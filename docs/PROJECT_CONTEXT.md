@@ -35,3 +35,18 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Se mantiene el storage `cloned_sites` via `sitesStorage`.
 - Sin cambios en rutas de frontend ni contratos publicos existentes.
 
+## Modulo nuevo: Link Hub (dashboard)
+
+- Ruta privada: `/linkhub`
+- Ruta publica: `/bio/[slug]`
+- Coleccion Firestore: `link_profiles`
+
+### Alcance
+
+- Editor estilo Linktree dentro del dashboard para configurar:
+  - foto de perfil
+  - nombre y bio
+  - slug publico
+  - enlaces sociales/CTA
+  - tema visual
+- Publicacion sin tocar rutas existentes.

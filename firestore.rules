@@ -37,6 +37,20 @@ service cloud.firestore {
       allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
+    match /link_profiles/{profileId} {
+      allow get, list: if resource.data.published == true
+        || isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if (isAdmin() || (signedIn() && resource.data.userId == request.auth.uid))
+        && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

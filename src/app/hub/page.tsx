@@ -9,6 +9,7 @@ import {
   Copy,
   BarChart2,
   Settings,
+  Link2,
   ArrowRight,
   LogOut,
   LayoutGrid,
@@ -71,6 +72,15 @@ export default function HubPage() {
       href: "/store",
       gradient: "from-zinc-900 to-zinc-900",
       border: "hover:border-emerald-500/50",
+    },
+    {
+      title: t("hub.linkhub.title"),
+      description: t("hub.linkhub.desc"),
+      icon: <Link2 className="w-8 h-8 text-sky-400" />,
+      action: t("hub.linkhub.action"),
+      href: "/linkhub",
+      gradient: "from-zinc-900 to-zinc-900",
+      border: "hover:border-sky-500/50",
     },
     {
       title: t("hub.metrics.title"),
