@@ -1,17 +1,22 @@
 "use client";
 
-import { ComponentType, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, ComponentType, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import {
   buildDefaultLinkHubProfile,
   getLinkHubProfileByUserId,
+  getLinkHubThemeColors,
+  getSafeLinkHubTheme,
+  hexToRgba,
   isLinkHubSlugAvailable,
   isValidExternalUrl,
   LINK_HUB_THEME_STYLES,
   LinkHubLink,
   LinkHubLinkType,
   LinkHubProfile,
+  LinkHubTheme,
+  normalizeHexColor,
   normalizeLinkUrl,
   sanitizeSlug,
   saveLinkHubProfileForUser,
@@ -22,20 +27,25 @@ import {
   Copy,
   ExternalLink,
   Globe,
+  ImagePlus,
   Instagram,
   Linkedin,
   Loader2,
   MoveDown,
   MoveUp,
   Music2,
+  Palette,
   Plus,
   Save,
+  Sparkles,
   Trash2,
+  Upload,
   Youtube,
   Facebook,
   MessageCircle,
   AtSign,
   Rocket,
+  X,
 } from "lucide-react";
 
 type SaveMode = "draft" | "publish";
@@ -71,12 +81,62 @@ function createEmptyLink(): LinkHubLink {
   };
 }
 
+function randomColorHex(): string {
+  const value = Math.floor(Math.random() * 0xffffff);
+  return `#${value.toString(16).padStart(6, "0")}`;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("La imagen no es valida."));
+    image.src = dataUrl;
+  });
+}
+
+async function optimizeAvatarImage(file: File): Promise<string> {
+  const source = await readFileAsDataUrl(file);
+  const image = await loadImageFromDataUrl(source);
+
+  const maxSize = 512;
+  const ratio = Math.min(maxSize / image.width, maxSize / image.height, 1);
+  const width = Math.max(1, Math.round(image.width * ratio));
+  const height = Math.max(1, Math.round(image.height * ratio));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("No se pudo preparar el avatar.");
+
+  context.drawImage(image, 0, 0, width, height);
+
+  let encoded = canvas.toDataURL("image/jpeg", 0.9);
+  if (encoded.length > 780_000) {
+    encoded = canvas.toDataURL("image/jpeg", 0.75);
+  }
+
+  return encoded;
+}
+
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
   const router = useRouter();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [origin, setOrigin] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -96,10 +156,22 @@ export default function LinkHubPage() {
         if (!active) return;
 
         if (stored) {
+          const safeTheme = getSafeLinkHubTheme((stored as LinkHubProfile).theme);
+          const preset = LINK_HUB_THEME_STYLES[safeTheme];
+
           setProfile({
             ...buildDefaultLinkHubProfile(user),
             ...stored,
             userId: user.uid,
+            theme: safeTheme,
+            themePrimaryColor: normalizeHexColor(
+              (stored as LinkHubProfile).themePrimaryColor,
+              preset.primary,
+            ),
+            themeSecondaryColor: normalizeHexColor(
+              (stored as LinkHubProfile).themeSecondaryColor,
+              preset.secondary,
+            ),
             links: Array.isArray(stored.links) && stored.links.length > 0 ? stored.links : [createEmptyLink()],
           });
           return;
@@ -137,12 +209,59 @@ export default function LinkHubPage() {
     return `${origin}/bio/${profile.slug}`;
   }, [origin, profile?.slug]);
 
-  const currentTheme = profile ? LINK_HUB_THEME_STYLES[profile.theme] : LINK_HUB_THEME_STYLES.midnight;
+  const activeTheme = useMemo(() => {
+    const themeKey = getSafeLinkHubTheme(profile?.theme);
+    const preset = LINK_HUB_THEME_STYLES[themeKey];
+    const colors = getLinkHubThemeColors(themeKey, profile?.themePrimaryColor, profile?.themeSecondaryColor);
+
+    return {
+      key: themeKey,
+      preset,
+      ...colors,
+    };
+  }, [profile?.theme, profile?.themePrimaryColor, profile?.themeSecondaryColor]);
+
+  const previewShellStyle = useMemo(
+    () => ({
+      borderColor: hexToRgba(activeTheme.primary, 0.35),
+      backgroundImage: `radial-gradient(120% 110% at 10% 0%, ${hexToRgba(activeTheme.primary, 0.38)} 0%, transparent 46%), radial-gradient(120% 110% at 100% 100%, ${hexToRgba(activeTheme.secondary, 0.34)} 0%, transparent 52%), linear-gradient(180deg, #020617 0%, #020617 40%, #000000 100%)`,
+    }),
+    [activeTheme.primary, activeTheme.secondary],
+  );
+
+  const previewPanelStyle = useMemo(
+    () => ({
+      borderColor: hexToRgba(activeTheme.primary, 0.25),
+      background: `linear-gradient(160deg, ${hexToRgba(activeTheme.primary, 0.16)} 0%, ${hexToRgba(activeTheme.secondary, 0.14)} 42%, rgba(0, 0, 0, 0.58) 100%)`,
+    }),
+    [activeTheme.primary, activeTheme.secondary],
+  );
+
+  const previewButtonStyle = useMemo(
+    () => ({
+      borderColor: hexToRgba(activeTheme.primary, 0.5),
+      background: `linear-gradient(120deg, ${hexToRgba(activeTheme.primary, 0.25)} 0%, ${hexToRgba(activeTheme.secondary, 0.24)} 100%)`,
+    }),
+    [activeTheme.primary, activeTheme.secondary],
+  );
 
   function patchProfile<K extends keyof LinkHubProfile>(field: K, value: LinkHubProfile[K]) {
     setProfile((prev) => {
       if (!prev) return prev;
       return { ...prev, [field]: value };
+    });
+  }
+
+  function applyTheme(theme: LinkHubTheme) {
+    const preset = LINK_HUB_THEME_STYLES[theme];
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        theme,
+        themePrimaryColor: preset.primary,
+        themeSecondaryColor: preset.secondary,
+      };
     });
   }
 
@@ -200,6 +319,35 @@ export default function LinkHubPage() {
     }
   }
 
+  async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Solo se permiten archivos de imagen para el avatar." });
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      setMessage({ type: "error", text: "La imagen es muy pesada. Usa una menor a 8MB." });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const optimized = await optimizeAvatarImage(file);
+      patchProfile("avatarUrl", optimized);
+      setMessage({ type: "success", text: "Avatar cargado correctamente." });
+    } catch (error) {
+      console.error("[LinkHub] Avatar upload error:", error);
+      setMessage({ type: "error", text: "No se pudo procesar la imagen seleccionada." });
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
   async function saveProfile(mode: SaveMode) {
     if (!profile || !user?.uid) return;
 
@@ -249,6 +397,13 @@ export default function LinkHubPage() {
         return;
       }
 
+      const safeTheme = getSafeLinkHubTheme(profile.theme);
+      const safeColors = getLinkHubThemeColors(
+        safeTheme,
+        profile.themePrimaryColor,
+        profile.themeSecondaryColor,
+      );
+
       const now = Date.now();
       const nextProfile: LinkHubProfile = {
         ...profile,
@@ -257,6 +412,9 @@ export default function LinkHubPage() {
         displayName: profile.displayName.trim(),
         bio: profile.bio.trim(),
         avatarUrl: profile.avatarUrl.trim(),
+        theme: safeTheme,
+        themePrimaryColor: safeColors.primary,
+        themeSecondaryColor: safeColors.secondary,
         links: preparedLinks.length > 0 ? preparedLinks : [createEmptyLink()],
         published: mode === "publish",
         publishedAt: mode === "publish" ? now : profile.publishedAt,
@@ -352,13 +510,37 @@ export default function LinkHubPage() {
                   />
                 </label>
                 <label className="space-y-2 md:col-span-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Foto de perfil (URL)</span>
-                  <input
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                    value={profile.avatarUrl}
-                    onChange={(event) => patchProfile("avatarUrl", event.target.value)}
-                    placeholder="https://..."
-                  />
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Foto de perfil</span>
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
+                    <input
+                      className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                      value={profile.avatarUrl}
+                      onChange={(event) => patchProfile("avatarUrl", event.target.value)}
+                      placeholder="https://... o sube un archivo"
+                    />
+                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-sky-100">
+                      {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      Adjuntar
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        disabled={isUploadingAvatar}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => patchProfile("avatarUrl", "")}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-300/40 bg-red-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-red-100"
+                    >
+                      <X className="h-4 w-4" />
+                      Quitar
+                    </button>
+                  </div>
+                  <p className="text-xs text-zinc-500">
+                    Soporta JPG, PNG, WEBP. Se optimiza automaticamente para carga rapida.
+                  </p>
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Bio</span>
@@ -451,30 +633,127 @@ export default function LinkHubPage() {
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
-              <h2 className="text-xl font-bold text-white mb-5">Tema visual</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {(Object.keys(LINK_HUB_THEME_STYLES) as Array<keyof typeof LINK_HUB_THEME_STYLES>).map(
-                  (themeKey) => {
-                    const theme = LINK_HUB_THEME_STYLES[themeKey];
-                    const active = profile.theme === themeKey;
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-white">Tema visual deluxe</h2>
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-200">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {Object.keys(LINK_HUB_THEME_STYLES).length} temas
+                </div>
+              </div>
 
-                    return (
-                      <button
-                        key={themeKey}
-                        type="button"
-                        onClick={() => patchProfile("theme", themeKey)}
-                        className={`rounded-2xl border p-4 text-left transition-all ${
-                          active
-                            ? "border-amber-300/80 bg-amber-400/10"
-                            : "border-white/10 bg-black/30 hover:border-white/20"
-                        }`}
-                      >
-                        <div className={`h-12 rounded-xl bg-gradient-to-r ${theme.background}`} />
-                        <p className="mt-3 text-sm font-bold text-white">{theme.label}</p>
-                      </button>
-                    );
-                  },
-                )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {(Object.keys(LINK_HUB_THEME_STYLES) as LinkHubTheme[]).map((themeKey) => {
+                  const theme = LINK_HUB_THEME_STYLES[themeKey];
+                  const active = profile.theme === themeKey;
+
+                  return (
+                    <button
+                      key={themeKey}
+                      type="button"
+                      onClick={() => applyTheme(themeKey)}
+                      className={`rounded-2xl border p-4 text-left transition-all ${
+                        active
+                          ? "border-amber-300/80 bg-amber-400/10"
+                          : "border-white/10 bg-black/30 hover:border-white/20"
+                      }`}
+                    >
+                      <div
+                        className="h-12 rounded-xl"
+                        style={{
+                          background: `linear-gradient(115deg, ${theme.primary} 0%, ${theme.secondary} 100%)`,
+                        }}
+                      />
+                      <p className="mt-3 text-sm font-bold text-white">{theme.label}</p>
+                      <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-zinc-400">{themeKey}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="mb-3 inline-flex items-center gap-2 text-xs uppercase tracking-[0.18em] font-bold text-zinc-300">
+                  <Palette className="w-4 h-4" />
+                  Personaliza colores (Primario + Secundario)
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Color primario</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        className="h-11 w-14 rounded-xl border border-white/15 bg-zinc-900"
+                        value={normalizeHexColor(profile.themePrimaryColor, activeTheme.preset.primary)}
+                        onChange={(event) => patchProfile("themePrimaryColor", event.target.value)}
+                      />
+                      <input
+                        className="flex-1 rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                        value={profile.themePrimaryColor || ""}
+                        onChange={(event) => patchProfile("themePrimaryColor", event.target.value)}
+                        onBlur={(event) =>
+                          patchProfile(
+                            "themePrimaryColor",
+                            normalizeHexColor(event.target.value, activeTheme.preset.primary),
+                          )
+                        }
+                        placeholder="#fbbf24"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Color secundario</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        className="h-11 w-14 rounded-xl border border-white/15 bg-zinc-900"
+                        value={normalizeHexColor(profile.themeSecondaryColor, activeTheme.preset.secondary)}
+                        onChange={(event) => patchProfile("themeSecondaryColor", event.target.value)}
+                      />
+                      <input
+                        className="flex-1 rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                        value={profile.themeSecondaryColor || ""}
+                        onChange={(event) => patchProfile("themeSecondaryColor", event.target.value)}
+                        onBlur={(event) =>
+                          patchProfile(
+                            "themeSecondaryColor",
+                            normalizeHexColor(event.target.value, activeTheme.preset.secondary),
+                          )
+                        }
+                        placeholder="#f97316"
+                      />
+                    </div>
+                  </label>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => applyTheme(activeTheme.key)}
+                    className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.13em] text-white"
+                  >
+                    Reset del tema
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const randomPrimary = randomColorHex();
+                      const randomSecondary = randomColorHex();
+                      setProfile((prev) => {
+                        if (!prev) return prev;
+                        return {
+                          ...prev,
+                          theme: "rgb",
+                          themePrimaryColor: randomPrimary,
+                          themeSecondaryColor: randomSecondary,
+                        };
+                      });
+                    }}
+                    className="rounded-xl border border-fuchsia-300/40 bg-fuchsia-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.13em] text-fuchsia-100"
+                  >
+                    RGB aleatorio
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -507,9 +786,12 @@ export default function LinkHubPage() {
           </section>
 
           <aside className="xl:sticky xl:top-28 h-fit">
-            <div className={`rounded-[2rem] border p-5 bg-gradient-to-b ${currentTheme.background}`}>
-              <div className={`rounded-[1.75rem] border ${currentTheme.surface} p-5 backdrop-blur-xl`}>
-                <p className={`text-[10px] uppercase tracking-[0.25em] font-black ${currentTheme.muted}`}>
+            <div className="rounded-[2rem] border p-5" style={previewShellStyle}>
+              <div
+                className={`rounded-[1.75rem] border ${activeTheme.preset.surface} p-5 backdrop-blur-xl`}
+                style={previewPanelStyle}
+              >
+                <p className={`text-[10px] uppercase tracking-[0.25em] font-black ${activeTheme.preset.muted}`}>
                   Preview Mobile
                 </p>
 
@@ -518,19 +800,26 @@ export default function LinkHubPage() {
                     <img
                       src={profile.avatarUrl}
                       alt={profile.displayName}
-                      className="h-24 w-24 rounded-full border border-white/20 object-cover"
+                      className="h-24 w-24 rounded-full border object-cover"
+                      style={{ borderColor: hexToRgba(activeTheme.primary, 0.55) }}
                     />
                   ) : (
-                    <div className="h-24 w-24 rounded-full border border-white/20 bg-white/10 flex items-center justify-center text-3xl font-black text-white">
-                      {profile.displayName.slice(0, 1).toUpperCase()}
+                    <div
+                      className="h-24 w-24 rounded-full border flex items-center justify-center text-3xl font-black text-white"
+                      style={{
+                        borderColor: hexToRgba(activeTheme.primary, 0.55),
+                        background: `linear-gradient(130deg, ${hexToRgba(activeTheme.primary, 0.32)} 0%, ${hexToRgba(activeTheme.secondary, 0.28)} 100%)`,
+                      }}
+                    >
+                      <ImagePlus className="h-8 w-8" />
                     </div>
                   )}
 
                   <h3 className="mt-4 text-2xl font-black text-white">{profile.displayName || "Tu nombre"}</h3>
-                  <p className={`mt-2 text-sm ${currentTheme.muted}`}>
+                  <p className={`mt-2 text-sm ${activeTheme.preset.muted}`}>
                     {profile.bio || "Tu descripcion corta aparecera aqui."}
                   </p>
-                  <div className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${currentTheme.accent}`}>
+                  <div className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${activeTheme.preset.accent}`}>
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     {profile.published ? "Publicado" : "Borrador"}
                   </div>
@@ -542,7 +831,8 @@ export default function LinkHubPage() {
                     return (
                       <div
                         key={link.id}
-                        className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${currentTheme.button}`}
+                        className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${activeTheme.preset.button}`}
+                        style={previewButtonStyle}
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="w-4 h-4" />
@@ -556,14 +846,15 @@ export default function LinkHubPage() {
                 </div>
 
                 {publicUrl && (
-                  <div className={`mt-6 rounded-xl border border-white/15 bg-black/30 p-3 text-xs ${currentTheme.muted}`}>
+                  <div className={`mt-6 rounded-xl border border-white/15 bg-black/30 p-3 text-xs ${activeTheme.preset.muted}`}>
                     <p className="font-bold text-white">URL publica</p>
                     <p className="mt-1 break-all">{publicUrl}</p>
                     <a
                       href={publicUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-amber-300 font-semibold"
+                      className="mt-2 inline-flex items-center gap-1 font-semibold"
+                      style={{ color: activeTheme.primary }}
                     >
                       Abrir pagina
                       <ExternalLink className="w-3.5 h-3.5" />

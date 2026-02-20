@@ -49,6 +49,10 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - slug publico
   - enlaces sociales/CTA
   - tema visual
+- Personalizacion avanzada de imagen y branding:
+  - adjuntar avatar por archivo (con optimizacion cliente)
+  - 10 temas adicionales (mas tema RGB custom)
+  - color primario y secundario editable para cualquier tema
 - Publicacion sin tocar rutas existentes.
 
 ## Modulo nuevo: Published Projects (dashboard)
