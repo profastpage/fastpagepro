@@ -106,7 +106,14 @@ export default function LinkHubPage() {
         setProfile(buildDefaultLinkHubProfile(user));
       } catch (error) {
         console.error("[LinkHub] Failed loading profile:", error);
-        setMessage({ type: "error", text: "No se pudo cargar tu Link Hub. Intenta de nuevo." });
+        if (active) {
+          // Fallback prevents infinite loading if Firestore rules temporarily block reads.
+          setProfile(buildDefaultLinkHubProfile(user));
+        }
+        setMessage({
+          type: "error",
+          text: "No se pudo leer tu perfil guardado. Se cargo un borrador local para que puedas continuar.",
+        });
       } finally {
         if (active) {
           setIsLoadingProfile(false);
@@ -264,10 +271,23 @@ export default function LinkHubPage() {
     }
   }
 
-  if (loading || isLoadingProfile || !profile) {
+  if (loading || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
+        <div className="max-w-lg rounded-3xl border border-red-400/30 bg-red-500/10 p-8 text-center">
+          <h1 className="text-2xl font-black">No se pudo abrir Link Hub</h1>
+          <p className="mt-3 text-red-100/90">
+            Ocurrio un problema de permisos o conexion. Recarga la pagina e intenta nuevamente.
+          </p>
+        </div>
       </div>
     );
   }

@@ -52,7 +52,6 @@ export default function Nav() {
   if (
     pathname === "/auth" ||
     pathname.startsWith("/editor") ||
-    pathname.startsWith("/store") ||
     pathname.startsWith("/bio/")
   ) return null;
 

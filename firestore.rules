@@ -38,7 +38,11 @@ service cloud.firestore {
     }
 
     match /link_profiles/{profileId} {
-      allow get, list: if resource.data.published == true
+      allow get: if isAdmin()
+        || (signedIn() && profileId == request.auth.uid)
+        || resource.data.published == true;
+
+      allow list: if resource.data.published == true
         || isAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
 

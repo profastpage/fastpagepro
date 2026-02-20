@@ -850,7 +850,7 @@ export default function StoreBuilderPage() {
   })();
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden pt-16 md:pt-24">
       <header className="border-b border-white/10 bg-zinc-900/80 backdrop-blur-md z-50 px-3 py-2 md:h-16 md:px-4 md:py-0">
         <div className="h-full flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center justify-between md:justify-start gap-2 min-w-0">

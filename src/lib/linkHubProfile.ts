@@ -172,16 +172,25 @@ export async function isLinkHubSlugAvailable(
   const normalized = sanitizeSlug(slug);
   if (!normalized) return false;
 
-  const slugQuery = query(
-    collection(db, LINK_HUB_COLLECTION),
-    where("slug", "==", normalized),
-    limit(1),
-  );
-  const snapshot = await getDocs(slugQuery);
-  if (snapshot.empty) return true;
+  try {
+    const slugQuery = query(
+      collection(db, LINK_HUB_COLLECTION),
+      where("slug", "==", normalized),
+      limit(1),
+    );
+    const snapshot = await getDocs(slugQuery);
+    if (snapshot.empty) return true;
 
-  const first = snapshot.docs[0];
-  return first.id === currentUserId;
+    const first = snapshot.docs[0];
+    return first.id === currentUserId;
+  } catch (error: any) {
+    const code = String(error?.code || "");
+    if (code.includes("permission-denied")) {
+      // Conservative default when query visibility is restricted by rules.
+      return false;
+    }
+    throw error;
+  }
 }
 
 export async function getPublishedLinkHubProfileBySlug(
