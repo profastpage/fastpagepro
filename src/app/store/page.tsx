@@ -823,8 +823,7 @@ export default function StoreBuilderPage() {
 
       setIsDirty(false);
       if (publishNow) {
-        setPublishedUrl(`/preview/${id}`);
-        setShowPublished(true);
+        router.push(`/published?highlight=${id}&kind=site`);
       } else {
         setSavedToast(true);
         setTimeout(() => setSavedToast(false), 2000);
@@ -2016,7 +2015,7 @@ export default function StoreBuilderPage() {
         url={publishedUrl || "/preview"}
         onBackToPanel={() => {
           setShowPublished(false);
-          router.push("/cloner/web");
+          router.push("/published");
         }}
         onContinueEditing={() => setShowPublished(false)}
       />

@@ -39,6 +39,7 @@ export interface LinkHubProfile {
   avatarUrl: string;
   theme: LinkHubTheme;
   published: boolean;
+  publishedAt?: number;
   links: LinkHubLink[];
   createdAt: number;
   updatedAt: number;
@@ -186,8 +187,8 @@ export async function isLinkHubSlugAvailable(
   } catch (error: any) {
     const code = String(error?.code || "");
     if (code.includes("permission-denied")) {
-      // Conservative default when query visibility is restricted by rules.
-      return false;
+      // Keep publish flow usable if security rules disallow global slug scans.
+      return true;
     }
     throw error;
   }

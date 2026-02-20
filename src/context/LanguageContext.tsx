@@ -22,6 +22,7 @@ const translations: Record<string, Record<Language, string>> = {
   "nav.cloner": { es: "Clonador", en: "Cloner", pt: "Clonador" },
   "nav.store": { es: "Tienda Online", en: "Online Store", pt: "Loja Online" },
   "nav.linkhub": { es: "Link Hub", en: "Link Hub", pt: "Link Hub" },
+  "nav.published": { es: "Publicados", en: "Published", pt: "Publicados" },
   "nav.metrics": { es: "MÃ©tricas Pro", en: "Pro Metrics", pt: "MÃ©tricas Pro" },
   "nav.hub": { es: "Hub", en: "Hub", pt: "Hub" },
   "nav.settings": { es: "ConfiguraciÃ³n", en: "Settings", pt: "ConfiguraÃ§Ãµes" },
@@ -317,6 +318,13 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Crie seu perfil estilo Linktree com foto, redes sociais e URL publica pronta para compartilhar.",
   },
   "hub.linkhub.action": { es: "Abrir Link Hub", en: "Open Link Hub", pt: "Abrir Link Hub" },
+  "hub.published.title": { es: "Proyectos Publicados", en: "Published Projects", pt: "Projetos Publicados" },
+  "hub.published.desc": {
+    es: "Gestiona todos tus proyectos publicados en una sola vista profesional.",
+    en: "Manage all your published projects in one professional view.",
+    pt: "Gerencie todos os seus projetos publicados em uma unica visao profissional.",
+  },
+  "hub.published.action": { es: "Ver Publicados", en: "View Published", pt: "Ver Publicados" },
   "hub.metrics.title": { es: "MÃ©tricas Pro", en: "Pro Metrics", pt: "MÃ©tricas Pro" },
   "hub.metrics.desc": {
     es: "AnalÃ­ticas avanzadas y mapas de calor para optimizar conversiones.",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { doc as firestoreDoc, setDoc } from "firebase/firestore";
+import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import MobileSavePublishBar from "@/components/MobileSavePublishBar";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
@@ -136,6 +136,33 @@ export default function BuilderPage() {
     const savedProjectId = localStorage.getItem("fastpage_builder_project_id");
     if (savedProjectId) setBuilderProjectId(savedProjectId);
   }, []);
+
+  useEffect(() => {
+    if (loading || !user?.uid || !builderProjectId) return;
+
+    (async () => {
+      try {
+        const snap = await getDoc(firestoreDoc(db, "cloned_sites", builderProjectId));
+        if (!snap.exists()) return;
+        const data = snap.data() as any;
+        if (data?.userId !== user.uid) return;
+        if (data?.source !== "builder") return;
+
+        if (Array.isArray(data.builderBlocks) && data.builderBlocks.length > 0) {
+          setBlocks(data.builderBlocks as Block[]);
+          setProjectStatus("saved");
+        }
+        if (typeof data.builderPrimaryColor === "string") {
+          setPrimaryColor(data.builderPrimaryColor);
+        }
+        if (typeof data.builderSecondaryColor === "string") {
+          setSecondaryColor(data.builderSecondaryColor);
+        }
+      } catch (error) {
+        console.error("[Builder] Failed to load saved project:", error);
+      }
+    })();
+  }, [loading, user?.uid, builderProjectId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -308,12 +335,16 @@ export default function BuilderPage() {
       html: htmlToStore,
       userId: user.uid,
       source: "builder",
+      type: "landing-page",
       status: publishNow ? "published" : "draft",
       published: publishNow,
       createdAt: now,
       updatedAt: now,
       templateName: "Constructor Fast Page",
       url: "builder://custom",
+      builderBlocks: blocks,
+      builderPrimaryColor: primaryColor,
+      builderSecondaryColor: secondaryColor,
     };
     if (publishNow) payload.publishedAt = now;
 
@@ -346,9 +377,7 @@ export default function BuilderPage() {
     setProjectError(null);
     try {
       const projectId = await upsertBuilderProject(true);
-      const previewUrl = `/preview/${projectId}`;
-      setPublishedUrl(previewUrl);
-      setShowPublished(true);
+      router.push(`/published?highlight=${projectId}&kind=site`);
     } catch (error: any) {
       setProjectError(error?.message || "No se pudo publicar el proyecto.");
     } finally {
@@ -593,7 +622,7 @@ export default function BuilderPage() {
         url={publishedUrl || "/preview"}
         onBackToPanel={() => {
           setShowPublished(false);
-          router.push("/cloner/web");
+          router.push("/published");
         }}
         onContinueEditing={() => setShowPublished(false)}
       />

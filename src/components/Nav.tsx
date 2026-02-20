@@ -44,6 +44,7 @@ export default function Nav() {
       { name: t("nav.cloner"), href: "/cloner/web", emoji: "" },
       { name: t("nav.store"), href: "/store", emoji: "" },
       { name: t("nav.linkhub"), href: "/linkhub", emoji: "" },
+      { name: t("nav.published"), href: "/published", emoji: "" },
       { name: t("nav.metrics"), href: "/metrics", emoji: "" },
       { name: t("nav.settings"), href: "/settings", emoji: "" },
     ];

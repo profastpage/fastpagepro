@@ -10,6 +10,7 @@ import {
   BarChart2,
   Settings,
   Link2,
+  FolderKanban,
   ArrowRight,
   LogOut,
   LayoutGrid,
@@ -81,6 +82,15 @@ export default function HubPage() {
       href: "/linkhub",
       gradient: "from-zinc-900 to-zinc-900",
       border: "hover:border-sky-500/50",
+    },
+    {
+      title: t("hub.published.title"),
+      description: t("hub.published.desc"),
+      icon: <FolderKanban className="w-8 h-8 text-emerald-300" />,
+      action: t("hub.published.action"),
+      href: "/published",
+      gradient: "from-zinc-900 to-zinc-900",
+      border: "hover:border-emerald-400/50",
     },
     {
       title: t("hub.metrics.title"),

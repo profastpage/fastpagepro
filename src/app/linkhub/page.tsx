@@ -1,6 +1,7 @@
 "use client";
 
 import { ComponentType, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import {
   buildDefaultLinkHubProfile,
@@ -72,6 +73,7 @@ function createEmptyLink(): LinkHubLink {
 
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
+  const router = useRouter();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -229,6 +231,13 @@ export default function LinkHubPage() {
       });
       return;
     }
+    if (mode === "publish" && preparedLinks.length === 0) {
+      setMessage({
+        type: "error",
+        text: "Debes agregar al menos un enlace valido antes de publicar.",
+      });
+      return;
+    }
 
     setIsSaving(true);
     setMessage(null);
@@ -250,6 +259,7 @@ export default function LinkHubPage() {
         avatarUrl: profile.avatarUrl.trim(),
         links: preparedLinks.length > 0 ? preparedLinks : [createEmptyLink()],
         published: mode === "publish",
+        publishedAt: mode === "publish" ? now : profile.publishedAt,
         updatedAt: now,
         createdAt: profile.createdAt || now,
       };
@@ -263,6 +273,9 @@ export default function LinkHubPage() {
             ? "Link Hub publicado. Ya puedes compartir tu URL."
             : "Borrador guardado correctamente.",
       });
+      if (mode === "publish") {
+        router.push(`/published?highlight=linkhub-${user.uid}&kind=linkhub`);
+      }
     } catch (error) {
       console.error("[LinkHub] Save error:", error);
       setMessage({ type: "error", text: "No se pudo guardar. Revisa permisos de Firestore." });

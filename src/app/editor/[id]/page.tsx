@@ -371,12 +371,7 @@ export default function EditorPage() {
 
       await setDoc(firestoreDoc(db, "cloned_sites", id), publishPayload, { merge: true });
 
-      setPublishResult({
-        success: true,
-        issues: [],
-        url: `/preview/${id}`
-      });
-      setShowPublished(true);
+      router.push(`/published?highlight=${id}&kind=site`);
     } catch (error: any) {
       console.error("Error publishing site:", error);
       setError("Error al publicar: " + error.message);
@@ -606,7 +601,7 @@ export default function EditorPage() {
         open={Boolean(showPublished && publishResult?.success && publishResult?.url)}
         url={publishResult?.url || `/preview/${id}`}
         issues={publishResult?.issues || []}
-        onBackToPanel={() => router.push("/cloner/web")}
+        onBackToPanel={() => router.push("/published")}
         onContinueEditing={() => setShowPublished(false)}
       />
     </div>
