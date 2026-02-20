@@ -417,7 +417,8 @@ export default function LinkHubPage() {
         themeSecondaryColor: safeColors.secondary,
         links: preparedLinks.length > 0 ? preparedLinks : [createEmptyLink()],
         published: mode === "publish",
-        publishedAt: mode === "publish" ? now : profile.publishedAt,
+        ...(typeof profile.publishedAt === "number" ? { publishedAt: profile.publishedAt } : {}),
+        ...(mode === "publish" ? { publishedAt: now } : {}),
         updatedAt: now,
         createdAt: profile.createdAt || now,
       };
