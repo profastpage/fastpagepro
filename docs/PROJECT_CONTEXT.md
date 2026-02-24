@@ -307,3 +307,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - titulo de seccion movido al header superior, centrado (`CARTA`/`CATALOGO`/`UBICACION`).
   - se elimina el bloque grande intermedio de titulo para liberar altura util del contenido.
   - resultado: mayor espacio visible para buscador, chips y lista de productos en mobile y desktop.
+
+## LinkHub Top Actions Mobile Icon-Only (2026-02-24)
+
+- Ruta privada ajustada: `/linkhub`.
+- En mobile:
+  - bloque sticky superior de acciones ahora muestra solo iconos pequenos para `guardar`, `publicar` y `copiar`.
+  - botones alineados en fila de derecha a izquierda.
+  - se agregan `title`/`aria-label` para claridad y accesibilidad.
+- En desktop:
+  - se mantiene el formato completo con texto en cada boton.
