@@ -212,7 +212,7 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - CTA principal sin ruido visual innecesario para lectura mas clara.
   - FAQ mobile/desktop con mejor contraste, padding, altura de linea y estados abiertos mas legibles.
 - Correccion transversal de textos:
-  - se agrega `fixMojibake()` en `LanguageContext` para normalizar caracteres mal codificados (`Ã`, `Â`, etc.) al momento de traducir (`t(key)`).
+  - se agrega `fixMojibake()` en `LanguageContext` para normalizar caracteres mal codificados (`Ãƒ`, `Ã‚`, etc.) al momento de traducir (`t(key)`).
   - esto mejora acentos, signos y legibilidad en landing y en el resto de pantallas que consumen el mismo contexto de idioma.
 
 ## Link Hub Top Actions (2026-02-24)
@@ -222,3 +222,16 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - bloque de acciones `Guardar borrador / Publicar Link Hub / Copiar URL` movido a la parte superior del editor.
   - bloque superior fijo (`sticky`) para acceso rapido continuo en mobile y desktop.
   - se elimina duplicado de botones al final del formulario para simplificar flujo.
+
+## Link Hub Item Editor + Auto Description AI-like (2026-02-24)
+
+- Ruta privada ajustada: `/linkhub`.
+- Mejoras de edicion de items:
+  - boton explicito `Agregar item` en el header de carta/catalogo y en estado vacio.
+  - seleccion de categoria robusta por item con fallback automatico si la categoria original ya no existe.
+  - selector visual de categoria por item reforzado para reducir errores al editar catalogos grandes.
+- Sugerencias automaticas de descripcion comercial:
+  - boton por item `Sugerir descripcion`.
+  - boton masivo `Sugerir descripciones` para todos los items.
+  - generacion dinamica basada en titulo + pistas del nombre de imagen URL.
+  - textos variables con enfoque de venta y emojis para restaurantes y negocios generales.

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, ComponentType, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -168,6 +168,172 @@ function toWhatsappUrl(raw: string): string {
   return digits ? `https://wa.me/${digits}` : "";
 }
 
+type CatalogDescriptionHint = {
+  pattern: RegExp;
+  emojis: string[];
+  hooks: string[];
+};
+
+const RESTAURANT_DESCRIPTION_HINTS: CatalogDescriptionHint[] = [
+  {
+    pattern: /(ceviche|marino|pescado|conchas|langostin|langostino|jalea|parihuela|sudado)/i,
+    emojis: ["🐟", "🦐", "🌊", "🍋"],
+    hooks: [
+      "frescura marina y sabor intenso en cada bocado",
+      "sazon casera con toque costero para volver siempre",
+      "equilibrio perfecto entre textura, aroma y frescura",
+    ],
+  },
+  {
+    pattern: /(chicharron|broaster|crispy|frito|frita|alita|pollo)/i,
+    emojis: ["🍗", "🔥", "😋", "🍟"],
+    hooks: [
+      "crujiente por fuera y jugoso por dentro",
+      "coccion al punto para disfrutar desde el primer mordisco",
+      "sabor potente ideal para compartir o repetir",
+    ],
+  },
+  {
+    pattern: /(chaufa|arroz|wok|saltado|lomo|tallarin|pasta|noodle)/i,
+    emojis: ["🍛", "🥢", "🔥", "🍜"],
+    hooks: [
+      "combinacion abundante con sazon irresistible",
+      "mezcla de ingredientes al punto con gran aroma",
+      "plato contundente y lleno de sabor en cada porcion",
+    ],
+  },
+  {
+    pattern: /(hamburguesa|burger|sandwich|pan|sanguch|wrap)/i,
+    emojis: ["🍔", "🥪", "🔥", "🧀"],
+    hooks: [
+      "balance perfecto entre carne, pan y salsas",
+      "sabor casero y porcion generosa para quedar feliz",
+      "hecho al momento para disfrutarlo bien caliente",
+    ],
+  },
+  {
+    pattern: /(pizza|lasagna|lasana)/i,
+    emojis: ["🍕", "🧀", "🔥", "🍅"],
+    hooks: [
+      "masa al punto con toppings que se lucen en cada slice",
+      "sabor intenso con combinaciones para todos los gustos",
+      "textura dorada y relleno poderoso para disfrutar sin pausa",
+    ],
+  },
+];
+
+const GENERAL_DESCRIPTION_HINTS: CatalogDescriptionHint[] = [
+  {
+    pattern: /(zapat|tenis|sneaker|calzado|sandalia|bota)/i,
+    emojis: ["👟", "✨", "🛍️", "🔥"],
+    hooks: [
+      "estilo y comodidad para tu rutina diaria",
+      "diseno moderno pensado para destacar",
+      "acabado premium con ajuste comodo y versatil",
+    ],
+  },
+  {
+    pattern: /(camisa|polo|polera|casaca|chaqueta|vestido|jean|ropa|moda)/i,
+    emojis: ["👕", "🧥", "✨", "🛍️"],
+    hooks: [
+      "look actual con detalles que elevan tu estilo",
+      "materiales comodos para usar todo el dia",
+      "prenda versatil para combinar facil y lucir increible",
+    ],
+  },
+  {
+    pattern: /(celular|smartphone|laptop|auricular|audifono|gamer|teclado|mouse|tablet|tecnolog)/i,
+    emojis: ["📱", "💻", "⚡", "🎧"],
+    hooks: [
+      "rendimiento confiable para trabajo, estudio o entretenimiento",
+      "tecnologia actual para mejorar tu experiencia diaria",
+      "calidad y potencia en un solo producto",
+    ],
+  },
+  {
+    pattern: /(crema|serum|perfume|maquillaje|skincare|belleza|cosmet)/i,
+    emojis: ["💄", "🧴", "✨", "🌸"],
+    hooks: [
+      "formula seleccionada para cuidar y resaltar tu estilo",
+      "acabado premium para resultados visibles desde el primer uso",
+      "ideal para tu rutina diaria con un toque profesional",
+    ],
+  },
+];
+
+const RESTAURANT_GENERIC_EMOJIS = ["🍽️", "😋", "🔥", "⭐"];
+const GENERAL_GENERIC_EMOJIS = ["🛍️", "✨", "💯", "🚀"];
+const RESTAURANT_STARTERS = ["Imperdible", "Recomendado", "Favorito del dia", "Recien preparado"];
+const GENERAL_STARTERS = ["Nuevo ingreso", "Top venta", "Recomendado", "Edicion especial"];
+const RESTAURANT_CLOSERS = [
+  "Pide el tuyo hoy y disfruta una experiencia brutal.",
+  "Ideal para compartir o darte un gustazo en cualquier momento.",
+  "Listo para conquistar paladares desde el primer bocado.",
+];
+const GENERAL_CLOSERS = [
+  "Llevatelo hoy y mejora tu experiencia desde el primer uso.",
+  "Perfecto para ti o para regalar con acierto total.",
+  "Una opcion que combina utilidad, estilo y valor real.",
+];
+
+function pickBySeed<T>(items: T[], seed: number): T {
+  if (items.length === 0) {
+    throw new Error("Cannot pick from an empty array.");
+  }
+  return items[Math.abs(seed) % items.length];
+}
+
+function normalizeTextForHints(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ");
+}
+
+function extractImageHintText(imageUrl: string): string {
+  if (!imageUrl || imageUrl.startsWith("data:image/")) return "";
+  try {
+    const decoded = decodeURIComponent(imageUrl);
+    return decoded.replace(/\.[a-z0-9]{2,5}($|\?)/gi, " ").replace(/[\/_+=%-]/g, " ");
+  } catch {
+    return imageUrl.replace(/[\/_+=%-]/g, " ");
+  }
+}
+
+function buildCatalogDescriptionSuggestion(
+  item: LinkHubCatalogItem,
+  businessType: LinkHubBusinessType,
+  categoryName: string,
+  seed: number,
+): string {
+  const title = item.title.trim();
+  const fallbackName = businessType === "restaurant" ? "Especial de la casa" : "Producto destacado";
+  const productName = title || fallbackName;
+  const hintSource = normalizeTextForHints(`${productName} ${categoryName} ${extractImageHintText(item.imageUrl)}`);
+  const hints = businessType === "restaurant" ? RESTAURANT_DESCRIPTION_HINTS : GENERAL_DESCRIPTION_HINTS;
+  const matchedHint = hints.find((entry) => entry.pattern.test(hintSource));
+
+  const genericEmojis = businessType === "restaurant" ? RESTAURANT_GENERIC_EMOJIS : GENERAL_GENERIC_EMOJIS;
+  const starters = businessType === "restaurant" ? RESTAURANT_STARTERS : GENERAL_STARTERS;
+  const closers = businessType === "restaurant" ? RESTAURANT_CLOSERS : GENERAL_CLOSERS;
+  const hooks =
+    matchedHint?.hooks ||
+    (businessType === "restaurant"
+      ? ["sabor equilibrado y presentacion que provoca", "calidad casera con un toque que enamora"]
+      : ["calidad real para uso diario", "diseno funcional con gran presencia"]);
+
+  const primaryEmoji = matchedHint ? pickBySeed(matchedHint.emojis, seed + 7) : pickBySeed(genericEmojis, seed + 11);
+  const supportEmoji = matchedHint
+    ? pickBySeed(matchedHint.emojis, seed + 13)
+    : pickBySeed(genericEmojis, seed + 17);
+  const starter = pickBySeed(starters, seed + 19);
+  const hook = pickBySeed(hooks, seed + 23);
+  const closer = pickBySeed(closers, seed + 29);
+
+  return `${primaryEmoji} ${starter}: ${productName}. ${hook}. ${supportEmoji} ${closer}`;
+}
+
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
   const router = useRouter();
@@ -183,6 +349,7 @@ export default function LinkHubPage() {
   const [editorItemSearch, setEditorItemSearch] = useState("");
   const [coverUrlInput, setCoverUrlInput] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const descriptionSeedRef = useRef<number>(Date.now());
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -266,6 +433,29 @@ export default function LinkHubPage() {
       // Ignore storage errors (private mode/quota).
     }
   }, [profile, user?.uid]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const validIds = new Set(profile.catalogCategories.map((category) => category.id));
+    const fallbackCategoryId = profile.catalogCategories[0]?.id || "";
+    if (!fallbackCategoryId) return;
+
+    const hasInvalidCategory = profile.catalogItems.some((item) => !validIds.has(item.categoryId));
+    if (!hasInvalidCategory) return;
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const allowedIds = new Set(prev.catalogCategories.map((category) => category.id));
+      const fallbackId = prev.catalogCategories[0]?.id || "";
+      if (!fallbackId) return prev;
+      return {
+        ...prev,
+        catalogItems: prev.catalogItems.map((item) =>
+          allowedIds.has(item.categoryId) ? item : { ...item, categoryId: fallbackId },
+        ),
+      };
+    });
+  }, [profile]);
 
   const publicUrl = useMemo(() => {
     if (!profile?.slug || !origin) return "";
@@ -478,13 +668,30 @@ export default function LinkHubPage() {
     });
   }
 
+  function resolveValidCategoryId(
+    categories: LinkHubProfile["catalogCategories"],
+    requestedCategoryId: string,
+  ): string {
+    if (categories.some((category) => category.id === requestedCategoryId)) {
+      return requestedCategoryId;
+    }
+    return categories[0]?.id || "";
+  }
+
+  function getNextDescriptionSeed(extra = 0): number {
+    const randomBump = Math.floor(Math.random() * 17) + 1;
+    descriptionSeedRef.current += randomBump + extra;
+    return descriptionSeedRef.current;
+  }
+
   function addCatalogItem() {
     setProfile((prev) => {
       if (!prev) return prev;
       if (prev.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS) return prev;
+      const baseCategoryId = prev.catalogCategories[0]?.id || "";
       return {
         ...prev,
-        catalogItems: [...prev.catalogItems, createLinkHubCatalogItem(prev.catalogCategories[0]?.id || "")],
+        catalogItems: [...prev.catalogItems, createLinkHubCatalogItem(baseCategoryId)],
       };
     });
   }
@@ -492,11 +699,87 @@ export default function LinkHubPage() {
   function patchCatalogItem(itemId: string, patch: Partial<LinkHubCatalogItem>) {
     setProfile((prev) => {
       if (!prev) return prev;
+      const normalizedPatch =
+        typeof patch.categoryId === "string"
+          ? { ...patch, categoryId: resolveValidCategoryId(prev.catalogCategories, patch.categoryId) }
+          : patch;
       return {
         ...prev,
-        catalogItems: prev.catalogItems.map((item) => (item.id === itemId ? { ...item, ...patch } : item)),
+        catalogItems: prev.catalogItems.map((item) =>
+          item.id === itemId ? { ...item, ...normalizedPatch } : item,
+        ),
       };
     });
+  }
+
+  function suggestCatalogItemDescription(itemId: string) {
+    if (!profile) return;
+    const itemIndex = profile.catalogItems.findIndex((entry) => entry.id === itemId);
+    if (itemIndex < 0) return;
+
+    const item = profile.catalogItems[itemIndex];
+    const categoryName =
+      profile.catalogCategories.find((category) => category.id === item.categoryId)?.name.trim() || "";
+
+    let nextDescription = "";
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      const seed = getNextDescriptionSeed(itemIndex + attempt);
+      const candidate = buildCatalogDescriptionSuggestion(item, profile.businessType, categoryName, seed);
+      if (candidate && candidate !== item.description && candidate !== nextDescription) {
+        nextDescription = candidate;
+        break;
+      }
+    }
+
+    if (!nextDescription) {
+      setMessage({
+        type: "error",
+        text: "Completa titulo o imagen para generar una descripcion distinta.",
+      });
+      return;
+    }
+
+    setProfile({
+      ...profile,
+      catalogItems: profile.catalogItems.map((entry) =>
+        entry.id === itemId ? { ...entry, description: nextDescription } : entry,
+      ),
+    });
+    setMessage({ type: "success", text: "Descripcion sugerida lista para este item." });
+  }
+
+  function suggestDescriptionsForAllItems() {
+    if (!profile) return;
+    let updatedCount = 0;
+    const nextItems = profile.catalogItems.map((item, index) => {
+      if (!item.title.trim() && !item.imageUrl.trim()) return item;
+      const categoryName =
+        profile.catalogCategories.find((category) => category.id === item.categoryId)?.name.trim() || "";
+      const seed = getNextDescriptionSeed(index);
+      const description = buildCatalogDescriptionSuggestion(item, profile.businessType, categoryName, seed);
+      if (!description || description === item.description) return item;
+      updatedCount += 1;
+      return {
+        ...item,
+        description,
+      };
+    });
+
+    if (updatedCount > 0) {
+      setProfile({
+        ...profile,
+        catalogItems: nextItems,
+      });
+    }
+
+    if (updatedCount > 0) {
+      setMessage({ type: "success", text: `Se generaron ${updatedCount} descripciones nuevas.` });
+    } else {
+      setMessage({
+        type: "error",
+        text: "Agrega titulo o imagen en tus items para poder sugerir descripciones.",
+      });
+    }
   }
 
   function removeCatalogItem(itemId: string) {
@@ -1354,15 +1637,26 @@ export default function LinkHubPage() {
                 <h2 className="text-xl font-bold text-white">
                   {profile.businessType === "restaurant" ? "Carta" : "Catalogo"} digital
                 </h2>
-                <button
-                  type="button"
-                  onClick={addCatalogItem}
-                  disabled={profile.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
-                >
-                  <Plus className="w-4 h-4" />
-                  Item
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={suggestDescriptionsForAllItems}
+                    disabled={profile.catalogItems.length === 0}
+                    className="inline-flex items-center gap-2 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-amber-100 disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Sugerir descripciones
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addCatalogItem}
+                    disabled={profile.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS}
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar item
+                  </button>
+                </div>
               </div>
 
               <div className="mb-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
@@ -1372,7 +1666,7 @@ export default function LinkHubPage() {
                     className="w-full bg-transparent text-sm text-white placeholder:text-zinc-500 focus:outline-none"
                     value={editorItemSearch}
                     onChange={(event) => setEditorItemSearch(event.target.value)}
-                    placeholder="Buscar item por nombre, descripcion, precio o badge..."
+                    placeholder="Buscar item por nombre, descripcion, categoria, precio o badge..."
                   />
                 </label>
                 <div className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-200">
@@ -1425,6 +1719,15 @@ export default function LinkHubPage() {
                 {filteredEditorItems.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-white/20 bg-black/20 p-4 text-sm text-zinc-300">
                     No hay items para este filtro. Limpia la busqueda o agrega uno nuevo.
+                    <button
+                      type="button"
+                      onClick={addCatalogItem}
+                      disabled={profile.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS}
+                      className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-white disabled:opacity-50"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Agregar item
+                    </button>
                   </div>
                 )}
                 {filteredEditorItems.map((item) => (
@@ -1459,6 +1762,13 @@ export default function LinkHubPage() {
                           className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-sky-100"
                         >
                           Duplicar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => suggestCatalogItemDescription(item.id)}
+                          className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-amber-100"
+                        >
+                          Sugerir descripcion
                         </button>
                         <button
                           type="button"
@@ -1515,17 +1825,22 @@ export default function LinkHubPage() {
                         onChange={(event) => patchCatalogItem(item.id, { imageUrl: event.target.value })}
                         placeholder="URL imagen"
                       />
-                      <select
-                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={item.categoryId}
-                        onChange={(event) => patchCatalogItem(item.id, { categoryId: event.target.value })}
-                      >
-                        {profile.catalogCategories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.emoji || "•"} {category.name}
-                          </option>
-                        ))}
-                      </select>
+                      <label className="space-y-2 rounded-xl border border-white/10 bg-zinc-900/50 px-3 py-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
+                          Categoria del item
+                        </span>
+                        <select
+                          className="w-full rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                          value={resolveValidCategoryId(profile.catalogCategories, item.categoryId)}
+                          onChange={(event) => patchCatalogItem(item.id, { categoryId: event.target.value })}
+                        >
+                          {profile.catalogCategories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.emoji || "•"} {category.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                       <input
                         className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
                         value={item.emoji || ""}
@@ -1550,12 +1865,17 @@ export default function LinkHubPage() {
                         onChange={(event) => patchCatalogItem(item.id, { badge: event.target.value })}
                         placeholder="Badge"
                       />
-                      <input
-                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={item.description}
-                        onChange={(event) => patchCatalogItem(item.id, { description: event.target.value })}
-                        placeholder="Descripcion"
-                      />
+                      <label className="space-y-2 md:col-span-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
+                          Descripcion comercial
+                        </span>
+                        <input
+                          className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                          value={item.description}
+                          onChange={(event) => patchCatalogItem(item.id, { description: event.target.value })}
+                          placeholder="Descripcion"
+                        />
+                      </label>
                     </div>
                   </div>
                 ))}
