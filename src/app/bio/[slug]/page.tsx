@@ -65,9 +65,9 @@ function getButtonRadiusClass(shape: LinkHubProfile["buttonShape"]): string {
 }
 
 function getCardClass(style: LinkHubProfile["cardStyle"]): string {
-  if (style === "solid") return "border-transparent bg-black/40";
+  if (style === "solid") return "border-transparent";
   if (style === "outline") return "border-white/25 bg-transparent";
-  return "border-white/10 bg-white/[0.04] backdrop-blur";
+  return "border-white/10 backdrop-blur";
 }
 
 export default function PublicBioPage() {
@@ -249,40 +249,82 @@ export default function PublicBioPage() {
   }
 
   const pageStyle = {
-    backgroundImage: `radial-gradient(120% 110% at 10% 0%, ${hexToRgba(colors.primary, 0.28)} 0%, transparent 50%), radial-gradient(120% 110% at 100% 100%, ${hexToRgba(colors.secondary, 0.32)} 0%, transparent 55%), linear-gradient(180deg, #020617 0%, #020617 44%, #000000 100%)`,
+    backgroundColor: hexToRgba(colors.secondary, 0.45),
+    backgroundImage: `radial-gradient(120% 110% at 10% 0%, ${hexToRgba(colors.primary, 0.34)} 0%, transparent 55%), radial-gradient(120% 110% at 100% 100%, ${hexToRgba(colors.secondary, 0.4)} 0%, transparent 60%), linear-gradient(165deg, ${hexToRgba(colors.primary, 0.28)} 0%, ${hexToRgba(colors.secondary, 0.26)} 50%, ${hexToRgba(colors.primary, 0.24)} 100%)`,
   };
 
   const wrapperStyle = {
     borderColor: hexToRgba(colors.primary, 0.45),
     fontFamily,
-    background: `linear-gradient(160deg, ${hexToRgba(colors.primary, 0.14)} 0%, ${hexToRgba(colors.secondary, 0.16)} 55%, rgba(0, 0, 0, 0.88) 100%)`,
+    background: `linear-gradient(160deg, ${hexToRgba(colors.primary, 0.22)} 0%, ${hexToRgba(colors.secondary, 0.18)} 55%, ${hexToRgba(colors.primary, 0.14)} 100%)`,
   };
 
   const interactiveStyle = {
     borderColor: hexToRgba(colors.primary, 0.42),
-    background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.2)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%)`,
+    background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.36)} 0%, ${hexToRgba(colors.secondary, 0.3)} 100%)`,
+    boxShadow: `0 10px 24px -18px ${hexToRgba(colors.primary, 0.95)}`,
+  };
+
+  const headerBarStyle = {
+    borderColor: hexToRgba(colors.primary, 0.2),
+    background: `linear-gradient(90deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%)`,
+  };
+
+  const avatarFallbackStyle = {
+    borderColor: hexToRgba(colors.primary, 0.85),
+    background: `linear-gradient(130deg, ${hexToRgba(colors.primary, 0.4)} 0%, ${hexToRgba(colors.secondary, 0.3)} 100%)`,
+  };
+
+  const cardSurfaceStyle =
+    profile.cardStyle === "solid"
+      ? { background: `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.22)} 100%)` }
+      : profile.cardStyle === "outline"
+      ? { background: "transparent" }
+      : {
+          background: `linear-gradient(150deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 100%)`,
+          backdropFilter: "blur(10px)",
+        };
+
+  const catalogStickyStyle = {
+    borderColor: hexToRgba(colors.primary, 0.24),
+    background: `linear-gradient(180deg, ${hexToRgba(colors.primary, 0.38)} 0%, ${hexToRgba(colors.secondary, 0.26)} 100%)`,
+    boxShadow: `0 12px 24px -22px ${hexToRgba(colors.primary, 0.95)}`,
+  };
+
+  const searchSurfaceStyle = {
+    borderColor: hexToRgba(colors.primary, 0.4),
+    background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%)`,
+  };
+
+  const navSurfaceStyle = {
+    borderColor: hexToRgba(colors.primary, 0.35),
+    background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.42)} 0%, ${hexToRgba(colors.secondary, 0.32)} 100%)`,
+  };
+
+  const itemSurfaceStyle = {
+    background: `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.12)} 100%)`,
   };
 
   return (
-    <div className="min-h-screen bg-black px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
+    <div className="min-h-screen px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
       <div
         className="mx-auto w-full max-w-md md:max-w-5xl rounded-[2.25rem] md:rounded-[2.5rem] border overflow-hidden text-white"
         style={wrapperStyle}
       >
-        <div className="px-4 md:px-8 py-3 border-b border-white/10 bg-black/25">
+        <div className="px-4 md:px-8 py-3 border-b" style={headerBarStyle}>
           <div className="flex items-center justify-between gap-3">
             <div className="inline-flex min-w-0 items-center gap-2">
               {profile.avatarUrl ? (
                 <img
                   src={profile.avatarUrl}
                   alt={profile.displayName}
-                  className="h-9 w-9 md:h-10 md:w-10 rounded-full border object-cover bg-black"
-                  style={{ borderColor: hexToRgba(colors.primary, 0.85) }}
+                  className="h-9 w-9 md:h-10 md:w-10 rounded-full border object-cover"
+                  style={avatarFallbackStyle}
                 />
               ) : (
                 <div
-                  className="h-9 w-9 md:h-10 md:w-10 rounded-full border flex items-center justify-center text-sm font-black bg-black"
-                  style={{ borderColor: hexToRgba(colors.primary, 0.85) }}
+                  className="h-9 w-9 md:h-10 md:w-10 rounded-full border flex items-center justify-center text-sm font-black"
+                  style={avatarFallbackStyle}
                 >
                   {profile.displayName.slice(0, 1).toUpperCase()}
                 </div>
@@ -324,13 +366,19 @@ export default function PublicBioPage() {
                   <img
                     src={profile.avatarUrl}
                     alt={profile.displayName}
-                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 object-cover bg-black"
-                    style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
+                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 object-cover"
+                    style={{
+                      borderColor: hexToRgba(colors.primary, 0.95),
+                      background: avatarFallbackStyle.background,
+                    }}
                   />
                 ) : (
                   <div
-                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black bg-black"
-                    style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
+                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black"
+                    style={{
+                      borderColor: hexToRgba(colors.primary, 0.95),
+                      background: avatarFallbackStyle.background,
+                    }}
                   >
                     {profile.displayName.slice(0, 1).toUpperCase()}
                   </div>
@@ -411,7 +459,7 @@ export default function PublicBioPage() {
 
         <div className="px-4 md:px-8 pb-24 md:pb-8">
           {activeTab === "contact" && (
-            <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
+            <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
               <h2 className="text-2xl font-black">{profile.sectionLabels.contact}</h2>
               <p className="mt-1 text-sm text-zinc-200/90">Atiende clientes directo desde tu canal favorito.</p>
 
@@ -465,7 +513,7 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "catalog" && (
-            <section className={`rounded-3xl border p-4 overflow-hidden ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
+            <section className={`rounded-3xl border p-4 overflow-hidden ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
               <div className="hidden md:flex items-center justify-between gap-3">
                 <h2 className="text-2xl font-black">{catalogLabel}</h2>
                 <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
@@ -481,9 +529,10 @@ export default function PublicBioPage() {
               >
                 <div
                   ref={catalogStickyRef}
-                  className="sticky top-0 z-20 -mx-1 mb-3 border-b border-white/10 bg-black/90 px-1 pb-3 pt-1 backdrop-blur"
+                  className="sticky top-0 z-20 -mx-1 mb-3 border-b px-1 pb-3 pt-1 backdrop-blur"
+                  style={catalogStickyStyle}
                 >
-                  <label className="flex items-center gap-2 rounded-2xl border bg-black/40 px-3 py-2" style={{ borderColor: hexToRgba(colors.primary, 0.35) }}>
+                  <label className="flex items-center gap-2 rounded-2xl border px-3 py-2" style={searchSurfaceStyle}>
                     <Search className="h-4 w-4 text-zinc-400" />
                     <input
                       value={searchTerm}
@@ -539,7 +588,7 @@ export default function PublicBioPage() {
                           <article
                             key={item.id}
                             className={`rounded-2xl border p-3 ${cardClass}`}
-                            style={{ borderColor: hexToRgba(colors.primary, 0.26) }}
+                            style={{ borderColor: hexToRgba(colors.primary, 0.26), ...itemSurfaceStyle }}
                           >
                             <div className="flex gap-3">
                               {item.imageUrl ? (
@@ -586,7 +635,7 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "location" && (
-            <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
+            <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
               <h2 className="hidden md:block text-2xl font-black">{profile.sectionLabels.location}</h2>
 
               <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: hexToRgba(colors.primary, 0.36) }}>
@@ -599,7 +648,7 @@ export default function PublicBioPage() {
                     referrerPolicy="no-referrer-when-downgrade"
                   />
                 ) : (
-                  <div className="h-64 w-full flex items-center justify-center bg-black/40 text-center px-6 text-zinc-300">
+                  <div className="h-64 w-full flex items-center justify-center text-center px-6 text-zinc-300" style={itemSurfaceStyle}>
                     Agrega un link de Google Maps Embed para mostrar el mapa.
                   </div>
                 )}
@@ -641,7 +690,7 @@ export default function PublicBioPage() {
       </div>
 
       <div className="md:hidden fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-        <div className="mx-auto w-full max-w-md rounded-2xl border border-white/15 bg-black/90 p-1 backdrop-blur-xl">
+        <div className="mx-auto w-full max-w-md rounded-2xl border p-1 backdrop-blur-xl" style={navSurfaceStyle}>
           <div className="grid grid-cols-3 gap-1">
             <button
               type="button"

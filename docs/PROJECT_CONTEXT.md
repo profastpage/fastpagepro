@@ -163,3 +163,17 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - chips y lista usan `no-scrollbar` para evitar barras visuales incomodas en horizontal/vertical.
 - Publico final:
   - la seccion de planes/comercial se mantiene solo en dashboard de creacion (`/linkhub`) y no se renderiza en la pagina publicada del cliente (`/bio/[slug]`).
+
+## Public Bio Theme-Surface Alignment (2026-02-24)
+
+- Ruta publica ajustada: `/bio/[slug]`.
+- Se reemplazan fondos negros duros en la experiencia publicada por superficies derivadas de los colores del tema del usuario:
+  - fondo general de pagina y wrapper
+  - barra superior con avatar + compartir
+  - bloque sticky de buscador/categorias en carta/catalogo
+  - tarjetas de secciones y tarjetas de items
+  - menu inferior mobile
+- Se refuerza consistencia visual:
+  - gradientes coherentes con `themePrimaryColor` y `themeSecondaryColor`
+  - profundidad sutil en botones activos mediante sombra tematica
+  - mejor continuidad visual entre contacto, carta/catalogo y ubicacion.
