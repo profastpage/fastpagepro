@@ -17,14 +17,12 @@ import {
 } from "@/lib/linkHubProfile";
 import {
   AtSign,
-  ExternalLink,
   Facebook,
   Fish,
   Globe,
   Loader2,
   MapPin,
   Menu,
-  MessageCircle,
   Phone,
   Search,
   Shirt,
@@ -45,9 +43,31 @@ const LINK_TYPE_ICON = {
   tiktok: Music2,
   youtube: Youtube,
   linkedin: Linkedin,
-  whatsapp: MessageCircle,
+  whatsapp: MessageCircleIcon,
   x: AtSign,
 } satisfies Record<LinkHubLinkType, ComponentType<{ className?: string }>>;
+
+const SOCIAL_BRAND_STYLE: Record<
+  LinkHubLinkType,
+  { background: string; color: string }
+> = {
+  website: { background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)", color: "#ffffff" },
+  instagram: { background: "linear-gradient(135deg, #f58529 0%, #dd2a7b 45%, #8134af 70%, #515bd4 100%)", color: "#ffffff" },
+  facebook: { background: "#1877F2", color: "#ffffff" },
+  tiktok: { background: "#111827", color: "#ffffff" },
+  youtube: { background: "#FF0000", color: "#ffffff" },
+  linkedin: { background: "#0A66C2", color: "#ffffff" },
+  whatsapp: { background: "#25D366", color: "#ffffff" },
+  x: { background: "#111827", color: "#ffffff" },
+};
+
+function MessageCircleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M12.04 2C6.52 2 2.04 6.3 2.04 11.62c0 2.1.7 4.03 1.88 5.6L2 22l4.94-1.56a10.24 10.24 0 0 0 5.1 1.34c5.52 0 10-4.3 10-9.62S17.56 2 12.04 2Zm.02 17.98c-1.64 0-3.25-.44-4.64-1.28l-.33-.2-2.93.93.95-2.85-.21-.35a7.78 7.78 0 0 1-1.2-4.13c0-4.3 3.73-7.8 8.34-7.8 4.6 0 8.33 3.5 8.33 7.8 0 4.31-3.73 7.8-8.31 7.8Zm4.56-5.9c-.25-.13-1.47-.7-1.7-.78-.23-.09-.4-.13-.57.13-.16.26-.65.77-.8.93-.15.17-.3.2-.56.07-.25-.13-1.07-.38-2.03-1.2-.75-.64-1.25-1.42-1.4-1.66-.15-.25-.02-.39.11-.51.12-.12.25-.3.37-.45.12-.15.16-.26.25-.44.08-.18.04-.33-.02-.46-.07-.13-.57-1.35-.78-1.84-.2-.48-.4-.42-.57-.42h-.48c-.17 0-.45.06-.69.31-.24.25-.9.87-.9 2.11 0 1.25.92 2.46 1.05 2.63.13.16 1.8 2.75 4.36 3.85.61.26 1.1.42 1.47.54.62.2 1.19.18 1.63.1.5-.07 1.47-.6 1.68-1.18.21-.57.21-1.06.15-1.17-.06-.11-.22-.17-.47-.3Z" />
+    </svg>
+  );
+}
 
 function normalizePhone(raw: string): string {
   return raw.replace(/[^\d+]/g, "");
@@ -212,6 +232,9 @@ export default function PublicBioPage() {
   const whatsappHref = toWhatsappUrl(profile.whatsappNumber);
   const catalogLabel =
     profile.businessType === "restaurant" ? profile.sectionLabels.menu : profile.sectionLabels.catalog;
+  const socialLinks = profile.links
+    .filter((link) => isValidExternalUrl(link.url))
+    .slice(0, 8);
 
   async function handleShare() {
     if (!profile) return;
@@ -328,6 +351,13 @@ export default function PublicBioPage() {
     background: `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.12)} 100%)`,
   };
 
+  const contactActionStyle = {
+    borderColor: hexToRgba(colors.primary, 0.22),
+    background: "rgba(255,255,255,0.95)",
+    color: "#0f172a",
+    boxShadow: `0 10px 20px -14px ${hexToRgba(colors.primary, 0.95)}`,
+  };
+
   return (
     <div className="min-h-screen px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
       <div
@@ -442,26 +472,29 @@ export default function PublicBioPage() {
               {profile.bio && <p className="mt-3 text-sm md:text-base text-zinc-100/85">{profile.bio}</p>}
             </div>
 
-            <div className="px-4 md:px-8 pb-4 flex items-center justify-center flex-wrap gap-2">
-              {profile.links
-                .filter((link) => link.url)
-                .slice(0, 8)
-                .map((link) => {
-                  const Icon = LINK_TYPE_ICON[link.type];
-                  return (
-                    <a
-                      key={link.id}
-                      href={link.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center border text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${buttonRadiusClass}`}
-                      style={interactiveStyle}
-                      aria-label={link.title}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </a>
-                  );
-                })}
+            <div className="px-4 md:px-8 pb-4 flex items-center justify-center flex-wrap gap-2.5">
+              {socialLinks.map((link) => {
+                const Icon = LINK_TYPE_ICON[link.type];
+                const brandStyle = SOCIAL_BRAND_STYLE[link.type];
+                return (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg border border-white/20 transition hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    style={{
+                      background: brandStyle.background,
+                      color: brandStyle.color,
+                      boxShadow: "0 8px 18px -14px rgba(15,23,42,0.9)",
+                    }}
+                    aria-label={link.title || link.type}
+                    title={link.title || link.type}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                );
+              })}
             </div>
           </>
         ) : (
@@ -516,7 +549,7 @@ export default function PublicBioPage() {
                   <a
                     href={callHref}
                     className={`inline-flex items-center justify-center gap-2 border px-4 py-3 font-bold ${buttonRadiusClass}`}
-                    style={interactiveStyle}
+                    style={contactActionStyle}
                   >
                     <Phone className="h-4 w-4" />
                     Llamar ahora
@@ -528,34 +561,12 @@ export default function PublicBioPage() {
                     target="_blank"
                     rel="noreferrer"
                     className={`inline-flex items-center justify-center gap-2 border px-4 py-3 font-bold ${buttonRadiusClass}`}
-                    style={interactiveStyle}
+                    style={contactActionStyle}
                   >
-                    <MessageCircle className="h-4 w-4" />
+                    <MessageCircleIcon className="h-4 w-4" />
                     Escribir ahora
                   </a>
                 )}
-
-                {profile.links
-                  .filter((link) => isValidExternalUrl(link.url))
-                  .map((link) => {
-                    const Icon = LINK_TYPE_ICON[link.type];
-                    return (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={`inline-flex items-center justify-between gap-2 border px-4 py-3 text-sm font-semibold ${buttonRadiusClass}`}
-                        style={interactiveStyle}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          {link.title}
-                        </span>
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    );
-                  })}
               </div>
             </section>
           )}

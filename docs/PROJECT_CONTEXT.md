@@ -191,3 +191,15 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Publico `/bio/[slug]`:
   - en `contacto`, si existen 2 o mas portadas se activa carrusel automatico con transicion elegante (fade + zoom suave).
   - si hay una sola portada se muestra fija; si no hay portada se mantiene fallback de gradiente.
+
+## Public Contact Social UX (2026-02-24)
+
+- Ruta publica ajustada: `/bio/[slug]` en tab `contacto`.
+- Redes sociales:
+  - se muestran como iconos tipo app (dinamicos segun enlaces configurados en dashboard).
+  - color visual por red (Facebook, Instagram, TikTok, WhatsApp, etc.) para una UX mas clara y moderna.
+- CTA de contacto:
+  - botones `Llamar ahora` y `Escribir ahora` con estilo limpio tipo tarjeta.
+  - `Escribir ahora` usa icono de WhatsApp y abre `wa.me` segun el numero configurado en dashboard.
+  - `Llamar ahora` usa `tel:` segun telefono configurado en dashboard.
+- Se elimina lista redundante de enlaces con texto en la tarjeta de contacto para reducir ruido y mejorar conversion.
