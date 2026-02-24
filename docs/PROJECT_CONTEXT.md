@@ -235,3 +235,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - boton masivo `Sugerir descripciones` para todos los items.
   - generacion dinamica basada en titulo + pistas del nombre de imagen URL.
   - textos variables con enfoque de venta y emojis para restaurantes y negocios generales.
+
+## Public Bio Static Scroll + Compact Language Toggle (2026-02-24)
+
+- Ruta publica ajustada: `/bio/[slug]`.
+- Comportamiento de scroll:
+  - se bloquea scroll vertical global (desktop + mobile) dentro de la pagina publica.
+  - tabs `contacto` y `ubicacion` quedan estaticas (sin desplazamiento vertical de pagina).
+  - solo `carta/catalogo` conserva scroll interno en el listado de items/productos.
+- Control de idioma:
+  - boton `EN/ES` optimizado para `/bio/*` en formato pequeno y fijo en esquina.
+  - se mantiene 100% funcional y sin interferir con el flujo de navegacion inferior.

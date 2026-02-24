@@ -200,6 +200,27 @@ export default function PublicBioPage() {
     return () => window.clearInterval(timer);
   }, [activeTab, coverImages.length]);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    const prevHtmlOverscroll = html.style.overscrollBehaviorY;
+    const prevBodyOverscroll = body.style.overscrollBehaviorY;
+
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.style.overscrollBehaviorY = "none";
+    body.style.overscrollBehaviorY = "none";
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      html.style.overscrollBehaviorY = prevHtmlOverscroll;
+      body.style.overscrollBehaviorY = prevBodyOverscroll;
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -359,9 +380,9 @@ export default function PublicBioPage() {
   };
 
   return (
-    <div className="min-h-screen px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
+    <div className="h-[100dvh] overflow-hidden px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
       <div
-        className="mx-auto w-full max-w-md md:max-w-5xl rounded-[2.25rem] md:rounded-[2.5rem] border overflow-hidden text-white"
+        className="mx-auto flex h-full w-full max-w-md flex-col rounded-[2.25rem] border overflow-hidden text-white md:max-w-5xl md:rounded-[2.5rem]"
         style={wrapperStyle}
       >
         <div className="px-4 md:px-8 py-3 border-b" style={headerBarStyle}>
@@ -538,9 +559,9 @@ export default function PublicBioPage() {
           </button>
         </div>
 
-        <div className="px-4 md:px-8 pb-24 md:pb-8">
+        <div className="flex-1 overflow-hidden px-4 pb-24 md:px-8 md:pb-8">
           {activeTab === "contact" && (
-            <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
+            <section className={`h-full overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
               <h2 className="text-2xl font-black">{profile.sectionLabels.contact}</h2>
               <p className="mt-1 text-sm text-zinc-200/90">Atiende clientes directo desde tu canal favorito.</p>
 
@@ -572,7 +593,7 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "catalog" && (
-            <section className={`rounded-3xl border p-4 overflow-hidden ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
+            <section className={`flex h-full flex-col overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
               <div className="hidden md:flex items-center justify-between gap-3">
                 <h2 className="text-2xl font-black">{catalogLabel}</h2>
                 <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
@@ -584,7 +605,7 @@ export default function PublicBioPage() {
               <div
                 ref={catalogScrollRef}
                 onScroll={handleCatalogScroll}
-                className="mt-2 max-h-[66vh] overflow-y-auto pr-1 no-scrollbar md:mt-4 md:max-h-[72vh]"
+                className="mt-2 min-h-0 flex-1 overflow-y-auto pr-1 no-scrollbar md:mt-4"
               >
                 <div
                   ref={catalogStickyRef}
@@ -694,7 +715,7 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "location" && (
-            <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
+            <section className={`h-full overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
               <h2 className="hidden md:block text-2xl font-black">{profile.sectionLabels.location}</h2>
 
               <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: hexToRgba(colors.primary, 0.36) }}>
