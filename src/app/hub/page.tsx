@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import PlanBadge from "@/components/subscription/PlanBadge";
+import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import {
   Layout,
   Copy,
@@ -16,10 +19,12 @@ import {
   LayoutGrid,
   ShieldAlert,
   Store,
+  CreditCard,
 } from "lucide-react";
 
 export default function HubPage() {
   const { user, loading, logout } = useAuth(true);
+  const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
   const router = useRouter();
   const { t } = useLanguage();
   const userName = user?.name || "Creador";
@@ -102,6 +107,15 @@ export default function HubPage() {
       border: "hover:border-purple-500/50",
     },
     {
+      title: "Billing",
+      description: "Gestiona planes FREE, BUSINESS y PRO, pagos y renovaciones.",
+      icon: <CreditCard className="w-8 h-8 text-emerald-300" />,
+      action: "Abrir Facturación",
+      href: "/dashboard/billing",
+      gradient: "from-zinc-900 to-zinc-900",
+      border: "hover:border-emerald-400/50",
+    },
+    {
       title: t("hub.config.title"),
       description: t("hub.config.desc"),
       icon: <Settings className="w-8 h-8 text-amber-400" />,
@@ -140,7 +154,18 @@ export default function HubPage() {
               <p className="text-zinc-500 dark:text-zinc-400 text-base md:text-lg">
                 {t("hub.subtitle")}
               </p>
+              <div className="mt-3 inline-flex items-center gap-2">
+                <span className="text-xs text-zinc-400">Plan:</span>
+                <PlanBadge plan={subscriptionSummary?.plan || "FREE"} />
+              </div>
             </div>
+          </div>
+
+          <div className="mb-6">
+            <SubscriptionExpiryBanner
+              visible={Boolean(subscriptionSummary?.expiringSoon)}
+              daysRemaining={subscriptionSummary?.daysRemaining || 0}
+            />
           </div>
 
           {/* Grid */}

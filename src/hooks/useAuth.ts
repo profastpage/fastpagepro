@@ -68,6 +68,19 @@ export function useAuth(requireAuth = false) {
         setUser(userData);
         // Update localStorage to keep it in sync
         localStorage.setItem('fp_session', JSON.stringify(userData));
+
+        // Sync subscription session cookie for middleware feature gating.
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          await fetch("/api/subscription/session", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          });
+        } catch (syncError) {
+          console.warn("[useAuth] No se pudo sincronizar la sesión de suscripción.", syncError);
+        }
       } else {
         if (!localStorage.getItem('fp_session')) {
           setUser(null);

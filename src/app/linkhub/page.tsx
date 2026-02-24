@@ -3,6 +3,7 @@
 import { ChangeEvent, ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   buildDefaultLinkHubProfile,
   createLinkHubCatalogCategory,
@@ -31,6 +32,9 @@ import {
   saveLinkHubProfileForUser,
   MAX_LINK_HUB_LINKS,
 } from "@/lib/linkHubProfile";
+import { isThemeAllowedForPlan } from "@/lib/permissions";
+import PlanBadge from "@/components/subscription/PlanBadge";
+import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import {
   CheckCircle2,
   Copy,
@@ -336,6 +340,7 @@ function buildCatalogDescriptionSuggestion(
 
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
+  const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
   const router = useRouter();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -350,6 +355,10 @@ export default function LinkHubPage() {
   const [coverUrlInput, setCoverUrlInput] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const descriptionSeedRef = useRef<number>(Date.now());
+
+  const activePlan = subscriptionSummary?.plan || "FREE";
+  const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
+  const canCustomizeColors = Boolean(subscriptionSummary?.features?.advancedColorCustomization);
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -713,6 +722,13 @@ export default function LinkHubPage() {
   }
 
   function suggestCatalogItemDescription(itemId: string) {
+    if (!aiEnabled) {
+      setMessage({
+        type: "error",
+        text: "Esta función IA está disponible solo en el plan PRO.",
+      });
+      return;
+    }
     if (!profile) return;
     const itemIndex = profile.catalogItems.findIndex((entry) => entry.id === itemId);
     if (itemIndex < 0) return;
@@ -749,6 +765,13 @@ export default function LinkHubPage() {
   }
 
   function suggestDescriptionsForAllItems() {
+    if (!aiEnabled) {
+      setMessage({
+        type: "error",
+        text: "La generación masiva con IA está disponible solo en plan PRO.",
+      });
+      return;
+    }
     if (!profile) return;
     let updatedCount = 0;
     const nextItems = profile.catalogItems.map((item, index) => {
@@ -1294,11 +1317,20 @@ export default function LinkHubPage() {
     <div className="min-h-screen bg-background text-foreground px-4 md:px-8 pt-24 md:pt-28 pb-16">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Link Hub</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Link Hub</h1>
+            <PlanBadge plan={activePlan} />
+          </div>
           <p className="mt-2 text-zinc-400 max-w-3xl">
             Crea una landing mobile-first con 3 secciones: contacto, {catalogLabel?.toLowerCase()} y ubicacion.
             Incluye catalogo digital online con 3 planes para activacion de clientes.
           </p>
+          <div className="mt-4">
+            <SubscriptionExpiryBanner
+              visible={Boolean(subscriptionSummary?.expiringSoon)}
+              daysRemaining={subscriptionSummary?.daysRemaining || 0}
+            />
+          </div>
         </div>
 
         {message && (
@@ -1641,8 +1673,9 @@ export default function LinkHubPage() {
                   <button
                     type="button"
                     onClick={suggestDescriptionsForAllItems}
-                    disabled={profile.catalogItems.length === 0}
+                    disabled={profile.catalogItems.length === 0 || !aiEnabled}
                     className="inline-flex items-center gap-2 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-amber-100 disabled:opacity-50"
+                    title={aiEnabled ? "Sugerir descripciones con IA" : "Disponible en plan PRO"}
                   >
                     <Sparkles className="w-4 h-4" />
                     Sugerir descripciones
@@ -1766,7 +1799,9 @@ export default function LinkHubPage() {
                         <button
                           type="button"
                           onClick={() => suggestCatalogItemDescription(item.id)}
+                          disabled={!aiEnabled}
                           className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-amber-100"
+                          title={aiEnabled ? "Sugerir descripción con IA" : "Disponible en plan PRO"}
                         >
                           Sugerir descripcion
                         </button>
@@ -1945,15 +1980,26 @@ export default function LinkHubPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {(Object.keys(LINK_HUB_THEME_STYLES) as LinkHubTheme[]).map((themeKey) => {
+                {(Object.keys(LINK_HUB_THEME_STYLES) as LinkHubTheme[]).map((themeKey, index) => {
                   const theme = LINK_HUB_THEME_STYLES[themeKey];
                   const active = profile.theme === themeKey;
+                  const canUseTheme = isThemeAllowedForPlan(activePlan, index);
 
                   return (
                     <button
                       key={themeKey}
                       type="button"
-                      onClick={() => applyTheme(themeKey)}
+                      onClick={() => {
+                        if (!canUseTheme) {
+                          setMessage({
+                            type: "error",
+                            text: "Tu plan FREE permite 3 temas. Actualiza a BUSINESS para desbloquear todos.",
+                          });
+                          return;
+                        }
+                        applyTheme(themeKey);
+                      }}
+                      disabled={!canUseTheme}
                       className={`rounded-2xl border p-4 text-left transition-all ${
                         active
                           ? "border-amber-300/80 bg-amber-400/10"
@@ -1968,6 +2014,11 @@ export default function LinkHubPage() {
                       />
                       <p className="mt-3 text-sm font-bold text-white">{theme.label}</p>
                       <p className="mt-1 text-[11px] uppercase tracking-[0.15em] text-zinc-400">{themeKey}</p>
+                      {!canUseTheme && (
+                        <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-300">
+                          Premium (BUSINESS/PRO)
+                        </p>
+                      )}
                     </button>
                   );
                 })}
@@ -1987,19 +2038,35 @@ export default function LinkHubPage() {
                         type="color"
                         className="h-11 w-14 rounded-xl border border-white/15 bg-zinc-900"
                         value={normalizeHexColor(profile.themePrimaryColor, activeTheme.preset.primary)}
-                        onChange={(event) => patchProfile("themePrimaryColor", event.target.value)}
+                        onChange={(event) => {
+                          if (!canCustomizeColors) {
+                            setMessage({
+                              type: "error",
+                              text: "La personalización avanzada de colores requiere plan BUSINESS o PRO.",
+                            });
+                            return;
+                          }
+                          patchProfile("themePrimaryColor", event.target.value);
+                        }}
+                        disabled={!canCustomizeColors}
                       />
                       <input
                         className="flex-1 rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                         value={profile.themePrimaryColor || ""}
-                        onChange={(event) => patchProfile("themePrimaryColor", event.target.value)}
+                        onChange={(event) => {
+                          if (!canCustomizeColors) return;
+                          patchProfile("themePrimaryColor", event.target.value);
+                        }}
                         onBlur={(event) =>
-                          patchProfile(
-                            "themePrimaryColor",
-                            normalizeHexColor(event.target.value, activeTheme.preset.primary),
-                          )
+                          canCustomizeColors
+                            ? patchProfile(
+                                "themePrimaryColor",
+                                normalizeHexColor(event.target.value, activeTheme.preset.primary),
+                              )
+                            : undefined
                         }
                         placeholder="#fbbf24"
+                        disabled={!canCustomizeColors}
                       />
                     </div>
                   </label>
@@ -2011,19 +2078,35 @@ export default function LinkHubPage() {
                         type="color"
                         className="h-11 w-14 rounded-xl border border-white/15 bg-zinc-900"
                         value={normalizeHexColor(profile.themeSecondaryColor, activeTheme.preset.secondary)}
-                        onChange={(event) => patchProfile("themeSecondaryColor", event.target.value)}
+                        onChange={(event) => {
+                          if (!canCustomizeColors) {
+                            setMessage({
+                              type: "error",
+                              text: "La personalización avanzada de colores requiere plan BUSINESS o PRO.",
+                            });
+                            return;
+                          }
+                          patchProfile("themeSecondaryColor", event.target.value);
+                        }}
+                        disabled={!canCustomizeColors}
                       />
                       <input
                         className="flex-1 rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                         value={profile.themeSecondaryColor || ""}
-                        onChange={(event) => patchProfile("themeSecondaryColor", event.target.value)}
+                        onChange={(event) => {
+                          if (!canCustomizeColors) return;
+                          patchProfile("themeSecondaryColor", event.target.value);
+                        }}
                         onBlur={(event) =>
-                          patchProfile(
-                            "themeSecondaryColor",
-                            normalizeHexColor(event.target.value, activeTheme.preset.secondary),
-                          )
+                          canCustomizeColors
+                            ? patchProfile(
+                                "themeSecondaryColor",
+                                normalizeHexColor(event.target.value, activeTheme.preset.secondary),
+                              )
+                            : undefined
                         }
                         placeholder="#f97316"
+                        disabled={!canCustomizeColors}
                       />
                     </div>
                   </label>
@@ -2040,6 +2123,13 @@ export default function LinkHubPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      if (!canCustomizeColors) {
+                        setMessage({
+                          type: "error",
+                          text: "El modo RGB avanzado requiere plan BUSINESS o PRO.",
+                        });
+                        return;
+                      }
                       const randomPrimary = randomColorHex();
                       const randomSecondary = randomColorHex();
                       setProfile((prev) => {
@@ -2053,6 +2143,7 @@ export default function LinkHubPage() {
                       });
                     }}
                     className="rounded-xl border border-fuchsia-300/40 bg-fuchsia-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.13em] text-fuchsia-100"
+                    disabled={!canCustomizeColors}
                   >
                     RGB aleatorio
                   </button>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
+import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
@@ -790,6 +791,9 @@ export default function StoreBuilderPage() {
     try {
       if (authLoading) throw new Error("Validando sesion...");
       if (!user?.uid) throw new Error("Debes iniciar sesion.");
+      if (publishNow) {
+        await assertCanPublishPageByPlan();
+      }
 
       const id = projectId || newId();
       const now = Date.now();

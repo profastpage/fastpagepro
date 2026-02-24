@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
+import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
@@ -358,6 +359,7 @@ export default function EditorPage() {
       if (!session?.uid) {
         throw new Error("Debes iniciar sesion para publicar.");
       }
+      await assertCanPublishPageByPlan();
 
       const publishPayload: Record<string, any> = {
         id,

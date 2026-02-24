@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
+import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
 import MobileSavePublishBar from "@/components/MobileSavePublishBar";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
 import { 
@@ -316,6 +317,9 @@ export default function BuilderPage() {
   const upsertBuilderProject = async (publishNow: boolean) => {
     if (!user?.uid) {
       throw new Error("Debes iniciar sesion para guardar o publicar.");
+    }
+    if (publishNow) {
+      await assertCanPublishPageByPlan();
     }
     const fullHtml = serializeBuilderHtml();
     if (!fullHtml) {

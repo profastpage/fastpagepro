@@ -246,3 +246,56 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Control de idioma:
   - boton `EN/ES` optimizado para `/bio/*` en formato pequeno y fijo en esquina.
   - se mantiene 100% funcional y sin interferir con el flujo de navegacion inferior.
+
+## SaaS Subscription System (2026-02-24)
+
+- Nuevo modulo de suscripciones para LinkHub y paginas B2B:
+  - planes: `FREE`, `BUSINESS`, `PRO`
+  - features controladas por plan:
+    - temas premium/categoria
+    - IA de personalizacion
+    - metricas
+    - dominio personalizado
+    - quitar branding
+    - multi usuario
+    - optimizacion de conversion
+- Persistencia SQL via Prisma:
+  - `prisma/schema.prisma` con modelos:
+    - `Subscription`
+    - `SubscriptionRequest` (soporte pagos manuales y estado pendiente)
+  - enums:
+    - `PlanType`
+    - `SubscriptionStatus`
+    - `PaymentMethod`
+    - `SubscriptionRequestStatus`
+- Servicios y helpers:
+  - `src/lib/permissions.ts` con `canAccessFeature(userPlan, feature)` y limites por plan.
+  - `src/lib/subscription/service.ts` con logica de:
+    - provision `FREE` por defecto
+    - expiracion automatica
+    - resumen de consumo y limites
+    - solicitudes de upgrade con pago manual
+  - `src/lib/ai/themeRecommender.ts` para recomendaciones IA (solo PRO).
+- API nuevas:
+  - `GET /api/subscription/current`
+  - `POST /api/subscription/request`
+  - `POST /api/subscription/session`
+  - `POST /api/subscription/admin/approve`
+  - `POST /api/ai/theme-recommender`
+- Billing:
+  - nueva ruta: `/dashboard/billing`
+  - incluye tabla comparativa de planes, seleccion de plan y metodo de pago, instrucciones, subida de comprobante y estado pendiente.
+- UI reusable:
+  - `PricingTable`
+  - `PlanBadge`
+  - `SubscriptionExpiryBanner`
+- Middleware de plan:
+  - `middleware.ts` valida cookie de sesion de suscripcion firmada.
+  - bloquea rutas premium segun feature requerida.
+- Integraciones de control:
+  - `Builder`, `Store` y `Editor` validan limite de paginas publicadas antes de publicar.
+  - `LinkHub` aplica control por plan:
+    - `FREE`: solo temas basicos
+    - `BUSINESS/PRO`: personalizacion avanzada de colores
+    - `PRO`: funciones IA de sugerencia automatica
+  - `Hub` y `LinkHub` muestran badge de plan activo y banner de expiracion.
