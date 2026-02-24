@@ -118,11 +118,14 @@ function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
-async function optimizeAvatarImage(file: File): Promise<string> {
+async function optimizeImageFile(
+  file: File,
+  options?: { maxSize?: number; quality?: number; heavyQuality?: number; heavyThreshold?: number },
+): Promise<string> {
   const source = await readFileAsDataUrl(file);
   const image = await loadImageFromDataUrl(source);
 
-  const maxSize = 512;
+  const maxSize = options?.maxSize ?? 512;
   const ratio = Math.min(maxSize / image.width, maxSize / image.height, 1);
   const width = Math.max(1, Math.round(image.width * ratio));
   const height = Math.max(1, Math.round(image.height * ratio));
@@ -136,9 +139,9 @@ async function optimizeAvatarImage(file: File): Promise<string> {
 
   context.drawImage(image, 0, 0, width, height);
 
-  let encoded = canvas.toDataURL("image/jpeg", 0.9);
-  if (encoded.length > 780_000) {
-    encoded = canvas.toDataURL("image/jpeg", 0.75);
+  let encoded = canvas.toDataURL("image/jpeg", options?.quality ?? 0.9);
+  if (encoded.length > (options?.heavyThreshold ?? 780_000)) {
+    encoded = canvas.toDataURL("image/jpeg", options?.heavyQuality ?? 0.75);
   }
 
   return encoded;
@@ -171,9 +174,12 @@ export default function LinkHubPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [uploadingCatalogItemId, setUploadingCatalogItemId] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewCategoryId, setPreviewCategoryId] = useState("");
+  const [editorItemSearch, setEditorItemSearch] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -191,16 +197,37 @@ export default function LinkHubPage() {
         const stored = await getLinkHubProfileByUserId(user.uid);
         if (!active) return;
 
+        let localDraft: LinkHubProfile | null = null;
+        try {
+          const cached = window.localStorage.getItem(`linkhub_draft_${user.uid}`);
+          if (cached) {
+            localDraft = normalizeLinkHubProfile(JSON.parse(cached) as Partial<LinkHubProfile>, user);
+          }
+        } catch {
+          localDraft = null;
+        }
+
         if (stored) {
           const normalized = normalizeLinkHubProfile(stored, user);
-          setProfile(normalized);
-          setPreviewCategoryId(normalized.catalogCategories[0]?.id || "");
+          const nextProfile =
+            localDraft && Number(localDraft.updatedAt || 0) > Number(normalized.updatedAt || 0)
+              ? localDraft
+              : normalized;
+          setProfile(nextProfile);
+          setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
+          if (nextProfile === localDraft) {
+            setMessage({ type: "success", text: "Se recupero tu borrador local mas reciente." });
+          }
           return;
         }
 
         const defaultProfile = buildDefaultLinkHubProfile(user);
-        setProfile(defaultProfile);
-        setPreviewCategoryId(defaultProfile.catalogCategories[0]?.id || "");
+        const nextProfile =
+          localDraft && Number(localDraft.updatedAt || 0) > Number(defaultProfile.updatedAt || 0)
+            ? localDraft
+            : defaultProfile;
+        setProfile(nextProfile);
+        setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
       } catch (error) {
         console.error("[LinkHub] Failed loading profile:", error);
         if (active) {
@@ -228,6 +255,15 @@ export default function LinkHubPage() {
       active = false;
     };
   }, [loading, user]);
+
+  useEffect(() => {
+    if (!profile || !user?.uid) return;
+    try {
+      window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(profile));
+    } catch {
+      // Ignore storage errors (private mode/quota).
+    }
+  }, [profile, user?.uid]);
 
   const publicUrl = useMemo(() => {
     if (!profile?.slug || !origin) return "";
@@ -262,6 +298,20 @@ export default function LinkHubPage() {
       return byCategory && bySearch;
     });
   }, [previewCategoryId, previewSearch, profile]);
+
+  const filteredEditorItems = useMemo(() => {
+    if (!profile) return [];
+    const term = editorItemSearch.trim().toLowerCase();
+    if (!term) return profile.catalogItems;
+    return profile.catalogItems.filter((item) => {
+      return (
+        item.title.toLowerCase().includes(term) ||
+        item.description.toLowerCase().includes(term) ||
+        (item.badge || "").toLowerCase().includes(term) ||
+        (item.price || "").toLowerCase().includes(term)
+      );
+    });
+  }, [editorItemSearch, profile]);
 
   const previewShellStyle = useMemo(
     () => ({
@@ -458,6 +508,47 @@ export default function LinkHubPage() {
     });
   }
 
+  function duplicateCatalogItem(itemId: string) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const source = prev.catalogItems.find((item) => item.id === itemId);
+      if (!source) return prev;
+      if (prev.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS) return prev;
+
+      const duplicated = {
+        ...source,
+        id: crypto.randomUUID(),
+        title: source.title ? `${source.title} copia` : "",
+      };
+      const index = prev.catalogItems.findIndex((item) => item.id === itemId);
+      const nextItems = [...prev.catalogItems];
+      nextItems.splice(index + 1, 0, duplicated);
+      return {
+        ...prev,
+        catalogItems: nextItems,
+      };
+    });
+  }
+
+  function moveCatalogItem(itemId: string, direction: "up" | "down") {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const index = prev.catalogItems.findIndex((item) => item.id === itemId);
+      if (index < 0) return prev;
+
+      const targetIndex = direction === "up" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.catalogItems.length) return prev;
+
+      const reordered = [...prev.catalogItems];
+      const [item] = reordered.splice(index, 1);
+      reordered.splice(targetIndex, 0, item);
+      return {
+        ...prev,
+        catalogItems: reordered,
+      };
+    });
+  }
+
   function patchLink(linkId: string, patch: Partial<LinkHubLink>) {
     setProfile((prev) => {
       if (!prev) return prev;
@@ -530,7 +621,7 @@ export default function LinkHubPage() {
 
     setIsUploadingAvatar(true);
     try {
-      const optimized = await optimizeAvatarImage(file);
+      const optimized = await optimizeImageFile(file, { maxSize: 512, quality: 0.9, heavyQuality: 0.75 });
       patchProfile("avatarUrl", optimized);
       setMessage({ type: "success", text: "Avatar cargado correctamente." });
     } catch (error) {
@@ -538,6 +629,62 @@ export default function LinkHubPage() {
       setMessage({ type: "error", text: "No se pudo procesar la imagen seleccionada." });
     } finally {
       setIsUploadingAvatar(false);
+    }
+  }
+
+  async function handleCoverUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "La portada debe ser un archivo de imagen." });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: "error", text: "La portada es muy pesada. Usa una menor a 10MB." });
+      return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+      const optimized = await optimizeImageFile(file, { maxSize: 1280, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 1_100_000 });
+      patchProfile("coverImageUrl", optimized);
+      setMessage({ type: "success", text: "Portada cargada correctamente." });
+    } catch (error) {
+      console.error("[LinkHub] Cover upload error:", error);
+      setMessage({ type: "error", text: "No se pudo procesar la portada." });
+    } finally {
+      setIsUploadingCover(false);
+    }
+  }
+
+  async function handleCatalogItemImageUpload(itemId: string, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "El producto debe tener una imagen valida." });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: "error", text: "La imagen del producto es muy pesada (max 10MB)." });
+      return;
+    }
+
+    setUploadingCatalogItemId(itemId);
+    try {
+      const optimized = await optimizeImageFile(file, { maxSize: 960, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 980_000 });
+      patchCatalogItem(itemId, { imageUrl: optimized });
+      setMessage({ type: "success", text: "Imagen del producto actualizada." });
+    } catch (error) {
+      console.error("[LinkHub] Catalog image upload error:", error);
+      setMessage({ type: "error", text: "No se pudo procesar la imagen del producto." });
+    } finally {
+      setUploadingCatalogItemId(null);
     }
   }
 
@@ -696,6 +843,11 @@ export default function LinkHubPage() {
       await saveLinkHubProfileForUser(user.uid, nextProfile);
       setProfile(nextProfile);
       setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
+      try {
+        window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(nextProfile));
+      } catch {
+        // ignore
+      }
       setMessage({
         type: "success",
         text:
@@ -836,12 +988,33 @@ export default function LinkHubPage() {
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Portada (URL)</span>
-                  <input
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                    value={profile.coverImageUrl}
-                    onChange={(event) => patchProfile("coverImageUrl", event.target.value)}
-                    placeholder="https://..."
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
+                    <input
+                      className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                      value={profile.coverImageUrl}
+                      onChange={(event) => patchProfile("coverImageUrl", event.target.value)}
+                      placeholder="https://..."
+                    />
+                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-sky-100">
+                      {isUploadingCover ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      Subir
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverUpload}
+                        className="hidden"
+                        disabled={isUploadingCover}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => patchProfile("coverImageUrl", "")}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-300/40 bg-red-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-red-100"
+                    >
+                      <X className="h-4 w-4" />
+                      Quitar
+                    </button>
+                  </div>
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Bio</span>
@@ -988,6 +1161,21 @@ export default function LinkHubPage() {
                 </button>
               </div>
 
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
+                <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
+                  <Search className="w-4 h-4 text-zinc-400" />
+                  <input
+                    className="w-full bg-transparent text-sm text-white placeholder:text-zinc-500 focus:outline-none"
+                    value={editorItemSearch}
+                    onChange={(event) => setEditorItemSearch(event.target.value)}
+                    placeholder="Buscar item por nombre, descripcion, precio o badge..."
+                  />
+                </label>
+                <div className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-200">
+                  {filteredEditorItems.length}/{profile.catalogItems.length} items
+                </div>
+              </div>
+
               <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-sm font-bold text-white">Categorias</p>
@@ -1030,17 +1218,85 @@ export default function LinkHubPage() {
               </div>
 
               <div className="mt-4 space-y-3">
-                {profile.catalogItems.map((item) => (
+                {filteredEditorItems.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-white/20 bg-black/20 p-4 text-sm text-zinc-300">
+                    No hay items para este filtro. Limpia la busqueda o agrega uno nuevo.
+                  </div>
+                )}
+                {filteredEditorItems.map((item) => (
                   <div key={item.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <p className="text-sm font-bold text-white">Item</p>
-                      <button
-                        type="button"
-                        onClick={() => removeCatalogItem(item.id)}
-                        className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-red-100"
-                      >
-                        Eliminar
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => moveCatalogItem(item.id, "up")}
+                          disabled={profile.catalogItems.findIndex((entry) => entry.id === item.id) <= 0}
+                          className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-200"
+                          aria-label="Mover item arriba"
+                        >
+                          <MoveUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveCatalogItem(item.id, "down")}
+                          disabled={
+                            profile.catalogItems.findIndex((entry) => entry.id === item.id) >=
+                            profile.catalogItems.length - 1
+                          }
+                          className="rounded-xl border border-white/10 bg-white/5 p-2 text-zinc-200"
+                          aria-label="Mover item abajo"
+                        >
+                          <MoveDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => duplicateCatalogItem(item.id)}
+                          className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-sky-100"
+                        >
+                          Duplicar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeCatalogItem(item.id)}
+                          className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-red-100"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-3 grid grid-cols-1 md:grid-cols-[120px_1fr] gap-3">
+                      <div className="rounded-xl border border-white/10 bg-black/40 p-2">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.title || "Producto"} className="h-24 w-full rounded-lg object-cover" />
+                        ) : (
+                          <div className="h-24 w-full rounded-lg bg-zinc-900/80 flex items-center justify-center text-zinc-500 text-xs">
+                            Sin imagen
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-sky-300/40 bg-sky-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-sky-100">
+                            {uploadingCatalogItemId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                            Subir imagen
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
+                              className="hidden"
+                              disabled={uploadingCatalogItemId === item.id}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => patchCatalogItem(item.id, { imageUrl: "" })}
+                            className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-red-100"
+                          >
+                            Quitar imagen
+                          </button>
+                        </div>
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <input

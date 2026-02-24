@@ -115,3 +115,17 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Persistencia:
   - se mantienen documentos en `link_profiles/{uid}`
   - se extiende schema sin romper documentos existentes mediante normalizacion de defaults.
+
+## Link Hub Editor UX Boost (2026-02-24)
+
+- Editor de catalogo/carta optimizado para operacion diaria:
+  - busqueda de items en tiempo real dentro del editor
+  - acciones rapidas por item: mover, duplicar y eliminar
+  - preview de imagen por item dentro del formulario
+- Carga de imagen simplificada:
+  - subida de portada por archivo (con optimizacion en cliente)
+  - subida de imagen por producto/item por archivo (con optimizacion en cliente)
+  - soporte continuo de URL manual para casos avanzados
+- Resiliencia para usuarios no tecnicos:
+  - borrador local automatico en navegador por usuario autenticado
+  - recuperacion de borrador local reciente al abrir `/linkhub`
