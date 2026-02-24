@@ -381,14 +381,14 @@ export default function HomePage() {
 
             {/* Subtitle */}
             <p
-              className="text-base md:text-xl text-white font-medium max-w-3xl animate-slide-up px-6 md:px-4 leading-relaxed tracking-wide text-center mt-2"
+              className="text-base sm:text-lg md:text-xl text-white/95 font-medium max-w-3xl animate-slide-up px-6 md:px-4 leading-relaxed tracking-normal text-center mt-2"
               style={{ animationDelay: "0.2s" }}
             >
               {t("hero.subtitle_start")}{" "}
               <span className="text-gold-glow font-bold text-tornasolado">
                 {t("hero.subtitle_highlight")}
               </span>{" "}
-              <span className="block my-2"></span>
+              <br className="hidden sm:block" />
               {t("hero.subtitle_end_1")}{" "}
               <span className="text-gold-glow font-bold text-tornasolado">
                 {t("hero.subtitle_end_highlight")}
@@ -405,9 +405,7 @@ export default function HomePage() {
                 onClick={() => handleCtaClick("hero", "primary")}
                 className="btn btn-deluxe w-full sm:w-auto px-10 py-5 text-lg group hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
               >
-                <span>🔥</span>
                 {t("hero.cta_create")}
-                <span>🔥</span>
               </Link>
 
               <Link
@@ -848,14 +846,14 @@ export default function HomePage() {
             {faqs.map((faq, i) => (
               <div
                 key={i}
-                className="glass rounded-xl overflow-hidden group border border-zinc-200 dark:border-white/10 shadow-sm dark:shadow-none transition-all duration-300 hover:border-yellow-500/30"
+                className="glass rounded-2xl overflow-hidden group border border-zinc-200 dark:border-white/10 bg-black/30 shadow-sm dark:shadow-none transition-all duration-300 hover:border-yellow-500/30"
               >
                 <details className="group">
-                  <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
-                    <span className="text-lg font-bold text-foreground text-gold-iridescent">
+                  <summary className="flex items-center justify-between gap-3 p-5 md:p-6 cursor-pointer list-none">
+                    <span className="pr-2 text-base md:text-lg font-bold leading-snug text-foreground group-open:text-yellow-300 transition-colors">
                       {faq.q}
                     </span>
-                    <span className="transform group-open:rotate-180 transition-transform duration-300 text-zinc-500 dark:text-yellow-400 group-hover:text-yellow-500">
+                    <span className="shrink-0 transform group-open:rotate-180 transition-transform duration-300 text-zinc-500 dark:text-yellow-400 group-hover:text-yellow-500">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
@@ -871,7 +869,7 @@ export default function HomePage() {
                       </svg>
                     </span>
                   </summary>
-                  <div className="px-6 pb-6 text-white border-t border-white/5 pt-6 font-medium leading-loose tracking-wide opacity-90">
+                  <div className="px-5 md:px-6 pb-6 text-zinc-200 border-t border-white/10 pt-5 md:pt-6 font-medium leading-8 tracking-normal">
                     <p>{faq.a}</p>
                   </div>
                 </details>

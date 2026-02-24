@@ -203,3 +203,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - `Escribir ahora` usa icono de WhatsApp y abre `wa.me` segun el numero configurado en dashboard.
   - `Llamar ahora` usa `tel:` segun telefono configurado en dashboard.
 - Se elimina lista redundante de enlaces con texto en la tarjeta de contacto para reducir ruido y mejorar conversion.
+
+## Landing Readability + Encoding Guard (2026-02-24)
+
+- Ruta ajustada: `/` (landing principal).
+- Mejoras visuales de lectura:
+  - subtitulo del hero con mejor jerarquia y salto de linea limpio en desktop.
+  - CTA principal sin ruido visual innecesario para lectura mas clara.
+  - FAQ mobile/desktop con mejor contraste, padding, altura de linea y estados abiertos mas legibles.
+- Correccion transversal de textos:
+  - se agrega `fixMojibake()` en `LanguageContext` para normalizar caracteres mal codificados (`Ã`, `Â`, etc.) al momento de traducir (`t(key)`).
+  - esto mejora acentos, signos y legibilidad en landing y en el resto de pantallas que consumen el mismo contexto de idioma.

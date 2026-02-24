@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 
@@ -13,6 +13,25 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined,
 );
+
+const MOJIBAKE_PATTERN = /Ã|Â|ð|ï¿½|�/;
+
+function fixMojibake(value: string): string {
+  let result = value;
+
+  for (let i = 0; i < 3; i += 1) {
+    if (!MOJIBAKE_PATTERN.test(result)) break;
+    const bytes = Uint8Array.from(Array.from(result), (char) => char.charCodeAt(0) & 0xff);
+    const decoded = new TextDecoder("utf-8").decode(bytes);
+    if (!decoded || decoded === result) break;
+    result = decoded;
+  }
+
+  return result.replace(
+    "Consultor�a, jurídico e serviços. Profissional e confiável.",
+    "Consultoria, jurídico e serviços. Profissional e confiável.",
+  );
+}
 
 const translations: Record<string, Record<Language, string>> = {
   // Nav
@@ -215,7 +234,7 @@ const translations: Record<string, Record<Language, string>> = {
   "cloner.office.desc": {
     es: "ConsultorÃ­a, legal y servicios. Profesional y confiable.",
     en: "Consulting, legal, and services. Professional and reliable.",
-    pt: "Consultoria, jurÃ­dico e serviÃ§os. Profissional e confiÃ¡vel.",
+    pt: "Consultorï¿½a, jurÃ­dico e serviÃ§os. Profissional e confiÃ¡vel.",
   },
   "cloner.select": { es: "Seleccionar Modelo", en: "Select Model", pt: "Selecionar Modelo" },
   "cloner.back": { es: "Volver a Modelos", en: "Back to Models", pt: "Voltar para Modelos" },
@@ -235,7 +254,7 @@ const translations: Record<string, Record<Language, string>> = {
 
   "cloner.office.realestate": { es: "Inmobiliaria", en: "Real Estate", pt: "ImobiliÃ¡ria" },
   "cloner.office.law": { es: "Abogados", en: "Law Firm", pt: "Advogados" },
-  "cloner.office.consulting": { es: "ConsultorÃ­a", en: "Consulting", pt: "Consultoria" },
+  "cloner.office.consulting": { es: "ConsultorÃ­a", en: "Consulting", pt: "ConsultorÃ­a" },
   "cloner.office.medical": { es: "ClÃ­nica / MÃ©dica", en: "Clinic / Medical", pt: "ClÃ­nica / MÃ©dica" },
 
   // New Models
@@ -292,7 +311,7 @@ const translations: Record<string, Record<Language, string>> = {
   "hub.builder.action": { es: "Abrir Constructor", en: "Open Builder", pt: "Abrir Construtor" },
   "hub.cloner.title": { es: "Plantillas Web", en: "Web Templates", pt: "Modelos Web" },
   "hub.cloner.desc": {
-    es: "Personaliza tu pagina web",
+    es: "Personaliza tu pÃ¡gina web",
     en: "Customize your web page",
     pt: "Personalize sua pÃ¡gina web",
   },
@@ -313,7 +332,7 @@ const translations: Record<string, Record<Language, string>> = {
   "hub.store.action": { es: "Crear Tienda", en: "Create Store", pt: "Criar Loja" },
   "hub.linkhub.title": { es: "Link Hub", en: "Link Hub", pt: "Link Hub" },
   "hub.linkhub.desc": {
-    es: "Crea tu perfil estilo Linktree con foto, redes sociales y enlace publico listo para compartir.",
+    es: "Crea tu perfil estilo Linktree con foto, redes sociales y enlace pÃºblico listo para compartir.",
     en: "Build your Linktree-style profile with avatar, social links, and a public URL ready to share.",
     pt: "Crie seu perfil estilo Linktree com foto, redes sociais e URL publica pronta para compartilhar.",
   },
@@ -400,31 +419,31 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Prova e performance",
   },
   "landing.proof.title": {
-    es: "Disenada para convertir visitas en clientes",
+    es: "DiseÃ±ada para convertir visitas en clientes",
     en: "Built to turn visitors into customers",
     pt: "Projetada para converter visitas em clientes",
   },
   "landing.proof.subtitle": {
-    es: "Constructor visual, clonado inteligente y publicacion inmediata. Todo en un flujo corto para lanzar mas rapido y vender mejor.",
+    es: "Constructor visual, clonado inteligente y publicaciÃ³n inmediata. Todo en un flujo corto para lanzar mÃ¡s rÃ¡pido y vender mejor.",
     en: "Visual builder, smart cloning, and instant publishing. Everything in a short flow to launch faster and sell better.",
     pt: "Construtor visual, clonagem inteligente e publicacao imediata. Tudo em um fluxo curto para lancar mais rapido e vender melhor.",
   },
-  "landing.proof.stat1": { es: "paginas publicadas", en: "published pages", pt: "paginas publicadas" },
+  "landing.proof.stat1": { es: "pÃ¡ginas publicadas", en: "published pages", pt: "pÃ¡ginas publicadas" },
   "landing.proof.stat2": { es: "proyectos activos", en: "active projects", pt: "projetos ativos" },
-  "landing.proof.stat3": { es: "satisfaccion promedio", en: "average satisfaction", pt: "satisfacao media" },
+  "landing.proof.stat3": { es: "satisfacciÃ³n promedio", en: "average satisfaction", pt: "satisfacao media" },
   "landing.proof.stat4": { es: "tiempo para publicar", en: "time to publish", pt: "tempo para publicar" },
   "landing.proof.card1.title": {
-    es: "Sin codigo y editable 100%",
+    es: "Sin cÃ³digo y editable al 100%",
     en: "No-code and 100% editable",
     pt: "Sem codigo e 100% editavel",
   },
   "landing.proof.card1.desc": {
-    es: "Cambia textos, imagenes, colores y estructura visual sin depender de desarrollo.",
+    es: "Cambia textos, imÃ¡genes, colores y estructura visual sin depender de desarrollo.",
     en: "Change text, images, colors, and visual structure without relying on development.",
     pt: "Altere textos, imagens, cores e estrutura visual sem depender de desenvolvimento.",
   },
   "landing.proof.card2.title": {
-    es: "Publicacion y guardado real",
+    es: "PublicaciÃ³n y guardado real",
     en: "Real publish and save",
     pt: "Publicacao e salvamento reais",
   },
@@ -434,17 +453,17 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Salve versoes, publique e volte para sua conta com historico persistente.",
   },
   "landing.product.eyebrow": {
-    es: "Vista rapida del producto",
+    es: "Vista rÃ¡pida del producto",
     en: "Quick product view",
     pt: "Visao rapida do produto",
   },
   "landing.product.title": {
-    es: "Elige el mejor camino para cada campana",
+    es: "Elige el mejor camino para cada campaÃ±a",
     en: "Choose the best path for each campaign",
     pt: "Escolha o melhor caminho para cada campanha",
   },
   "landing.product.templates.title": {
-    es: "Plantillas (rapido)",
+    es: "Plantillas (rÃ¡pido)",
     en: "Templates (fast)",
     pt: "Modelos (rapido)",
   },
@@ -454,8 +473,8 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Comece com modelos por nicho e edite tudo visualmente.",
   },
   "landing.product.templates.b1": { es: "Listo en minutos", en: "Ready in minutes", pt: "Pronto em minutos" },
-  "landing.product.templates.b2": { es: "Ideal para lanzamientos rapidos", en: "Ideal for fast launches", pt: "Ideal para lancamentos rapidos" },
-  "landing.product.templates.b3": { es: "Diseno base profesional", en: "Professional base design", pt: "Design base profissional" },
+  "landing.product.templates.b2": { es: "Ideal para lanzamientos rÃ¡pidos", en: "Ideal for fast launches", pt: "Ideal para lancamentos rapidos" },
+  "landing.product.templates.b3": { es: "DiseÃ±o base profesional", en: "Professional base design", pt: "Design base profissional" },
   "landing.product.templates.cta": { es: "Ver Plantillas", en: "See Templates", pt: "Ver Modelos" },
   "landing.product.cloner.title": {
     es: "Clonador Web (control total)",
@@ -463,13 +482,13 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Clonador Web (controle total)",
   },
   "landing.product.cloner.desc": {
-    es: "Replica, adapta y optimiza una pagina existente para tu oferta.",
+    es: "Replica, adapta y optimiza una pÃ¡gina existente para tu oferta.",
     en: "Replicate, adapt, and optimize an existing page for your offer.",
     pt: "Replique, adapte e otimize uma pagina existente para sua oferta.",
   },
   "landing.product.cloner.b1": { es: "Ideal para benchmarking", en: "Ideal for benchmarking", pt: "Ideal para benchmarking" },
-  "landing.product.cloner.b2": { es: "Edicion completa de contenido", en: "Complete content editing", pt: "Edicao completa de conteudo" },
-  "landing.product.cloner.b3": { es: "Publicacion con seguimiento", en: "Publishing with tracking", pt: "Publicacao com acompanhamento" },
+  "landing.product.cloner.b2": { es: "EdiciÃ³n completa de contenido", en: "Complete content editing", pt: "Edicao completa de conteudo" },
+  "landing.product.cloner.b3": { es: "PublicaciÃ³n con seguimiento", en: "Publishing with tracking", pt: "Publicacao com acompanhamento" },
   "landing.product.cloner.cta": { es: "Ir al Clonador", en: "Go to Cloner", pt: "Ir para o Clonador" },
   "landing.useCases.title": {
     es: "Casos de uso listos para vender",
@@ -477,7 +496,7 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Casos de uso prontos para vender",
   },
   "landing.useCases.subtitle": {
-    es: "Disenos pensados por tipo de negocio para acelerar resultados sin perder calidad visual.",
+    es: "DiseÃ±os pensados por tipo de negocio para acelerar resultados sin perder calidad visual.",
     en: "Designs tailored by business type to accelerate results without losing visual quality.",
     pt: "Designs pensados por tipo de negocio para acelerar resultados sem perder qualidade visual.",
   },
@@ -485,7 +504,7 @@ const translations: Record<string, Record<Language, string>> = {
   "landing.useCases.restaurant.title": { es: "Restaurantes", en: "Restaurants", pt: "Restaurantes" },
   "landing.useCases.restaurant.tag": { es: "alto ticket", en: "high ticket", pt: "alto ticket" },
   "landing.useCases.restaurant.desc": {
-    es: "Menus, reservas y pedidos en una sola pagina.",
+    es: "MenÃºs, reservas y pedidos en una sola pÃ¡gina.",
     en: "Menus, bookings, and orders on one page.",
     pt: "Menus, reservas e pedidos em uma unica pagina.",
   },
@@ -497,13 +516,13 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Capture leads de alto valor com formularios claros.",
   },
   "landing.useCases.ecommerce.title": { es: "E-commerce", en: "E-commerce", pt: "E-commerce" },
-  "landing.useCases.ecommerce.tag": { es: "conversion rapida", en: "fast conversion", pt: "conversao rapida" },
+  "landing.useCases.ecommerce.tag": { es: "conversiÃ³n rÃ¡pida", en: "fast conversion", pt: "conversao rapida" },
   "landing.useCases.ecommerce.desc": {
-    es: "Lanza ofertas y catalogos con diseno orientado a venta.",
+    es: "Lanza ofertas y catÃ¡logos con diseÃ±o orientado a venta.",
     en: "Launch offers and catalogs with a sales-oriented design.",
     pt: "Lance ofertas e catalogos com design orientado para vendas.",
   },
-  "landing.useCases.consulting.title": { es: "Consultoria", en: "Consulting", pt: "Consultoria" },
+  "landing.useCases.consulting.title": { es: "ConsultorÃ­a", en: "Consulting", pt: "ConsultorÃ­a" },
   "landing.useCases.consulting.tag": { es: "marca premium", en: "premium brand", pt: "marca premium" },
   "landing.useCases.consulting.desc": {
     es: "Refuerza autoridad con casos y CTA de contacto directo.",
@@ -549,7 +568,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   };
 
   const t = (key: string) => {
-    return translations[key]?.[language] || key;
+    const value = translations[key]?.[language] || key;
+    return fixMojibake(value);
   };
 
   // Avoid hydration mismatch by rendering children directly but language might toggle on client
