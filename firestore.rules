@@ -38,21 +38,36 @@ service cloud.firestore {
     }
 
     match /link_profiles/{profileId} {
+      function isLinkProfileOwner() {
+        return signedIn()
+          && (
+            profileId == request.auth.uid
+            || resource.data.userId == request.auth.uid
+          );
+      }
+
       allow get: if isAdmin()
-        || (signedIn() && profileId == request.auth.uid)
+        || isLinkProfileOwner()
         || resource.data.published == true;
 
-      allow list: if resource.data.published == true
-        || isAdmin()
-        || (signedIn() && resource.data.userId == request.auth.uid);
+      allow list: if isAdmin()
+        || resource.data.published == true
+        || (signedIn() && (
+          profileId == request.auth.uid
+          || resource.data.userId == request.auth.uid
+        ));
 
       allow create: if signedIn()
+        && profileId == request.auth.uid
         && request.resource.data.userId == request.auth.uid;
 
-      allow update: if (isAdmin() || (signedIn() && resource.data.userId == request.auth.uid))
-        && request.resource.data.userId == resource.data.userId;
+      allow update: if isAdmin()
+        || (
+          isLinkProfileOwner()
+          && request.resource.data.userId == request.auth.uid
+        );
 
-      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || isLinkProfileOwner();
     }
 
     match /{document=**} {

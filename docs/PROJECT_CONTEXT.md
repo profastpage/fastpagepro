@@ -88,3 +88,10 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - `builderBlocks`
   - `builderPrimaryColor`
   - `builderSecondaryColor`
+
+## Firestore Rules Update (2026-02-24)
+
+- Coleccion afectada: `link_profiles`.
+- Se reforzo ownership para escritura usando `documentId == auth.uid` y `request.resource.data.userId == auth.uid`.
+- Se mantiene lectura publica solo para perfiles `published == true`.
+- Se agrego compatibilidad con documentos legacy que no tenian `userId` en el recurso existente, evitando bloqueos de `update` para el propietario real.

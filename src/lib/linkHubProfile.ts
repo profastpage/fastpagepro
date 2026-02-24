@@ -319,7 +319,10 @@ export async function getLinkHubProfileByUserId(userId: string): Promise<LinkHub
   if (!snapshot.exists()) {
     return null;
   }
-  return snapshot.data() as LinkHubProfile;
+  return {
+    ...(snapshot.data() as LinkHubProfile),
+    userId,
+  };
 }
 
 export async function saveLinkHubProfileForUser(
@@ -327,7 +330,14 @@ export async function saveLinkHubProfileForUser(
   profile: LinkHubProfile,
 ): Promise<void> {
   const profileRef = doc(db, LINK_HUB_COLLECTION, userId);
-  await setDoc(profileRef, profile, { merge: true });
+  await setDoc(
+    profileRef,
+    {
+      ...profile,
+      userId,
+    },
+    { merge: true },
+  );
 }
 
 export async function isLinkHubSlugAvailable(
