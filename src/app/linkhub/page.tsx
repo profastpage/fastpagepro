@@ -23,6 +23,7 @@ import {
   LinkHubTheme,
   MAX_LINK_HUB_CATALOG_CATEGORIES,
   MAX_LINK_HUB_CATALOG_ITEMS,
+  MAX_LINK_HUB_COVER_IMAGES,
   normalizeHexColor,
   normalizeLinkUrl,
   normalizeLinkHubProfile,
@@ -180,6 +181,7 @@ export default function LinkHubPage() {
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewCategoryId, setPreviewCategoryId] = useState("");
   const [editorItemSearch, setEditorItemSearch] = useState("");
+  const [coverUrlInput, setCoverUrlInput] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -577,6 +579,77 @@ export default function LinkHubPage() {
     });
   }
 
+  function sanitizeCoverUrl(raw: string): string {
+    const value = raw.trim();
+    if (!value) return "";
+    if (value.startsWith("data:image/")) return value;
+    return normalizeLinkUrl(value);
+  }
+
+  function addCoverImageUrl() {
+    const normalized = sanitizeCoverUrl(coverUrlInput);
+    if (!normalized) {
+      setMessage({ type: "error", text: "Ingresa una URL valida para la portada." });
+      return;
+    }
+
+    if (!normalized.startsWith("data:image/") && !isValidExternalUrl(normalized)) {
+      setMessage({ type: "error", text: "La URL de portada debe comenzar con https://." });
+      return;
+    }
+
+    const currentCoverImages = profile?.coverImageUrls || [];
+    if (currentCoverImages.length >= MAX_LINK_HUB_COVER_IMAGES) {
+      setMessage({ type: "error", text: `Solo puedes tener hasta ${MAX_LINK_HUB_COVER_IMAGES} portadas.` });
+      return;
+    }
+
+    if (currentCoverImages.includes(normalized)) {
+      setMessage({ type: "error", text: "Esa imagen de portada ya fue agregada." });
+      return;
+    }
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const merged = [...(prev.coverImageUrls || []), normalized]
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .filter((item, index, source) => source.indexOf(item) === index)
+        .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+      return {
+        ...prev,
+        coverImageUrls: merged,
+        coverImageUrl: merged[0] || "",
+      };
+    });
+
+    setCoverUrlInput("");
+    setMessage({ type: "success", text: "Imagen de portada agregada." });
+  }
+
+  function removeCoverImageAt(indexToRemove: number) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const nextCovers = (prev.coverImageUrls || []).filter((_, index) => index !== indexToRemove);
+      return {
+        ...prev,
+        coverImageUrls: nextCovers,
+        coverImageUrl: nextCovers[0] || "",
+      };
+    });
+  }
+
+  function clearCoverImages() {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        coverImageUrls: [],
+        coverImageUrl: "",
+      };
+    });
+  }
+
   function moveLink(linkId: string, direction: "up" | "down") {
     setProfile((prev) => {
       if (!prev) return prev;
@@ -633,28 +706,68 @@ export default function LinkHubPage() {
   }
 
   async function handleCoverUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const files = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (!file) return;
+    if (files.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: "La portada debe ser un archivo de imagen." });
+    const currentCount = profile?.coverImageUrls?.length || 0;
+    if (currentCount >= MAX_LINK_HUB_COVER_IMAGES) {
+      setMessage({ type: "error", text: `Solo puedes tener hasta ${MAX_LINK_HUB_COVER_IMAGES} portadas.` });
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setMessage({ type: "error", text: "La portada es muy pesada. Usa una menor a 10MB." });
+    const remainingSlots = MAX_LINK_HUB_COVER_IMAGES - currentCount;
+    const selected = files.slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      setMessage({ type: "error", text: `Solo se cargaron ${remainingSlots} imagen(es). Limite: ${MAX_LINK_HUB_COVER_IMAGES}.` });
+    }
+
+    const validFiles = selected.filter((file) => file.type.startsWith("image/"));
+    if (validFiles.length === 0) {
+      setMessage({ type: "error", text: "Selecciona archivos de imagen para la portada." });
+      return;
+    }
+
+    const oversized = validFiles.find((file) => file.size > 10 * 1024 * 1024);
+    if (oversized) {
+      setMessage({ type: "error", text: "Cada portada debe ser menor a 10MB." });
       return;
     }
 
     setIsUploadingCover(true);
     try {
-      const optimized = await optimizeImageFile(file, { maxSize: 1280, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 1_100_000 });
-      patchProfile("coverImageUrl", optimized);
-      setMessage({ type: "success", text: "Portada cargada correctamente." });
+      const optimizedImages: string[] = [];
+      for (const file of validFiles) {
+        const optimized = await optimizeImageFile(file, {
+          maxSize: 1280,
+          quality: 0.88,
+          heavyQuality: 0.72,
+          heavyThreshold: 1_100_000,
+        });
+        optimizedImages.push(optimized);
+      }
+
+      setProfile((prev) => {
+        if (!prev) return prev;
+        const merged = [...(prev.coverImageUrls || []), ...optimizedImages]
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .filter((item, index, source) => source.indexOf(item) === index)
+          .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+        return {
+          ...prev,
+          coverImageUrls: merged,
+          coverImageUrl: merged[0] || "",
+        };
+      });
+
+      setMessage({
+        type: "success",
+        text: `${optimizedImages.length} portada(s) cargada(s) correctamente.`,
+      });
     } catch (error) {
       console.error("[LinkHub] Cover upload error:", error);
-      setMessage({ type: "error", text: "No se pudo procesar la portada." });
+      setMessage({ type: "error", text: "No se pudieron procesar las portadas." });
     } finally {
       setIsUploadingCover(false);
     }
@@ -799,6 +912,12 @@ export default function LinkHubPage() {
       );
 
       const now = Date.now();
+      const cleanedCoverImageUrls = [...(profile.coverImageUrls || []), profile.coverImageUrl]
+        .map((url) => url.trim())
+        .filter(Boolean)
+        .filter((url, index, source) => source.indexOf(url) === index)
+        .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+
       const nextProfile = normalizeLinkHubProfile(
         {
           ...profile,
@@ -807,7 +926,8 @@ export default function LinkHubPage() {
           displayName: profile.displayName.trim(),
           bio: profile.bio.trim(),
           avatarUrl: profile.avatarUrl.trim(),
-          coverImageUrl: profile.coverImageUrl.trim(),
+          coverImageUrl: cleanedCoverImageUrls[0] || "",
+          coverImageUrls: cleanedCoverImageUrls,
           categoryLabel: profile.categoryLabel.trim(),
           phoneNumber: profile.phoneNumber.trim(),
           whatsappNumber: profile.whatsappNumber.trim(),
@@ -987,33 +1107,88 @@ export default function LinkHubPage() {
                   </p>
                 </label>
                 <label className="space-y-2 md:col-span-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Portada (URL)</span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">
+                    Portadas (hasta {MAX_LINK_HUB_COVER_IMAGES})
+                  </span>
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
                     <input
                       className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                      value={profile.coverImageUrl}
-                      onChange={(event) => patchProfile("coverImageUrl", event.target.value)}
-                      placeholder="https://..."
+                      value={coverUrlInput}
+                      onChange={(event) => setCoverUrlInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addCoverImageUrl();
+                        }
+                      }}
+                      placeholder="https://... (agregar portada por URL)"
                     />
+                    <button
+                      type="button"
+                      onClick={addCoverImageUrl}
+                      disabled={
+                        isUploadingCover ||
+                        profile.coverImageUrls.length >= MAX_LINK_HUB_COVER_IMAGES ||
+                        coverUrlInput.trim().length === 0
+                      }
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-amber-100 disabled:opacity-50"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Agregar URL
+                    </button>
                     <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-sky-100">
                       {isUploadingCover ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                       Subir
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={handleCoverUpload}
                         className="hidden"
-                        disabled={isUploadingCover}
+                        disabled={isUploadingCover || profile.coverImageUrls.length >= MAX_LINK_HUB_COVER_IMAGES}
                       />
                     </label>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="text-xs text-zinc-500">
+                      {profile.coverImageUrls.length}/{MAX_LINK_HUB_COVER_IMAGES} imagenes de portada. Si agregas mas de una, se mostraran con transicion automatica en la pagina publica.
+                    </p>
                     <button
                       type="button"
-                      onClick={() => patchProfile("coverImageUrl", "")}
+                      onClick={clearCoverImages}
+                      disabled={profile.coverImageUrls.length === 0}
                       className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-300/40 bg-red-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-red-100"
                     >
                       <X className="h-4 w-4" />
-                      Quitar
+                      Quitar todo
                     </button>
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {profile.coverImageUrls.map((coverUrl, index) => (
+                      <div key={`${coverUrl}-${index}`} className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                        <img
+                          src={coverUrl}
+                          alt={`Portada ${index + 1}`}
+                          className="h-24 w-full object-cover"
+                        />
+                        <div className="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2">
+                          <p className="text-xs font-semibold text-zinc-200 truncate">Portada {index + 1}</p>
+                          <button
+                            type="button"
+                            onClick={() => removeCoverImageAt(index)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-300/40 bg-red-400/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-red-100"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Quitar
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {profile.coverImageUrls.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-white/20 px-4 py-6 text-center text-xs text-zinc-400 sm:col-span-2">
+                        Aun no agregaste portadas. Sube una o varias imagenes para activar el slider.
+                      </div>
+                    )}
                   </div>
                 </label>
                 <label className="space-y-2 md:col-span-2">

@@ -78,6 +78,7 @@ export default function PublicBioPage() {
   const [activeTab, setActiveTab] = useState<PublicTab>("contact");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [activeCoverIndex, setActiveCoverIndex] = useState(0);
   const [shareFeedback, setShareFeedback] = useState("");
   const catalogScrollRef = useRef<HTMLDivElement | null>(null);
   const catalogStickyRef = useRef<HTMLDivElement | null>(null);
@@ -141,6 +142,14 @@ export default function PublicBioPage() {
     .filter((section) => section.items.length > 0);
 
   const totalFilteredItems = categorySections.reduce((acc, section) => acc + section.items.length, 0);
+  const coverImages = [
+    ...(profile?.coverImageUrls ?? []),
+    profile?.coverImageUrl || "",
+  ]
+    .map((url) => String(url || "").trim())
+    .filter(Boolean)
+    .filter((url, index, source) => source.indexOf(url) === index)
+    .slice(0, 5);
 
   useEffect(() => {
     if (activeTab !== "catalog") return;
@@ -156,6 +165,20 @@ export default function PublicBioPage() {
     const chip = categoryChipRefs.current[selectedCategoryId];
     chip?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [selectedCategoryId]);
+
+  useEffect(() => {
+    if (activeCoverIndex >= coverImages.length) {
+      setActiveCoverIndex(0);
+    }
+  }, [activeCoverIndex, coverImages.length]);
+
+  useEffect(() => {
+    if (activeTab !== "contact" || coverImages.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveCoverIndex((prev) => (prev + 1) % coverImages.length);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [activeTab, coverImages.length]);
 
   if (loading) {
     return (
@@ -346,12 +369,37 @@ export default function PublicBioPage() {
         {activeTab === "contact" ? (
           <>
             <div className="relative">
-              {profile.coverImageUrl ? (
-                <img
-                  src={profile.coverImageUrl}
-                  alt="Portada"
-                  className="h-40 md:h-64 w-full object-cover"
-                />
+              {coverImages.length > 0 ? (
+                <div className="relative h-40 md:h-64 w-full overflow-hidden">
+                  {coverImages.map((imageUrl, index) => (
+                    <img
+                      key={`${imageUrl}-${index}`}
+                      src={imageUrl}
+                      alt={`Portada ${index + 1}`}
+                      className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ease-out ${
+                        index === activeCoverIndex ? "scale-100 opacity-100" : "scale-105 opacity-0"
+                      }`}
+                    />
+                  ))}
+                  {coverImages.length > 1 && (
+                    <div
+                      className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border px-2 py-1 backdrop-blur"
+                      style={{
+                        borderColor: hexToRgba(colors.primary, 0.35),
+                        background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.35)} 0%, ${hexToRgba(colors.secondary, 0.28)} 100%)`,
+                      }}
+                    >
+                      {coverImages.map((_, index) => (
+                        <span
+                          key={`cover-dot-${index}`}
+                          className={`h-1.5 w-1.5 rounded-full transition ${
+                            index === activeCoverIndex ? "bg-white" : "bg-white/45"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div
                   className="h-40 md:h-64 w-full"

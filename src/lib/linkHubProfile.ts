@@ -14,6 +14,7 @@ export const LINK_HUB_COLLECTION = "link_profiles";
 export const MAX_LINK_HUB_LINKS = 12;
 export const MAX_LINK_HUB_CATALOG_CATEGORIES = 16;
 export const MAX_LINK_HUB_CATALOG_ITEMS = 120;
+export const MAX_LINK_HUB_COVER_IMAGES = 5;
 
 export const LINK_HUB_THEME_STYLES = {
   midnight: {
@@ -278,6 +279,7 @@ export interface LinkHubProfile {
   bio: string;
   avatarUrl: string;
   coverImageUrl: string;
+  coverImageUrls: string[];
   categoryLabel: string;
   phoneNumber: string;
   whatsappNumber: string;
@@ -623,6 +625,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     bio: "",
     avatarUrl: safeText(user.photoURL),
     coverImageUrl: "",
+    coverImageUrls: [],
     categoryLabel: businessType === "restaurant" ? "Cevicheria" : "Tienda online",
     phoneNumber: "",
     whatsappNumber: "",
@@ -790,6 +793,17 @@ export function normalizeLinkHubProfile(
     safeText(input.themeSecondaryColor) || base.themeSecondaryColor,
   );
 
+  const rawCoverImageUrls = Array.isArray((input as Record<string, unknown>)["coverImageUrls"])
+    ? ((input as Record<string, unknown>)["coverImageUrls"] as unknown[])
+    : [];
+  const mergedCoverImageUrls = [
+    ...rawCoverImageUrls.map((value) => safeText(value)),
+    safeText(input.coverImageUrl),
+  ]
+    .filter(Boolean)
+    .filter((value, index, source) => source.indexOf(value) === index)
+    .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+
   const createdAtNumber = Number(input.createdAt);
   const updatedAtNumber = Number(input.updatedAt);
 
@@ -801,7 +815,8 @@ export function normalizeLinkHubProfile(
     displayName: safeText(input.displayName) || base.displayName,
     bio: safeText(input.bio),
     avatarUrl: safeText(input.avatarUrl) || base.avatarUrl,
-    coverImageUrl: safeText(input.coverImageUrl),
+    coverImageUrl: mergedCoverImageUrls[0] || "",
+    coverImageUrls: mergedCoverImageUrls,
     categoryLabel:
       safeText(input.categoryLabel) ||
       (businessType === "restaurant" ? "Restaurante" : "Tienda online"),

@@ -177,3 +177,17 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - gradientes coherentes con `themePrimaryColor` y `themeSecondaryColor`
   - profundidad sutil en botones activos mediante sombra tematica
   - mejor continuidad visual entre contacto, carta/catalogo y ubicacion.
+
+## Link Hub Cover Slider (2026-02-24)
+
+- Dashboard `/linkhub`:
+  - portada ahora soporta hasta `5` imagenes por perfil (`coverImageUrls`).
+  - carga multiple por archivo (`input[file][multiple]`) con optimizacion cliente.
+  - alta por URL manual + validacion.
+  - grilla de previews con eliminacion individual y accion `Quitar todo`.
+- Persistencia:
+  - se agrega `coverImageUrls: string[]` al perfil.
+  - compatibilidad backward: `coverImageUrl` legacy se mantiene y se sincroniza al primer elemento del array.
+- Publico `/bio/[slug]`:
+  - en `contacto`, si existen 2 o mas portadas se activa carrusel automatico con transicion elegante (fade + zoom suave).
+  - si hay una sola portada se muestra fija; si no hay portada se mantiene fallback de gradiente.
