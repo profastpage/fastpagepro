@@ -140,3 +140,15 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - layout expandido (sin marco tipo telefono angosto)
   - tabs de navegacion visibles arriba del contenido principal
 - Se mantiene compatibilidad de datos y comportamiento funcional de secciones.
+
+## Public Bio Header + Share UX (2026-02-24)
+
+- Header superior fijo dentro del card con:
+  - avatar pequeno del perfil
+  - boton de compartir (Web Share API con fallback a copiar enlace)
+- Comportamiento por submenu:
+  - `contacto`: mantiene portada + avatar grande
+  - `carta/catalogo` y `ubicacion`: vista compacta (solo avatar pequeno arriba, sin hero grande)
+- Buscador en tiempo real de carta/catalogo mantenido y con placeholder contextual:
+  - `Buscar en la carta...`
+  - `Buscar en el catalogo...`

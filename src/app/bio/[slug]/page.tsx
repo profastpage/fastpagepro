@@ -35,6 +35,7 @@ import {
   Music2,
   BadgeDollarSign,
   Sparkles,
+  Share2,
 } from "lucide-react";
 
 type PublicTab = "contact" | "catalog" | "location";
@@ -79,6 +80,7 @@ export default function PublicBioPage() {
   const [activeTab, setActiveTab] = useState<PublicTab>("contact");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [shareFeedback, setShareFeedback] = useState("");
 
   const slug = useMemo(() => sanitizeSlug(params?.slug || ""), [params?.slug]);
 
@@ -163,6 +165,26 @@ export default function PublicBioPage() {
     return byCategory && bySearch;
   });
 
+  async function handleShare() {
+    if (!profile) return;
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: profile.displayName,
+          text: `Mira ${profile.displayName} en Fast Page`,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareFeedback("Enlace copiado");
+        window.setTimeout(() => setShareFeedback(""), 1800);
+      }
+    } catch {
+      // user cancelled share dialog
+    }
+  }
+
   const pageStyle = {
     backgroundImage: `radial-gradient(120% 110% at 10% 0%, ${hexToRgba(colors.primary, 0.28)} 0%, transparent 50%), radial-gradient(120% 110% at 100% 100%, ${hexToRgba(colors.secondary, 0.32)} 0%, transparent 55%), linear-gradient(180deg, #020617 0%, #020617 44%, #000000 100%)`,
   };
@@ -184,70 +206,112 @@ export default function PublicBioPage() {
         className="mx-auto w-full max-w-md md:max-w-5xl rounded-[2.25rem] md:rounded-[2.5rem] border overflow-hidden text-white"
         style={wrapperStyle}
       >
-        <div className="relative">
-          {profile.coverImageUrl ? (
-            <img
-              src={profile.coverImageUrl}
-              alt="Portada"
-              className="h-40 md:h-64 w-full object-cover"
-            />
-          ) : (
-            <div
-              className="h-40 md:h-64 w-full"
-              style={{
-                background: `linear-gradient(130deg, ${hexToRgba(colors.primary, 0.5)} 0%, ${hexToRgba(colors.secondary, 0.44)} 100%)`,
-              }}
-            />
-          )}
-
-          <div className="absolute inset-x-0 -bottom-12 flex justify-center">
-            {profile.avatarUrl ? (
-              <img
-                src={profile.avatarUrl}
-                alt={profile.displayName}
-                className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 object-cover bg-black"
-                style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
-              />
-            ) : (
-              <div
-                className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black bg-black"
-                style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
-              >
-                {profile.displayName.slice(0, 1).toUpperCase()}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="px-5 md:px-8 pt-16 md:pt-20 pb-4 text-center">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight">{profile.displayName}</h1>
-          <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: hexToRgba(colors.primary, 0.95) }}>
-            {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
-          </p>
-          {profile.bio && <p className="mt-3 text-sm md:text-base text-zinc-100/85">{profile.bio}</p>}
-        </div>
-
-        <div className="px-4 md:px-8 pb-4 flex items-center justify-center flex-wrap gap-2">
-          {profile.links
-            .filter((link) => link.url)
-            .slice(0, 8)
-            .map((link) => {
-              const Icon = LINK_TYPE_ICON[link.type];
-              return (
-                <a
-                  key={link.id}
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center border text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${buttonRadiusClass}`}
-                  style={interactiveStyle}
-                  aria-label={link.title}
+        <div className="px-4 md:px-8 py-3 border-b border-white/10 bg-black/25">
+          <div className="flex items-center justify-between gap-3">
+            <div className="inline-flex min-w-0 items-center gap-2">
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.displayName}
+                  className="h-9 w-9 md:h-10 md:w-10 rounded-full border object-cover bg-black"
+                  style={{ borderColor: hexToRgba(colors.primary, 0.85) }}
+                />
+              ) : (
+                <div
+                  className="h-9 w-9 md:h-10 md:w-10 rounded-full border flex items-center justify-center text-sm font-black bg-black"
+                  style={{ borderColor: hexToRgba(colors.primary, 0.85) }}
                 >
-                  <Icon className="h-5 w-5" />
-                </a>
-              );
-            })}
+                  {profile.displayName.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span className="truncate text-xs md:text-sm font-semibold text-zinc-100">{profile.displayName}</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/25 bg-white/5 text-white hover:bg-white/10"
+              aria-label="Compartir"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+          </div>
+          {shareFeedback && <p className="mt-2 text-xs font-semibold text-emerald-200">{shareFeedback}</p>}
         </div>
+
+        {activeTab === "contact" ? (
+          <>
+            <div className="relative">
+              {profile.coverImageUrl ? (
+                <img
+                  src={profile.coverImageUrl}
+                  alt="Portada"
+                  className="h-40 md:h-64 w-full object-cover"
+                />
+              ) : (
+                <div
+                  className="h-40 md:h-64 w-full"
+                  style={{
+                    background: `linear-gradient(130deg, ${hexToRgba(colors.primary, 0.5)} 0%, ${hexToRgba(colors.secondary, 0.44)} 100%)`,
+                  }}
+                />
+              )}
+
+              <div className="absolute inset-x-0 -bottom-12 flex justify-center">
+                {profile.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.displayName}
+                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 object-cover bg-black"
+                    style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
+                  />
+                ) : (
+                  <div
+                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black bg-black"
+                    style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
+                  >
+                    {profile.displayName.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="px-5 md:px-8 pt-16 md:pt-20 pb-4 text-center">
+              <h1 className="text-4xl md:text-6xl font-black tracking-tight">{profile.displayName}</h1>
+              <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: hexToRgba(colors.primary, 0.95) }}>
+                {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
+              </p>
+              {profile.bio && <p className="mt-3 text-sm md:text-base text-zinc-100/85">{profile.bio}</p>}
+            </div>
+
+            <div className="px-4 md:px-8 pb-4 flex items-center justify-center flex-wrap gap-2">
+              {profile.links
+                .filter((link) => link.url)
+                .slice(0, 8)
+                .map((link) => {
+                  const Icon = LINK_TYPE_ICON[link.type];
+                  return (
+                    <a
+                      key={link.id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={`inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center border text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${buttonRadiusClass}`}
+                      style={interactiveStyle}
+                      aria-label={link.title}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </a>
+                  );
+                })}
+            </div>
+          </>
+        ) : (
+          <div className="px-5 md:px-8 py-6 md:py-8 text-center border-b border-white/10">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight uppercase">
+              {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
+            </h1>
+          </div>
+        )}
 
         <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6">
           <button
@@ -340,7 +404,7 @@ export default function PublicBioPage() {
           {activeTab === "catalog" && (
             <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-black">{catalogLabel}</h2>
+                <h2 className="hidden md:block text-2xl font-black">{catalogLabel}</h2>
                 <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
                   {profile.businessType === "restaurant" ? <Fish className="h-3.5 w-3.5" /> : <Store className="h-3.5 w-3.5" />}
                   {filteredItems.length}
@@ -352,7 +416,7 @@ export default function PublicBioPage() {
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder={`Buscar en ${catalogLabel.toLowerCase()}...`}
+                  placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
                   className="w-full bg-transparent text-sm text-white placeholder:text-zinc-400 focus:outline-none"
                 />
               </label>
@@ -479,7 +543,7 @@ export default function PublicBioPage() {
 
           {activeTab === "location" && (
             <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
-              <h2 className="text-2xl font-black">{profile.sectionLabels.location}</h2>
+              <h2 className="hidden md:block text-2xl font-black">{profile.sectionLabels.location}</h2>
 
               <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: hexToRgba(colors.primary, 0.36) }}>
                 {profile.location.mapEmbedUrl ? (
