@@ -152,3 +152,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Buscador en tiempo real de carta/catalogo mantenido y con placeholder contextual:
   - `Buscar en la carta...`
   - `Buscar en el catalogo...`
+
+## Public Carta/Catalogo Sticky + Scroll Sync (2026-02-24)
+
+- Ruta publica ajustada: `/bio/[slug]` en la tab `carta/catalogo`.
+- UX mobile/desktop en catalogo:
+  - bloque superior de buscador + chips de categorias permanece fijo (`sticky`) durante el scroll interno de productos.
+  - auto-seleccion de categoria por posicion de scroll: el chip activo cambia segun la seccion visible (ej. `Chicharrones`).
+  - click en chip realiza scroll hacia la categoria respetando offset del bloque sticky.
+  - chips y lista usan `no-scrollbar` para evitar barras visuales incomodas en horizontal/vertical.
+- Publico final:
+  - la seccion de planes/comercial se mantiene solo en dashboard de creacion (`/linkhub`) y no se renderiza en la pagina publicada del cliente (`/bio/[slug]`).

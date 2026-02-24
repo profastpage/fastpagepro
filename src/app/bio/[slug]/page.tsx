@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentType, useEffect, useMemo, useState } from "react";
+import { ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   getLinkHubThemeColors,
@@ -33,8 +33,6 @@ import {
   Instagram,
   Linkedin,
   Music2,
-  BadgeDollarSign,
-  Sparkles,
   Share2,
 } from "lucide-react";
 
@@ -81,6 +79,10 @@ export default function PublicBioPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [shareFeedback, setShareFeedback] = useState("");
+  const catalogScrollRef = useRef<HTMLDivElement | null>(null);
+  const catalogStickyRef = useRef<HTMLDivElement | null>(null);
+  const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const categoryChipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const slug = useMemo(() => sanitizeSlug(params?.slug || ""), [params?.slug]);
 
@@ -154,16 +156,24 @@ export default function PublicBioPage() {
   const catalogLabel =
     profile.businessType === "restaurant" ? profile.sectionLabels.menu : profile.sectionLabels.catalog;
 
-  const filteredItems = profile.catalogItems.filter((item) => {
-    const byCategory = selectedCategoryId ? item.categoryId === selectedCategoryId : true;
-    const query = searchTerm.trim().toLowerCase();
-    const bySearch =
-      !query ||
-      item.title.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      item.badge?.toLowerCase().includes(query);
-    return byCategory && bySearch;
-  });
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const categorySections = profile.catalogCategories
+    .map((category) => {
+      const items = profile.catalogItems.filter((item) => {
+        if (item.categoryId !== category.id) return false;
+        if (!normalizedSearch) return true;
+        return (
+          item.title.toLowerCase().includes(normalizedSearch) ||
+          item.description.toLowerCase().includes(normalizedSearch) ||
+          (item.badge || "").toLowerCase().includes(normalizedSearch)
+        );
+      });
+      return { ...category, items };
+    })
+    .filter((section) => section.items.length > 0);
+
+  const totalFilteredItems = categorySections.reduce((acc, section) => acc + section.items.length, 0);
 
   async function handleShare() {
     if (!profile) return;
@@ -182,6 +192,59 @@ export default function PublicBioPage() {
       }
     } catch {
       // user cancelled share dialog
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab !== "catalog") return;
+    if (categorySections.length === 0) return;
+    const exists = categorySections.some((section) => section.id === selectedCategoryId);
+    if (!exists) {
+      setSelectedCategoryId(categorySections[0].id);
+    }
+  }, [activeTab, categorySections, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!selectedCategoryId) return;
+    const chip = categoryChipRefs.current[selectedCategoryId];
+    chip?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [selectedCategoryId]);
+
+  function scrollToCategory(categoryId: string) {
+    setSelectedCategoryId(categoryId);
+    const container = catalogScrollRef.current;
+    const target = categorySectionRefs.current[categoryId];
+    if (!container || !target) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const stickyHeight = catalogStickyRef.current?.offsetHeight || 0;
+    const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - stickyHeight - 8;
+    container.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+  }
+
+  function handleCatalogScroll() {
+    const container = catalogScrollRef.current;
+    if (!container || categorySections.length === 0) return;
+
+    const containerTop = container.getBoundingClientRect().top;
+    const stickyHeight = catalogStickyRef.current?.offsetHeight || 0;
+    const threshold = containerTop + stickyHeight + 8;
+    let activeId = categorySections[0].id;
+
+    for (const section of categorySections) {
+      const node = categorySectionRefs.current[section.id];
+      if (!node) continue;
+      const top = node.getBoundingClientRect().top;
+      if (top <= threshold) {
+        activeId = section.id;
+      } else {
+        break;
+      }
+    }
+
+    if (activeId !== selectedCategoryId) {
+      setSelectedCategoryId(activeId);
     }
   }
 
@@ -402,142 +465,123 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "catalog" && (
-            <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="hidden md:block text-2xl font-black">{catalogLabel}</h2>
+            <section className={`rounded-3xl border p-4 overflow-hidden ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
+              <div className="hidden md:flex items-center justify-between gap-3">
+                <h2 className="text-2xl font-black">{catalogLabel}</h2>
                 <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
                   {profile.businessType === "restaurant" ? <Fish className="h-3.5 w-3.5" /> : <Store className="h-3.5 w-3.5" />}
-                  {filteredItems.length}
+                  {totalFilteredItems}
                 </div>
               </div>
 
-              <label className="mt-4 flex items-center gap-2 rounded-2xl border bg-black/30 px-3 py-2" style={{ borderColor: hexToRgba(colors.primary, 0.35) }}>
-                <Search className="h-4 w-4 text-zinc-400" />
-                <input
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
-                  className="w-full bg-transparent text-sm text-white placeholder:text-zinc-400 focus:outline-none"
-                />
-              </label>
+              <div
+                ref={catalogScrollRef}
+                onScroll={handleCatalogScroll}
+                className="mt-2 max-h-[66vh] overflow-y-auto pr-1 no-scrollbar md:mt-4 md:max-h-[72vh]"
+              >
+                <div
+                  ref={catalogStickyRef}
+                  className="sticky top-0 z-20 -mx-1 mb-3 border-b border-white/10 bg-black/90 px-1 pb-3 pt-1 backdrop-blur"
+                >
+                  <label className="flex items-center gap-2 rounded-2xl border bg-black/40 px-3 py-2" style={{ borderColor: hexToRgba(colors.primary, 0.35) }}>
+                    <Search className="h-4 w-4 text-zinc-400" />
+                    <input
+                      value={searchTerm}
+                      onChange={(event) => setSearchTerm(event.target.value)}
+                      placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
+                      className="w-full bg-transparent text-sm text-white placeholder:text-zinc-400 focus:outline-none"
+                    />
+                  </label>
 
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                {profile.catalogCategories.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => setSelectedCategoryId(category.id)}
-                    className={`shrink-0 border px-3 py-2 text-xs font-bold transition ${buttonRadiusClass} ${
-                      selectedCategoryId === category.id ? "text-white" : "text-zinc-100"
-                    }`}
-                    style={
-                      selectedCategoryId === category.id
-                        ? interactiveStyle
-                        : { borderColor: hexToRgba(colors.primary, 0.35) }
-                    }
-                  >
-                    <span className="mr-1">{category.emoji || category.name.slice(0, 1).toUpperCase()}</span>
-                    {category.name}
-                  </button>
-                ))}
-              </div>
+                  <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
+                    {categorySections.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        ref={(node) => {
+                          categoryChipRefs.current[category.id] = node;
+                        }}
+                        onClick={() => scrollToCategory(category.id)}
+                        className={`shrink-0 border px-3 py-2 text-xs font-bold transition ${buttonRadiusClass} ${
+                          selectedCategoryId === category.id ? "text-white" : "text-zinc-100"
+                        }`}
+                        style={
+                          selectedCategoryId === category.id
+                            ? interactiveStyle
+                            : { borderColor: hexToRgba(colors.primary, 0.35) }
+                        }
+                      >
+                        <span className="mr-1">{category.emoji || category.name.slice(0, 1).toUpperCase()}</span>
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              <div className="mt-4 space-y-3">
-                {filteredItems.length === 0 && (
+                {categorySections.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-white/25 p-4 text-sm text-zinc-200">
                     No hay productos para el filtro actual.
                   </div>
                 )}
 
-                {filteredItems.map((item) => (
-                  <article
-                    key={item.id}
-                    className={`rounded-2xl border p-3 ${cardClass}`}
-                    style={{ borderColor: hexToRgba(colors.primary, 0.26) }}
-                  >
-                    <div className="flex gap-3">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-xl object-cover" />
-                      ) : (
-                        <div
-                          className="h-20 w-20 rounded-xl flex items-center justify-center text-2xl"
-                          style={interactiveStyle}
-                        >
-                          <span className="text-[10px] font-black uppercase tracking-[0.08em]">
-                            {item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
-                          </span>
-                        </div>
-                      )}
+                <div className="space-y-6">
+                  {categorySections.map((section) => (
+                    <div
+                      key={section.id}
+                      ref={(node) => {
+                        categorySectionRefs.current[section.id] = node;
+                      }}
+                      className="scroll-mt-24"
+                    >
+                      <h3 className="text-3xl md:text-2xl font-black tracking-tight">{section.name}</h3>
+                      <div className="mt-3 space-y-3">
+                        {section.items.map((item) => (
+                          <article
+                            key={item.id}
+                            className={`rounded-2xl border p-3 ${cardClass}`}
+                            style={{ borderColor: hexToRgba(colors.primary, 0.26) }}
+                          >
+                            <div className="flex gap-3">
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-xl object-cover" />
+                              ) : (
+                                <div
+                                  className="h-20 w-20 rounded-xl flex items-center justify-center text-2xl"
+                                  style={interactiveStyle}
+                                >
+                                  <span className="text-[10px] font-black uppercase tracking-[0.08em]">
+                                    {item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
+                                  </span>
+                                </div>
+                              )}
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="text-xl font-extrabold leading-tight">{item.title}</h3>
-                          {item.badge && (
-                            <span className="rounded-full border px-2 py-1 text-[10px] font-black uppercase" style={interactiveStyle}>
-                              {item.badge}
-                            </span>
-                          )}
-                        </div>
-                        {item.description && <p className="mt-1 text-sm text-zinc-200/90">{item.description}</p>}
-                        <div className="mt-2 flex items-center gap-2 text-sm font-bold">
-                          {item.compareAtPrice && (
-                            <span className="text-zinc-400 line-through">S/{item.compareAtPrice}</span>
-                          )}
-                          <span className="text-lg" style={{ color: hexToRgba(colors.primary, 0.98) }}>
-                            S/{item.price}
-                          </span>
-                        </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="text-xl font-extrabold leading-tight">{item.title}</h4>
+                                  {item.badge && (
+                                    <span className="rounded-full border px-2 py-1 text-[10px] font-black uppercase" style={interactiveStyle}>
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                {item.description && <p className="mt-1 text-sm text-zinc-200/90">{item.description}</p>}
+                                <div className="mt-2 flex items-center gap-2 text-sm font-bold">
+                                  {item.compareAtPrice && (
+                                    <span className="text-zinc-400 line-through">S/{item.compareAtPrice}</span>
+                                  )}
+                                  <span className="text-lg" style={{ color: hexToRgba(colors.primary, 0.98) }}>
+                                    S/{item.price}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </article>
+                        ))}
                       </div>
                     </div>
-                  </article>
-                ))}
-              </div>
-
-              {profile.pricing.enabled && (
-                <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: hexToRgba(colors.primary, 0.36) }}>
-                  <div className="flex items-center gap-2">
-                    <BadgeDollarSign className="h-4 w-4" />
-                    <p className="text-[11px] uppercase tracking-[0.16em] font-bold">{profile.sectionLabels.pricing}</p>
-                  </div>
-                  <h3 className="mt-2 text-xl font-black">{profile.pricing.title}</h3>
-                  <p className="mt-1 text-sm text-zinc-200/85">{profile.pricing.subtitle}</p>
-
-                  <div className="mt-4 grid grid-cols-1 gap-3">
-                    {profile.pricing.plans.slice(0, 3).map((plan) => (
-                      <article
-                        key={plan.id}
-                        className={`rounded-2xl border p-3 ${plan.highlighted ? "ring-1" : ""}`}
-                        style={{ borderColor: hexToRgba(colors.primary, 0.4), boxShadow: plan.highlighted ? `0 0 0 1px ${hexToRgba(colors.secondary, 0.45)}` : undefined }}
-                      >
-                        <p className="text-sm font-black">{plan.title}</p>
-                        {plan.normalPrice && <p className="mt-1 text-xs text-zinc-400">Normal: {plan.currency}{plan.normalPrice}</p>}
-                        <p className="mt-1 text-3xl font-black" style={{ color: hexToRgba(colors.primary, 0.98) }}>
-                          {plan.currency}{plan.price}
-                        </p>
-                        <ul className="mt-3 space-y-1 text-xs text-zinc-100/90">
-                          {plan.features.slice(0, 5).map((feature, idx) => (
-                            <li key={`${plan.id}-${idx}`} className="flex gap-2">
-                              <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        {plan.ctaUrl && isValidExternalUrl(plan.ctaUrl) && (
-                          <a
-                            href={plan.ctaUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`mt-3 inline-flex w-full items-center justify-center border px-3 py-2 text-xs font-bold ${buttonRadiusClass}`}
-                            style={interactiveStyle}
-                          >
-                            {plan.ctaLabel || "Mas detalles"}
-                          </a>
-                        )}
-                      </article>
-                    ))}
-                  </div>
+                  ))}
                 </div>
-              )}
+              </div>
             </section>
           )}
 
