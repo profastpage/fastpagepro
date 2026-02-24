@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import {
   buildDefaultLinkHubProfile,
+  createLinkHubCatalogCategory,
+  createLinkHubCatalogItem,
   getLinkHubProfileByUserId,
   getLinkHubThemeColors,
   getSafeLinkHubTheme,
@@ -14,10 +16,16 @@ import {
   LINK_HUB_THEME_STYLES,
   LinkHubLink,
   LinkHubLinkType,
+  LinkHubBusinessType,
+  LinkHubCatalogItem,
+  LinkHubPricingPlan,
   LinkHubProfile,
   LinkHubTheme,
+  MAX_LINK_HUB_CATALOG_CATEGORIES,
+  MAX_LINK_HUB_CATALOG_ITEMS,
   normalizeHexColor,
   normalizeLinkUrl,
+  normalizeLinkHubProfile,
   sanitizeSlug,
   saveLinkHubProfileForUser,
   MAX_LINK_HUB_LINKS,
@@ -26,18 +34,24 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
+  Fish,
   Globe,
   ImagePlus,
   Instagram,
   Linkedin,
   Loader2,
+  MapPin,
   MoveDown,
   MoveUp,
   Music2,
   Palette,
+  Phone,
   Plus,
   Save,
+  Search,
   Sparkles,
+  Store,
+  BadgeDollarSign,
   Trash2,
   Upload,
   Youtube,
@@ -130,6 +144,26 @@ async function optimizeAvatarImage(file: File): Promise<string> {
   return encoded;
 }
 
+function parseMultiline(input: string): string[] {
+  return input
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function formatMultiline(lines: string[]): string {
+  return lines.join("\n");
+}
+
+function normalizePhone(raw: string): string {
+  return raw.replace(/[^\d+]/g, "");
+}
+
+function toWhatsappUrl(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  return digits ? `https://wa.me/${digits}` : "";
+}
+
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
   const router = useRouter();
@@ -138,6 +172,8 @@ export default function LinkHubPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [origin, setOrigin] = useState("");
+  const [previewSearch, setPreviewSearch] = useState("");
+  const [previewCategoryId, setPreviewCategoryId] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
@@ -156,33 +192,22 @@ export default function LinkHubPage() {
         if (!active) return;
 
         if (stored) {
-          const safeTheme = getSafeLinkHubTheme((stored as LinkHubProfile).theme);
-          const preset = LINK_HUB_THEME_STYLES[safeTheme];
-
-          setProfile({
-            ...buildDefaultLinkHubProfile(user),
-            ...stored,
-            userId: user.uid,
-            theme: safeTheme,
-            themePrimaryColor: normalizeHexColor(
-              (stored as LinkHubProfile).themePrimaryColor,
-              preset.primary,
-            ),
-            themeSecondaryColor: normalizeHexColor(
-              (stored as LinkHubProfile).themeSecondaryColor,
-              preset.secondary,
-            ),
-            links: Array.isArray(stored.links) && stored.links.length > 0 ? stored.links : [createEmptyLink()],
-          });
+          const normalized = normalizeLinkHubProfile(stored, user);
+          setProfile(normalized);
+          setPreviewCategoryId(normalized.catalogCategories[0]?.id || "");
           return;
         }
 
-        setProfile(buildDefaultLinkHubProfile(user));
+        const defaultProfile = buildDefaultLinkHubProfile(user);
+        setProfile(defaultProfile);
+        setPreviewCategoryId(defaultProfile.catalogCategories[0]?.id || "");
       } catch (error) {
         console.error("[LinkHub] Failed loading profile:", error);
         if (active) {
           // Fallback prevents infinite loading if Firestore rules temporarily block reads.
-          setProfile(buildDefaultLinkHubProfile(user));
+          const fallback = buildDefaultLinkHubProfile(user);
+          setProfile(fallback);
+          setPreviewCategoryId(fallback.catalogCategories[0]?.id || "");
         }
         setMessage({
           type: "error",
@@ -220,6 +245,23 @@ export default function LinkHubPage() {
       ...colors,
     };
   }, [profile?.theme, profile?.themePrimaryColor, profile?.themeSecondaryColor]);
+
+  const catalogLabel =
+    profile?.businessType === "restaurant" ? profile?.sectionLabels.menu : profile?.sectionLabels.catalog;
+
+  const previewItems = useMemo(() => {
+    if (!profile) return [];
+    return profile.catalogItems.filter((item) => {
+      const byCategory = previewCategoryId ? item.categoryId === previewCategoryId : true;
+      const term = previewSearch.trim().toLowerCase();
+      const bySearch =
+        !term ||
+        item.title.toLowerCase().includes(term) ||
+        item.description.toLowerCase().includes(term) ||
+        item.badge?.toLowerCase().includes(term);
+      return byCategory && bySearch;
+    });
+  }, [previewCategoryId, previewSearch, profile]);
 
   const previewShellStyle = useMemo(
     () => ({
@@ -261,6 +303,157 @@ export default function LinkHubPage() {
         theme,
         themePrimaryColor: preset.primary,
         themeSecondaryColor: preset.secondary,
+      };
+    });
+  }
+
+  function patchLocation<K extends keyof LinkHubProfile["location"]>(
+    field: K,
+    value: LinkHubProfile["location"][K],
+  ) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        location: {
+          ...prev.location,
+          [field]: value,
+        },
+      };
+    });
+  }
+
+  function patchSectionLabel<K extends keyof LinkHubProfile["sectionLabels"]>(
+    field: K,
+    value: LinkHubProfile["sectionLabels"][K],
+  ) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        sectionLabels: {
+          ...prev.sectionLabels,
+          [field]: value,
+        },
+      };
+    });
+  }
+
+  function patchPricing<K extends keyof LinkHubProfile["pricing"]>(
+    field: K,
+    value: LinkHubProfile["pricing"][K],
+  ) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        pricing: {
+          ...prev.pricing,
+          [field]: value,
+        },
+      };
+    });
+  }
+
+  function patchPlan(planId: string, patch: Partial<LinkHubPricingPlan>) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        pricing: {
+          ...prev.pricing,
+          plans: prev.pricing.plans.map((plan) => (plan.id === planId ? { ...plan, ...patch } : plan)),
+        },
+      };
+    });
+  }
+
+  function changeBusinessType(nextType: LinkHubBusinessType) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        businessType: nextType,
+        sectionLabels: {
+          ...prev.sectionLabels,
+          menu: nextType === "restaurant" ? "Carta" : prev.sectionLabels.menu,
+          catalog: nextType === "general" ? "Catalogo" : prev.sectionLabels.catalog,
+        },
+      };
+    });
+  }
+
+  function addCategory() {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      if (prev.catalogCategories.length >= MAX_LINK_HUB_CATALOG_CATEGORIES) return prev;
+      const emoji = prev.businessType === "restaurant" ? "🍽️" : "🛍️";
+      return {
+        ...prev,
+        catalogCategories: [...prev.catalogCategories, createLinkHubCatalogCategory("", emoji)],
+      };
+    });
+  }
+
+  function patchCategory(
+    categoryId: string,
+    patch: Partial<LinkHubProfile["catalogCategories"][number]>,
+  ) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        catalogCategories: prev.catalogCategories.map((category) =>
+          category.id === categoryId ? { ...category, ...patch } : category,
+        ),
+      };
+    });
+  }
+
+  function removeCategory(categoryId: string) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      if (prev.catalogCategories.length <= 1) return prev;
+      const categories = prev.catalogCategories.filter((category) => category.id !== categoryId);
+      const fallbackId = categories[0]?.id || "";
+      return {
+        ...prev,
+        catalogCategories: categories,
+        catalogItems: prev.catalogItems.map((item) =>
+          item.categoryId === categoryId ? { ...item, categoryId: fallbackId } : item,
+        ),
+      };
+    });
+  }
+
+  function addCatalogItem() {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      if (prev.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS) return prev;
+      return {
+        ...prev,
+        catalogItems: [...prev.catalogItems, createLinkHubCatalogItem(prev.catalogCategories[0]?.id || "")],
+      };
+    });
+  }
+
+  function patchCatalogItem(itemId: string, patch: Partial<LinkHubCatalogItem>) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        catalogItems: prev.catalogItems.map((item) => (item.id === itemId ? { ...item, ...patch } : item)),
+      };
+    });
+  }
+
+  function removeCatalogItem(itemId: string) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const nextItems = prev.catalogItems.filter((item) => item.id !== itemId);
+      return {
+        ...prev,
+        catalogItems: nextItems.length > 0 ? nextItems : [createLinkHubCatalogItem(prev.catalogCategories[0]?.id || "")],
       };
     });
   }
@@ -379,10 +572,64 @@ export default function LinkHubPage() {
       });
       return;
     }
-    if (mode === "publish" && preparedLinks.length === 0) {
+
+    const cleanedCategories = profile.catalogCategories
+      .map((category) => ({
+        ...category,
+        name: category.name.trim(),
+        emoji: (category.emoji || "").trim(),
+      }))
+      .filter((category) => category.name.length > 0)
+      .slice(0, MAX_LINK_HUB_CATALOG_CATEGORIES);
+
+    if (cleanedCategories.length === 0) {
+      setMessage({ type: "error", text: "Debes agregar al menos una categoria." });
+      return;
+    }
+
+    const categoryIds = new Set(cleanedCategories.map((category) => category.id));
+    const fallbackCategoryId = cleanedCategories[0].id;
+    const cleanedItems = profile.catalogItems
+      .map((item) => ({
+        ...item,
+        categoryId: categoryIds.has(item.categoryId) ? item.categoryId : fallbackCategoryId,
+        title: item.title.trim(),
+        description: item.description.trim(),
+        imageUrl: item.imageUrl.trim(),
+        price: item.price.trim(),
+        compareAtPrice: (item.compareAtPrice || "").trim(),
+        badge: (item.badge || "").trim(),
+        emoji: (item.emoji || "").trim(),
+      }))
+      .filter((item) => item.title || item.description || item.price || item.imageUrl)
+      .slice(0, MAX_LINK_HUB_CATALOG_ITEMS);
+
+    const invalidItem = cleanedItems.find((item) => !item.title || !item.price);
+    if (invalidItem) {
+      setMessage({ type: "error", text: "Cada item de carta/catalogo debe tener nombre y precio." });
+      return;
+    }
+
+    const cleanedPlans = profile.pricing.plans.slice(0, 3).map((plan) => ({
+      ...plan,
+      title: plan.title.trim(),
+      normalPrice: plan.normalPrice.trim(),
+      price: plan.price.trim(),
+      currency: plan.currency.trim() || "S/.",
+      ctaLabel: plan.ctaLabel.trim() || "Mas detalles",
+      ctaUrl: plan.ctaUrl.trim(),
+      features: plan.features.map((feature) => feature.trim()).filter(Boolean),
+    }));
+
+    if (profile.pricing.enabled && cleanedPlans.some((plan) => !plan.title || !plan.price)) {
+      setMessage({ type: "error", text: "Cada plan debe tener titulo y precio." });
+      return;
+    }
+
+    if (mode === "publish" && cleanedItems.length === 0) {
       setMessage({
         type: "error",
-        text: "Debes agregar al menos un enlace valido antes de publicar.",
+        text: "Debes agregar al menos un item valido antes de publicar.",
       });
       return;
     }
@@ -405,26 +652,50 @@ export default function LinkHubPage() {
       );
 
       const now = Date.now();
-      const nextProfile: LinkHubProfile = {
-        ...profile,
-        userId: user.uid,
-        slug: sanitizedSlug,
-        displayName: profile.displayName.trim(),
-        bio: profile.bio.trim(),
-        avatarUrl: profile.avatarUrl.trim(),
-        theme: safeTheme,
-        themePrimaryColor: safeColors.primary,
-        themeSecondaryColor: safeColors.secondary,
-        links: preparedLinks.length > 0 ? preparedLinks : [createEmptyLink()],
-        published: mode === "publish",
-        ...(typeof profile.publishedAt === "number" ? { publishedAt: profile.publishedAt } : {}),
-        ...(mode === "publish" ? { publishedAt: now } : {}),
-        updatedAt: now,
-        createdAt: profile.createdAt || now,
-      };
+      const nextProfile = normalizeLinkHubProfile(
+        {
+          ...profile,
+          userId: user.uid,
+          slug: sanitizedSlug,
+          displayName: profile.displayName.trim(),
+          bio: profile.bio.trim(),
+          avatarUrl: profile.avatarUrl.trim(),
+          coverImageUrl: profile.coverImageUrl.trim(),
+          categoryLabel: profile.categoryLabel.trim(),
+          phoneNumber: profile.phoneNumber.trim(),
+          whatsappNumber: profile.whatsappNumber.trim(),
+          theme: safeTheme,
+          themePrimaryColor: safeColors.primary,
+          themeSecondaryColor: safeColors.secondary,
+          links: preparedLinks.length > 0 ? preparedLinks : [createEmptyLink()],
+          catalogCategories: cleanedCategories,
+          catalogItems: cleanedItems,
+          location: {
+            ...profile.location,
+            address: profile.location.address.trim(),
+            mapEmbedUrl: profile.location.mapEmbedUrl.trim(),
+            mapsUrl: profile.location.mapsUrl.trim(),
+            ctaLabel: profile.location.ctaLabel.trim() || "Ir ahora",
+            scheduleLines: profile.location.scheduleLines.map((line) => line.trim()).filter(Boolean),
+          },
+          pricing: {
+            ...profile.pricing,
+            title: profile.pricing.title.trim() || "Catalogo digital online",
+            subtitle: profile.pricing.subtitle.trim(),
+            plans: cleanedPlans,
+          },
+          published: mode === "publish",
+          ...(typeof profile.publishedAt === "number" ? { publishedAt: profile.publishedAt } : {}),
+          ...(mode === "publish" ? { publishedAt: now } : {}),
+          updatedAt: now,
+          createdAt: profile.createdAt || now,
+        },
+        user,
+      );
 
       await saveLinkHubProfileForUser(user.uid, nextProfile);
       setProfile(nextProfile);
+      setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
       setMessage({
         type: "success",
         text:
@@ -470,8 +741,8 @@ export default function LinkHubPage() {
         <div className="mb-8">
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Link Hub</h1>
           <p className="mt-2 text-zinc-400 max-w-3xl">
-            Crea una landing de enlaces estilo Linktree para compartir todas tus redes, productos y canales en
-            una sola URL profesional.
+            Crea una landing mobile-first con 3 secciones: contacto, {catalogLabel?.toLowerCase()} y ubicacion.
+            Incluye catalogo digital online con 3 planes para activacion de clientes.
           </p>
         </div>
 
@@ -510,6 +781,26 @@ export default function LinkHubPage() {
                     placeholder="tu-nombre"
                   />
                 </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Rubro</span>
+                  <select
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={profile.businessType}
+                    onChange={(event) => changeBusinessType(event.target.value as LinkHubBusinessType)}
+                  >
+                    <option value="restaurant">Restaurante / Cafeteria</option>
+                    <option value="general">Tienda / General</option>
+                  </select>
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Etiqueta del rubro</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={profile.categoryLabel}
+                    onChange={(event) => patchProfile("categoryLabel", event.target.value)}
+                    placeholder={profile.businessType === "restaurant" ? "Cevicheria" : "Tienda online"}
+                  />
+                </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Foto de perfil</span>
                   <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
@@ -544,6 +835,15 @@ export default function LinkHubPage() {
                   </p>
                 </label>
                 <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Portada (URL)</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={profile.coverImageUrl}
+                    onChange={(event) => patchProfile("coverImageUrl", event.target.value)}
+                    placeholder="https://..."
+                  />
+                </label>
+                <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Bio</span>
                   <textarea
                     rows={3}
@@ -553,10 +853,49 @@ export default function LinkHubPage() {
                     placeholder="Describe brevemente lo que ofreces."
                   />
                 </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Tab contacto</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={profile.sectionLabels.contact}
+                    onChange={(event) => patchSectionLabel("contact", event.target.value)}
+                    placeholder="Contacto"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Tab ubicacion</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={profile.sectionLabels.location}
+                    onChange={(event) => patchSectionLabel("location", event.target.value)}
+                    placeholder="Ubicacion"
+                  />
+                </label>
               </div>
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Telefono</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={profile.phoneNumber}
+                    onChange={(event) => patchProfile("phoneNumber", event.target.value)}
+                    placeholder="+51 999 999 999"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">WhatsApp</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={profile.whatsappNumber}
+                    onChange={(event) => patchProfile("whatsappNumber", event.target.value)}
+                    placeholder="+51 999 999 999"
+                  />
+                </label>
+              </div>
+
               <div className="flex items-center justify-between gap-4 mb-5">
                 <h2 className="text-xl font-bold text-white">Enlaces sociales y CTA</h2>
                 <button
@@ -630,6 +969,189 @@ export default function LinkHubPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-white">
+                  {profile.businessType === "restaurant" ? "Carta" : "Catalogo"} digital
+                </h2>
+                <button
+                  type="button"
+                  onClick={addCatalogItem}
+                  disabled={profile.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" />
+                  Item
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-sm font-bold text-white">Categorias</p>
+                  <button
+                    type="button"
+                    onClick={addCategory}
+                    disabled={profile.catalogCategories.length >= MAX_LINK_HUB_CATALOG_CATEGORIES}
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white disabled:opacity-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Categoria
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {profile.catalogCategories.map((category) => (
+                    <div key={category.id} className="grid grid-cols-[90px_1fr_auto] gap-2">
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={category.emoji || ""}
+                        onChange={(event) => patchCategory(category.id, { emoji: event.target.value })}
+                        placeholder="🍽️"
+                      />
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={category.name}
+                        onChange={(event) => patchCategory(category.id, { name: event.target.value })}
+                        placeholder="Nombre de categoria"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeCategory(category.id)}
+                        disabled={profile.catalogCategories.length <= 1}
+                        className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-2 text-red-100 disabled:opacity-40"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {profile.catalogItems.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-sm font-bold text-white">Item</p>
+                      <button
+                        type="button"
+                        onClick={() => removeCatalogItem(item.id)}
+                        className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-red-100"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.title}
+                        onChange={(event) => patchCatalogItem(item.id, { title: event.target.value })}
+                        placeholder="Nombre del item"
+                      />
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.imageUrl}
+                        onChange={(event) => patchCatalogItem(item.id, { imageUrl: event.target.value })}
+                        placeholder="URL imagen"
+                      />
+                      <select
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.categoryId}
+                        onChange={(event) => patchCatalogItem(item.id, { categoryId: event.target.value })}
+                      >
+                        {profile.catalogCategories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.emoji || "•"} {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.emoji || ""}
+                        onChange={(event) => patchCatalogItem(item.id, { emoji: event.target.value })}
+                        placeholder="Emoji"
+                      />
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.price}
+                        onChange={(event) => patchCatalogItem(item.id, { price: event.target.value })}
+                        placeholder="Precio"
+                      />
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.compareAtPrice || ""}
+                        onChange={(event) => patchCatalogItem(item.id, { compareAtPrice: event.target.value })}
+                        placeholder="Precio referencial"
+                      />
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.badge || ""}
+                        onChange={(event) => patchCatalogItem(item.id, { badge: event.target.value })}
+                        placeholder="Badge"
+                      />
+                      <input
+                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={item.description}
+                        onChange={(event) => patchCatalogItem(item.id, { description: event.target.value })}
+                        placeholder="Descripcion"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+              <h2 className="text-xl font-bold text-white mb-5">Ubicacion</h2>
+              <div className="grid grid-cols-1 gap-4">
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Direccion</span>
+                  <textarea
+                    rows={2}
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white resize-none"
+                    value={profile.location.address}
+                    onChange={(event) => patchLocation("address", event.target.value)}
+                    placeholder="Av. Principal 123, Ciudad"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Google Maps embed URL</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+                    value={profile.location.mapEmbedUrl}
+                    onChange={(event) => patchLocation("mapEmbedUrl", event.target.value)}
+                    placeholder="https://www.google.com/maps/embed?..."
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Google Maps URL</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+                    value={profile.location.mapsUrl}
+                    onChange={(event) => patchLocation("mapsUrl", event.target.value)}
+                    placeholder="https://maps.google.com/..."
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Horarios (uno por linea)</span>
+                  <textarea
+                    rows={4}
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white resize-none"
+                    value={formatMultiline(profile.location.scheduleLines)}
+                    onChange={(event) => patchLocation("scheduleLines", parseMultiline(event.target.value))}
+                    placeholder="Lunes a Viernes: 10:00 am - 8:00 pm"
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Texto boton mapa</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
+                    value={profile.location.ctaLabel}
+                    onChange={(event) => patchLocation("ctaLabel", event.target.value)}
+                    placeholder="Ir ahora"
+                  />
+                </label>
               </div>
             </div>
 
@@ -755,6 +1277,117 @@ export default function LinkHubPage() {
                     RGB aleatorio
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-white">Catalogo digital online (planes)</h2>
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-200">
+                  <input
+                    type="checkbox"
+                    checked={profile.pricing.enabled}
+                    onChange={(event) => patchPricing("enabled", event.target.checked)}
+                    className="h-4 w-4 rounded border border-white/20 bg-black"
+                  />
+                  Mostrar planes
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Titulo</span>
+                  <input
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                    value={profile.pricing.title}
+                    onChange={(event) => patchPricing("title", event.target.value)}
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Subtitulo</span>
+                  <input
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                    value={profile.pricing.subtitle}
+                    onChange={(event) => patchPricing("subtitle", event.target.value)}
+                  />
+                </label>
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Etiqueta seccion</span>
+                  <input
+                    className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                    value={profile.sectionLabels.pricing}
+                    onChange={(event) => patchSectionLabel("pricing", event.target.value)}
+                    placeholder="Catalogo digital online"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {profile.pricing.plans.slice(0, 3).map((plan, index) => (
+                  <article
+                    key={plan.id}
+                    className={`rounded-2xl border p-4 ${
+                      plan.highlighted ? "border-amber-300/60 bg-amber-500/10" : "border-white/10 bg-black/30"
+                    }`}
+                  >
+                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-300 font-bold">Plan {index + 1}</p>
+                    <div className="mt-3 space-y-2">
+                      <input
+                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={plan.title}
+                        onChange={(event) => patchPlan(plan.id, { title: event.target.value })}
+                        placeholder="Plan"
+                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        <input
+                          className="rounded-xl border border-white/10 bg-zinc-900/80 px-2 py-2 text-sm text-white"
+                          value={plan.currency}
+                          onChange={(event) => patchPlan(plan.id, { currency: event.target.value })}
+                          placeholder="S/."
+                        />
+                        <input
+                          className="rounded-xl border border-white/10 bg-zinc-900/80 px-2 py-2 text-sm text-white"
+                          value={plan.normalPrice}
+                          onChange={(event) => patchPlan(plan.id, { normalPrice: event.target.value })}
+                          placeholder="450"
+                        />
+                        <input
+                          className="rounded-xl border border-white/10 bg-zinc-900/80 px-2 py-2 text-sm text-white"
+                          value={plan.price}
+                          onChange={(event) => patchPlan(plan.id, { price: event.target.value })}
+                          placeholder="350"
+                        />
+                      </div>
+                      <textarea
+                        rows={4}
+                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white resize-none"
+                        value={formatMultiline(plan.features)}
+                        onChange={(event) => patchPlan(plan.id, { features: parseMultiline(event.target.value) })}
+                        placeholder="Una caracteristica por linea"
+                      />
+                      <input
+                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={plan.ctaLabel}
+                        onChange={(event) => patchPlan(plan.id, { ctaLabel: event.target.value })}
+                        placeholder="Mas detalles"
+                      />
+                      <input
+                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                        value={plan.ctaUrl}
+                        onChange={(event) => patchPlan(plan.id, { ctaUrl: event.target.value })}
+                        placeholder="https://..."
+                      />
+                      <label className="inline-flex items-center gap-2 text-xs text-zinc-300">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(plan.highlighted)}
+                          onChange={(event) => patchPlan(plan.id, { highlighted: event.target.checked })}
+                        />
+                        Destacar
+                      </label>
+                    </div>
+                  </article>
+                ))}
               </div>
             </div>
 

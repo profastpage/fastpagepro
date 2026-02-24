@@ -95,3 +95,23 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Se reforzo ownership para escritura usando `documentId == auth.uid` y `request.resource.data.userId == auth.uid`.
 - Se mantiene lectura publica solo para perfiles `published == true`.
 - Se agrego compatibilidad con documentos legacy que no tenian `userId` en el recurso existente, evitando bloqueos de `update` para el propietario real.
+
+## Link Hub 2.0 Upgrade (2026-02-24)
+
+- Ruta privada: `/linkhub` y ruta publica: `/bio/[slug]`.
+- Link Hub ahora soporta modo de negocio:
+  - `restaurant`: tabs `contacto + carta + ubicacion`
+  - `general`: tabs `contacto + catalogo + ubicacion`
+- Se agrega modulo de catalogo digital online configurable:
+  - categorias y productos/items dinamicos
+  - precios, precio referencial, badge y emoji por item
+- Se agrega modulo de ubicacion:
+  - direccion
+  - mapa embebido y URL de Google Maps
+  - horarios en multilinea
+- Se agrega modulo de activacion comercial:
+  - seccion `Catalogo digital online`
+  - 3 planes editables (titulo, precios, features, CTA)
+- Persistencia:
+  - se mantienen documentos en `link_profiles/{uid}`
+  - se extiende schema sin romper documentos existentes mediante normalizacion de defaults.

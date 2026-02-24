@@ -12,6 +12,8 @@ import {
 
 export const LINK_HUB_COLLECTION = "link_profiles";
 export const MAX_LINK_HUB_LINKS = 12;
+export const MAX_LINK_HUB_CATALOG_CATEGORIES = 16;
+export const MAX_LINK_HUB_CATALOG_ITEMS = 120;
 
 export const LINK_HUB_THEME_STYLES = {
   midnight: {
@@ -169,7 +171,36 @@ export const LINK_HUB_THEME_STYLES = {
   },
 } as const;
 
+export const LINK_HUB_FONT_FAMILIES = {
+  modern: {
+    label: "Modern Sans",
+    stack: "'Poppins','Montserrat','Segoe UI',system-ui,sans-serif",
+  },
+  elegant: {
+    label: "Elegant Serif",
+    stack: "'Playfair Display','Merriweather',Georgia,serif",
+  },
+  energetic: {
+    label: "Energetic",
+    stack: "'Nunito','Trebuchet MS','Segoe UI',sans-serif",
+  },
+  editorial: {
+    label: "Editorial",
+    stack: "'DM Sans','Helvetica Neue',Arial,sans-serif",
+  },
+  mono: {
+    label: "Mono",
+    stack: "'JetBrains Mono','Fira Code','Courier New',monospace",
+  },
+} as const;
+
 export type LinkHubTheme = keyof typeof LINK_HUB_THEME_STYLES;
+export type LinkHubFontFamily = keyof typeof LINK_HUB_FONT_FAMILIES;
+
+export type LinkHubBusinessType = "restaurant" | "general";
+export type LinkHubButtonShape = "rounded" | "pill" | "square";
+export type LinkHubCardStyle = "glass" | "solid" | "outline";
+
 export type LinkHubLinkType =
   | "website"
   | "instagram"
@@ -187,18 +218,84 @@ export interface LinkHubLink {
   type: LinkHubLinkType;
 }
 
+export interface LinkHubSectionLabels {
+  contact: string;
+  menu: string;
+  catalog: string;
+  location: string;
+  pricing: string;
+}
+
+export interface LinkHubCatalogCategory {
+  id: string;
+  name: string;
+  emoji?: string;
+}
+
+export interface LinkHubCatalogItem {
+  id: string;
+  categoryId: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  price: string;
+  compareAtPrice?: string;
+  badge?: string;
+  emoji?: string;
+}
+
+export interface LinkHubLocation {
+  address: string;
+  mapEmbedUrl: string;
+  mapsUrl: string;
+  scheduleLines: string[];
+  ctaLabel: string;
+}
+
+export interface LinkHubPricingPlan {
+  id: string;
+  title: string;
+  normalPrice: string;
+  price: string;
+  currency: string;
+  features: string[];
+  ctaLabel: string;
+  ctaUrl: string;
+  highlighted?: boolean;
+}
+
+export interface LinkHubPricingConfig {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  plans: LinkHubPricingPlan[];
+}
+
 export interface LinkHubProfile {
   userId: string;
   slug: string;
   displayName: string;
   bio: string;
   avatarUrl: string;
+  coverImageUrl: string;
+  categoryLabel: string;
+  phoneNumber: string;
+  whatsappNumber: string;
+  businessType: LinkHubBusinessType;
+  fontFamily: LinkHubFontFamily;
+  buttonShape: LinkHubButtonShape;
+  cardStyle: LinkHubCardStyle;
+  sectionLabels: LinkHubSectionLabels;
   theme: LinkHubTheme;
   themePrimaryColor?: string;
   themeSecondaryColor?: string;
   published: boolean;
   publishedAt?: number;
   links: LinkHubLink[];
+  catalogCategories: LinkHubCatalogCategory[];
+  catalogItems: LinkHubCatalogItem[];
+  location: LinkHubLocation;
+  pricing: LinkHubPricingConfig;
   createdAt: number;
   updatedAt: number;
 }
@@ -211,6 +308,237 @@ export interface LinkHubUserSeed {
 }
 
 const HEX_COLOR_PATTERN = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/;
+
+function safeText(input: unknown) {
+  return String(input || "").replace(/\s+/g, " ").trim();
+}
+
+function createId(prefix: string): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}-${Date.now()}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getSafeLinkType(type: unknown): LinkHubLinkType {
+  const value = safeText(type).toLowerCase();
+  if (
+    value === "website" ||
+    value === "instagram" ||
+    value === "facebook" ||
+    value === "tiktok" ||
+    value === "youtube" ||
+    value === "linkedin" ||
+    value === "whatsapp" ||
+    value === "x"
+  ) {
+    return value;
+  }
+  return "website";
+}
+
+function getSafeBusinessType(type: unknown): LinkHubBusinessType {
+  return safeText(type).toLowerCase() === "general" ? "general" : "restaurant";
+}
+
+export function getSafeLinkHubFontFamily(type?: string): LinkHubFontFamily {
+  if (!type) return "modern";
+  if (type in LINK_HUB_FONT_FAMILIES) return type as LinkHubFontFamily;
+  return "modern";
+}
+
+export function getSafeLinkHubButtonShape(type?: string): LinkHubButtonShape {
+  if (type === "pill" || type === "square" || type === "rounded") return type;
+  return "rounded";
+}
+
+export function getSafeLinkHubCardStyle(type?: string): LinkHubCardStyle {
+  if (type === "glass" || type === "solid" || type === "outline") return type;
+  return "glass";
+}
+
+export function createLinkHubCatalogCategory(name = "", emoji = ""): LinkHubCatalogCategory {
+  return {
+    id: createId("cat"),
+    name,
+    emoji,
+  };
+}
+
+export function createLinkHubCatalogItem(categoryId = ""): LinkHubCatalogItem {
+  return {
+    id: createId("item"),
+    categoryId,
+    title: "",
+    description: "",
+    imageUrl: "",
+    price: "",
+    compareAtPrice: "",
+    badge: "",
+    emoji: "",
+  };
+}
+
+export function createLinkHubPricingPlan(seed?: Partial<LinkHubPricingPlan>): LinkHubPricingPlan {
+  return {
+    id: seed?.id || createId("plan"),
+    title: safeText(seed?.title) || "Plan",
+    normalPrice: safeText(seed?.normalPrice),
+    price: safeText(seed?.price),
+    currency: safeText(seed?.currency) || "S/.",
+    features: Array.isArray(seed?.features)
+      ? seed!.features.map((feature) => safeText(feature)).filter(Boolean)
+      : [],
+    ctaLabel: safeText(seed?.ctaLabel) || "Mas detalles",
+    ctaUrl: safeText(seed?.ctaUrl),
+    highlighted: Boolean(seed?.highlighted),
+  };
+}
+
+export function getDefaultLinkHubSectionLabels(): LinkHubSectionLabels {
+  return {
+    contact: "Contacto",
+    menu: "Carta",
+    catalog: "Catalogo",
+    location: "Ubicacion",
+    pricing: "Catalogo digital online",
+  };
+}
+
+export function createDefaultCatalogCategories(
+  businessType: LinkHubBusinessType,
+): LinkHubCatalogCategory[] {
+  if (businessType === "restaurant") {
+    return [
+      createLinkHubCatalogCategory("Ceviches", "??"),
+      createLinkHubCatalogCategory("Sudados", "??"),
+      createLinkHubCatalogCategory("Mariscos", "??"),
+      createLinkHubCatalogCategory("Bebidas", "??"),
+    ];
+  }
+
+  return [
+    createLinkHubCatalogCategory("Destacados", "?"),
+    createLinkHubCatalogCategory("Novedades", "??"),
+    createLinkHubCatalogCategory("Ofertas", "??"),
+    createLinkHubCatalogCategory("Accesorios", "???"),
+  ];
+}
+
+export function createDefaultCatalogItems(
+  categories: LinkHubCatalogCategory[],
+  businessType: LinkHubBusinessType,
+): LinkHubCatalogItem[] {
+  const firstCategoryId = categories[0]?.id || createId("cat");
+  const secondCategoryId = categories[1]?.id || firstCategoryId;
+
+  if (businessType === "restaurant") {
+    return [
+      {
+        ...createLinkHubCatalogItem(firstCategoryId),
+        title: "Ceviche de la casa",
+        description: "Pescado fresco, leche de tigre y camote glaseado.",
+        imageUrl:
+          "https://images.unsplash.com/photo-1625943555419-56a2cb596640?auto=format&fit=crop&w=900&q=80",
+        price: "27.00",
+        compareAtPrice: "30.00",
+        badge: "-10%",
+        emoji: "??",
+      },
+      {
+        ...createLinkHubCatalogItem(secondCategoryId),
+        title: "Sudado de pescado",
+        description: "Caldo concentrado con tomate, culantro y yuca cocida.",
+        imageUrl:
+          "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80",
+        price: "32.00",
+        compareAtPrice: "",
+        badge: "",
+        emoji: "??",
+      },
+    ];
+  }
+
+  return [
+    {
+      ...createLinkHubCatalogItem(firstCategoryId),
+      title: "Producto estrella",
+      description: "Articulo premium listo para venta online.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80",
+      price: "199.00",
+      compareAtPrice: "249.00",
+      badge: "HOT",
+      emoji: "?",
+    },
+    {
+      ...createLinkHubCatalogItem(secondCategoryId),
+      title: "Edicion limitada",
+      description: "Ideal para promociones y campanas de temporada.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80",
+      price: "149.00",
+      compareAtPrice: "179.00",
+      badge: "NEW",
+      emoji: "???",
+    },
+  ];
+}
+
+export function createDefaultPricingPlans(): LinkHubPricingPlan[] {
+  return [
+    createLinkHubPricingPlan({
+      title: "Plan Estandar",
+      normalPrice: "450",
+      price: "350",
+      currency: "S/.",
+      features: [
+        "Carga inicial de 50 productos/platos",
+        "Pedidos enviados a WhatsApp",
+        "1 banner promocional",
+        "Codigo QR personalizado",
+        "Soporte prioritario por 1 mes",
+      ],
+      ctaLabel: "Mas detalles",
+      ctaUrl: "",
+    }),
+    createLinkHubPricingPlan({
+      title: "Plan Avanzado",
+      normalPrice: "650",
+      price: "500",
+      currency: "S/.",
+      highlighted: true,
+      features: [
+        "Carga inicial de 100 productos/platos",
+        "Pedidos enviados a WhatsApp",
+        "2 banners promocionales",
+        "Google Maps con ubicacion",
+        "Soporte prioritario por 3 meses",
+      ],
+      ctaLabel: "Mas detalles",
+      ctaUrl: "",
+    }),
+    createLinkHubPricingPlan({
+      title: "Plan Premium",
+      normalPrice: "950",
+      price: "750",
+      currency: "S/.",
+      features: [
+        "Carga inicial de 200 productos/platos",
+        "Pedidos enviados a WhatsApp",
+        "3 banners promocionales",
+        "Video tutorial + capacitacion",
+        "Soporte prioritario por 6 meses",
+      ],
+      ctaLabel: "Mas detalles",
+      ctaUrl: "",
+    }),
+  ];
+}
 
 function normalizeHexToLong(hex: string): string {
   if (hex.length !== 4) return hex;
@@ -225,7 +553,7 @@ export function getSafeLinkHubTheme(theme?: string): LinkHubTheme {
 }
 
 export function normalizeHexColor(input: string | undefined, fallback: string): string {
-  const source = String(input || "").trim();
+  const source = safeText(input);
   if (!HEX_COLOR_PATTERN.test(source)) return fallback;
   return normalizeHexToLong(source.toLowerCase());
 }
@@ -250,10 +578,6 @@ export function getLinkHubThemeColors(
     primary: normalizeHexColor(primaryColor, preset.primary),
     secondary: normalizeHexColor(secondaryColor, preset.secondary),
   };
-}
-
-function safeText(input: string) {
-  return input.replace(/\s+/g, " ").trim();
 }
 
 export function sanitizeSlug(input: string): string {
@@ -285,31 +609,226 @@ export function isValidExternalUrl(url: string): boolean {
 
 export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfile {
   const now = Date.now();
-  const fallbackName = safeText(user.name || "") || "Creator";
-  const emailPrefix = safeText((user.email || "").split("@")[0] || "");
+  const fallbackName = safeText(user.name) || "Creator";
+  const emailPrefix = safeText(String(user.email || "").split("@")[0]);
   const slugBase = sanitizeSlug(fallbackName || emailPrefix || "creator");
   const baseTheme = LINK_HUB_THEME_STYLES.midnight;
+  const businessType: LinkHubBusinessType = "restaurant";
+  const categories = createDefaultCatalogCategories(businessType);
 
   return {
-    userId: user.uid || "",
+    userId: safeText(user.uid),
     slug: slugBase || "creator",
     displayName: fallbackName,
     bio: "",
-    avatarUrl: user.photoURL || "",
+    avatarUrl: safeText(user.photoURL),
+    coverImageUrl: "",
+    categoryLabel: businessType === "restaurant" ? "Cevicheria" : "Tienda online",
+    phoneNumber: "",
+    whatsappNumber: "",
+    businessType,
+    fontFamily: "modern",
+    buttonShape: "rounded",
+    cardStyle: "glass",
+    sectionLabels: getDefaultLinkHubSectionLabels(),
     theme: "midnight",
     themePrimaryColor: baseTheme.primary,
     themeSecondaryColor: baseTheme.secondary,
     published: false,
     links: [
       {
-        id: crypto.randomUUID(),
-        title: "Website",
+        id: createId("link"),
+        title: "Instagram",
+        url: "",
+        type: "instagram",
+      },
+      {
+        id: createId("link"),
+        title: "Web",
         url: "",
         type: "website",
       },
     ],
+    catalogCategories: categories,
+    catalogItems: createDefaultCatalogItems(categories, businessType),
+    location: {
+      address: "",
+      mapEmbedUrl: "",
+      mapsUrl: "",
+      scheduleLines: ["Lunes a Sabado: 11:30 am - 9:00 pm", "Domingos: 12:00 pm - 6:00 pm"],
+      ctaLabel: "Ir ahora",
+    },
+    pricing: {
+      enabled: true,
+      title: "Catalogo digital online",
+      subtitle: "Activa tu plataforma con el plan ideal para tu negocio.",
+      plans: createDefaultPricingPlans(),
+    },
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+export function normalizeLinkHubProfile(
+  input: Partial<LinkHubProfile> | null | undefined,
+  user: LinkHubUserSeed = {},
+): LinkHubProfile {
+  const base = buildDefaultLinkHubProfile({
+    uid: safeText(input?.userId) || safeText(user.uid),
+    name: safeText(input?.displayName) || safeText(user.name),
+    email: safeText(user.email),
+    photoURL: safeText(input?.avatarUrl) || safeText(user.photoURL),
+  });
+
+  if (!input) return base;
+
+  const businessType = getSafeBusinessType(input.businessType);
+
+  const rawLabels: Record<string, unknown> = isRecord(input.sectionLabels) ? input.sectionLabels : {};
+  const sectionLabels: LinkHubSectionLabels = {
+    contact: safeText(rawLabels["contact"]) || base.sectionLabels.contact,
+    menu: safeText(rawLabels["menu"]) || base.sectionLabels.menu,
+    catalog: safeText(rawLabels["catalog"]) || base.sectionLabels.catalog,
+    location: safeText(rawLabels["location"]) || base.sectionLabels.location,
+    pricing: safeText(rawLabels["pricing"]) || base.sectionLabels.pricing,
+  };
+
+  const defaultCategories = createDefaultCatalogCategories(businessType);
+  const rawCategories = Array.isArray(input.catalogCategories) ? input.catalogCategories : [];
+  const catalogCategories = rawCategories
+    .map((category) => ({
+      id: safeText(category?.id) || createId("cat"),
+      name: safeText(category?.name),
+      emoji: safeText(category?.emoji),
+    }))
+    .filter((category) => category.name.length > 0)
+    .slice(0, MAX_LINK_HUB_CATALOG_CATEGORIES);
+
+  const finalCategories = catalogCategories.length > 0 ? catalogCategories : defaultCategories;
+  const categoryIds = new Set(finalCategories.map((category) => category.id));
+  const firstCategoryId = finalCategories[0]?.id || createId("cat");
+
+  const rawItems = Array.isArray(input.catalogItems) ? input.catalogItems : [];
+  const catalogItems = rawItems
+    .map((item) => {
+      const rawCategoryId = safeText(item?.categoryId);
+      const categoryId = categoryIds.has(rawCategoryId) ? rawCategoryId : firstCategoryId;
+
+      return {
+        id: safeText(item?.id) || createId("item"),
+        categoryId,
+        title: safeText(item?.title),
+        description: safeText(item?.description),
+        imageUrl: safeText(item?.imageUrl),
+        price: safeText(item?.price),
+        compareAtPrice: safeText(item?.compareAtPrice),
+        badge: safeText(item?.badge),
+        emoji: safeText(item?.emoji),
+      } as LinkHubCatalogItem;
+    })
+    .filter((item) => item.title.length > 0)
+    .slice(0, MAX_LINK_HUB_CATALOG_ITEMS);
+
+  const finalItems =
+    catalogItems.length > 0
+      ? catalogItems
+      : createDefaultCatalogItems(finalCategories, businessType);
+
+  const rawLocation: Record<string, unknown> = isRecord(input.location) ? input.location : {};
+  const location: LinkHubLocation = {
+    address: safeText(rawLocation["address"]) || base.location.address,
+    mapEmbedUrl: safeText(rawLocation["mapEmbedUrl"]) || base.location.mapEmbedUrl,
+    mapsUrl: safeText(rawLocation["mapsUrl"]) || base.location.mapsUrl,
+    scheduleLines: Array.isArray(rawLocation["scheduleLines"])
+      ? rawLocation["scheduleLines"].map((line: unknown) => safeText(line)).filter(Boolean)
+      : base.location.scheduleLines,
+    ctaLabel: safeText(rawLocation["ctaLabel"]) || base.location.ctaLabel,
+  };
+
+  const defaultPlans = createDefaultPricingPlans();
+  const rawPricing: Record<string, unknown> = isRecord(input.pricing) ? input.pricing : {};
+  const rawPlans = Array.isArray(rawPricing["plans"]) ? rawPricing["plans"] : [];
+
+  const normalizedPlans = rawPlans
+    .map((plan: unknown, index: number) => {
+      const safePlan: Record<string, unknown> = isRecord(plan) ? plan : {};
+      const safeFeatures = Array.isArray(safePlan["features"]) ? safePlan["features"] : [];
+      return createLinkHubPricingPlan({
+        id: safeText(safePlan["id"]) || defaultPlans[index]?.id || createId("plan"),
+        title: safeText(safePlan["title"]) || defaultPlans[index]?.title || "Plan",
+        normalPrice: safeText(safePlan["normalPrice"]),
+        price: safeText(safePlan["price"]) || defaultPlans[index]?.price || "",
+        currency: safeText(safePlan["currency"]) || defaultPlans[index]?.currency || "S/.",
+        features: safeFeatures.length > 0
+          ? safeFeatures.map((feature: unknown) => safeText(feature)).filter(Boolean)
+          : defaultPlans[index]?.features || [],
+        ctaLabel: safeText(safePlan["ctaLabel"]) || defaultPlans[index]?.ctaLabel || "Mas detalles",
+        ctaUrl: safeText(safePlan["ctaUrl"]),
+        highlighted: Boolean(safePlan["highlighted"]),
+      });
+    })
+    .slice(0, 3);
+
+  while (normalizedPlans.length < 3) {
+    normalizedPlans.push(createLinkHubPricingPlan(defaultPlans[normalizedPlans.length]));
+  }
+
+  const links = (Array.isArray(input.links) ? input.links : base.links)
+    .map((link) => ({
+      id: safeText(link?.id) || createId("link"),
+      title: safeText(link?.title),
+      url: safeText(link?.url),
+      type: getSafeLinkType(link?.type),
+    }))
+    .filter((link) => link.title.length > 0 || link.url.length > 0)
+    .slice(0, MAX_LINK_HUB_LINKS);
+
+  const safeTheme = getSafeLinkHubTheme(safeText(input.theme) || base.theme);
+  const colors = getLinkHubThemeColors(
+    safeTheme,
+    safeText(input.themePrimaryColor) || base.themePrimaryColor,
+    safeText(input.themeSecondaryColor) || base.themeSecondaryColor,
+  );
+
+  const createdAtNumber = Number(input.createdAt);
+  const updatedAtNumber = Number(input.updatedAt);
+
+  return {
+    ...base,
+    ...input,
+    userId: safeText(input.userId) || base.userId,
+    slug: sanitizeSlug(safeText(input.slug) || base.slug),
+    displayName: safeText(input.displayName) || base.displayName,
+    bio: safeText(input.bio),
+    avatarUrl: safeText(input.avatarUrl) || base.avatarUrl,
+    coverImageUrl: safeText(input.coverImageUrl),
+    categoryLabel:
+      safeText(input.categoryLabel) ||
+      (businessType === "restaurant" ? "Restaurante" : "Tienda online"),
+    phoneNumber: safeText(input.phoneNumber),
+    whatsappNumber: safeText(input.whatsappNumber),
+    businessType,
+    fontFamily: getSafeLinkHubFontFamily(safeText(input.fontFamily) || base.fontFamily),
+    buttonShape: getSafeLinkHubButtonShape(safeText(input.buttonShape) || base.buttonShape),
+    cardStyle: getSafeLinkHubCardStyle(safeText(input.cardStyle) || base.cardStyle),
+    sectionLabels,
+    theme: safeTheme,
+    themePrimaryColor: colors.primary,
+    themeSecondaryColor: colors.secondary,
+    published: Boolean(input.published),
+    publishedAt: Number(input.publishedAt) || undefined,
+    links: links.length > 0 ? links : base.links,
+    catalogCategories: finalCategories,
+    catalogItems: finalItems,
+    location,
+    pricing: {
+      enabled: typeof rawPricing["enabled"] === "boolean" ? (rawPricing["enabled"] as boolean) : base.pricing.enabled,
+      title: safeText(rawPricing["title"]) || base.pricing.title,
+      subtitle: safeText(rawPricing["subtitle"]) || base.pricing.subtitle,
+      plans: normalizedPlans,
+    },
+    createdAt: Number.isFinite(createdAtNumber) && createdAtNumber > 0 ? createdAtNumber : base.createdAt,
+    updatedAt: Number.isFinite(updatedAtNumber) && updatedAtNumber > 0 ? updatedAtNumber : base.updatedAt,
   };
 }
 
@@ -319,10 +838,14 @@ export async function getLinkHubProfileByUserId(userId: string): Promise<LinkHub
   if (!snapshot.exists()) {
     return null;
   }
-  return {
-    ...(snapshot.data() as LinkHubProfile),
-    userId,
-  };
+
+  return normalizeLinkHubProfile(
+    {
+      ...(snapshot.data() as Partial<LinkHubProfile>),
+      userId,
+    },
+    { uid: userId },
+  );
 }
 
 export async function saveLinkHubProfileForUser(
@@ -330,14 +853,15 @@ export async function saveLinkHubProfileForUser(
   profile: LinkHubProfile,
 ): Promise<void> {
   const profileRef = doc(db, LINK_HUB_COLLECTION, userId);
-  await setDoc(
-    profileRef,
+  const normalized = normalizeLinkHubProfile(
     {
       ...profile,
       userId,
     },
-    { merge: true },
+    { uid: userId },
   );
+
+  await setDoc(profileRef, normalized, { merge: true });
 }
 
 export async function isLinkHubSlugAvailable(
@@ -358,10 +882,9 @@ export async function isLinkHubSlugAvailable(
 
     const first = snapshot.docs[0];
     return first.id === currentUserId;
-  } catch (error: any) {
-    const code = String(error?.code || "");
+  } catch (error: unknown) {
+    const code = safeText((error as { code?: string })?.code);
     if (code.includes("permission-denied")) {
-      // Keep publish flow usable if security rules disallow global slug scans.
       return true;
     }
     throw error;
@@ -385,5 +908,5 @@ export async function getPublishedLinkHubProfileBySlug(
     return null;
   }
 
-  return snapshot.docs[0].data() as LinkHubProfile;
+  return normalizeLinkHubProfile(snapshot.docs[0].data() as Partial<LinkHubProfile>);
 }
