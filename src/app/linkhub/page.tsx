@@ -1030,6 +1030,35 @@ export default function LinkHubPage() {
           </div>
         )}
 
+        <div className="sticky top-24 z-30 mb-6 rounded-3xl border border-white/10 bg-zinc-950/90 p-3 backdrop-blur-xl">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button
+              onClick={() => saveProfile("draft")}
+              disabled={isSaving}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Guardar borrador
+            </button>
+            <button
+              onClick={() => saveProfile("publish")}
+              disabled={isSaving}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300/40 bg-emerald-400/10 px-5 py-3 text-sm font-bold text-emerald-100"
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+              Publicar Link Hub
+            </button>
+            <button
+              onClick={copyPublicUrl}
+              disabled={!publicUrl}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-5 py-3 text-sm font-bold text-sky-100 disabled:opacity-50"
+            >
+              <Copy className="w-4 h-4" />
+              Copiar URL
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8">
           <section className="space-y-6">
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
@@ -1822,32 +1851,6 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-3">
-              <button
-                onClick={() => saveProfile("draft")}
-                disabled={isSaving}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white"
-              >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Guardar borrador
-              </button>
-              <button
-                onClick={() => saveProfile("publish")}
-                disabled={isSaving}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300/40 bg-emerald-400/10 px-5 py-3 text-sm font-bold text-emerald-100"
-              >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-                Publicar Link Hub
-              </button>
-              <button
-                onClick={copyPublicUrl}
-                disabled={!publicUrl}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-5 py-3 text-sm font-bold text-sky-100 disabled:opacity-50"
-              >
-                <Copy className="w-4 h-4" />
-                Copiar URL
-              </button>
-            </div>
           </section>
 
           <aside className="xl:sticky xl:top-28 h-fit">

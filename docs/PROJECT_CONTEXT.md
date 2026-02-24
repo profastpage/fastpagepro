@@ -214,3 +214,11 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Correccion transversal de textos:
   - se agrega `fixMojibake()` en `LanguageContext` para normalizar caracteres mal codificados (`Ã`, `Â`, etc.) al momento de traducir (`t(key)`).
   - esto mejora acentos, signos y legibilidad en landing y en el resto de pantallas que consumen el mismo contexto de idioma.
+
+## Link Hub Top Actions (2026-02-24)
+
+- Ruta privada ajustada: `/linkhub`.
+- UX de edicion:
+  - bloque de acciones `Guardar borrador / Publicar Link Hub / Copiar URL` movido a la parte superior del editor.
+  - bloque superior fijo (`sticky`) para acceso rapido continuo en mobile y desktop.
+  - se elimina duplicado de botones al final del formulario para simplificar flujo.
