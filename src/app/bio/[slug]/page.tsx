@@ -123,6 +123,40 @@ export default function PublicBioPage() {
     };
   }, [slug]);
 
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const catalogItems = profile?.catalogItems ?? [];
+  const categorySections = (profile?.catalogCategories ?? [])
+    .map((category) => {
+      const items = catalogItems.filter((item) => {
+        if (item.categoryId !== category.id) return false;
+        if (!normalizedSearch) return true;
+        return (
+          item.title.toLowerCase().includes(normalizedSearch) ||
+          item.description.toLowerCase().includes(normalizedSearch) ||
+          (item.badge || "").toLowerCase().includes(normalizedSearch)
+        );
+      });
+      return { ...category, items };
+    })
+    .filter((section) => section.items.length > 0);
+
+  const totalFilteredItems = categorySections.reduce((acc, section) => acc + section.items.length, 0);
+
+  useEffect(() => {
+    if (activeTab !== "catalog") return;
+    if (categorySections.length === 0) return;
+    const exists = categorySections.some((section) => section.id === selectedCategoryId);
+    if (!exists) {
+      setSelectedCategoryId(categorySections[0].id);
+    }
+  }, [activeTab, categorySections, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!selectedCategoryId) return;
+    const chip = categoryChipRefs.current[selectedCategoryId];
+    chip?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [selectedCategoryId]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -156,25 +190,6 @@ export default function PublicBioPage() {
   const catalogLabel =
     profile.businessType === "restaurant" ? profile.sectionLabels.menu : profile.sectionLabels.catalog;
 
-  const normalizedSearch = searchTerm.trim().toLowerCase();
-
-  const categorySections = profile.catalogCategories
-    .map((category) => {
-      const items = profile.catalogItems.filter((item) => {
-        if (item.categoryId !== category.id) return false;
-        if (!normalizedSearch) return true;
-        return (
-          item.title.toLowerCase().includes(normalizedSearch) ||
-          item.description.toLowerCase().includes(normalizedSearch) ||
-          (item.badge || "").toLowerCase().includes(normalizedSearch)
-        );
-      });
-      return { ...category, items };
-    })
-    .filter((section) => section.items.length > 0);
-
-  const totalFilteredItems = categorySections.reduce((acc, section) => acc + section.items.length, 0);
-
   async function handleShare() {
     if (!profile) return;
     const url = window.location.href;
@@ -194,21 +209,6 @@ export default function PublicBioPage() {
       // user cancelled share dialog
     }
   }
-
-  useEffect(() => {
-    if (activeTab !== "catalog") return;
-    if (categorySections.length === 0) return;
-    const exists = categorySections.some((section) => section.id === selectedCategoryId);
-    if (!exists) {
-      setSelectedCategoryId(categorySections[0].id);
-    }
-  }, [activeTab, categorySections, selectedCategoryId]);
-
-  useEffect(() => {
-    if (!selectedCategoryId) return;
-    const chip = categoryChipRefs.current[selectedCategoryId];
-    chip?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [selectedCategoryId]);
 
   function scrollToCategory(categoryId: string) {
     setSelectedCategoryId(categoryId);
