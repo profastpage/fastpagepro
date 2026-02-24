@@ -317,3 +317,12 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - se agregan `title`/`aria-label` para claridad y accesibilidad.
 - En desktop:
   - se mantiene el formato completo con texto en cada boton.
+
+## LinkHub FREE Theme Curation (2026-02-24)
+
+- Ruta privada ajustada: `/linkhub`.
+- Ajuste del catalogo de temas para plan `FREE`:
+  - se prioriza visual premium en los primeros temas disponibles:
+    - `Black Gold Deluxe` (negro + dorado)
+    - `Monochrome Luxe` (blanco/negro)
+  - al mantenerse la restriccion FREE por "primeros 3 temas", ambos quedan visibles y seleccionables sin upgrade.

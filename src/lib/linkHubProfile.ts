@@ -18,14 +18,26 @@ export const MAX_LINK_HUB_COVER_IMAGES = 5;
 
 export const LINK_HUB_THEME_STYLES = {
   midnight: {
-    label: "Midnight",
+    label: "Black Gold Deluxe",
     primary: "#fbbf24",
-    secondary: "#f97316",
+    secondary: "#f59e0b",
+    background: "from-zinc-950 via-black to-amber-950",
+    surface: "border-amber-200/25 bg-amber-100/10",
+    button:
+      "border-amber-200/35 bg-gradient-to-r from-amber-300/25 to-yellow-300/20 text-amber-50 hover:brightness-110",
+    muted: "text-amber-100/70",
+    accent: "text-amber-200",
+  },
+  graphite: {
+    label: "Monochrome Luxe",
+    primary: "#e5e7eb",
+    secondary: "#6b7280",
     background: "from-zinc-950 via-black to-zinc-900",
-    surface: "border-white/10 bg-white/[0.03]",
-    button: "border-white/15 bg-white/[0.06] text-white hover:bg-white/[0.12]",
-    muted: "text-zinc-400",
-    accent: "text-amber-300",
+    surface: "border-zinc-200/20 bg-zinc-100/10",
+    button:
+      "border-zinc-200/30 bg-gradient-to-r from-zinc-200/20 to-slate-300/20 text-zinc-50 hover:brightness-110",
+    muted: "text-zinc-300/75",
+    accent: "text-zinc-100",
   },
   sunset: {
     label: "Sunset",
@@ -70,17 +82,6 @@ export const LINK_HUB_THEME_STYLES = {
       "border-lime-200/30 bg-gradient-to-r from-lime-300/30 to-yellow-300/30 text-lime-50 hover:brightness-110",
     muted: "text-lime-100/75",
     accent: "text-yellow-200",
-  },
-  graphite: {
-    label: "Graphite",
-    primary: "#94a3b8",
-    secondary: "#64748b",
-    background: "from-zinc-900 via-zinc-950 to-black",
-    surface: "border-slate-200/20 bg-slate-100/10",
-    button:
-      "border-slate-200/30 bg-gradient-to-r from-slate-300/30 to-slate-500/25 text-slate-50 hover:brightness-110",
-    muted: "text-slate-200/70",
-    accent: "text-slate-100",
   },
   ruby: {
     label: "Ruby Flame",
