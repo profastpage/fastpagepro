@@ -129,3 +129,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Resiliencia para usuarios no tecnicos:
   - borrador local automatico en navegador por usuario autenticado
   - recuperacion de borrador local reciente al abrir `/linkhub`
+
+## Public Bio Responsive Nav Fix (2026-02-24)
+
+- Ruta publica ajustada: `/bio/[slug]`.
+- Mobile:
+  - menu inferior fijo, centrado y alineado con safe-area
+  - botones de `contacto/carta- catalogo/ubicacion` con ancho uniforme y texto truncado para evitar desbordes
+- Desktop:
+  - layout expandido (sin marco tipo telefono angosto)
+  - tabs de navegacion visibles arriba del contenido principal
+- Se mantiene compatibilidad de datos y comportamiento funcional de secciones.

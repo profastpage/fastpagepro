@@ -179,18 +179,21 @@ export default function PublicBioPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black px-2 py-3 md:py-8" style={pageStyle}>
-      <div className="mx-auto w-full max-w-md rounded-[2.25rem] border overflow-hidden text-white" style={wrapperStyle}>
+    <div className="min-h-screen bg-black px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
+      <div
+        className="mx-auto w-full max-w-md md:max-w-5xl rounded-[2.25rem] md:rounded-[2.5rem] border overflow-hidden text-white"
+        style={wrapperStyle}
+      >
         <div className="relative">
           {profile.coverImageUrl ? (
             <img
               src={profile.coverImageUrl}
               alt="Portada"
-              className="h-40 w-full object-cover"
+              className="h-40 md:h-64 w-full object-cover"
             />
           ) : (
             <div
-              className="h-40 w-full"
+              className="h-40 md:h-64 w-full"
               style={{
                 background: `linear-gradient(130deg, ${hexToRgba(colors.primary, 0.5)} 0%, ${hexToRgba(colors.secondary, 0.44)} 100%)`,
               }}
@@ -202,12 +205,12 @@ export default function PublicBioPage() {
               <img
                 src={profile.avatarUrl}
                 alt={profile.displayName}
-                className="h-24 w-24 rounded-full border-4 object-cover bg-black"
+                className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 object-cover bg-black"
                 style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
               />
             ) : (
               <div
-                className="h-24 w-24 rounded-full border-4 flex items-center justify-center text-3xl font-black bg-black"
+                className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black bg-black"
                 style={{ borderColor: hexToRgba(colors.primary, 0.95) }}
               >
                 {profile.displayName.slice(0, 1).toUpperCase()}
@@ -216,15 +219,15 @@ export default function PublicBioPage() {
           </div>
         </div>
 
-        <div className="px-5 pt-16 pb-4 text-center">
-          <h1 className="text-4xl font-black tracking-tight">{profile.displayName}</h1>
-          <p className="mt-2 text-sm uppercase tracking-[0.18em]" style={{ color: hexToRgba(colors.primary, 0.95) }}>
+        <div className="px-5 md:px-8 pt-16 md:pt-20 pb-4 text-center">
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight">{profile.displayName}</h1>
+          <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: hexToRgba(colors.primary, 0.95) }}>
             {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
           </p>
-          {profile.bio && <p className="mt-3 text-sm text-zinc-100/85">{profile.bio}</p>}
+          {profile.bio && <p className="mt-3 text-sm md:text-base text-zinc-100/85">{profile.bio}</p>}
         </div>
 
-        <div className="px-4 pb-4 flex items-center justify-center flex-wrap gap-2">
+        <div className="px-4 md:px-8 pb-4 flex items-center justify-center flex-wrap gap-2">
           {profile.links
             .filter((link) => link.url)
             .slice(0, 8)
@@ -236,7 +239,7 @@ export default function PublicBioPage() {
                   href={link.url}
                   target="_blank"
                   rel="noreferrer"
-                  className={`inline-flex h-11 w-11 items-center justify-center border text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${buttonRadiusClass}`}
+                  className={`inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center border text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${buttonRadiusClass}`}
                   style={interactiveStyle}
                   aria-label={link.title}
                 >
@@ -246,7 +249,40 @@ export default function PublicBioPage() {
             })}
         </div>
 
-        <div className="px-4 pb-4">
+        <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab("contact")}
+            className={`rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition ${
+              activeTab === "contact" ? "text-white" : "text-zinc-300"
+            }`}
+            style={activeTab === "contact" ? interactiveStyle : { borderColor: hexToRgba(colors.primary, 0.32) }}
+          >
+            {profile.sectionLabels.contact}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("catalog")}
+            className={`rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition ${
+              activeTab === "catalog" ? "text-white" : "text-zinc-300"
+            }`}
+            style={activeTab === "catalog" ? interactiveStyle : { borderColor: hexToRgba(colors.primary, 0.32) }}
+          >
+            {catalogLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("location")}
+            className={`rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition ${
+              activeTab === "location" ? "text-white" : "text-zinc-300"
+            }`}
+            style={activeTab === "location" ? interactiveStyle : { borderColor: hexToRgba(colors.primary, 0.32) }}
+          >
+            {profile.sectionLabels.location}
+          </button>
+        </div>
+
+        <div className="px-4 md:px-8 pb-24 md:pb-8">
           {activeTab === "contact" && (
             <section className={`rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28) }}>
               <h2 className="text-2xl font-black">{profile.sectionLabels.contact}</h2>
@@ -336,7 +372,7 @@ export default function PublicBioPage() {
                         : { borderColor: hexToRgba(colors.primary, 0.35) }
                     }
                   >
-                    <span className="mr-1">{category.emoji || (profile.businessType === "restaurant" ? "???" : "???")}</span>
+                    <span className="mr-1">{category.emoji || category.name.slice(0, 1).toUpperCase()}</span>
                     {category.name}
                   </button>
                 ))}
@@ -363,7 +399,9 @@ export default function PublicBioPage() {
                           className="h-20 w-20 rounded-xl flex items-center justify-center text-2xl"
                           style={interactiveStyle}
                         >
-                          {item.emoji || (profile.businessType === "restaurant" ? "???" : "??")}
+                          <span className="text-[10px] font-black uppercase tracking-[0.08em]">
+                            {item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
+                          </span>
                         </div>
                       )}
 
@@ -492,12 +530,15 @@ export default function PublicBioPage() {
           )}
         </div>
 
-        <div className="sticky bottom-0 z-20 border-t border-white/10 bg-black/85 px-1 pb-1 pt-1 backdrop-blur">
+      </div>
+
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+        <div className="mx-auto w-full max-w-md rounded-2xl border border-white/15 bg-black/90 p-1 backdrop-blur-xl">
           <div className="grid grid-cols-3 gap-1">
             <button
               type="button"
               onClick={() => setActiveTab("contact")}
-              className={`rounded-xl px-2 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] ${
+              className={`h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight ${
                 activeTab === "contact" ? "text-white" : "text-zinc-300"
               }`}
               style={activeTab === "contact" ? interactiveStyle : undefined}
@@ -505,13 +546,13 @@ export default function PublicBioPage() {
               <div className="mx-auto mb-1 h-4 w-4">
                 <Phone className="h-4 w-4" />
               </div>
-              {profile.sectionLabels.contact}
+              <span className="block truncate">{profile.sectionLabels.contact}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("catalog")}
-              className={`rounded-xl px-2 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] ${
+              className={`h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight ${
                 activeTab === "catalog" ? "text-white" : "text-zinc-300"
               }`}
               style={activeTab === "catalog" ? interactiveStyle : undefined}
@@ -519,13 +560,13 @@ export default function PublicBioPage() {
               <div className="mx-auto mb-1 h-4 w-4">
                 {profile.businessType === "restaurant" ? <Menu className="h-4 w-4" /> : <Shirt className="h-4 w-4" />}
               </div>
-              {catalogLabel}
+              <span className="block truncate">{catalogLabel}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("location")}
-              className={`rounded-xl px-2 py-2 text-center text-[11px] font-black uppercase tracking-[0.08em] ${
+              className={`h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight ${
                 activeTab === "location" ? "text-white" : "text-zinc-300"
               }`}
               style={activeTab === "location" ? interactiveStyle : undefined}
@@ -533,7 +574,7 @@ export default function PublicBioPage() {
               <div className="mx-auto mb-1 h-4 w-4">
                 <MapPin className="h-4 w-4" />
               </div>
-              {profile.sectionLabels.location}
+              <span className="block truncate">{profile.sectionLabels.location}</span>
             </button>
           </div>
         </div>
