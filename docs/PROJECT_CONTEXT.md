@@ -299,3 +299,11 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
     - `BUSINESS/PRO`: personalizacion avanzada de colores
     - `PRO`: funciones IA de sugerencia automatica
   - `Hub` y `LinkHub` muestran badge de plan activo y banner de expiracion.
+
+## Public Bio Header Compact Section Title (2026-02-24)
+
+- Ruta publica ajustada: `/bio/[slug]`.
+- UX en `carta/catalogo` y `ubicacion`:
+  - titulo de seccion movido al header superior, centrado (`CARTA`/`CATALOGO`/`UBICACION`).
+  - se elimina el bloque grande intermedio de titulo para liberar altura util del contenido.
+  - resultado: mayor espacio visible para buscador, chips y lista de productos en mobile y desktop.

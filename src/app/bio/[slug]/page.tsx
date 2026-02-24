@@ -414,6 +414,11 @@ export default function PublicBioPage() {
               <Share2 className="h-4 w-4" />
             </button>
           </div>
+          {activeTab !== "contact" && (
+            <p className="mt-2 text-center text-2xl font-black tracking-tight uppercase md:text-3xl">
+              {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
+            </p>
+          )}
           {shareFeedback && <p className="mt-2 text-xs font-semibold text-emerald-200">{shareFeedback}</p>}
         </div>
 
@@ -518,13 +523,7 @@ export default function PublicBioPage() {
               })}
             </div>
           </>
-        ) : (
-          <div className="px-5 md:px-8 py-6 md:py-8 text-center border-b border-white/10">
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight uppercase">
-              {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
-            </h1>
-          </div>
-        )}
+        ) : null}
 
         <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6">
           <button
