@@ -693,6 +693,115 @@ export function normalizeLinkUrl(rawUrl: string): string {
   return `https://${value}`;
 }
 
+function extractIframeSrc(raw: string): string {
+  const match = raw.match(/<iframe[^>]*src=["']([^"']+)["'][^>]*>/i);
+  if (!match) return raw;
+  return safeText(match[1]);
+}
+
+function decodeHtmlEntities(raw: string): string {
+  return raw
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
+function extractGoogleMapsQueryFromUrl(input: URL): string {
+  const byQuery = input.searchParams.get("q") || input.searchParams.get("query");
+  if (byQuery) return byQuery;
+
+  const atMatch = input.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    return `${atMatch[1]},${atMatch[2]}`;
+  }
+
+  const placeMatch = input.pathname.match(/\/place\/([^/]+)/i);
+  if (placeMatch?.[1]) {
+    return placeMatch[1].replace(/\+/g, " ");
+  }
+
+  return "";
+}
+
+function normalizeGoogleMapsSource(raw: string): string {
+  const cleaned = decodeHtmlEntities(extractIframeSrc(raw)).trim();
+  if (!cleaned) return "";
+
+  if (/^https?:\/\//i.test(cleaned)) return cleaned;
+  if (/^www\./i.test(cleaned)) return `https://${cleaned}`;
+  if (/^\/?maps/i.test(cleaned)) {
+    return `https://www.google.com/${cleaned.replace(/^\/+/, "")}`;
+  }
+  return cleaned;
+}
+
+function toGoogleMapsPublicUrl(raw: string, fallbackAddress = ""): string {
+  const source = normalizeGoogleMapsSource(raw);
+  if (!source) {
+    const address = safeText(fallbackAddress);
+    return address
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+      : "";
+  }
+
+  if (!/^https?:\/\//i.test(source)) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(source)}`;
+  }
+
+  try {
+    const parsed = new URL(source);
+    return parsed.toString();
+  } catch {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(source)}`;
+  }
+}
+
+function toGoogleMapsEmbedUrl(rawEmbed: string, rawMaps: string, fallbackAddress = ""): string {
+  const source = normalizeGoogleMapsSource(rawEmbed) || normalizeGoogleMapsSource(rawMaps);
+
+  if (!source) {
+    const address = safeText(fallbackAddress);
+    return address ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed` : "";
+  }
+
+  if (!/^https?:\/\//i.test(source)) {
+    return `https://www.google.com/maps?q=${encodeURIComponent(source)}&output=embed`;
+  }
+
+  try {
+    const parsed = new URL(source);
+    const isGoogleHost = /(^|\.)google\./i.test(parsed.hostname) || /maps\.app\.goo\.gl$/i.test(parsed.hostname);
+    if (!isGoogleHost) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(source)}&output=embed`;
+    }
+
+    if (parsed.pathname.includes("/maps/embed")) return parsed.toString();
+    if (parsed.searchParams.get("output") === "embed") return parsed.toString();
+
+    const query = extractGoogleMapsQueryFromUrl(parsed);
+    if (query) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+    }
+
+    return `https://www.google.com/maps?q=${encodeURIComponent(parsed.toString())}&output=embed`;
+  } catch {
+    return `https://www.google.com/maps?q=${encodeURIComponent(source)}&output=embed`;
+  }
+}
+
+export function normalizeGoogleMapsLocationInput(
+  mapEmbedInput: string,
+  mapsInput: string,
+  fallbackAddress = "",
+): { mapEmbedUrl: string; mapsUrl: string } {
+  return {
+    mapEmbedUrl: toGoogleMapsEmbedUrl(mapEmbedInput, mapsInput, fallbackAddress),
+    mapsUrl: toGoogleMapsPublicUrl(mapsInput || mapEmbedInput, fallbackAddress),
+  };
+}
+
 export function isValidExternalUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -840,10 +949,16 @@ export function normalizeLinkHubProfile(
       : createDefaultCatalogItems(finalCategories, businessType);
 
   const rawLocation: Record<string, unknown> = isRecord(input.location) ? input.location : {};
+  const rawAddress = safeText(rawLocation["address"]);
+  const normalizedMaps = normalizeGoogleMapsLocationInput(
+    String(rawLocation["mapEmbedUrl"] || ""),
+    String(rawLocation["mapsUrl"] || ""),
+    rawAddress,
+  );
   const location: LinkHubLocation = {
-    address: safeText(rawLocation["address"]) || base.location.address,
-    mapEmbedUrl: safeText(rawLocation["mapEmbedUrl"]) || base.location.mapEmbedUrl,
-    mapsUrl: safeText(rawLocation["mapsUrl"]) || base.location.mapsUrl,
+    address: rawAddress || base.location.address,
+    mapEmbedUrl: normalizedMaps.mapEmbedUrl || base.location.mapEmbedUrl,
+    mapsUrl: normalizedMaps.mapsUrl || base.location.mapsUrl,
     scheduleLines: Array.isArray(rawLocation["scheduleLines"])
       ? rawLocation["scheduleLines"].map((line: unknown) => safeText(line)).filter(Boolean)
       : base.location.scheduleLines,

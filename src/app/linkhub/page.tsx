@@ -33,6 +33,7 @@ import {
   normalizeHexColor,
   normalizeLinkUrl,
   normalizeLinkHubProfile,
+  normalizeGoogleMapsLocationInput,
   sanitizeSlug,
   saveLinkHubProfileForUser,
   MAX_LINK_HUB_LINKS,
@@ -1354,6 +1355,11 @@ export default function LinkHubPage() {
         .filter(Boolean)
         .filter((url, index, source) => source.indexOf(url) === index)
         .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+      const normalizedMaps = normalizeGoogleMapsLocationInput(
+        profile.location.mapEmbedUrl.trim(),
+        profile.location.mapsUrl.trim(),
+        profile.location.address.trim(),
+      );
 
       const nextProfile = normalizeLinkHubProfile(
         {
@@ -1377,8 +1383,8 @@ export default function LinkHubPage() {
           location: {
             ...profile.location,
             address: profile.location.address.trim(),
-            mapEmbedUrl: profile.location.mapEmbedUrl.trim(),
-            mapsUrl: profile.location.mapsUrl.trim(),
+            mapEmbedUrl: normalizedMaps.mapEmbedUrl,
+            mapsUrl: normalizedMaps.mapsUrl,
             ctaLabel: profile.location.ctaLabel.trim() || "Ir ahora",
             scheduleLines: profile.location.scheduleLines.map((line) => line.trim()).filter(Boolean),
           },
@@ -2088,16 +2094,16 @@ export default function LinkHubPage() {
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Google Maps embed URL</span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Google Maps (link o iframe)</span>
                   <input
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
                     value={profile.location.mapEmbedUrl}
                     onChange={(event) => patchLocation("mapEmbedUrl", event.target.value)}
-                    placeholder="https://www.google.com/maps/embed?..."
+                    placeholder="Pega link de Maps o codigo iframe"
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Google Maps URL</span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Google Maps URL (abrir en app)</span>
                   <input
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white"
                     value={profile.location.mapsUrl}

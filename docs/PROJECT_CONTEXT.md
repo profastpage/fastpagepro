@@ -360,3 +360,18 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - en rubro restaurante, la categoria de temas queda forzada a `food`.
   - grilla de temas muestra solo los temas exclusivos de la categoria activa.
   - contador muestra total global de temas y cantidad exclusiva por categoria activa.
+
+## Google Maps Normalization Fix (2026-02-25)
+
+- Ruta privada ajustada: `/linkhub` (seccion ubicacion).
+- Normalizacion robusta de entrada para mapas:
+  - acepta `link de Google Maps`
+  - acepta `URL embed`
+  - acepta `codigo <iframe ...>`
+  - acepta `direccion en texto`
+- Persistencia:
+  - convierte automaticamente a `mapEmbedUrl` valido para iframe.
+  - genera `mapsUrl` valido para abrir direccion en app/navegador.
+- Resultado:
+  - se evita error 404 al renderizar mapa cuando el usuario pega formatos mixtos.
+  - cada cliente puede pegar su enlace/direccion y ver la ubicacion correctamente en la pagina publica.
