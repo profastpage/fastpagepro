@@ -344,3 +344,19 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - barra superior en `carta/catalogo` y `ubicacion` mas compacta en mobile (estilo delgado y encuadrado)
   - el titulo de seccion (`CARTA`/`UBICACION`) se muestra centrado dentro de la barra superior compacta
   - botones de contacto mejorados en desktop para evitar recortes y mantener alineacion estable.
+
+## LinkHub 20 Themes by Category (2026-02-25)
+
+- Ruta privada ajustada: `/linkhub`.
+- Catalogo de temas ampliado a `20` temas visuales.
+- Nuevo eje de segmentacion de temas por categoria:
+  - `food` (comida)
+  - `fashion` (ropa)
+  - `technology` (tecnologia)
+- Persistencia:
+  - nuevo campo `themeCategory` en `LinkHubProfile` con normalizacion backward compatible.
+- UX de editor:
+  - selector de `Categoria visual` en dashboard.
+  - en rubro restaurante, la categoria de temas queda forzada a `food`.
+  - grilla de temas muestra solo los temas exclusivos de la categoria activa.
+  - contador muestra total global de temas y cantidad exclusiva por categoria activa.

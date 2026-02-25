@@ -160,6 +160,72 @@ export const LINK_HUB_THEME_STYLES = {
     muted: "text-violet-100/75",
     accent: "text-cyan-200",
   },
+  saffron: {
+    label: "Saffron Kitchen",
+    primary: "#f59e0b",
+    secondary: "#ef4444",
+    background: "from-amber-950 via-orange-950 to-rose-950",
+    surface: "border-amber-200/25 bg-amber-100/12",
+    button:
+      "border-amber-200/35 bg-gradient-to-r from-amber-300/30 to-red-300/25 text-amber-50 hover:brightness-110",
+    muted: "text-amber-100/75",
+    accent: "text-red-200",
+  },
+  crimsonChef: {
+    label: "Crimson Chef",
+    primary: "#ef4444",
+    secondary: "#f97316",
+    background: "from-red-950 via-zinc-950 to-orange-950",
+    surface: "border-red-200/20 bg-red-100/10",
+    button:
+      "border-red-200/30 bg-gradient-to-r from-red-300/30 to-orange-300/25 text-red-50 hover:brightness-110",
+    muted: "text-red-100/75",
+    accent: "text-orange-200",
+  },
+  runway: {
+    label: "Runway Noir",
+    primary: "#111827",
+    secondary: "#9ca3af",
+    background: "from-zinc-950 via-slate-950 to-zinc-900",
+    surface: "border-zinc-200/20 bg-zinc-100/10",
+    button:
+      "border-zinc-200/30 bg-gradient-to-r from-zinc-300/25 to-slate-300/20 text-zinc-50 hover:brightness-110",
+    muted: "text-zinc-200/75",
+    accent: "text-zinc-100",
+  },
+  blushBoutique: {
+    label: "Blush Boutique",
+    primary: "#ec4899",
+    secondary: "#f472b6",
+    background: "from-fuchsia-950 via-rose-950 to-pink-950",
+    surface: "border-pink-200/20 bg-pink-100/10",
+    button:
+      "border-pink-200/30 bg-gradient-to-r from-pink-300/30 to-rose-300/25 text-pink-50 hover:brightness-110",
+    muted: "text-pink-100/75",
+    accent: "text-rose-200",
+  },
+  neonCircuit: {
+    label: "Neon Circuit",
+    primary: "#22d3ee",
+    secondary: "#22c55e",
+    background: "from-cyan-950 via-zinc-950 to-emerald-950",
+    surface: "border-cyan-200/20 bg-cyan-100/10",
+    button:
+      "border-cyan-200/30 bg-gradient-to-r from-cyan-300/30 to-emerald-300/25 text-cyan-50 hover:brightness-110",
+    muted: "text-cyan-100/75",
+    accent: "text-emerald-200",
+  },
+  titanTech: {
+    label: "Titan Tech",
+    primary: "#3b82f6",
+    secondary: "#06b6d4",
+    background: "from-slate-950 via-blue-950 to-cyan-950",
+    surface: "border-blue-200/20 bg-blue-100/10",
+    button:
+      "border-blue-200/30 bg-gradient-to-r from-blue-300/30 to-cyan-300/25 text-blue-50 hover:brightness-110",
+    muted: "text-blue-100/75",
+    accent: "text-cyan-200",
+  },
   rgb: {
     label: "RGB Custom",
     primary: "#ff0055",
@@ -200,9 +266,22 @@ export type LinkHubTheme = keyof typeof LINK_HUB_THEME_STYLES;
 export type LinkHubFontFamily = keyof typeof LINK_HUB_FONT_FAMILIES;
 
 export type LinkHubBusinessType = "restaurant" | "general";
+export type LinkHubThemeCategory = "food" | "fashion" | "technology";
 export type LinkHubButtonShape = "rounded" | "pill" | "square";
 export type LinkHubCardStyle = "glass" | "solid" | "outline";
 export type LinkHubTextTone = "white" | "black" | "gold" | "blackGold";
+
+export const LINK_HUB_THEME_CATEGORY_LABELS: Record<LinkHubThemeCategory, string> = {
+  food: "Comida",
+  fashion: "Ropa",
+  technology: "Tecnologia",
+};
+
+export const LINK_HUB_THEME_CATEGORY_MAP: Record<LinkHubThemeCategory, LinkHubTheme[]> = {
+  food: ["midnight", "sunset", "sandstorm", "ruby", "coral", "saffron", "crimsonChef"],
+  fashion: ["graphite", "runway", "blushBoutique", "violet", "jade", "aurora"],
+  technology: ["ocean", "cobalt", "obsidian", "neon", "neonCircuit", "titanTech", "rgb"],
+};
 
 export type LinkHubLinkType =
   | "website"
@@ -286,6 +365,7 @@ export interface LinkHubProfile {
   phoneNumber: string;
   whatsappNumber: string;
   businessType: LinkHubBusinessType;
+  themeCategory: LinkHubThemeCategory;
   fontFamily: LinkHubFontFamily;
   buttonShape: LinkHubButtonShape;
   cardStyle: LinkHubCardStyle;
@@ -369,6 +449,11 @@ export function getSafeLinkHubCardStyle(type?: string): LinkHubCardStyle {
 export function getSafeLinkHubTextTone(type?: string): LinkHubTextTone {
   if (type === "black" || type === "gold" || type === "blackGold" || type === "white") return type;
   return "white";
+}
+
+export function getSafeLinkHubThemeCategory(type?: string): LinkHubThemeCategory {
+  if (type === "food" || type === "fashion" || type === "technology") return type;
+  return "food";
 }
 
 export function createLinkHubCatalogCategory(name = "", emoji = ""): LinkHubCatalogCategory {
@@ -638,6 +723,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     phoneNumber: "",
     whatsappNumber: "",
     businessType,
+    themeCategory: "food",
     fontFamily: "modern",
     buttonShape: "rounded",
     cardStyle: "glass",
@@ -695,6 +781,13 @@ export function normalizeLinkHubProfile(
   if (!input) return base;
 
   const businessType = getSafeBusinessType(input.businessType);
+  const requestedThemeCategory = getSafeLinkHubThemeCategory(safeText(input.themeCategory));
+  const themeCategory =
+    businessType === "restaurant"
+      ? "food"
+      : requestedThemeCategory === "food"
+        ? "fashion"
+        : requestedThemeCategory;
 
   const rawLabels: Record<string, unknown> = isRecord(input.sectionLabels) ? input.sectionLabels : {};
   const sectionLabels: LinkHubSectionLabels = {
@@ -832,6 +925,7 @@ export function normalizeLinkHubProfile(
     phoneNumber: safeText(input.phoneNumber),
     whatsappNumber: safeText(input.whatsappNumber),
     businessType,
+    themeCategory,
     fontFamily: getSafeLinkHubFontFamily(safeText(input.fontFamily) || base.fontFamily),
     buttonShape: getSafeLinkHubButtonShape(safeText(input.buttonShape) || base.buttonShape),
     cardStyle: getSafeLinkHubCardStyle(safeText(input.cardStyle) || base.cardStyle),

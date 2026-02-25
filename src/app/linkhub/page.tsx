@@ -10,10 +10,13 @@ import {
   createLinkHubCatalogItem,
   getLinkHubProfileByUserId,
   getLinkHubThemeColors,
+  getSafeLinkHubThemeCategory,
   getSafeLinkHubTheme,
   hexToRgba,
   isLinkHubSlugAvailable,
   isValidExternalUrl,
+  LINK_HUB_THEME_CATEGORY_LABELS,
+  LINK_HUB_THEME_CATEGORY_MAP,
   LINK_HUB_THEME_STYLES,
   LinkHubLink,
   LinkHubLinkType,
@@ -21,6 +24,7 @@ import {
   LinkHubCatalogItem,
   LinkHubPricingPlan,
   LinkHubProfile,
+  LinkHubThemeCategory,
   LinkHubTextTone,
   LinkHubTheme,
   MAX_LINK_HUB_CATALOG_CATEGORIES,
@@ -494,6 +498,31 @@ export default function LinkHubPage() {
     });
   }, [profile]);
 
+  useEffect(() => {
+    if (!profile) return;
+    const normalizedCategory =
+      profile.businessType === "restaurant"
+        ? "food"
+        : getSafeLinkHubThemeCategory(profile.themeCategory);
+    const allowedThemes = LINK_HUB_THEME_CATEGORY_MAP[normalizedCategory];
+    if (allowedThemes.length === 0) return;
+    const safeTheme = allowedThemes.includes(profile.theme) ? profile.theme : allowedThemes[0];
+    if (normalizedCategory === profile.themeCategory && safeTheme === profile.theme) return;
+
+    const preset = LINK_HUB_THEME_STYLES[safeTheme];
+    setProfile((prev) => {
+      if (!prev) return prev;
+      if (prev.themeCategory === normalizedCategory && prev.theme === safeTheme) return prev;
+      return {
+        ...prev,
+        themeCategory: normalizedCategory,
+        theme: safeTheme,
+        themePrimaryColor: preset.primary,
+        themeSecondaryColor: preset.secondary,
+      };
+    });
+  }, [profile]);
+
   const publicUrl = useMemo(() => {
     if (!profile?.slug || !origin) return "";
     return `${origin}/bio/${profile.slug}`;
@@ -510,6 +539,15 @@ export default function LinkHubPage() {
       ...colors,
     };
   }, [profile?.theme, profile?.themePrimaryColor, profile?.themeSecondaryColor]);
+
+  const activeThemeCategory = useMemo(() => {
+    if (profile?.businessType === "restaurant") return "food" as LinkHubThemeCategory;
+    return getSafeLinkHubThemeCategory(profile?.themeCategory);
+  }, [profile?.businessType, profile?.themeCategory]);
+
+  const availableThemeKeys = useMemo(() => {
+    return LINK_HUB_THEME_CATEGORY_MAP[activeThemeCategory];
+  }, [activeThemeCategory]);
 
   const catalogLabel =
     profile?.businessType === "restaurant" ? profile?.sectionLabels.menu : profile?.sectionLabels.catalog;
@@ -620,6 +658,24 @@ export default function LinkHubPage() {
     });
   }
 
+  function changeThemeCategory(nextCategory: LinkHubThemeCategory) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const safeCategory =
+        prev.businessType === "restaurant" ? "food" : getSafeLinkHubThemeCategory(nextCategory);
+      const allowedThemes = LINK_HUB_THEME_CATEGORY_MAP[safeCategory];
+      const nextTheme = allowedThemes.includes(prev.theme) ? prev.theme : allowedThemes[0];
+      const nextPreset = LINK_HUB_THEME_STYLES[nextTheme];
+      return {
+        ...prev,
+        themeCategory: safeCategory,
+        theme: nextTheme,
+        themePrimaryColor: nextPreset.primary,
+        themeSecondaryColor: nextPreset.secondary,
+      };
+    });
+  }
+
   function patchLocation<K extends keyof LinkHubProfile["location"]>(
     field: K,
     value: LinkHubProfile["location"][K],
@@ -684,9 +740,22 @@ export default function LinkHubPage() {
   function changeBusinessType(nextType: LinkHubBusinessType) {
     setProfile((prev) => {
       if (!prev) return prev;
+      const nextThemeCategory =
+        nextType === "restaurant"
+          ? "food"
+          : prev.themeCategory === "food"
+            ? "fashion"
+            : getSafeLinkHubThemeCategory(prev.themeCategory);
+      const allowedThemes = LINK_HUB_THEME_CATEGORY_MAP[nextThemeCategory];
+      const nextTheme = allowedThemes.includes(prev.theme) ? prev.theme : allowedThemes[0];
+      const nextPreset = LINK_HUB_THEME_STYLES[nextTheme];
       return {
         ...prev,
         businessType: nextType,
+        themeCategory: nextThemeCategory,
+        theme: nextTheme,
+        themePrimaryColor: nextPreset.primary,
+        themeSecondaryColor: nextPreset.secondary,
         sectionLabels: {
           ...prev.sectionLabels,
           menu: nextType === "restaurant" ? "Carta" : prev.sectionLabels.menu,
@@ -1477,6 +1546,26 @@ export default function LinkHubPage() {
                   </select>
                 </label>
                 <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Categoria visual</span>
+                  <select
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:opacity-70"
+                    value={activeThemeCategory}
+                    onChange={(event) => changeThemeCategory(event.target.value as LinkHubThemeCategory)}
+                    disabled={profile.businessType === "restaurant"}
+                  >
+                    {Object.entries(LINK_HUB_THEME_CATEGORY_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                  {profile.businessType === "restaurant" && (
+                    <p className="text-[11px] text-zinc-400">
+                      En restaurantes se aplica automaticamente la categoria de temas para comida.
+                    </p>
+                  )}
+                </label>
+                <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Etiqueta del rubro</span>
                   <input
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
@@ -2043,12 +2132,19 @@ export default function LinkHubPage() {
                 <h2 className="text-xl font-bold text-white">Tema visual deluxe</h2>
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-200">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {Object.keys(LINK_HUB_THEME_STYLES).length} temas
+                  {Object.keys(LINK_HUB_THEME_STYLES).length} temas totales
                 </div>
               </div>
+              <p className="mb-4 text-xs text-zinc-300">
+                Categoria activa:{" "}
+                <span className="font-bold uppercase tracking-[0.08em] text-amber-200">
+                  {LINK_HUB_THEME_CATEGORY_LABELS[activeThemeCategory]}
+                </span>{" "}
+                ({availableThemeKeys.length} temas exclusivos)
+              </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {(Object.keys(LINK_HUB_THEME_STYLES) as LinkHubTheme[]).map((themeKey, index) => {
+                {availableThemeKeys.map((themeKey, index) => {
                   const theme = LINK_HUB_THEME_STYLES[themeKey];
                   const active = profile.theme === themeKey;
                   const canUseTheme = isThemeAllowedForPlan(activePlan, index);
@@ -2061,7 +2157,7 @@ export default function LinkHubPage() {
                         if (!canUseTheme) {
                           setMessage({
                             type: "error",
-                            text: "Tu plan FREE permite 3 temas. Actualiza a BUSINESS para desbloquear todos.",
+                            text: "Tu plan FREE permite 3 temas por categoria. Actualiza a BUSINESS para desbloquear todos.",
                           });
                           return;
                         }
