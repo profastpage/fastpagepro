@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -8,33 +8,26 @@ import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import { resolveStoreSlug, sanitizeStoreSlug } from "@/lib/publicStorefront";
-import PublishSuccessModal from "@/components/PublishSuccessModal";
-import {
-  ArrowLeft,
-  CheckCircle,
-  DollarSign,
-  ExternalLink,
-  FileText,
-  Loader2,
-  Monitor,
-  Palette,
-  Plus,
-  Rocket,
-  Save,
-  ShoppingCart,
-  Smartphone,
-  Store,
-  Trash2,
-  X,
-} from "lucide-react";
+import { getVisualStoreTheme, getVisualStoreVars } from "@/lib/storeVisualTheme";
 import {
   generateStorefrontHtml,
   STORE_THEMES,
   type StoreConfig,
-  type StoreFeature,
   type StoreProduct,
   type StoreThemeId,
 } from "@/lib/storefrontGenerator";
+import {
+  ArrowLeft,
+  ExternalLink,
+  Loader2,
+  Monitor,
+  Plus,
+  Rocket,
+  Save,
+  Smartphone,
+  Trash2,
+  Upload,
+} from "lucide-react";
 
 const FIREBASE_PUBLIC_CONFIG = {
   apiKey:
@@ -54,14 +47,71 @@ const FIREBASE_PUBLIC_CONFIG = {
     "1:812748660444:web:4bf4184a13a377bc26de19",
 };
 
-function isValidHttpUrl(input: string) {
-  try {
-    const u = new URL(input);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
+type VisualSort = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
+type VisualContent = NonNullable<StoreConfig["content"]>;
+
+const DEFAULT_CONFIG: StoreConfig = {
+  storeName: "Couture Perú",
+  tagline: "El detalle perfecto para tu día a día.",
+  currency: "PEN",
+  themeId: "ruby",
+  primaryCta: "Comprar ahora",
+  supportWhatsapp: "51999999999",
+  customRgb: {
+    accent: { r: 220, g: 38, b: 38 },
+    accent2: { r: 248, g: 113, b: 113 },
+  },
+  content: {
+    topStripText: "🎁 10% de Dscto. con el cupón: BIENVENIDA10",
+    heroTitle: "FAST FOOD RESTAURANT",
+    heroSubtitle: "High quality slider in smart, customizable and intuitive design.",
+    offerSectionTitle: "🔥 Ofertas Especiales",
+    searchPlaceholder: "Buscar producto...",
+    scheduleText: "8:00 am - 10:00 pm",
+    businessAddress: "Av. Alfredo Benavides 52, Santiago de Surco",
+    heroImageUrl:
+      "https://images.unsplash.com/photo-1553979459-d2229ba7433b?q=80&w=1600&auto=format&fit=crop",
+    logoImageUrl:
+      "https://images.unsplash.com/photo-1551782450-17144efb9c50?q=80&w=800&auto=format&fit=crop",
+    facebookUrl: "https://facebook.com",
+    instagramUrl: "https://instagram.com",
+    tiktokUrl: "https://tiktok.com",
+    whatsappUrl: "https://wa.me/51999999999",
+    phoneUrl: "tel:+51999999999",
+    footerLeft: "© 2026 Couture Perú - Todos los derechos reservados.",
+  },
+};
+
+const DEFAULT_PRODUCTS: StoreProduct[] = [
+  {
+    id: "p1",
+    name: "Cartera Veronique",
+    description: "Color camel",
+    category: "Carteras",
+    priceCents: 8700,
+    compareAtPriceCents: 9500,
+    imageUrl:
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Oferta",
+    ctaLabel: "Ver producto",
+    sku: "CAR-001",
+  },
+  {
+    id: "p2",
+    name: "Cartera Velours",
+    description: "Color plata",
+    category: "Carteras",
+    priceCents: 6500,
+    compareAtPriceCents: 0,
+    imageUrl:
+      "https://images.unsplash.com/photo-1591561954557-26941169b49e?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Oferta",
+    ctaLabel: "Ver oferta",
+    sku: "CAR-002",
+  },
+];
 
 function newId(prefix = "") {
   const rand =
@@ -78,487 +128,132 @@ function clampInt(n: number, min: number, max: number) {
 function formatMoney(cents: number, currency: StoreConfig["currency"]) {
   const v = (cents || 0) / 100;
   try {
-    return new Intl.NumberFormat("es-PE", { style: "currency", currency }).format(
-      v,
-    );
+    return new Intl.NumberFormat("es-PE", { style: "currency", currency }).format(v);
   } catch {
     return `${v.toFixed(2)} ${currency}`;
   }
 }
 
-function safeFeatures(input: StoreConfig["features"]): StoreFeature[] {
-  if (!Array.isArray(input)) return [];
-  return input
-    .filter(Boolean)
-    .map((f) => ({
-      title: String((f as any)?.title || ""),
-      subtitle: String((f as any)?.subtitle || ""),
-      color: (f as any)?.color ? String((f as any).color) : undefined,
-    }))
-    .slice(0, 8);
+function isOfferProduct(product: StoreProduct) {
+  const badge = String(product.badge || "").toLowerCase();
+  return (product.compareAtPriceCents || 0) > (product.priceCents || 0) || badge.includes("oferta");
 }
 
-function clampRgbValue(n: number) {
-  return Math.max(0, Math.min(255, Math.trunc(n)));
+function sortProducts(items: StoreProduct[], sort: VisualSort) {
+  if (sort === "priceAsc") return [...items].sort((a, b) => (a.priceCents || 0) - (b.priceCents || 0));
+  if (sort === "priceDesc") return [...items].sort((a, b) => (b.priceCents || 0) - (a.priceCents || 0));
+  if (sort === "nameAsc") return [...items].sort((a, b) => a.name.localeCompare(b.name, "es"));
+  return items;
 }
 
 function hexToRgb(hex: string) {
   const clean = hex.replace("#", "").trim();
-  if (clean.length === 3) {
-    const r = parseInt(clean[0] + clean[0], 16);
-    const g = parseInt(clean[1] + clean[1], 16);
-    const b = parseInt(clean[2] + clean[2], 16);
-    if ([r, g, b].every((v) => Number.isFinite(v))) return { r, g, b };
+  const normalized = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return { r: 0, g: 0, b: 0 };
+  return {
+    r: parseInt(normalized.slice(0, 2), 16),
+    g: parseInt(normalized.slice(2, 4), 16),
+    b: parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex(rgb?: { r: number; g: number; b: number }) {
+  const r = (rgb?.r || 0).toString(16).padStart(2, "0");
+  const g = (rgb?.g || 0).toString(16).padStart(2, "0");
+  const b = (rgb?.b || 0).toString(16).padStart(2, "0");
+  return `#${r}${g}${b}`;
+}
+
+async function compressImage(file: File, maxSide = 1400, quality = 0.84) {
+  const data = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result || ""));
+    r.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    r.readAsDataURL(file);
+  });
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = () => reject(new Error("No se pudo procesar la imagen."));
+    i.src = data;
+  });
+  const ratio = img.width / img.height;
+  let width = img.width;
+  let height = img.height;
+  if (Math.max(width, height) > maxSide) {
+    if (ratio >= 1) {
+      width = maxSide;
+      height = Math.round(maxSide / ratio);
+    } else {
+      height = maxSide;
+      width = Math.round(maxSide * ratio);
+    }
   }
-  if (clean.length === 6) {
-    const r = parseInt(clean.slice(0, 2), 16);
-    const g = parseInt(clean.slice(2, 4), 16);
-    const b = parseInt(clean.slice(4, 6), 16);
-    if ([r, g, b].every((v) => Number.isFinite(v))) return { r, g, b };
-  }
-  return { r: 0, g: 0, b: 0 };
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("No se pudo procesar la imagen.");
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/jpeg", quality);
 }
 
-function sanitizeRichTextClient(input: string) {
-  if (!input) return "";
-  if (!input.includes("<")) return input.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
-    return input.replace(/<[^>]*>/g, "");
-  }
-
-  const allowedTags = new Set(["SPAN", "B", "STRONG", "I", "EM", "U", "BR"]);
-  const allowedStyleProps = new Set([
-    "color",
-    "font-size",
-    "font-family",
-    "font-weight",
-    "letter-spacing",
-    "text-transform",
-    "text-decoration",
-    "font-style",
-    "line-height",
-  ]);
-
-  const isSafeStyleValue = (prop: string, valueRaw: string) => {
-    const value = String(valueRaw || "").trim();
-    if (!value) return false;
-    const lower = value.toLowerCase();
-    if (lower.includes("url(") || lower.includes("expression(")) return false;
-
-    if (prop === "color") {
-      return (
-        /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value) ||
-        /^rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(\s*,\s*(0|1|0?\.\d+))?\s*\)$/i.test(value) ||
-        /^hsla?\(/i.test(value) ||
-        /^var\(--(accent|accent2)\)$/i.test(value) ||
-        /^(white|black|transparent|currentcolor)$/i.test(value)
-      );
-    }
-    if (prop === "font-size" || prop === "letter-spacing" || prop === "line-height") {
-      return /^-?\d+(\.\d+)?(px|rem|em|%)$/.test(value) || /^\d+(\.\d+)?$/.test(value);
-    }
-    if (prop === "font-family") {
-      return /^[a-z0-9\s,'"-]+$/i.test(value);
-    }
-    if (prop === "font-weight") {
-      return /^(normal|bold|bolder|lighter|[1-9]00)$/.test(lower);
-    }
-    if (prop === "text-transform") {
-      return /^(none|uppercase|lowercase|capitalize)$/.test(lower);
-    }
-    if (prop === "text-decoration") {
-      return /^(none|underline|line-through|overline)$/.test(lower);
-    }
-    if (prop === "font-style") {
-      return /^(normal|italic|oblique)$/.test(lower);
-    }
-    return false;
-  };
-
-  const cleanStyle = (styleAttr: string) => {
-    const pieces = String(styleAttr || "")
-      .split(";")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const kept: string[] = [];
-    for (const part of pieces) {
-      const idx = part.indexOf(":");
-      if (idx <= 0) continue;
-      const prop = part.slice(0, idx).trim().toLowerCase();
-      const value = part.slice(idx + 1).trim();
-      if (!allowedStyleProps.has(prop)) continue;
-      if (!isSafeStyleValue(prop, value)) continue;
-      kept.push(`${prop}:${value}`);
-    }
-    return kept.join(";");
-  };
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(String(input || ""), "text/html");
-  const walk = (node: Node) => {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as HTMLElement;
-      if (!allowedTags.has(el.tagName)) {
-        const txt = doc.createTextNode(el.textContent || "");
-        el.replaceWith(txt);
-        return;
-      }
-      const style = el.getAttribute("style") || "";
-      const cls = el.getAttribute("class") || "";
-      for (const attr of Array.from(el.attributes)) {
-        const n = attr.name.toLowerCase();
-        if (n === "style" || n === "class") continue;
-        el.removeAttribute(attr.name);
-      }
-      if (style) {
-        const cleaned = cleanStyle(style);
-        if (cleaned) el.setAttribute("style", cleaned);
-        else el.removeAttribute("style");
-      }
-      if (cls && el.tagName === "SPAN") {
-        const keep = cls
-          .split(/\s+/)
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .filter((c) => c === "fp-accent");
-        if (keep.length) el.setAttribute("class", keep.join(" "));
-        else el.removeAttribute("class");
-      } else {
-        el.removeAttribute("class");
-      }
-    }
-    for (const child of Array.from(node.childNodes)) walk(child);
-  };
-  walk(doc.body);
-  return doc.body.innerHTML || "";
-}
-
-function applyInlineStyleToSelection(root: HTMLElement, style: Record<string, string>) {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return false;
-  const range = sel.getRangeAt(0);
-  const anchor = sel.anchorNode;
-  const focus = sel.focusNode;
-  if (!anchor || !focus) return false;
-  if (!root.contains(anchor) || !root.contains(focus)) return false;
-  if (range.collapsed) return false;
-
-  const span = document.createElement("span");
-  for (const [k, v] of Object.entries(style)) {
-    span.style.setProperty(k, v);
-  }
-  span.appendChild(range.extractContents());
-  range.insertNode(span);
-  sel.removeAllRanges();
-  const next = document.createRange();
-  next.selectNodeContents(span);
-  sel.addRange(next);
-  return true;
-}
-
-function wrapSelectionWithTag(root: HTMLElement, tagName: "strong" | "em" | "u" | "span", className?: string) {
-  const sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return false;
-  const range = sel.getRangeAt(0);
-  const anchor = sel.anchorNode;
-  const focus = sel.focusNode;
-  if (!anchor || !focus) return false;
-  if (!root.contains(anchor) || !root.contains(focus)) return false;
-  if (range.collapsed) return false;
-
-  const el = document.createElement(tagName);
-  if (className && tagName === "span") el.className = className;
-  el.appendChild(range.extractContents());
-  range.insertNode(el);
-  sel.removeAllRanges();
-  const next = document.createRange();
-  next.selectNodeContents(el);
-  sel.addRange(next);
-  return true;
-}
-
-function RichTextField(props: {
-  label: string;
-  value: string;
-  onChange: (nextHtml: string) => void;
-  placeholder?: string;
-  minHeightClass?: string;
-}) {
-  const { label, value, onChange, placeholder, minHeightClass } = props;
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [color, setColor] = useState("#ffffff");
-  const [fontSize, setFontSize] = useState("16px");
-  const [fontFamily, setFontFamily] = useState("'Plus Jakarta Sans', system-ui");
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (document.activeElement === el) return;
-    el.innerHTML = value || "";
-  }, [value]);
-
-  const commit = () => {
-    const el = ref.current;
-    if (!el) return;
-    onChange(sanitizeRichTextClient(el.innerHTML || ""));
-  };
-
-  const apply = (fn: (root: HTMLElement) => boolean) => {
-    const el = ref.current;
-    if (!el) return;
-    el.focus();
-    const ok = fn(el);
-    if (ok) commit();
-  };
-
-  return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-4 space-y-3">
-      <div className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-        {label}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => apply((root) => wrapSelectionWithTag(root, "strong"))}
-          className="px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-xs font-extrabold hover:bg-white/5"
-          title="Negrita"
-        >
-          B
-        </button>
-        <button
-          type="button"
-          onClick={() => apply((root) => wrapSelectionWithTag(root, "em"))}
-          className="px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-xs font-extrabold hover:bg-white/5"
-          title="Italica"
-        >
-          I
-        </button>
-        <button
-          type="button"
-          onClick={() => apply((root) => wrapSelectionWithTag(root, "u"))}
-          className="px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-xs font-extrabold hover:bg-white/5"
-          title="Subrayado"
-        >
-          U
-        </button>
-        <button
-          type="button"
-          onClick={() => apply((root) => wrapSelectionWithTag(root, "span", "fp-accent"))}
-          className="px-3 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-200 text-xs font-extrabold hover:bg-emerald-500/20"
-          title="Accent (degradado)"
-        >
-          Accent
-        </button>
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/30 border border-white/10">
-          <span className="text-xs font-extrabold text-zinc-400">Color</span>
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => {
-              setColor(e.target.value);
-              apply((root) => applyInlineStyleToSelection(root, { color: e.target.value }));
-            }}
-            className="w-8 h-6 bg-transparent border-none p-0"
-            aria-label="Color"
-          />
-        </div>
-        <select
-          value={fontSize}
-          onChange={(e) => {
-            setFontSize(e.target.value);
-            apply((root) => applyInlineStyleToSelection(root, { "font-size": e.target.value }));
-          }}
-          className="px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-xs font-extrabold outline-none"
-          aria-label="Tamano"
-        >
-          {["12px", "14px", "16px", "18px", "22px", "28px", "34px", "42px"].map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-        <select
-          value={fontFamily}
-          onChange={(e) => {
-            setFontFamily(e.target.value);
-            apply((root) => applyInlineStyleToSelection(root, { "font-family": e.target.value }));
-          }}
-          className="px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-xs font-extrabold outline-none"
-          aria-label="Fuente"
-        >
-          <option value="'Plus Jakarta Sans', system-ui">Jakarta</option>
-          <option value="Poppins, system-ui">Poppins</option>
-          <option value="Montserrat, system-ui">Montserrat</option>
-          <option value="'Playfair Display', serif">Playfair</option>
-        </select>
-        <button
-          type="button"
-          onClick={() => {
-            const el = ref.current;
-            if (!el) return;
-            const txt = el.textContent || "";
-            el.innerHTML = txt.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-            commit();
-          }}
-          className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-extrabold hover:bg-white/10"
-          title="Quitar formato"
-        >
-          Reset
-        </button>
-      </div>
-      <div
-        ref={ref}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={commit}
-        onBlur={commit}
-        data-placeholder={placeholder || ""}
-        className={`w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40 ${minHeightClass || "min-h-[70px]"}`}
-        style={{ whiteSpace: "pre-wrap" }}
-      />
-      {placeholder ? (
-        <p className="text-xs text-zinc-500">
-          Tip: Selecciona palabras dentro del texto para cambiar color, tamano o fuente.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-type ProductDraft = {
-  id?: string;
-  name: string;
-  price: string;
-  description: string;
-  imageUrl: string;
-  active: boolean;
-  badge: string;
-  sku: string;
-};
-
-const DEFAULT_CONFIG: StoreConfig = {
-  storeName: "Tienda Deluxe",
-  tagline: "Ecommerce profesional con carrito y checkout",
-  currency: "PEN",
-  themeId: "aurora",
-  primaryCta: "Comprar ahora",
-  customRgb: {
-    accent: { r: 6, g: 182, b: 212 },
-    accent2: { r: 34, g: 197, b: 94 },
-  },
-  content: {
-    kicker: "Ecommerce Deluxe",
-    kickerHtml: "Ecommerce Deluxe",
-    heroTitle: "Tu tienda lista para",
-    heroAccent: "vender hoy",
-    heroHeadlineHtml:
-      'Tu tienda lista para <span class="fp-accent">vender hoy</span>.',
-    heroSubtitle:
-      "Productos, carrito y checkout dentro de una experiencia rapida y premium. Disenada para convertir en movil y escritorio.",
-    heroSubtitleHtml:
-      "Productos, carrito y checkout dentro de una experiencia rapida y premium. Disenada para convertir en movil y escritorio.",
-    heroPrimaryButton: "Explorar productos",
-    heroSecondaryButton: "Ver carrito",
-    productsTitle: "Productos destacados",
-    productsSubtitle: "Todo lo que agregues aqui aparecera debajo del hero.",
-    productsTitleHtml: "Productos destacados",
-    productsSubtitleHtml:
-      "Todo lo que agregues aqui aparecera debajo del hero.",
-    tipText:
-      "Tip: Puedes publicar tu tienda y recibir pedidos desde cualquier dispositivo.",
-    tipTextHtml:
-      "Tip: Puedes publicar tu tienda y recibir pedidos desde cualquier dispositivo.",
-    cartLabel: "Carrito",
-    checkoutTitle: "Checkout",
-    checkoutButton: "Finalizar compra",
-    continueButton: "Seguir comprando",
-    footerLeft: "Publicado con Fast Page",
-    footerLeftHtml: "Publicado con Fast Page",
-  },
-  features: [
-    { title: "Carrito inteligente", subtitle: "Persistente y rapido" },
-    { title: "Checkout integrado", subtitle: "Flujo profesional", color: "var(--accent2)" },
-    { title: "Diseno premium", subtitle: "5 temas deluxe", color: "#a78bfa" },
-  ],
-};
-
-const DEFAULT_PRODUCTS: StoreProduct[] = [
-  {
-    id: "p1",
-    name: "Producto Estrella",
-    priceCents: 4990,
-    description: "Un producto premium con excelente margen y alta conversion.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?q=80&w=1600&auto=format&fit=crop",
-    active: true,
-    badge: "Nuevo",
-    sku: "STAR-01",
-  },
-  {
-    id: "p2",
-    name: "Pack Oferta",
-    priceCents: 8990,
-    description: "Bundle recomendado para aumentar el ticket promedio.",
-    imageUrl:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1600&auto=format&fit=crop",
-    active: true,
-    badge: "Oferta",
-    sku: "BUNDLE-01",
-  },
-];
-
-export default function StoreBuilderPage() {
+export default function StorePage() {
   const { user, loading: authLoading } = useAuth(true);
   const router = useRouter();
+  const hydratedRef = useRef(false);
 
   const [projectId, setProjectId] = useState<string | null>(null);
   const [config, setConfig] = useState<StoreConfig>(DEFAULT_CONFIG);
   const [products, setProducts] = useState<StoreProduct[]>(DEFAULT_PRODUCTS);
 
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("Todos");
+  const [sortBy, setSortBy] = useState<VisualSort>("featured");
+
   const [loadingProject, setLoadingProject] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [savedToast, setSavedToast] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [isMobileViewport, setIsMobileViewport] = useState(false);
-  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
-  const [activePanel, setActivePanel] = useState<
-    "products" | "design" | "content" | "settings"
-  >("products");
-  const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
+  const content = (config.content || {}) as VisualContent;
+  const themeVars = getVisualStoreVars(config);
+  const visualTheme = getVisualStoreTheme(config);
+  const publicStoreSlug = useMemo(() => resolveStoreSlug(config, projectId || "draft"), [config, projectId]);
 
-  const [showPublished, setShowPublished] = useState(false);
-  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const categories = useMemo(() => {
+    const set = new Set<string>(["Todos"]);
+    products.forEach((p) => set.add(String(p.category || "General")));
+    return Array.from(set);
+  }, [products]);
 
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [productDraft, setProductDraft] = useState<ProductDraft>({
-    name: "",
-    price: "",
-    description: "",
-    imageUrl: "",
-    active: true,
-    badge: "",
-    sku: "",
-  });
+  const filteredProducts = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const base = products.filter((p) => p.active).filter((p) => {
+      if (category !== "Todos" && String(p.category || "General") !== category) return false;
+      if (!term) return true;
+      return [p.name, p.description, p.badge || "", p.category || ""].join(" ").toLowerCase().includes(term);
+    });
+    return sortProducts(base, sortBy);
+  }, [products, category, search, sortBy]);
 
-  const hydratedRef = useRef(false);
-  const previewIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const offerProducts = useMemo(() => products.filter((p) => p.active && isOfferProduct(p)), [products]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(max-width: 1023px)");
-    const sync = () => {
-      const mobile = media.matches;
-      setIsMobileViewport(mobile);
-      if (mobile) setViewMode("mobile");
-    };
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
+  const storefrontHtml = useMemo(() => {
+    try {
+      return generateStorefrontHtml({
+        storeId: projectId || "draft",
+        config,
+        products,
+        firebaseConfig: FIREBASE_PUBLIC_CONFIG,
+      });
+    } catch {
+      return "<!doctype html><html><body>Store</body></html>";
+    }
+  }, [projectId, config, products]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -567,10 +262,7 @@ export default function StoreBuilderPage() {
   }, []);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user?.uid) return;
-    if (!projectId) return;
-
+    if (authLoading || !user?.uid || !projectId) return;
     setLoadingProject(true);
     setError(null);
     (async () => {
@@ -578,26 +270,18 @@ export default function StoreBuilderPage() {
         const snap = await getDoc(firestoreDoc(db, "cloned_sites", projectId));
         if (!snap.exists()) return;
         const data = snap.data() as any;
-        if (data?.userId && data.userId !== user.uid) {
-          throw new Error("No tienes permisos para abrir este proyecto.");
-        }
+        if (data?.userId && data.userId !== user.uid) throw new Error("No tienes permisos.");
         if (data?.storeConfig) {
           const loadedConfig = data.storeConfig as StoreConfig;
-          const resolvedLoadedSlug = sanitizeStoreSlug(
-            String((loadedConfig as any)?.storeSlug || data?.storeSlug || ""),
-          );
-          setConfig(
-            resolvedLoadedSlug
-              ? { ...loadedConfig, storeSlug: resolvedLoadedSlug }
-              : loadedConfig,
-          );
+          const slug = sanitizeStoreSlug(String((loadedConfig as any)?.storeSlug || data?.storeSlug || ""));
+          setConfig({ ...DEFAULT_CONFIG, ...loadedConfig, storeSlug: slug || undefined });
         }
-        if (Array.isArray(data?.storeProducts)) {
+        if (Array.isArray(data?.storeProducts) && data.storeProducts.length) {
           setProducts(data.storeProducts as StoreProduct[]);
         }
         setIsDirty(false);
       } catch (e: any) {
-        setError(e?.message || "No se pudo cargar el proyecto.");
+        setError(e?.message || "No se pudo cargar.");
       } finally {
         setLoadingProject(false);
       }
@@ -614,212 +298,69 @@ export default function StoreBuilderPage() {
 
   useEffect(() => {
     if (!isDirty) return;
-    const timer = setTimeout(() => void saveProject(false), 15000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => void saveProject(false), 15000);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDirty]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (viewMode !== "mobile") return;
-    const iframe = previewIframeRef.current;
-    if (!iframe) return;
-    const t = setTimeout(() => {
-      try {
-        iframe.contentWindow?.scrollTo(0, 0);
-      } catch {
-        // ignore
-      }
-    }, 50);
-    return () => clearTimeout(t);
-  }, [viewMode, projectId]);
+    if (!categories.includes(category)) setCategory("Todos");
+  }, [categories, category]);
 
-  const publicStoreSlug = useMemo(
-    () => resolveStoreSlug(config, projectId || "draft"),
-    [config, projectId],
-  );
+  const setContent = (patch: Partial<VisualContent>) =>
+    setConfig((prev) => ({ ...prev, content: { ...(prev.content || {}), ...patch } }));
 
-  const storefrontHtml = useMemo(() => {
-    const id = projectId || "draft";
-    try {
-      return generateStorefrontHtml({
-        storeId: id,
-        config,
-        products,
-        firebaseConfig: FIREBASE_PUBLIC_CONFIG,
-      });
-    } catch (e: any) {
-      // Don't let preview generation crash the whole editor.
-      console.error("[StoreBuilder] Preview generation failed:", e);
-      const msg = String(e?.message || "Error generando preview");
-      return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Preview error</title><style>body{margin:0;font-family:system-ui;background:#0b0b0f;color:#e5e7eb;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px} .card{max-width:720px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);border-radius:18px;padding:18px} b{display:block;margin-bottom:8px} code{white-space:pre-wrap;color:#a7f3d0}</style></head><body><div class="card"><b>No se pudo generar el preview</b><div style="color:#a1a1aa;font-weight:700">El editor sigue funcionando. Abre consola para mas detalle.</div><div style="margin-top:10px"><code>${msg.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</code></div></div></body></html>`;
-    }
-  }, [projectId, config, products]);
+  const updateProduct = (id: string, patch: Partial<StoreProduct>) => {
+    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  };
 
-  const updateContent = (patch: Partial<StoreConfig["content"]>) => {
-    setConfig((c) => ({
-      ...c,
-      content: {
-        ...(c.content || {}),
-        ...patch,
+  const addProduct = () => {
+    setProducts((prev) => [
+      {
+        id: newId("prod-"),
+        name: "Nuevo producto",
+        description: "Descripción",
+        category: "General",
+        priceCents: 4900,
+        compareAtPriceCents: 0,
+        imageUrl: "",
+        active: true,
+        badge: "Oferta",
+        ctaLabel: "Ver producto",
+        sku: "",
       },
-    }));
+      ...prev,
+    ]);
   };
 
-  const updateFeature = (idx: number, patch: Partial<StoreFeature>) => {
-    setConfig((c) => {
-      const features = safeFeatures(c.features);
-      while (features.length < 3) {
-        features.push({ title: "", subtitle: "" });
-      }
-      features[idx] = { ...features[idx], ...patch };
-      return { ...c, features };
-    });
-  };
-
-  const addFeature = () => {
-    setConfig((c) => {
-      const features = safeFeatures(c.features);
-      if (features.length >= 6) return c;
-      features.push({ title: "Nuevo beneficio", subtitle: "Descripcion" });
-      return { ...c, features };
-    });
-  };
-
-  const removeFeature = (idx: number) => {
-    setConfig((c) => {
-      const features = safeFeatures(c.features);
-      features.splice(idx, 1);
-      return { ...c, features };
-    });
-  };
-
-  const openNewProduct = () => {
-    setEditingProductId(null);
-    setProductDraft({
-      name: "",
-      price: "",
-      description: "",
-      imageUrl: "",
-      active: true,
-      badge: "",
-      sku: "",
-    });
-    setProductModalOpen(true);
-  };
-
-  const openEditProduct = (p: StoreProduct) => {
-    setEditingProductId(p.id);
-    setProductDraft({
-      id: p.id,
-      name: p.name,
-      price: String((p.priceCents / 100).toFixed(2)),
-      description: p.description,
-      imageUrl: p.imageUrl,
-      active: p.active,
-      badge: p.badge || "",
-      sku: p.sku || "",
-    });
-    setProductModalOpen(true);
-  };
-
-  const upsertProduct = () => {
-    const name = productDraft.name.trim();
-    if (!name) {
-      setError("El producto necesita un nombre.");
-      return;
-    }
-    const priceNum = Number(productDraft.price.replace(",", "."));
-    if (!Number.isFinite(priceNum) || priceNum < 0) {
-      setError("Precio invalido. Usa un numero como 29.90");
-      return;
-    }
-    const priceCents = clampInt(Math.round(priceNum * 100), 0, 999999999);
-    const imageUrl = productDraft.imageUrl.trim();
-    if (imageUrl && !isValidHttpUrl(imageUrl)) {
-      setError("La imagen debe ser una URL valida (http/https).");
-      return;
-    }
-
-    const id = editingProductId || newId("p");
-    const next: StoreProduct = {
-      id,
-      name,
-      priceCents,
-      description: productDraft.description.trim(),
-      imageUrl,
-      active: Boolean(productDraft.active),
-      badge: productDraft.badge.trim() || undefined,
-      sku: productDraft.sku.trim() || undefined,
-    };
-
-    setProducts((prev) => {
-      const idx = prev.findIndex((x) => x.id === id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = next;
-        return copy;
-      }
-      return [next, ...prev];
-    });
-
-    setProductModalOpen(false);
-    setEditingProductId(null);
-  };
-
-  const deleteProduct = (id: string) => {
-    if (!confirm("¿Eliminar este producto?")) return;
+  const removeProduct = (id: string) => {
+    if (!confirm("¿Eliminar producto?")) return;
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const getRgbValue = (
-    kind: "accent" | "accent2",
-    channel: "r" | "g" | "b",
-  ) => {
-    const fallback =
-      kind === "accent" ? hexToRgb(theme.accent) : hexToRgb(theme.accent2);
-    const stored = config.customRgb?.[kind];
-    return (stored?.[channel] ?? fallback[channel] ?? 0) as number;
-  };
-
-  const updateRgb = (
-    kind: "accent" | "accent2",
-    channel: "r" | "g" | "b",
-    value: string,
-  ) => {
-    const num = clampRgbValue(Number(value));
-    setConfig((c) => {
-      const current = c.customRgb?.[kind] || hexToRgb(kind === "accent" ? theme.accent : theme.accent2);
-      return {
-        ...c,
-        customRgb: {
-          ...(c.customRgb || {}),
-          [kind]: { ...current, [channel]: num },
-        },
-      };
-    });
+  const onImage = async (file: File, cb: (data: string) => void) => {
+    try {
+      const image = await compressImage(file);
+      cb(image);
+    } catch (e: any) {
+      setError(e?.message || "No se pudo subir imagen.");
+    }
   };
 
   const saveProject = async (publishNow: boolean) => {
     if (saving || publishing) return;
-    if (publishNow) setPublishing(true);
-    else setSaving(true);
+    publishNow ? setPublishing(true) : setSaving(true);
     setError(null);
     try {
-      if (authLoading) throw new Error("Validando sesion...");
-      if (!user?.uid) throw new Error("Debes iniciar sesion.");
-      if (publishNow) {
-        await assertCanPublishPageByPlan();
-      }
+      if (authLoading) throw new Error("Validando sesión...");
+      if (!user?.uid) throw new Error("Debes iniciar sesión.");
+      if (publishNow) await assertCanPublishPageByPlan();
 
       const id = projectId || newId();
       const storeSlug = resolveStoreSlug(config, id);
       const nextConfig = config.storeSlug === storeSlug ? config : { ...config, storeSlug };
       const now = Date.now();
-      const htmlToStore = publishNow
-        ? injectMetricsTracking(storefrontHtml, id)
-        : storefrontHtml;
-
+      const html = publishNow ? injectMetricsTracking(storefrontHtml, id) : storefrontHtml;
       const payload: Record<string, any> = {
         id,
         userId: user.uid,
@@ -830,30 +371,26 @@ export default function StoreBuilderPage() {
         storeConfig: nextConfig,
         storeSlug,
         storeProducts: products,
-        html: htmlToStore,
+        html,
         updatedAt: now,
         status: publishNow ? "published" : "draft",
         published: publishNow,
       };
       if (!projectId) payload.createdAt = now;
       if (publishNow) payload.publishedAt = now;
-
       await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
-      if (config.storeSlug !== storeSlug) {
-        setConfig((prev) => ({ ...prev, storeSlug }));
-      }
 
       if (!projectId) {
         setProjectId(id);
         localStorage.setItem("fastpage_store_project_id", id);
       }
+      if (config.storeSlug !== storeSlug) setConfig((prev) => ({ ...prev, storeSlug }));
 
       setIsDirty(false);
-      if (publishNow) {
-        router.push(`/published?highlight=${id}&kind=site`);
-      } else {
+      if (publishNow) router.push(`/published?highlight=${id}&kind=site`);
+      else {
         setSavedToast(true);
-        setTimeout(() => setSavedToast(false), 2000);
+        setTimeout(() => setSavedToast(false), 1300);
       }
     } catch (e: any) {
       setError(e?.message || "No se pudo guardar.");
@@ -863,1201 +400,122 @@ export default function StoreBuilderPage() {
     }
   };
 
-  const theme =
-    STORE_THEMES.find((x) => x.id === config.themeId) || STORE_THEMES[0];
-  const featuresEditable = (() => {
-    const current = safeFeatures(config.features);
-    if (current.length) return current;
-    return [
-      { title: "", subtitle: "" },
-      { title: "", subtitle: "" },
-      { title: "", subtitle: "" },
-    ];
-  })();
-
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden pt-16 md:pt-24">
-      <header className="border-b border-white/10 bg-zinc-900/80 backdrop-blur-md z-50 px-3 py-2 md:h-16 md:px-4 md:py-0">
-        <div className="h-full flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center justify-between md:justify-start gap-2 min-w-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <button
-                onClick={() => {
-                  if (typeof window !== "undefined" && window.history.length > 1) {
-                    router.back();
-                    return;
-                  }
-                  router.push("/hub");
-                }}
-                className="p-2 hover:bg-white/5 rounded-xl text-zinc-400 transition-all active:scale-95"
-                aria-label="Volver"
-              >
-                <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen pt-20 pb-8" style={{ ...themeVars, background: "var(--vs-page)", color: "var(--vs-text)" }}>
+      <div className="mx-auto max-w-[1600px] px-3 md:px-6">
+        <header className="sticky top-16 z-40 rounded-2xl border bg-white/90 px-3 py-3 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3 min-w-0">
+              <button onClick={() => (window.history.length > 1 ? router.back() : router.push("/hub"))} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
+                <ArrowLeft className="h-5 w-5" />
               </button>
-              <div className="h-6 w-px bg-white/10 hidden sm:block" />
-              <div className="flex items-center gap-2 min-w-0">
-                <Store className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-sm font-medium text-zinc-300 truncate max-w-[200px]">
-                  Tienda: {projectId || "nuevo"}
-                </span>
+              <div className="min-w-0">
+                <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: "var(--vs-muted)" }}>Editor visual ecommerce</p>
+                <input value={config.storeName} onChange={(e) => setConfig((p) => ({ ...p, storeName: e.target.value }))} className="w-full bg-transparent text-lg font-black outline-none" />
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
-            {isMobileViewport && (
-              <button
-                onClick={() => setMobilePanelOpen(true)}
-                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all"
-              >
-                Panel
-              </button>
-            )}
-
-            {!isMobileViewport && (
-              <div className="hidden md:flex items-center p-1 rounded-2xl bg-white/5 border border-white/10">
-                <button
-                  onClick={() => setViewMode("desktop")}
-                  className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
-                    viewMode === "desktop"
-                      ? "bg-white text-black"
-                      : "text-zinc-300 hover:text-white"
-                  }`}
-                  title="Modo PC"
-                >
-                  <Monitor className="w-4 h-4" />
-                  PC
-                </button>
-                <button
-                  onClick={() => setViewMode("mobile")}
-                  className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
-                    viewMode === "mobile"
-                      ? "bg-white text-black"
-                      : "text-zinc-300 hover:text-white"
-                  }`}
-                  title="Modo movil"
-                >
-                  <Smartphone className="w-4 h-4" />
-                  Movil
-                </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex rounded-xl border bg-white p-1" style={{ borderColor: "var(--vs-border)" }}>
+                <button onClick={() => setViewMode("desktop")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "desktop" ? "text-white" : "text-slate-700"}`} style={viewMode === "desktop" ? { background: "var(--vs-dark)" } : undefined}><Monitor className="h-4 w-4" />PC</button>
+                <button onClick={() => setViewMode("mobile")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "mobile" ? "text-white" : "text-slate-700"}`} style={viewMode === "mobile" ? { background: "var(--vs-dark)" } : undefined}><Smartphone className="h-4 w-4" />Móvil</button>
               </div>
-            )}
-
-            <button
-              onClick={() => {
-                if (typeof window === "undefined") return;
-                window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer");
-              }}
-              className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-              <span>Ver tienda</span>
-            </button>
-
-            <button
-              onClick={() => saveProject(false)}
-              disabled={saving || loadingProject}
-              className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span>Guardar</span>
-            </button>
-            <button
-              onClick={() => saveProject(true)}
-              disabled={publishing || loadingProject}
-              className="flex-1 md:flex-none px-4 md:px-6 py-2 rounded-xl bg-emerald-500 text-black text-sm font-bold hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-emerald-500/20"
-            >
-              {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-              <span>Publicar</span>
-            </button>
+              <button onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><ExternalLink className="h-4 w-4" />Ver tienda</button>
+              <button onClick={() => saveProject(false)} disabled={saving || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold disabled:opacity-60" style={{ borderColor: "var(--vs-border)" }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Guardar</button>
+              <button onClick={() => saveProject(true)} disabled={publishing || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-dark)" }}>{publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}Publicar</button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="flex-grow flex relative overflow-hidden bg-zinc-900">
-        <div className="hidden lg:block w-96 border-r border-white/10 bg-zinc-950/80 backdrop-blur-xl p-4 overflow-y-auto">
-          <div className="flex p-1 bg-zinc-900/60 border border-white/10 rounded-2xl mb-5">
-            {[
-              { id: "products", label: "Productos", icon: <ShoppingCart className="w-4 h-4" /> },
-              { id: "design", label: "Diseno", icon: <Palette className="w-4 h-4" /> },
-              { id: "content", label: "Contenido", icon: <FileText className="w-4 h-4" /> },
-              { id: "settings", label: "Ajustes", icon: <DollarSign className="w-4 h-4" /> },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActivePanel(tab.id as any)}
-                className={`flex-1 px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 ${
-                  activePanel === tab.id ? "bg-emerald-500 text-black" : "text-zinc-400 hover:text-white"
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="rounded-3xl border bg-white p-3 md:p-5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <div className={viewMode === "mobile" ? "mx-auto w-[390px] max-w-full" : "w-full"}>
+              <div className="overflow-hidden rounded-[30px] border bg-[var(--vs-surface)]" style={{ borderColor: "var(--vs-border-strong)" }}>
+                <div className="px-4 py-2 text-center text-sm font-bold text-white" style={{ background: "var(--vs-dark)" }}>
+                  <input value={content.topStripText || ""} onChange={(e) => setContent({ topStripText: e.target.value })} className="w-full bg-transparent text-center outline-none" />
+                </div>
+                <div className="relative h-[220px] md:h-[320px]">
+                  {content.heroImageUrl ? <img src={content.heroImageUrl} alt="hero" className="h-full w-full object-cover" /> : null}
+                  <label className="absolute right-3 top-3 inline-flex cursor-pointer items-center gap-1 rounded-xl bg-black/70 px-3 py-2 text-xs font-bold text-white"><Upload className="h-3.5 w-3.5" />Portada<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => setContent({ heroImageUrl: img })); e.target.value = ""; }} /></label>
+                </div>
+                <div className="relative px-4 pb-8 pt-16 md:px-8">
+                  <div className="absolute -top-14 left-1/2 -translate-x-1/2">
+                    <label className="relative block h-28 w-28 cursor-pointer overflow-hidden rounded-full border-4 border-white bg-white shadow-lg">
+                      {content.logoImageUrl ? <img src={content.logoImageUrl} alt="logo" className="h-full w-full object-cover" /> : null}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => setContent({ logoImageUrl: img })); e.target.value = ""; }} />
+                    </label>
+                  </div>
 
-          {activePanel === "products" && (
-            <div className="space-y-3">
-              <button
-                onClick={openNewProduct}
-                className="w-full px-4 py-3 rounded-2xl bg-emerald-500 text-black font-extrabold hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
-              >
-                <Plus className="w-5 h-5" />
-                Agregar producto
-              </button>
-              {products.map((p) => (
-                <div
-                  key={p.id}
-                  className="rounded-3xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition-all cursor-pointer"
-                  onClick={() => openEditProduct(p)}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <b className="text-white truncate">{p.name}</b>
-                      <div className="mt-1 text-xs text-zinc-400 line-clamp-2">{p.description}</div>
-                      <div className="mt-2 text-sm font-extrabold text-emerald-300">
-                        {formatMoney(p.priceCents, config.currency)}
-                      </div>
+                  <div className="mx-auto max-w-3xl text-center">
+                    <input value={config.storeName} onChange={(e) => setConfig((p) => ({ ...p, storeName: e.target.value }))} className="w-full bg-transparent text-center text-4xl font-black outline-none" />
+                    <textarea value={config.tagline} onChange={(e) => setConfig((p) => ({ ...p, tagline: e.target.value }))} className="mt-3 w-full resize-none bg-transparent text-center text-lg outline-none" style={{ color: "var(--vs-muted)" }} />
+                    <div className="mx-auto mt-4 max-w-sm rounded-full px-5 py-3 text-lg font-black text-white" style={{ background: "linear-gradient(135deg,var(--vs-accent),var(--vs-accent-2))" }}>
+                      <input value={content.scheduleText || ""} onChange={(e) => setContent({ scheduleText: e.target.value })} className="w-full bg-transparent text-center outline-none" />
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteProduct(p.id);
-                      }}
-                      className="p-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 hover:bg-red-500/20 transition-all"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <input value={content.businessAddress || ""} onChange={(e) => setContent({ businessAddress: e.target.value })} className="mt-4 w-full bg-transparent text-center text-lg outline-none" />
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
 
-          {activePanel === "design" && (
-            <div className="space-y-3">
-              {STORE_THEMES.map((th) => (
-                <button
-                  key={th.id}
-                  onClick={() => setConfig((c) => ({ ...c, themeId: th.id as StoreThemeId }))}
-                  className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
-                    config.themeId === th.id ? "bg-emerald-500/10 border-emerald-500/25" : "bg-black/20 border-white/10 hover:bg-white/5"
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="font-extrabold text-white truncate">{th.name}</div>
-                    <div className="text-xs text-zinc-500">Radio {th.radius}px</div>
+                  <div className="mt-8">
+                    <input value={content.offerSectionTitle || ""} onChange={(e) => setContent({ offerSectionTitle: e.target.value })} className="w-full bg-transparent text-4xl font-black outline-none" />
+                    <div className={viewMode === "mobile" ? "mt-4 flex snap-x gap-3 overflow-x-auto pb-2" : "mt-4 grid grid-cols-3 gap-4"}>
+                      {offerProducts.map((p) => (
+                        <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "min-w-[78%] snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "var(--vs-border)" }}>
+                          <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-black uppercase text-white">{p.badge || "Oferta"}</span></div>
+                          <div className="p-3"><p className="font-black">{p.name}</p><p className="mt-1 text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatMoney(p.priceCents, config.currency)}</p><button className="mt-2 h-10 w-full rounded-xl text-sm font-black text-white" style={{ background: "var(--vs-accent)" }}>{p.ctaLabel || "Ver oferta"}</button></div>
+                        </article>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full border border-white/10" style={{ background: th.accent }} />
-                    <span className="w-5 h-5 rounded-full border border-white/10" style={{ background: th.accent2 }} />
-                  </div>
-                </button>
-              ))}
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <div className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">Tema actual</div>
-                <div className="mt-2 font-extrabold text-white">{theme.name}</div>
-              </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 space-y-3">
-                <div className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                  Personalizar colores (RGB)
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-xs text-zinc-400 font-bold">Accent</div>
-                  <div className="text-xs text-zinc-400 font-bold">R / G / B</div>
-                  <div className="text-xs text-zinc-400 font-bold text-right">Preview</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 items-center">
-                  <div className="text-sm font-bold text-white">Primario</div>
-                  <div className="flex items-center gap-2">
-                    {(["r", "g", "b"] as const).map((ch) => (
-                      <input
-                        key={`accent-${ch}`}
-                        type="number"
-                        min={0}
-                        max={255}
-                        value={getRgbValue("accent", ch)}
-                        onChange={(e) => updateRgb("accent", ch, e.target.value)}
-                        className="w-16 px-2 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold text-xs outline-none focus:border-emerald-500/40"
-                      />
+                  <div className="mt-8 rounded-2xl border bg-white p-3" style={{ borderColor: "var(--vs-border)" }}>
+                    <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={content.searchPlaceholder || "Buscar producto..."} className="h-10 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                    <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{categories.map((c) => <button key={c} onClick={() => setCategory(c)} className="shrink-0 rounded-xl border px-4 py-2 text-sm font-bold" style={category === c ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" } : { borderColor: "var(--vs-border)" }}>{c}</button>)}</div>
+                    <div className="mt-3 flex items-center justify-between"><p className="text-sm font-semibold" style={{ color: "var(--vs-muted)" }}>Total: {filteredProducts.length} productos</p><select value={sortBy} onChange={(e) => setSortBy(e.target.value as VisualSort)} className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none" style={{ borderColor: "var(--vs-border)" }}><option value="featured">Ordenar por</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option><option value="nameAsc">Nombre A-Z</option></select></div>
+                  </div>
+
+                  <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
+                    {filteredProducts.map((p) => (
+                      <article key={p.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
+                        <div className="relative h-36 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img })); e.target.value = ""; }} /></label></div>
+                        <div className="space-y-2 p-3">
+                          <input value={p.badge || ""} onChange={(e) => updateProduct(p.id, { badge: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs font-bold uppercase outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Badge" />
+                          <input value={p.name} onChange={(e) => updateProduct(p.id, { name: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm font-black outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                          <input value={p.description} onChange={(e) => updateProduct(p.id, { description: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                          <input value={p.category || ""} onChange={(e) => updateProduct(p.id, { category: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Categoría" />
+                          <div className="grid grid-cols-2 gap-2">
+                            <input value={String((p.priceCents || 0) / 100)} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) return; updateProduct(p.id, { priceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Precio" />
+                            <input value={String(((p.compareAtPriceCents || 0) / 100) || "")} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) { updateProduct(p.id, { compareAtPriceCents: 0 }); return; } updateProduct(p.id, { compareAtPriceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Antes" />
+                          </div>
+                          <input value={p.ctaLabel || "Ver producto"} onChange={(e) => updateProduct(p.id, { ctaLabel: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="CTA" />
+                          <button onClick={() => removeProduct(p.id)} className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold text-red-600" style={{ borderColor: "#fecaca", background: "#fff5f5" }}><Trash2 className="h-3.5 w-3.5" />Eliminar</button>
+                        </div>
+                      </article>
                     ))}
                   </div>
-                  <div className="flex justify-end">
-                    <span
-                      className="w-8 h-8 rounded-full border border-white/10"
-                      style={{
-                        background: `rgb(${getRgbValue("accent", "r")}, ${getRgbValue("accent", "g")}, ${getRgbValue("accent", "b")})`,
-                      }}
-                    />
-                  </div>
+
+                  <button onClick={addProduct} className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-black text-white" style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}><Plus className="h-4 w-4" />Agregar producto</button>
                 </div>
-                <div className="grid grid-cols-3 gap-2 items-center">
-                  <div className="text-sm font-bold text-white">Secundario</div>
-                  <div className="flex items-center gap-2">
-                    {(["r", "g", "b"] as const).map((ch) => (
-                      <input
-                        key={`accent2-${ch}`}
-                        type="number"
-                        min={0}
-                        max={255}
-                        value={getRgbValue("accent2", ch)}
-                        onChange={(e) => updateRgb("accent2", ch, e.target.value)}
-                        className="w-16 px-2 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold text-xs outline-none focus:border-emerald-500/40"
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-end">
-                    <span
-                      className="w-8 h-8 rounded-full border border-white/10"
-                      style={{
-                        background: `rgb(${getRgbValue("accent2", "r")}, ${getRgbValue("accent2", "g")}, ${getRgbValue("accent2", "b")})`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={() => setConfig((c) => ({ ...c, customRgb: undefined }))}
-                  className="w-full px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all"
-                >
-                  Usar colores del tema
-                </button>
               </div>
             </div>
-          )}
+          </section>
 
-          {activePanel === "content" && (
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <RichTextField
-                  label="Hero: Kicker"
-                  value={config.content?.kickerHtml || config.content?.kicker || ""}
-                  onChange={(html) =>
-                    updateContent({
-                      kickerHtml: html,
-                      kicker: html.replace(/<[^>]*>/g, ""),
-                    })
-                  }
-                  placeholder="Ecommerce Deluxe"
-                  minHeightClass="min-h-[56px]"
-                />
-
-                <RichTextField
-                  label="Hero: Titular (por palabra)"
-                  value={config.content?.heroHeadlineHtml || ""}
-                  onChange={(html) =>
-                    updateContent({ heroHeadlineHtml: html })
-                  }
-                  placeholder='Tu tienda lista para <span class="fp-accent">vender hoy</span>.'
-                  minHeightClass="min-h-[88px]"
-                />
-
-                <RichTextField
-                  label="Hero: Subtitulo (por palabra)"
-                  value={config.content?.heroSubtitleHtml || config.content?.heroSubtitle || ""}
-                  onChange={(html) =>
-                    updateContent({
-                      heroSubtitleHtml: html,
-                      heroSubtitle: html.replace(/<[^>]*>/g, ""),
-                    })
-                  }
-                  placeholder="Productos, carrito y checkout..."
-                  minHeightClass="min-h-[120px]"
-                />
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton principal
-                    </label>
-                    <input
-                      value={config.content?.heroPrimaryButton || ""}
-                      onChange={(e) =>
-                        updateContent({ heroPrimaryButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton secundario
-                    </label>
-                    <input
-                      value={config.content?.heroSecondaryButton || ""}
-                      onChange={(e) =>
-                        updateContent({ heroSecondaryButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                </div>
+          <aside className="space-y-3">
+            <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+              <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinámico</h3>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Blanco + acentos personalizables.</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">{STORE_THEMES.map((t) => <button key={t.id} onClick={() => setConfig((p) => ({ ...p, themeId: t.id as StoreThemeId }))} className="rounded-xl border px-3 py-2 text-left text-xs font-bold" style={config.themeId === t.id ? { borderColor: "var(--vs-accent)", background: "color-mix(in srgb,var(--vs-accent) 12%,white)" } : { borderColor: "var(--vs-border)" }}>{t.name}</button>)}</div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <label className="text-xs font-semibold">Primario<input type="color" value={rgbToHex(config.customRgb?.accent)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
+                <label className="text-xs font-semibold">Secundario<input type="color" value={rgbToHex(config.customRgb?.accent2)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent2: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
               </div>
-
-              <div className="space-y-3">
-                <RichTextField
-                  label="Seccion productos: Titulo (por palabra)"
-                  value={config.content?.productsTitleHtml || config.content?.productsTitle || ""}
-                  onChange={(html) =>
-                    updateContent({
-                      productsTitleHtml: html,
-                      productsTitle: html.replace(/<[^>]*>/g, ""),
-                    })
-                  }
-                  placeholder="Productos destacados"
-                  minHeightClass="min-h-[60px]"
-                />
-
-                <RichTextField
-                  label="Seccion productos: Subtitulo (por palabra)"
-                  value={config.content?.productsSubtitleHtml || config.content?.productsSubtitle || ""}
-                  onChange={(html) =>
-                    updateContent({
-                      productsSubtitleHtml: html,
-                      productsSubtitle: html.replace(/<[^>]*>/g, ""),
-                    })
-                  }
-                  placeholder="Todo lo que agregues aqui aparecera debajo del hero."
-                  minHeightClass="min-h-[70px]"
-                />
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 space-y-3">
-                <div className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                  Beneficios
-                </div>
-                {featuresEditable.map((feat, idx) => (
-                  <div
-                    key={`feat-${idx}`}
-                    className="rounded-2xl border border-white/10 bg-black/30 p-3 space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <b className="text-xs text-white">Item {idx + 1}</b>
-                      <button
-                        onClick={() => removeFeature(idx)}
-                        className="text-xs text-red-300 hover:text-red-200"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                    <input
-                      value={feat.title}
-                      onChange={(e) =>
-                        updateFeature(idx, { title: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                      placeholder="Titulo"
-                    />
-                    <input
-                      value={feat.subtitle}
-                      onChange={(e) =>
-                        updateFeature(idx, { subtitle: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                      placeholder="Subtitulo"
-                    />
-                    <input
-                      value={feat.color || ""}
-                      onChange={(e) =>
-                        updateFeature(idx, { color: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                      placeholder="Color (ej: #a78bfa)"
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={addFeature}
-                  className="w-full px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all"
-                >
-                  Agregar beneficio
-                </button>
-              </div>
-
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4 space-y-3">
-                <div className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                  Etiquetas
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Carrito
-                    </label>
-                    <input
-                      value={config.content?.cartLabel || ""}
-                      onChange={(e) => updateContent({ cartLabel: e.target.value })}
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Checkout titulo
-                    </label>
-                    <input
-                      value={config.content?.checkoutTitle || ""}
-                      onChange={(e) =>
-                        updateContent({ checkoutTitle: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton checkout
-                    </label>
-                    <input
-                      value={config.content?.checkoutButton || ""}
-                      onChange={(e) =>
-                        updateContent({ checkoutButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton seguir
-                    </label>
-                    <input
-                      value={config.content?.continueButton || ""}
-                      onChange={(e) =>
-                        updateContent({ continueButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-                </div>
-                <RichTextField
-                  label="Tip (por palabra)"
-                  value={config.content?.tipTextHtml || config.content?.tipText || ""}
-                  onChange={(html) =>
-                    updateContent({
-                      tipTextHtml: html,
-                      tipText: html.replace(/<[^>]*>/g, ""),
-                    })
-                  }
-                  placeholder="Tip: ..."
-                  minHeightClass="min-h-[64px]"
-                />
-                <RichTextField
-                  label="Footer izquierda (por palabra)"
-                  value={config.content?.footerLeftHtml || config.content?.footerLeft || ""}
-                  onChange={(html) =>
-                    updateContent({
-                      footerLeftHtml: html,
-                      footerLeft: html.replace(/<[^>]*>/g, ""),
-                    })
-                  }
-                  placeholder="Publicado con Fast Page"
-                  minHeightClass="min-h-[56px]"
-                />
-              </div>
-            </div>
-          )}
-
-          {activePanel === "settings" && (
-            <div className="space-y-3">
-              <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">Nombre</label>
-                <input
-                  value={config.storeName}
-                  onChange={(e) => setConfig((c) => ({ ...c, storeName: e.target.value }))}
-                  className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                />
-                <label className="mt-4 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">Tagline</label>
-                <input
-                  value={config.tagline}
-                  onChange={(e) => setConfig((c) => ({ ...c, tagline: e.target.value }))}
-                  className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                />
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Moneda
-                    </label>
-                    <select
-                      value={config.currency}
-                      onChange={(e) => setConfig((c) => ({ ...c, currency: e.target.value as any }))}
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    >
-                      <option value="PEN">PEN</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      CTA
-                    </label>
-                    <input
-                      value={config.primaryCta || ""}
-                      onChange={(e) => setConfig((c) => ({ ...c, primaryCta: e.target.value }))}
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                      placeholder="Comprar ahora"
-                    />
-                  </div>
-                </div>
-                <label className="mt-4 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                  WhatsApp (opcional)
-                </label>
-                <input
-                  value={config.supportWhatsapp || ""}
-                  onChange={(e) => setConfig((c) => ({ ...c, supportWhatsapp: e.target.value }))}
-                  className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                  placeholder="51999999999"
-                />
-                <p className="mt-2 text-xs text-zinc-500">
-                  Si lo llenas, el boton principal abrira WhatsApp con tu carrito.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-grow flex items-center justify-center p-4 md:p-8 bg-zinc-900/50">
-          <div
-            className={`bg-white shadow-2xl transition-all duration-500 ease-in-out relative ${
-              viewMode === "mobile" ? "w-[375px] h-[667px] rounded-[40px] border-[12px] border-zinc-800" : "w-full h-full rounded-lg"
-            }`}
-          >
-            {loadingProject ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-zinc-950 rounded-[inherit]">
-                <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
-              </div>
-            ) : (
-              <iframe
-                ref={previewIframeRef}
-                title="Storefront Preview"
-                className="w-full h-full border-none rounded-[inherit]"
-                sandbox="allow-scripts allow-forms allow-popups allow-modals allow-same-origin"
-                srcDoc={storefrontHtml}
-              />
-            )}
-          </div>
+              <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Tema activo: <b>{visualTheme.label}</b><br />URL pública: <b>/t/{publicStoreSlug}</b></div>
+            </section>
+          </aside>
         </div>
       </div>
 
-      {mobilePanelOpen && (
-        <div className="fixed inset-0 z-[210] bg-black/70 backdrop-blur-md p-4 flex items-end lg:hidden">
-          <div className="w-full bg-zinc-900 border border-white/10 rounded-[28px] overflow-hidden shadow-2xl max-h-[85vh] flex flex-col">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <div className="min-w-0">
-                <p className="text-xs font-black tracking-[0.18em] uppercase text-zinc-500">
-                  Tienda Online
-                </p>
-                <b className="text-white">{config.storeName || "Tienda"}</b>
-              </div>
-              <button
-                onClick={() => setMobilePanelOpen(false)}
-                className="p-2 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white transition-all active:scale-95"
-                aria-label="Cerrar"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-2 border-b border-white/10">
-              <div className="flex p-1 bg-zinc-950/40 border border-white/10 rounded-2xl">
-                {[
-                  { id: "products", label: "Productos" },
-                  { id: "design", label: "Tema" },
-                  { id: "content", label: "Contenido" },
-                  { id: "settings", label: "Ajustes" },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActivePanel(tab.id as any)}
-                    className={`flex-1 px-3 py-2 rounded-xl text-xs font-extrabold transition-all ${
-                      activePanel === tab.id
-                        ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/20"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-4 overflow-y-auto no-scrollbar">
-              {activePanel === "products" && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => {
-                      setMobilePanelOpen(false);
-                      openNewProduct();
-                    }}
-                    className="w-full px-4 py-3 rounded-2xl bg-emerald-500 text-black font-extrabold hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
-                  >
-                    <Plus className="w-5 h-5" />
-                    Agregar producto
-                  </button>
-                  {products.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => {
-                        setMobilePanelOpen(false);
-                        openEditProduct(p);
-                      }}
-                      className="w-full text-left rounded-3xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition-all"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <b className="text-white truncate">{p.name}</b>
-                          <div className="mt-1 text-xs text-zinc-400 line-clamp-2">
-                            {p.description}
-                          </div>
-                          <div className="mt-2 text-sm font-extrabold text-emerald-300">
-                            {formatMoney(p.priceCents, config.currency)}
-                          </div>
-                        </div>
-                        <span className="text-zinc-500 text-xs font-black">Editar</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {activePanel === "design" && (
-                <div className="space-y-2">
-                  {STORE_THEMES.map((th) => (
-                    <button
-                      key={th.id}
-                      onClick={() =>
-                        setConfig((c) => ({ ...c, themeId: th.id as StoreThemeId }))
-                      }
-                      className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
-                        config.themeId === th.id
-                          ? "bg-emerald-500/10 border-emerald-500/25"
-                          : "bg-black/20 border-white/10 hover:bg-white/5"
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <div className="font-extrabold text-white truncate">
-                          {th.name}
-                        </div>
-                        <div className="text-xs text-zinc-500">Radio {th.radius}px</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-5 h-5 rounded-full border border-white/10"
-                          style={{ background: th.accent }}
-                        />
-                        <span
-                          className="w-5 h-5 rounded-full border border-white/10"
-                          style={{ background: th.accent2 }}
-                        />
-                      </div>
-                    </button>
-                  ))}
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-4 space-y-3">
-                    <div className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      RGB personalizado
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 items-center">
-                      <div className="text-sm font-bold text-white">Primario</div>
-                      <div className="flex items-center gap-2">
-                        {(["r", "g", "b"] as const).map((ch) => (
-                          <input
-                            key={`m-accent-${ch}`}
-                            type="number"
-                            min={0}
-                            max={255}
-                            value={getRgbValue("accent", ch)}
-                            onChange={(e) => updateRgb("accent", ch, e.target.value)}
-                            className="w-14 px-2 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold text-xs outline-none focus:border-emerald-500/40"
-                          />
-                        ))}
-                      </div>
-                      <div className="flex justify-end">
-                        <span
-                          className="w-7 h-7 rounded-full border border-white/10"
-                          style={{
-                            background: `rgb(${getRgbValue("accent", "r")}, ${getRgbValue("accent", "g")}, ${getRgbValue("accent", "b")})`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 items-center">
-                      <div className="text-sm font-bold text-white">Secundario</div>
-                      <div className="flex items-center gap-2">
-                        {(["r", "g", "b"] as const).map((ch) => (
-                          <input
-                            key={`m-accent2-${ch}`}
-                            type="number"
-                            min={0}
-                            max={255}
-                            value={getRgbValue("accent2", ch)}
-                            onChange={(e) => updateRgb("accent2", ch, e.target.value)}
-                            className="w-14 px-2 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold text-xs outline-none focus:border-emerald-500/40"
-                          />
-                        ))}
-                      </div>
-                      <div className="flex justify-end">
-                        <span
-                          className="w-7 h-7 rounded-full border border-white/10"
-                          style={{
-                            background: `rgb(${getRgbValue("accent2", "r")}, ${getRgbValue("accent2", "g")}, ${getRgbValue("accent2", "b")})`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setConfig((c) => ({ ...c, customRgb: undefined }))}
-                      className="w-full px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all"
-                    >
-                      Usar colores del tema
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activePanel === "content" && (
-                <div className="space-y-3">
-                  <div className="space-y-3">
-                    <RichTextField
-                      label="Hero: Kicker"
-                      value={config.content?.kickerHtml || config.content?.kicker || ""}
-                      onChange={(html) =>
-                        updateContent({
-                          kickerHtml: html,
-                          kicker: html.replace(/<[^>]*>/g, ""),
-                        })
-                      }
-                      placeholder="Ecommerce Deluxe"
-                      minHeightClass="min-h-[56px]"
-                    />
-
-                    <RichTextField
-                      label="Hero: Titular (por palabra)"
-                      value={config.content?.heroHeadlineHtml || ""}
-                      onChange={(html) => updateContent({ heroHeadlineHtml: html })}
-                      placeholder='Tu tienda lista para <span class="fp-accent">vender hoy</span>.'
-                      minHeightClass="min-h-[92px]"
-                    />
-
-                    <RichTextField
-                      label="Hero: Subtitulo (por palabra)"
-                      value={config.content?.heroSubtitleHtml || config.content?.heroSubtitle || ""}
-                      onChange={(html) =>
-                        updateContent({
-                          heroSubtitleHtml: html,
-                          heroSubtitle: html.replace(/<[^>]*>/g, ""),
-                        })
-                      }
-                      placeholder="Productos, carrito y checkout..."
-                      minHeightClass="min-h-[120px]"
-                    />
-
-                    <label className="mt-3 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton principal
-                    </label>
-                    <input
-                      value={config.content?.heroPrimaryButton || ""}
-                      onChange={(e) =>
-                        updateContent({ heroPrimaryButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                    <label className="mt-3 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton secundario
-                    </label>
-                    <input
-                      value={config.content?.heroSecondaryButton || ""}
-                      onChange={(e) =>
-                        updateContent({ heroSecondaryButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <RichTextField
-                      label="Productos: Titulo (por palabra)"
-                      value={config.content?.productsTitleHtml || config.content?.productsTitle || ""}
-                      onChange={(html) =>
-                        updateContent({
-                          productsTitleHtml: html,
-                          productsTitle: html.replace(/<[^>]*>/g, ""),
-                        })
-                      }
-                      placeholder="Productos destacados"
-                      minHeightClass="min-h-[60px]"
-                    />
-                    <RichTextField
-                      label="Productos: Subtitulo (por palabra)"
-                      value={config.content?.productsSubtitleHtml || config.content?.productsSubtitle || ""}
-                      onChange={(html) =>
-                        updateContent({
-                          productsSubtitleHtml: html,
-                          productsSubtitle: html.replace(/<[^>]*>/g, ""),
-                        })
-                      }
-                      placeholder="Todo lo que agregues aqui aparecera debajo del hero."
-                      minHeightClass="min-h-[70px]"
-                    />
-                  </div>
-
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-4 space-y-3">
-                    <div className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Beneficios
-                    </div>
-                    {featuresEditable.map((feat, idx) => (
-                      <div
-                        key={`mfeat-${idx}`}
-                        className="rounded-2xl border border-white/10 bg-black/30 p-3 space-y-2"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <b className="text-xs text-white">Item {idx + 1}</b>
-                          <button
-                            onClick={() => removeFeature(idx)}
-                            className="text-xs text-red-300 hover:text-red-200"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                        <input
-                          value={feat.title}
-                          onChange={(e) =>
-                            updateFeature(idx, { title: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                          placeholder="Titulo"
-                        />
-                        <input
-                          value={feat.subtitle}
-                          onChange={(e) =>
-                            updateFeature(idx, { subtitle: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                          placeholder="Subtitulo"
-                        />
-                        <input
-                          value={feat.color || ""}
-                          onChange={(e) =>
-                            updateFeature(idx, { color: e.target.value })
-                          }
-                          className="w-full px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                          placeholder="Color (ej: #a78bfa)"
-                        />
-                      </div>
-                    ))}
-                    <button
-                      onClick={addFeature}
-                      className="w-full px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 transition-all"
-                    >
-                      Agregar beneficio
-                    </button>
-                  </div>
-
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-4 space-y-3">
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Carrito
-                    </label>
-                    <input
-                      value={config.content?.cartLabel || ""}
-                      onChange={(e) => updateContent({ cartLabel: e.target.value })}
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                    <label className="mt-3 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Checkout titulo
-                    </label>
-                    <input
-                      value={config.content?.checkoutTitle || ""}
-                      onChange={(e) =>
-                        updateContent({ checkoutTitle: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                    <label className="mt-3 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton checkout
-                    </label>
-                    <input
-                      value={config.content?.checkoutButton || ""}
-                      onChange={(e) =>
-                        updateContent({ checkoutButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                    <label className="mt-3 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Boton seguir
-                    </label>
-                    <input
-                      value={config.content?.continueButton || ""}
-                      onChange={(e) =>
-                        updateContent({ continueButton: e.target.value })
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                    <RichTextField
-                      label="Tip (por palabra)"
-                      value={config.content?.tipTextHtml || config.content?.tipText || ""}
-                      onChange={(html) =>
-                        updateContent({
-                          tipTextHtml: html,
-                          tipText: html.replace(/<[^>]*>/g, ""),
-                        })
-                      }
-                      placeholder="Tip: ..."
-                      minHeightClass="min-h-[64px]"
-                    />
-                    <RichTextField
-                      label="Footer izquierda (por palabra)"
-                      value={config.content?.footerLeftHtml || config.content?.footerLeft || ""}
-                      onChange={(html) =>
-                        updateContent({
-                          footerLeftHtml: html,
-                          footerLeft: html.replace(/<[^>]*>/g, ""),
-                        })
-                      }
-                      placeholder="Publicado con Fast Page"
-                      minHeightClass="min-h-[56px]"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {activePanel === "settings" && (
-                <div className="space-y-3">
-                  <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-                    <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Nombre
-                    </label>
-                    <input
-                      value={config.storeName}
-                      onChange={(e) =>
-                        setConfig((c) => ({ ...c, storeName: e.target.value }))
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-                    <label className="mt-4 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      Tagline
-                    </label>
-                    <input
-                      value={config.tagline}
-                      onChange={(e) =>
-                        setConfig((c) => ({ ...c, tagline: e.target.value }))
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    />
-
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                          Moneda
-                        </label>
-                        <select
-                          value={config.currency}
-                          onChange={(e) =>
-                            setConfig((c) => ({
-                              ...c,
-                              currency: e.target.value as any,
-                            }))
-                          }
-                          className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                        >
-                          <option value="PEN">PEN</option>
-                          <option value="USD">USD</option>
-                          <option value="EUR">EUR</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                          CTA
-                        </label>
-                        <input
-                          value={config.primaryCta || ""}
-                          onChange={(e) =>
-                            setConfig((c) => ({
-                              ...c,
-                              primaryCta: e.target.value,
-                            }))
-                          }
-                          className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                          placeholder="Comprar ahora"
-                        />
-                      </div>
-                    </div>
-
-                    <label className="mt-4 block text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                      WhatsApp (opcional)
-                    </label>
-                    <input
-                      value={config.supportWhatsapp || ""}
-                      onChange={(e) =>
-                        setConfig((c) => ({
-                          ...c,
-                          supportWhatsapp: e.target.value,
-                        }))
-                      }
-                      className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                      placeholder="51999999999"
-                    />
-                    <p className="mt-2 text-xs text-zinc-500">
-                      Si lo llenas, el boton principal abrira WhatsApp con tu carrito.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {productModalOpen && (
-        <div className="fixed inset-0 z-[220] bg-black/70 backdrop-blur-md p-4 flex items-center justify-center">
-          <div className="w-full max-w-xl bg-zinc-900 border border-white/10 rounded-[28px] overflow-hidden shadow-2xl">
-            <div className="p-5 border-b border-white/10 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black tracking-[0.18em] uppercase text-zinc-500">
-                  Productos
-                </p>
-                <h3 className="text-lg font-extrabold text-white">
-                  {editingProductId ? "Editar producto" : "Nuevo producto"}
-                </h3>
-              </div>
-              <button
-                onClick={() => setProductModalOpen(false)}
-                className="p-2 rounded-xl hover:bg-white/5 text-zinc-400 hover:text-white transition-all active:scale-95"
-                aria-label="Cerrar"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-5 grid grid-cols-1 gap-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                    Nombre
-                  </label>
-                  <input
-                    value={productDraft.name}
-                    onChange={(e) => setProductDraft((d) => ({ ...d, name: e.target.value }))}
-                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    placeholder="Producto"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                    Precio
-                  </label>
-                  <input
-                    value={productDraft.price}
-                    onChange={(e) => setProductDraft((d) => ({ ...d, price: e.target.value }))}
-                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    placeholder="29.90"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                  Descripcion
-                </label>
-                <textarea
-                  value={productDraft.description}
-                  onChange={(e) => setProductDraft((d) => ({ ...d, description: e.target.value }))}
-                  className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40 min-h-[90px]"
-                  placeholder="Beneficio, detalle, garantia..."
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                  Imagen (URL)
-                </label>
-                <input
-                  value={productDraft.imageUrl}
-                  onChange={(e) => setProductDraft((d) => ({ ...d, imageUrl: e.target.value }))}
-                  className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                    Badge
-                  </label>
-                  <input
-                    value={productDraft.badge}
-                    onChange={(e) => setProductDraft((d) => ({ ...d, badge: e.target.value }))}
-                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    placeholder="Nuevo / Oferta"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-extrabold tracking-[0.18em] uppercase text-zinc-500">
-                    SKU
-                  </label>
-                  <input
-                    value={productDraft.sku}
-                    onChange={(e) => setProductDraft((d) => ({ ...d, sku: e.target.value }))}
-                    className="mt-2 w-full px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold outline-none focus:border-emerald-500/40"
-                    placeholder="SKU-001"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <label className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-black/30 border border-white/10 text-white font-bold">
-                    <input
-                      type="checkbox"
-                      checked={productDraft.active}
-                      onChange={(e) => setProductDraft((d) => ({ ...d, active: e.target.checked }))}
-                      className="w-4 h-4"
-                    />
-                    Activo
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  onClick={() => setProductModalOpen(false)}
-                  className="px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-extrabold hover:bg-white/10 transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={upsertProduct}
-                  className="px-6 py-3 rounded-2xl bg-emerald-500 text-black font-extrabold hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-                >
-                  <CheckCircle className="w-5 h-5" />
-                  Guardar producto
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="fixed bottom-8 right-8 bg-red-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-3 shadow-xl z-[300]">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-2 hover:bg-white/10 rounded-lg p-1">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {savedToast && (
-        <div className="fixed bottom-8 right-8 bg-emerald-500 text-black px-6 py-3 rounded-2xl font-bold flex items-center gap-3 shadow-xl z-[300]">
-          <CheckCircle className="w-5 h-5" />
-          <span>Cambios guardados</span>
-        </div>
-      )}
-
-      <PublishSuccessModal
-        open={Boolean(showPublished && publishedUrl)}
-        url={publishedUrl || "/preview"}
-        onBackToPanel={() => {
-          setShowPublished(false);
-          router.push("/published");
-        }}
-        onContinueEditing={() => setShowPublished(false)}
-      />
+      {error && <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 shadow-xl">{error}</div>}
+      {savedToast && <div className="fixed bottom-5 left-5 z-50 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-black text-emerald-700 shadow-xl">Cambios guardados</div>}
+      {loadingProject && <div className="fixed inset-0 z-50 grid place-items-center bg-black/30"><div className="rounded-2xl bg-white p-6 shadow-2xl"><Loader2 className="h-7 w-7 animate-spin" /></div></div>}
     </div>
   );
 }
-

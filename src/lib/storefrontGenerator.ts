@@ -22,6 +22,9 @@ export type StoreProduct = {
   active: boolean;
   badge?: string;
   sku?: string;
+  category?: string;
+  compareAtPriceCents?: number;
+  ctaLabel?: string;
 };
 
 export type StoreFeature = {
@@ -72,6 +75,19 @@ export type StoreConfig = {
     continueButton?: string;
     footerLeft?: string;
     footerLeftHtml?: string;
+    topStripText?: string;
+    heroImageUrl?: string;
+    logoImageUrl?: string;
+    businessSubtitle?: string;
+    businessAddress?: string;
+    scheduleText?: string;
+    offerSectionTitle?: string;
+    searchPlaceholder?: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+    tiktokUrl?: string;
+    whatsappUrl?: string;
+    phoneUrl?: string;
   };
 
   features?: StoreFeature[];

@@ -727,3 +727,28 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Reglas Firestore ajustadas:
   - lectura publica solo para `cloned_sites` publicados de `source: "store-builder"`.
   - nueva coleccion `store_orders` con `create` publico validado para checkout y lectura restringida a admin/owner.
+
+## Online Store Visual Editor Revamp (2026-02-25)
+
+- Ruta privada actualizada: `/store`.
+- Cambio principal:
+  - editor convertido a modo visual inline (WYSIWYG) sobre la misma plantilla.
+  - textos e imagenes editables directamente dentro del canvas (sin depender de panel separado para todo).
+- UX editor:
+  - switch `PC / Movil` para revisar y editar responsive real.
+  - carga de imagenes desde la misma pagina para portada, logo y productos.
+  - edicion inline de productos (badge, nombre, descripcion, categoria, precio, CTA).
+  - bloque de ofertas con carrusel horizontal en modo movil.
+- Temas dinamicos:
+  - fondo claro con acentos dinamicos por tema y colores customizables.
+  - combinaciones tipo rojo/negro, dorado/negro y variantes aqua/mint/mono manteniendo superficie blanca.
+- Ruta publica alineada: `/t/[slug]`.
+  - estructura visual tipo catalogo ecommerce multirubro:
+    - mini header
+    - hero compacto
+    - ofertas especiales
+    - buscador + chips de categoria + ordenar
+    - grid de productos
+    - paginacion
+    - footer oscuro social
+    - carrito flotante + drawer + checkout MVP por WhatsApp
