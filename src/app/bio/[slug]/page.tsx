@@ -46,6 +46,7 @@ type PublicTab = "contact" | "catalog" | "location";
 type CheckoutStep = "cart" | "checkout";
 type DeliveryMethod = "delivery" | "pickup" | "dinein";
 type PaymentMethod = "cash" | "transfer" | "yape" | "plin";
+type GoldKeywordAction = "contact" | "catalog" | "location" | "call" | "whatsapp";
 
 type CartItem = {
   id: string;
@@ -125,6 +126,24 @@ function renderTitleWithAccent(value: string, accentColor: string) {
       <span style={{ color: accentColor }}>{tail}</span>
     </>
   );
+}
+
+function normalizeKeywordToken(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function resolveGoldKeywordAction(token: string): GoldKeywordAction | null {
+  if (!token) return null;
+  if (["carta", "menu", "catalogo", "productos", "platos"].includes(token)) return "catalog";
+  if (["ubicacion", "mapa", "direccion", "local"].includes(token)) return "location";
+  if (["contacto", "atencion", "clientes"].includes(token)) return "contact";
+  if (["llamar", "telefono", "celular"].includes(token)) return "call";
+  if (["whatsapp", "pedido", "pedidos", "reservas"].includes(token)) return "whatsapp";
+  return null;
 }
 
 function normalizePhone(raw: string): string {
@@ -436,6 +455,66 @@ export default function PublicBioPage() {
     yape: "Yape",
     plin: "Plin",
   };
+
+  const goldKeywordStyle: CSSProperties = {
+    backgroundImage:
+      "linear-gradient(180deg, rgba(255,248,220,1) 0%, rgba(252,211,77,1) 46%, rgba(217,119,6,1) 100%)",
+    WebkitBackgroundClip: "text",
+    backgroundClip: "text",
+    color: "transparent",
+    textShadow: useWhiteCartaBackground
+      ? "0 0 10px rgba(217,119,6,0.26)"
+      : "0 0 12px rgba(252,211,77,0.3), 0 1px 0 rgba(255,255,255,0.25)",
+  };
+
+  function onGoldKeywordClick(action: GoldKeywordAction) {
+    if (action === "catalog") {
+      setActiveTab("catalog");
+      return;
+    }
+    if (action === "location") {
+      setActiveTab("location");
+      return;
+    }
+    if (action === "contact") {
+      setActiveTab("contact");
+      return;
+    }
+    if (action === "call") {
+      if (callHref) {
+        window.location.href = callHref;
+      } else {
+        setActiveTab("contact");
+      }
+      return;
+    }
+    if (whatsappHref) {
+      window.open(whatsappHref, "_blank", "noopener,noreferrer");
+    } else {
+      setActiveTab("contact");
+    }
+  }
+
+  function renderBioWithGoldKeywords(text: string) {
+    const chunks = text.split(/(\s+)/);
+    return chunks.map((chunk, index) => {
+      if (!chunk.trim()) return <span key={`space-${index}`}>{chunk}</span>;
+      const action = resolveGoldKeywordAction(normalizeKeywordToken(chunk));
+      if (!action) return <span key={`txt-${index}`}>{chunk}</span>;
+      return (
+        <button
+          key={`kw-${index}`}
+          type="button"
+          onClick={() => onGoldKeywordClick(action)}
+          className="inline font-semibold underline-offset-4 transition hover:brightness-110 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] rounded-[0.35rem] px-0.5"
+          style={goldKeywordStyle}
+          title="Ir a esta seccion"
+        >
+          {chunk}
+        </button>
+      );
+    });
+  }
 
   function addItemToCart(
     item: LinkHubProfile["catalogItems"][number],
@@ -941,7 +1020,7 @@ export default function PublicBioPage() {
               </p>
               {profile.bio && (
                 <p className="mt-3 text-sm md:text-base" style={{ color: textPalette.muted }}>
-                  {profile.bio}
+                  {renderBioWithGoldKeywords(profile.bio)}
                 </p>
               )}
             </div>

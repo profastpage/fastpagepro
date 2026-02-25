@@ -587,3 +587,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - el `Preview Mobile` ahora refleja esta eleccion en vivo.
 - Render publico:
   - `/bio/[slug]` aplica la eleccion persistida para fondo, superficies y menu.
+
+## Gold Click Keywords in Bio (2026-02-25)
+
+- Ruta ajustada: `/bio/[slug]`.
+- Se agrego resaltado dorado estilo landing en palabras clave del texto `bio`.
+- Palabras destacadas ahora son accionables:
+  - `carta/menu/catalogo` -> abre tab Carta.
+  - `ubicacion/mapa/direccion` -> abre tab Ubicacion.
+  - `contacto` -> abre tab Contacto.
+  - `llamar/telefono` -> ejecuta llamada (si hay telefono).
+  - `whatsapp/pedido/reservas` -> abre WhatsApp (si esta configurado).
