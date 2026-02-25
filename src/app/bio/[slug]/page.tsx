@@ -110,6 +110,22 @@ function MessageCircleIcon({ className }: { className?: string }) {
   );
 }
 
+function renderTitleWithAccent(value: string, accentColor: string) {
+  const clean = value.trim();
+  if (!clean) return value;
+  const parts = clean.split(/\s+/);
+  if (parts.length === 1) {
+    return <span>{clean}</span>;
+  }
+  const tail = parts.pop() || "";
+  return (
+    <>
+      <span>{parts.join(" ")} </span>
+      <span style={{ color: accentColor }}>{tail}</span>
+    </>
+  );
+}
+
 function normalizePhone(raw: string): string {
   return raw.replace(/[^\d+]/g, "");
 }
@@ -382,6 +398,7 @@ export default function PublicBioPage() {
     accent: colors.primary,
     searchPlaceholder: "#94a3b8",
   };
+  const accentWordColor = colors.primary;
   const safeFont = getSafeLinkHubFontFamily(profile.fontFamily);
   const fontFamily = LINK_HUB_FONT_FAMILIES[safeFont].stack;
 
@@ -753,6 +770,7 @@ export default function PublicBioPage() {
 
   const itemSurfaceStyle = {
     background: "var(--carta-surface-2)",
+    boxShadow: "0 10px 22px -18px rgba(15,23,42,0.35)",
   };
 
   const contactActionStyle = {
@@ -780,7 +798,7 @@ export default function PublicBioPage() {
       style={pageStyle}
     >
       <div
-        className="mx-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-[2.25rem] border md:max-w-5xl md:rounded-[2.5rem]"
+        className="mx-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-[2.45rem] border md:max-w-5xl md:rounded-[2.75rem]"
         style={wrapperStyle}
       >
         <div
@@ -811,7 +829,7 @@ export default function PublicBioPage() {
             {activeTab !== "contact" && (
               <p
                 className="pointer-events-none absolute left-1/2 top-1/2 w-[46%] -translate-x-1/2 -translate-y-1/2 truncate text-center text-sm font-black uppercase tracking-[0.12em] md:text-base"
-                style={{ color: textPalette.heading }}
+                style={{ color: accentWordColor }}
               >
                 {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
               </p>
@@ -899,7 +917,7 @@ export default function PublicBioPage() {
 
             <div className="px-5 md:px-8 pt-16 md:pt-20 pb-4 text-center">
               <h1 className="text-4xl md:text-6xl font-black tracking-tight" style={{ color: textPalette.heading }}>
-                {profile.displayName}
+                {renderTitleWithAccent(profile.displayName, accentWordColor)}
               </h1>
               <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: "var(--carta-accent)" }}>
                 {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
@@ -942,7 +960,7 @@ export default function PublicBioPage() {
           <button
             type="button"
             onClick={() => setActiveTab("contact")}
-            className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
             style={
               activeTab === "contact"
                 ? navActiveStyle
@@ -957,7 +975,7 @@ export default function PublicBioPage() {
           <button
             type="button"
             onClick={() => setActiveTab("catalog")}
-            className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
             style={
               activeTab === "catalog"
                 ? navActiveStyle
@@ -972,7 +990,7 @@ export default function PublicBioPage() {
           <button
             type="button"
             onClick={() => setActiveTab("location")}
-            className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
             style={
               activeTab === "location"
                 ? navActiveStyle
@@ -989,10 +1007,10 @@ export default function PublicBioPage() {
         <div className="flex-1 overflow-hidden px-4 pb-24 md:px-8 md:pb-6">
           {activeTab === "contact" && (
             <section
-              className={`flex h-full min-h-0 flex-col rounded-3xl border p-4 md:p-6 ${cardClass}`}
+              className={`flex h-full min-h-0 flex-col rounded-[1.9rem] border p-4 md:p-6 ${cardClass}`}
               style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}
             >
-              <h2 className="text-2xl font-black" style={{ color: textPalette.heading }}>
+              <h2 className="text-2xl font-black" style={{ color: accentWordColor }}>
                 {profile.sectionLabels.contact}
               </h2>
               <p className="mt-1 text-sm" style={{ color: textPalette.muted }}>
@@ -1027,9 +1045,9 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "catalog" && (
-            <section className={`flex h-full flex-col overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
+            <section className={`flex h-full flex-col overflow-hidden rounded-[1.9rem] border p-4 ${cardClass}`} style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
               <div className="hidden md:flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-black" style={{ color: textPalette.heading }}>
+                <h2 className="text-2xl font-black" style={{ color: accentWordColor }}>
                   {catalogLabel}
                 </h2>
                 <div className="inline-flex items-center gap-2">
@@ -1116,14 +1134,14 @@ export default function PublicBioPage() {
                       }}
                       className="scroll-mt-24"
                     >
-                      <h3 className="text-3xl md:text-2xl font-black tracking-tight" style={{ color: textPalette.heading }}>
+                      <h3 className="text-3xl md:text-2xl font-black tracking-tight" style={{ color: accentWordColor }}>
                         {section.name}
                       </h3>
                       <div className="mt-3 space-y-3">
                         {section.items.map((item) => (
                           <article
                             key={item.id}
-                            className={`rounded-2xl border p-3 ${cardClass}`}
+                            className={`rounded-[1.2rem] border p-3 ${cardClass}`}
                             style={{ borderColor: "var(--carta-border)", ...itemSurfaceStyle }}
                           >
                             <div className="flex gap-3">
@@ -1188,8 +1206,8 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "location" && (
-            <section className={`h-full overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
-              <h2 className="hidden md:block text-2xl font-black" style={{ color: textPalette.heading }}>
+            <section className={`h-full overflow-hidden rounded-[1.9rem] border p-4 ${cardClass}`} style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
+              <h2 className="hidden md:block text-2xl font-black" style={{ color: accentWordColor }}>
                 {profile.sectionLabels.location}
               </h2>
 
@@ -1219,7 +1237,7 @@ export default function PublicBioPage() {
 
               {profile.location.scheduleLines.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-2xl font-black" style={{ color: textPalette.heading }}>Horarios</p>
+                  <p className="text-2xl font-black" style={{ color: accentWordColor }}>Horarios</p>
                   <div className="mt-2 space-y-2 text-sm" style={{ color: textPalette.muted }}>
                     {profile.location.scheduleLines.map((line, index) => (
                       <p key={`${line}-${index}`}>{line}</p>
@@ -1269,12 +1287,12 @@ export default function PublicBioPage() {
       )}
 
       <div className="md:hidden fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
-        <div className="mx-auto w-full max-w-md rounded-2xl border p-1 backdrop-blur-xl" style={navSurfaceStyle}>
+        <div className="mx-auto w-full max-w-md rounded-[1.5rem] border p-1 backdrop-blur-xl" style={navSurfaceStyle}>
           <div className="grid grid-cols-3 gap-1">
             <button
               type="button"
               onClick={() => setActiveTab("contact")}
-              className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
               style={
                 activeTab === "contact"
                   ? navActiveStyle
@@ -1290,7 +1308,7 @@ export default function PublicBioPage() {
             <button
               type="button"
               onClick={() => setActiveTab("catalog")}
-              className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
               style={
                 activeTab === "catalog"
                   ? navActiveStyle
@@ -1306,7 +1324,7 @@ export default function PublicBioPage() {
             <button
               type="button"
               onClick={() => setActiveTab("location")}
-              className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
               style={
                 activeTab === "location"
                   ? navActiveStyle

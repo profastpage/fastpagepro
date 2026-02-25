@@ -527,3 +527,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Resultado UX:
   - apariencia alineada a referencia de carta blanca profesional.
   - menu conserva identidad de color segun tema elegido por el usuario.
+
+## Public Bio Rounded Frames + Accent Words (2026-02-25)
+
+- Ruta ajustada: `/bio/[slug]`.
+- Refinamiento visual:
+  - marcos mas redondeados en contenedor principal, secciones, tarjetas de producto y barra inferior.
+  - bordes y sombras suaves para un look fino/ordenado tipo referencia.
+- Acento de color del menu aplicado a palabras clave:
+  - nombre principal con ultima palabra en color del tema.
+  - titulos clave de secciones (`Contacto`, `Carta/Catalogo`, `Ubicacion`, `Horarios`) con color del menu activo.
+  - categorias de la carta destacadas con el mismo color de tema.
