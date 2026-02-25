@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const CLEANUP_KEY = "fp_sw_cleanup_v1";
+const CLEANUP_KEY = "fp_sw_cleanup_v2";
 
 export default function ServiceWorkerCleanup() {
   useEffect(() => {

@@ -851,3 +851,5 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - API ajustada: `/api/subscription/current`
   - ante error interno no-auth, devuelve fallback `FREE` con estado degradado (`200`) en lugar de `500`.
   - evita que el frontend quede en estado inestable cuando falla temporalmente Prisma o servicios de suscripcion.
+- Service worker cleanup:
+  - se incremento version de limpieza (`fp_sw_cleanup_v2`) para forzar invalidacion de caches/SW legacy en clientes que seguian con bundle antiguo.

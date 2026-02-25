@@ -86,6 +86,36 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ error: "No se pudo obtener la suscripcion actual" }, { status: 500 });
+    const now = new Date();
+    const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+    const features = ALL_FEATURES.reduce<Record<SubscriptionFeature, boolean>>(
+      (acc, feature) => {
+        acc[feature] = canAccessFeature("FREE", feature);
+        return acc;
+      },
+      {} as Record<SubscriptionFeature, boolean>,
+    );
+
+    return NextResponse.json(
+      {
+        degraded: true,
+        summary: {
+          userId: userId || "unknown",
+          plan: "FREE",
+          status: "ACTIVE",
+          startDate: now.toISOString(),
+          endDate: endDate.toISOString(),
+          expiringSoon: false,
+          daysRemaining: 3650,
+          limits: getPlanLimits("FREE"),
+          usage: {
+            publishedPages: 0,
+          },
+          features,
+        },
+        pendingRequests: [],
+      },
+      { status: 200 },
+    );
   }
 }
