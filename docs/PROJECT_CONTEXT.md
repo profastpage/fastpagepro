@@ -427,3 +427,17 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Resultado UX:
   - en PC se libera la parte superior del formulario principal.
   - las acciones quedan visualmente ancladas al preview y ordenadas en un bloque estable.
+
+## LinkHub Mobile Framing + Overflow Hardening (2026-02-25)
+
+- Ruta ajustada: `/linkhub`.
+- Orden visual mobile-first alineado al formato de tarjetas de `Billing`:
+  - contenedor principal mobile ahora usa `max-w-md` centrado.
+  - barra superior de acciones mobile tambien centrada con el mismo ancho.
+- Correcciones de desborde horizontal en editor de carta/catalogo:
+  - filas de acciones y encabezados ahora envuelven (`flex-wrap`) en mobile.
+  - bloques de categorias y controles pasan a stacking en pantallas pequenas.
+  - botones largos de item (`Duplicar`, `Sugerir`, `Eliminar`) reducen densidad en mobile para no romper marco.
+- Resultado:
+  - Link Hub queda encasillado y ordenado como en el patron visual de la imagen de referencia.
+  - desaparece el corte lateral/overflow en secciones de item y categorias.

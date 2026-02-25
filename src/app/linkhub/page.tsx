@@ -1469,9 +1469,9 @@ export default function LinkHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground px-4 md:px-8 pt-40 md:pt-24 pb-16">
+    <div className="min-h-screen bg-background text-foreground px-3 md:px-8 pt-40 md:pt-24 pb-16">
       <div className="fixed inset-x-0 top-16 z-40 px-4 md:hidden">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto w-full max-w-md">
           <div className="rounded-3xl border border-white/10 bg-zinc-950/90 p-3 backdrop-blur-xl">
             <div className="flex flex-row-reverse items-center justify-end gap-2">
               <button
@@ -1505,7 +1505,7 @@ export default function LinkHubPage() {
           </div>
         </div>
       </div>
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto w-full max-w-md md:max-w-7xl">
         <div className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Link Hub</h1>
@@ -1674,7 +1674,7 @@ export default function LinkHubPage() {
                       />
                     </label>
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-3">
+                  <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-zinc-500">
                       {profile.coverImageUrls.length}/{MAX_LINK_HUB_COVER_IMAGES} imagenes de portada. Si agregas mas de una, se mostraran con transicion automatica en la pagina publica.
                     </p>
@@ -1769,7 +1769,7 @@ export default function LinkHubPage() {
                 </label>
               </div>
 
-              <div className="flex items-center justify-between gap-4 mb-5">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold text-white">Enlaces sociales y CTA</h2>
                 <button
                   type="button"
@@ -1846,11 +1846,11 @@ export default function LinkHubPage() {
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
-              <div className="mb-5 flex items-center justify-between gap-3">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold text-white">
                   {profile.businessType === "restaurant" ? "Carta" : "Catalogo"} digital
                 </h2>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={suggestDescriptionsForAllItems}
@@ -1889,7 +1889,7 @@ export default function LinkHubPage() {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm font-bold text-white">Categorias</p>
                   <button
                     type="button"
@@ -1903,7 +1903,7 @@ export default function LinkHubPage() {
                 </div>
                 <div className="space-y-2">
                   {profile.catalogCategories.map((category) => (
-                    <div key={category.id} className="grid grid-cols-[90px_1fr_auto] gap-2">
+                    <div key={category.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[90px_1fr_auto]">
                       <input
                         className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
                         value={category.emoji || ""}
@@ -1946,9 +1946,9 @@ export default function LinkHubPage() {
                 )}
                 {filteredEditorItems.map((item) => (
                   <div key={item.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm font-bold text-white">Item</p>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => moveCatalogItem(item.id, "up")}
@@ -1973,7 +1973,7 @@ export default function LinkHubPage() {
                         <button
                           type="button"
                           onClick={() => duplicateCatalogItem(item.id)}
-                          className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-sky-100"
+                          className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-100 sm:px-3 sm:text-[11px]"
                         >
                           Duplicar
                         </button>
@@ -1981,7 +1981,7 @@ export default function LinkHubPage() {
                           type="button"
                           onClick={() => suggestCatalogItemDescription(item.id)}
                           disabled={!aiEnabled}
-                          className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-amber-100"
+                          className="rounded-xl border border-amber-300/30 bg-amber-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-100 sm:px-3 sm:text-[11px]"
                           title={aiEnabled ? "Sugerir descripción con IA" : "Disponible en plan PRO"}
                         >
                           Sugerir descripcion
@@ -1989,7 +1989,7 @@ export default function LinkHubPage() {
                         <button
                           type="button"
                           onClick={() => removeCatalogItem(item.id)}
-                          className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-red-100"
+                          className="rounded-xl border border-red-300/30 bg-red-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-red-100 sm:px-3 sm:text-[11px]"
                         >
                           Eliminar
                         </button>
