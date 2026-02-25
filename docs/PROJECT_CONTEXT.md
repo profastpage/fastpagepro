@@ -417,3 +417,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Resultado:
   - los dos colores del tema se conservan al `guardar`, `publicar` y abrir URL publicada.
   - la vista publica queda consistente con el preview del dashboard.
+
+## LinkHub Actions Repositioned by Viewport (2026-02-25)
+
+- Ruta ajustada: `/linkhub`.
+- Comportamiento nuevo de acciones `Guardar / Publicar / Copiar`:
+  - `mobile` (`< md`): barra superior fija con iconos pequenos.
+  - `desktop` (`>= md`): bloque de acciones movido debajo del panel `Preview Mobile`, dentro del sidebar derecho.
+- Resultado UX:
+  - en PC se libera la parte superior del formulario principal.
+  - las acciones quedan visualmente ancladas al preview y ordenadas en un bloque estable.
