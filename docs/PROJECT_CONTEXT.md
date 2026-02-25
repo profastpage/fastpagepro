@@ -538,3 +538,15 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - nombre principal con ultima palabra en color del tema.
   - titulos clave de secciones (`Contacto`, `Carta/Catalogo`, `Ubicacion`, `Horarios`) con color del menu activo.
   - categorias de la carta destacadas con el mismo color de tema.
+
+## LinkHub Preview Aligned with Carta Digital (2026-02-25)
+
+- Ruta ajustada: `/linkhub` (sidebar de `Preview Mobile`).
+- Se reemplazo el preview oscuro legacy por una maqueta real de Carta Digital:
+  - shell blanco y limpio.
+  - header compacto con avatar + compartir.
+  - portada + avatar central.
+  - bloque de `CARTA/CATALOGO` con buscador y chips de categoria.
+  - cards de productos/items en mini.
+  - barra inferior de 3 tabs (Contacto/Carta-Ubicacion) con color activo del tema.
+- El color dinamico del tema se concentra en menu/chips/nav para que el editor refleje el resultado esperado de la carta.

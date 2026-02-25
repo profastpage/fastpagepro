@@ -49,7 +49,6 @@ import {
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import {
-  CheckCircle2,
   Copy,
   ExternalLink,
   Fish,
@@ -111,6 +110,19 @@ function createEmptyLink(): LinkHubLink {
     url: "",
     type: "website",
   };
+}
+
+function highlightLastWord(value: string, accentColor: string) {
+  const clean = value.trim();
+  if (!clean) return value;
+  const parts = clean.split(/\s+/);
+  if (parts.length === 1) return clean;
+  const tail = parts.pop() || "";
+  return (
+    <>
+      {parts.join(" ")} <span style={{ color: accentColor }}>{tail}</span>
+    </>
+  );
 }
 
 function randomColorHex(): string {
@@ -603,63 +615,88 @@ export default function LinkHubPage() {
     });
   }, [editorItemSearch, profile]);
 
+  const previewMenuBorder = useMemo(() => hexToRgba(activeTheme.primary, 0.34), [activeTheme.primary]);
+  const previewMenuGradientSoft = useMemo(
+    () =>
+      `linear-gradient(135deg, ${hexToRgba(activeTheme.primary, 0.16)} 0%, ${hexToRgba(activeTheme.secondary, 0.14)} 100%)`,
+    [activeTheme.primary, activeTheme.secondary],
+  );
+  const previewMenuGradientActive = useMemo(
+    () => `linear-gradient(135deg, ${activeTheme.primary} 0%, ${activeTheme.secondary} 100%)`,
+    [activeTheme.primary, activeTheme.secondary],
+  );
   const previewShellStyle = useMemo(
     () => ({
-      borderColor: hexToRgba(activeTheme.primary, 0.35),
-      backgroundImage: `radial-gradient(120% 110% at 10% 0%, ${hexToRgba(activeTheme.primary, 0.38)} 0%, transparent 46%), radial-gradient(120% 110% at 100% 100%, ${hexToRgba(activeTheme.secondary, 0.34)} 0%, transparent 52%), linear-gradient(180deg, #020617 0%, #020617 40%, #000000 100%)`,
+      borderColor: previewMenuBorder,
+      background:
+        "radial-gradient(110% 110% at 10% 0%, rgba(148,163,184,0.22) 0%, transparent 56%), linear-gradient(180deg, #e2e8f0 0%, #dbe4ee 100%)",
     }),
-    [activeTheme.primary, activeTheme.secondary],
+    [previewMenuBorder],
   );
-
   const previewPanelStyle = useMemo(
     () => ({
-      borderColor: hexToRgba(activeTheme.primary, 0.25),
-      background: `linear-gradient(160deg, ${hexToRgba(activeTheme.primary, 0.16)} 0%, ${hexToRgba(activeTheme.secondary, 0.14)} 42%, rgba(0, 0, 0, 0.58) 100%)`,
+      borderColor: "rgba(15,23,42,0.14)",
+      background: "#ffffff",
+      boxShadow: "0 24px 48px -34px rgba(15,23,42,0.42)",
     }),
-    [activeTheme.primary, activeTheme.secondary],
+    [],
   );
-
-  const previewButtonStyle = useMemo(
+  const previewHeaderStyle = useMemo(
     () => ({
-      borderColor: hexToRgba(activeTheme.primary, 0.5),
-      background: `linear-gradient(120deg, ${hexToRgba(activeTheme.primary, 0.25)} 0%, ${hexToRgba(activeTheme.secondary, 0.24)} 100%)`,
+      borderColor: "rgba(15,23,42,0.1)",
+      background: "#ffffff",
     }),
-    [activeTheme.primary, activeTheme.secondary],
+    [],
   );
-
-  const previewTextTone = useMemo(() => {
-    const tone = profile?.textTone || "white";
-    if (tone === "black") {
-      return {
-        heading: "#111827",
-        body: "rgba(17,24,39,0.86)",
-        muted: "rgba(17,24,39,0.72)",
-        accent: "#111827",
-      };
-    }
-    if (tone === "gold") {
-      return {
-        heading: "#fef3c7",
-        body: "#fde68a",
-        muted: "rgba(253,230,138,0.86)",
-        accent: "#fbbf24",
-      };
-    }
-    if (tone === "blackGold") {
-      return {
-        heading: "#fbbf24",
-        body: "rgba(15,23,42,0.92)",
-        muted: "rgba(15,23,42,0.78)",
-        accent: "#f59e0b",
-      };
-    }
-    return {
-      heading: "#ffffff",
-      body: "rgba(255,255,255,0.9)",
-      muted: "rgba(228,228,231,0.84)",
-      accent: activeTheme.primary,
-    };
-  }, [activeTheme.primary, profile?.textTone]);
+  const previewChipBaseStyle = useMemo(
+    () => ({
+      borderColor: previewMenuBorder,
+      background: "#ffffff",
+      color: "#0f172a",
+    }),
+    [previewMenuBorder],
+  );
+  const previewChipActiveStyle = useMemo(
+    () => ({
+      borderColor: previewMenuBorder,
+      background: previewMenuGradientActive,
+      color: "#ffffff",
+      boxShadow: "0 12px 24px -18px rgba(15,23,42,0.32)",
+    }),
+    [previewMenuBorder, previewMenuGradientActive],
+  );
+  const previewSearchStyle = useMemo(
+    () => ({
+      borderColor: "rgba(15,23,42,0.16)",
+      background: "#ffffff",
+      color: "#0f172a",
+    }),
+    [],
+  );
+  const previewBottomNavStyle = useMemo(
+    () => ({
+      borderColor: previewMenuBorder,
+      background: previewMenuGradientSoft,
+    }),
+    [previewMenuBorder, previewMenuGradientSoft],
+  );
+  const previewItemCardStyle = useMemo(
+    () => ({
+      borderColor: "rgba(15,23,42,0.12)",
+      background: "#ffffff",
+      boxShadow: "0 10px 20px -18px rgba(15,23,42,0.34)",
+    }),
+    [],
+  );
+  const previewCoverUrl = useMemo(
+    () => profile?.coverImageUrls?.[0] || profile?.coverImageUrl || "",
+    [profile?.coverImageUrl, profile?.coverImageUrls],
+  );
+  const previewCategoryTabs = useMemo(
+    () => (profile?.catalogCategories || []).slice(0, 6),
+    [profile?.catalogCategories],
+  );
+  const previewVisibleItems = useMemo(() => previewItems.slice(0, 4), [previewItems]);
 
   function patchProfile<K extends keyof LinkHubProfile>(field: K, value: LinkHubProfile[K]) {
     setProfile((prev) => {
@@ -2572,103 +2609,182 @@ export default function LinkHubPage() {
           </section>
 
           <aside className="xl:sticky xl:top-28 h-fit">
-            <div className="rounded-[2rem] border p-5" style={previewShellStyle}>
-              <div
-                className={`rounded-[1.75rem] border ${activeTheme.preset.surface} p-5 backdrop-blur-xl`}
-                style={previewPanelStyle}
-              >
-                <p className={`text-[10px] uppercase tracking-[0.25em] font-black ${activeTheme.preset.muted}`}>
+            <div className="rounded-[2rem] border p-4" style={previewShellStyle}>
+              <div className="overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
+                <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black text-slate-500">
                   Preview Mobile
                 </p>
 
-                <div className="mt-4 flex flex-col items-center text-center">
-                  {profile.avatarUrl ? (
-                    <img
-                      src={profile.avatarUrl}
-                      alt={profile.displayName}
-                      className="h-24 w-24 rounded-full border object-cover"
-                      style={{ borderColor: hexToRgba(activeTheme.primary, 0.55) }}
-                    />
-                  ) : (
-                    <div
-                      className="h-24 w-24 rounded-full border flex items-center justify-center text-3xl font-black text-white"
-                      style={{
-                        borderColor: hexToRgba(activeTheme.primary, 0.55),
-                        background: `linear-gradient(130deg, ${hexToRgba(activeTheme.primary, 0.32)} 0%, ${hexToRgba(activeTheme.secondary, 0.28)} 100%)`,
-                      }}
+                <div className="mt-2 border-b px-3 py-3" style={previewHeaderStyle}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="inline-flex min-w-0 items-center gap-2">
+                      {profile.avatarUrl ? (
+                        <img
+                          src={profile.avatarUrl}
+                          alt={profile.displayName}
+                          className="h-8 w-8 rounded-full border object-cover"
+                          style={{ borderColor: previewMenuBorder }}
+                        />
+                      ) : (
+                        <div
+                          className="h-8 w-8 rounded-full border flex items-center justify-center text-[11px] font-black text-slate-700"
+                          style={{ borderColor: previewMenuBorder, background: previewMenuGradientSoft }}
+                        >
+                          {(profile.displayName || "N").slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <p className="truncate text-xs font-semibold text-slate-700">
+                        {profile.displayName || "Nombre del negocio"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border text-slate-700"
+                      style={{ borderColor: previewMenuBorder, background: "#ffffff" }}
+                      aria-label="Compartir"
                     >
-                      <ImagePlus className="h-8 w-8" />
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative h-28 overflow-hidden">
+                  {previewCoverUrl ? (
+                    <img src={previewCoverUrl} alt="Portada" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full" style={{ background: previewMenuGradientSoft }} />
+                  )}
+                  <div className="absolute inset-x-0 -bottom-8 flex justify-center">
+                    {profile.avatarUrl ? (
+                      <img
+                        src={profile.avatarUrl}
+                        alt={profile.displayName}
+                        className="h-16 w-16 rounded-full border-[3px] border-white object-cover"
+                        style={{ boxShadow: "0 12px 20px -16px rgba(15,23,42,0.45)" }}
+                      />
+                    ) : (
+                      <div
+                        className="h-16 w-16 rounded-full border-[3px] border-white flex items-center justify-center text-xl font-black text-slate-700"
+                        style={{ background: previewMenuGradientSoft, boxShadow: "0 12px 20px -16px rgba(15,23,42,0.45)" }}
+                      >
+                        <ImagePlus className="h-5 w-5" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="px-4 pt-10 pb-2 text-center">
+                  <h3 className="text-[1.55rem] font-black leading-tight text-slate-900">
+                    {highlightLastWord(profile.displayName || "Tu negocio", activeTheme.primary)}
+                  </h3>
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: activeTheme.primary }}>
+                    {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
+                  </p>
+                </div>
+
+                <div className="px-4 pb-2">
+                  <p className="text-center text-xs font-black uppercase tracking-[0.14em]" style={{ color: activeTheme.primary }}>
+                    {catalogLabel || "Carta"}
+                  </p>
+                  <label className="mt-2 flex items-center gap-2 rounded-[0.95rem] border px-3 py-2" style={previewSearchStyle}>
+                    <Search className="h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      value={previewSearch}
+                      onChange={(event) => setPreviewSearch(event.target.value)}
+                      placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
+                      className="w-full bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                    />
+                  </label>
+                  <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
+                    {previewCategoryTabs.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => setPreviewCategoryId(category.id)}
+                        className="shrink-0 rounded-[0.85rem] border px-2.5 py-1.5 text-[10px] font-bold"
+                        style={previewCategoryId === category.id ? previewChipActiveStyle : previewChipBaseStyle}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2 px-4 pb-3">
+                  {previewVisibleItems.length > 0 ? (
+                    previewVisibleItems.map((item) => (
+                      <article key={item.id} className="rounded-[0.95rem] border p-2" style={previewItemCardStyle}>
+                        <div className="flex gap-2">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.title} className="h-14 w-14 rounded-[0.75rem] object-cover" />
+                          ) : (
+                            <div
+                              className="h-14 w-14 rounded-[0.75rem] border flex items-center justify-center text-[9px] font-black text-slate-600"
+                              style={{ borderColor: previewMenuBorder }}
+                            >
+                              ITEM
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-extrabold text-slate-900">{item.title || "Producto"}</p>
+                            <p className="line-clamp-1 text-[11px] text-slate-500">{item.description || "Descripcion comercial"}</p>
+                            <p className="mt-1 text-[12px] font-black" style={{ color: activeTheme.primary }}>
+                              S/{item.price || "0.00"}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <div className="rounded-[0.95rem] border border-dashed px-3 py-4 text-center text-[11px] text-slate-500" style={{ borderColor: "rgba(15,23,42,0.18)" }}>
+                      No hay items para el filtro actual.
                     </div>
                   )}
-
-                  <h3 className="mt-4 text-2xl font-black" style={{ color: previewTextTone.heading }}>
-                    {profile.displayName || "Tu nombre"}
-                  </h3>
-                  <p className="mt-2 text-sm" style={{ color: previewTextTone.muted }}>
-                    {profile.bio || "Tu descripcion corta aparecera aqui."}
-                  </p>
-                  <div className="mt-2 inline-flex items-center gap-1 text-xs font-bold" style={{ color: previewTextTone.accent }}>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {profile.published ? "Publicado" : "Borrador"}
-                  </div>
                 </div>
 
-                <div className="mt-6 space-y-3">
-                  {profile.links.map((link) => {
-                    const Icon = LINK_TYPE_ICON[link.type];
-                    return (
-                      <div
-                        key={link.id}
-                        className={`w-full rounded-xl border px-4 py-3 text-left transition-all ${activeTheme.preset.button}`}
-                        style={previewButtonStyle}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Icon className="w-4 h-4" />
-                          <span className="font-semibold text-sm" style={{ color: previewTextTone.body }}>
-                            {link.title || "Nuevo enlace"}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div
-                  className="mt-5 rounded-xl border p-3"
-                  style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.surface2 }}
-                >
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: activeCartaTheme.tokens.mutedText }}>
-                    Carta Theme
-                  </p>
-                  <p className="mt-1 text-xs font-semibold" style={{ color: activeCartaTheme.tokens.text }}>
-                    {activeCartaTheme.name}
-                  </p>
-                  <div className="mt-2 flex gap-2">
-                    <span className="rounded-full border px-2 py-1 text-[10px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipBg, color: activeCartaTheme.tokens.chipText }}>
-                      Categoria
-                    </span>
-                    <span className="rounded-full border px-2 py-1 text-[10px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipActiveBg, color: activeCartaTheme.tokens.chipActiveText }}>
-                      Activa
-                    </span>
+                <div className="px-3 pb-3">
+                  <div className="grid grid-cols-3 gap-1 rounded-[1rem] border p-1" style={previewBottomNavStyle}>
+                    <button type="button" className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase text-slate-700">
+                      {profile.sectionLabels.contact}
+                    </button>
+                    <button type="button" className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase" style={previewChipActiveStyle}>
+                      {catalogLabel}
+                    </button>
+                    <button type="button" className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase text-slate-700">
+                      {profile.sectionLabels.location}
+                    </button>
                   </div>
                 </div>
-
-                {publicUrl && (
-                  <div className="mt-6 rounded-xl border border-white/15 bg-black/30 p-3 text-xs" style={{ color: previewTextTone.muted }}>
-                    <p className="font-bold" style={{ color: previewTextTone.heading }}>URL publica</p>
-                    <p className="mt-1 break-all">{publicUrl}</p>
-                    <a
-                      href={publicUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 font-semibold"
-                      style={{ color: activeTheme.primary }}
-                    >
-                      Abrir pagina
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                )}
+              </div>
+              {publicUrl && (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
+                  <p className="font-bold text-slate-900">URL publica</p>
+                  <p className="mt-1 break-all">{publicUrl}</p>
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 font-semibold"
+                    style={{ color: activeTheme.primary }}
+                  >
+                    Abrir pagina
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              )}
+              <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                  Carta Theme
+                </p>
+                <p className="mt-1 text-xs font-semibold text-slate-800">{activeCartaTheme.name}</p>
+                <div className="mt-2 flex gap-2">
+                  <span className="rounded-full border px-2 py-1 text-[10px] font-bold" style={previewChipBaseStyle}>
+                    Categoria
+                  </span>
+                  <span className="rounded-full border px-2 py-1 text-[10px] font-bold" style={previewChipActiveStyle}>
+                    Activa
+                  </span>
+                </div>
               </div>
             </div>
             <div className="mt-4 hidden md:grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/70 p-4 backdrop-blur-xl">
