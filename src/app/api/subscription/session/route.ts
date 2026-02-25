@@ -7,7 +7,7 @@ import {
 } from "@/lib/subscription/sessionToken";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
-const DEFAULT_COOKIE_BASE_DOMAINS = ["fastpagespro.com", "fastpagepro.com"];
+const DEFAULT_COOKIE_BASE_DOMAINS = ["fastpagepro.com", "fastpagespro.com"];
 
 function resolveCookieDomain(request: NextRequest): string | undefined {
   const envDomains = String(process.env.SUBSCRIPTION_COOKIE_BASE_DOMAINS || "")

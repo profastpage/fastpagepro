@@ -10,11 +10,11 @@ export const metadata: Metadata = {
     description:
       "Lanza proyectos no-code con Builder, Templates, Cloner, Online Store, Carta Digital, IA y Pro Metrics.",
     type: "website",
-    url: "https://fastpagespro.com",
+    url: "https://www.fastpagepro.com",
     siteName: "FastPage",
   },
   alternates: {
-    canonical: "https://fastpagespro.com",
+    canonical: "https://www.fastpagepro.com",
   },
 };
 

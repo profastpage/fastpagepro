@@ -909,3 +909,17 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - mayor separacion entre header, sidebar y canvas para evitar choques visuales.
   - ajustes de `sticky top` y `grid gaps` para mantener orden profesional en desktop y mobile.
   - toast de error reubicado para no superponerse con controles flotantes.
+
+## Auth Domain + Layout Stabilization (2026-02-26)
+
+- Dominio canónico actualizado a `www.fastpagepro.com` para autenticación OAuth y SEO home.
+- Alias de redirección conservados para compatibilidad:
+  - `fastpagepro.com`
+  - `fastpagespro.com`
+  - `www.fastpagespro.com`
+  - hosts Vercel legacy
+- `/auth`:
+  - se eliminó el bloqueo global de `overflow/touchAction` en `html/body` que afectaba interacción en móvil/PC.
+  - layout responsive ajustado con espaciado seguro (`pt` superior por navbar global, `overflow-x-hidden`) y fallback visual de carga.
+- Sesión de suscripción:
+  - orden de dominios base ajustado para priorizar `.fastpagepro.com` y compartir cookies entre `www` + apex.

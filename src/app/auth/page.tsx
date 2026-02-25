@@ -19,14 +19,14 @@ import {
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
-const DEFAULT_AUTH_CANONICAL_HOST = "fastpagespro.com";
+const DEFAULT_AUTH_CANONICAL_HOST = "www.fastpagepro.com";
 const CANONICAL_AUTH_HOST = (
   process.env.NEXT_PUBLIC_AUTH_CANONICAL_HOST || DEFAULT_AUTH_CANONICAL_HOST
 )
   .trim()
   .toLowerCase();
 const DEFAULT_AUTH_ALIAS_HOSTS =
-  "www.fastpagespro.com,fastpagepro.com,www.fastpagepro.com,fastpage-eight.vercel.app,fastpage2-0.vercel.app";
+  "fastpagepro.com,fastpagespro.com,www.fastpagespro.com,fastpage-eight.vercel.app,fastpage2-0.vercel.app";
 const AUTH_ALIAS_HOSTS = (
   process.env.NEXT_PUBLIC_AUTH_ALIAS_HOSTS || DEFAULT_AUTH_ALIAS_HOSTS
 )
@@ -39,7 +39,13 @@ const RECOMMENDED_FIREBASE_AUTH_DOMAINS = Array.from(
 
 export default function AuthPage() {
   return (
-    <Suspense fallback={<div>Cargando...</div>}>
+    <Suspense
+      fallback={
+        <div className="grid min-h-screen place-items-center bg-black text-sm font-semibold text-zinc-300">
+          Cargando...
+        </div>
+      }
+    >
       <AuthContent />
     </Suspense>
   );
@@ -91,32 +97,6 @@ function AuthContent() {
     if (!isCanonicalRedirectNeeded()) return;
     showToast(`Redirigiendo al dominio seguro: ${CANONICAL_AUTH_HOST}`);
     setTimeout(() => redirectToCanonicalAuthHost(), 700);
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
-    const prevHtmlOverscroll = html.style.overscrollBehavior;
-    const prevBodyOverscroll = body.style.overscrollBehavior;
-    const prevBodyTouchAction = body.style.touchAction;
-
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    html.style.overscrollBehavior = "none";
-    body.style.overscrollBehavior = "none";
-    body.style.touchAction = "none";
-
-    return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-      html.style.overscrollBehavior = prevHtmlOverscroll;
-      body.style.overscrollBehavior = prevBodyOverscroll;
-      body.style.touchAction = prevBodyTouchAction;
-    };
   }, []);
 
   const showToast = (message: string) => {
@@ -393,12 +373,11 @@ function AuthContent() {
   };
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <main className="relative min-h-screen overflow-x-hidden px-4 pb-10 pt-24 md:pb-12 md:pt-28">
       {/* Background Elements */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-yellow-600/10 rounded-full blur-[80px] pointer-events-none" />
-
-      <div className="w-full max-w-md relative z-10">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col">
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 group">
@@ -423,7 +402,7 @@ function AuthContent() {
         </div>
 
         {/* Auth Card */}
-        <div className="glass rounded-2xl p-1 overflow-hidden border border-white/10 shadow-2xl">
+        <div className="glass overflow-hidden rounded-2xl border border-white/10 p-1 shadow-2xl">
           {/* Tabs */}
           <div className="grid grid-cols-2 p-1 bg-black/20 rounded-xl mb-6">
             <button
