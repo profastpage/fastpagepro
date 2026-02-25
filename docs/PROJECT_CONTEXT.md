@@ -686,3 +686,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - barra de acciones (`Guardar`, `Publicar`, `Copiar`) alineada al extremo derecho y con anchos consistentes por boton.
 - Resultado:
   - composicion mas ordenada en escritorio, sin sensacion de preview sobredimensionado ni botones desalineados.
+
+## Subscription Sync from Super Admin to Digital Menu (2026-02-25)
+
+- Modulo ajustado: `useSubscription` (cliente).
+- Problema corregido:
+  - el dashboard `/admin` mostraba plan actualizado en `users/{uid}`, pero `/linkhub` seguia tomando `FREE` por depender de APIs de suscripcion inestables.
+- Correccion aplicada:
+  - `useSubscription` ahora combina API + lectura directa de `users/{uid}` en Firestore.
+  - cuando existe `subscriptionPlan` en Firestore, ese valor se usa como fuente efectiva para plan/features (`FREE`, `BUSINESS`, `PRO`) en Digital Menu.
+- Resultado:
+  - funciones premium en `/linkhub` (temas premium, IA, personalizacion avanzada) se habilitan segun el plan elegido en Super Admin.
