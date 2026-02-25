@@ -625,4 +625,20 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Mejora aplicada:
   - al elegir un tema visual deluxe (grid de 20 temas) ahora se sincroniza automaticamente un `cartaThemeId` compatible.
   - al guardar/publicar, `cartaThemeId` y `cartaBackgroundMode` se persisten explicitamente.
-  - en la pagina publica, si un perfil antiguo no tiene `cartaThemeId`, se aplica fallback desde el tema visual seleccionado para mantener coherencia.
+- en la pagina publica, si un perfil antiguo no tiene `cartaThemeId`, se aplica fallback desde el tema visual seleccionado para mantener coherencia.
+
+## Super Admin Auth + Rules Hardening (2026-02-25)
+
+- Rutas/archivos ajustados:
+  - `/api/subscription/session`
+  - `/api/subscription/admin/summaries`
+  - `/api/subscription/admin/manage`
+  - `src/lib/server/requireFirebaseUser.ts`
+  - `firestore.rules`
+  - `/admin` (UI)
+- Correcciones aplicadas:
+  - `requireFirebaseUser` ahora usa fallback automatico a Identity Toolkit cuando `adminAuth.verifyIdToken()` falla por infraestructura/credenciales.
+  - se agrega resolucion robusta de `API key` y `projectId` con fallback al proyecto base para evitar `503` por variables faltantes en despliegue.
+  - reglas de Firestore para `isAdmin()` ahora validan el email root en forma case-insensitive (`lower()`), evitando falsos negativos por mayusculas.
+  - `users/{userId}` permite `create` por admin para operaciones de recuperacion/soporte sin bloquear el panel.
+  - en `/admin`, un fallo de sincronizacion de planes ya no bloquea la tabla completa de usuarios; se muestra aviso parcial.

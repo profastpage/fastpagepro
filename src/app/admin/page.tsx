@@ -59,6 +59,7 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [planSyncError, setPlanSyncError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [authorized, setAuthorized] = useState(false);
@@ -93,6 +94,7 @@ export default function AdminPanel() {
       }
 
       const summaries = Array.isArray(payload?.summaries) ? (payload.summaries as PlanSummary[]) : [];
+      setPlanSyncError(null);
       setPlanByUserId((previous) => {
         const next: Record<string, PlanSummary> = { ...previous };
         for (const summary of summaries) {
@@ -110,7 +112,7 @@ export default function AdminPanel() {
         return next;
       });
     } catch (requestError: any) {
-      setError(requestError?.message || "No se pudo cargar el estado de planes.");
+      setPlanSyncError(requestError?.message || "No se pudo cargar el estado de planes.");
     }
   }, []);
 
@@ -376,6 +378,12 @@ export default function AdminPanel() {
         </div>
 
         {/* Users Table */}
+        {planSyncError && (
+          <div className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-amber-200">Estado de planes parcial</p>
+            <p className="mt-1 text-xs text-amber-100/90">{planSyncError}</p>
+          </div>
+        )}
         <div className="bg-zinc-900/50 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -403,7 +411,7 @@ export default function AdminPanel() {
                         <ShieldAlert className="w-8 h-8 text-red-500 mx-auto mb-2" />
                         <p className="text-red-400 text-sm font-bold">Error de Conexión</p>
                         <p className="text-red-400/60 text-xs mt-1">{error}</p>
-                        <p className="text-zinc-500 text-[10px] mt-4 uppercase tracking-widest">Verifica las reglas de Firestore o la consola</p>
+                        <p className="text-zinc-500 text-[10px] mt-4 uppercase tracking-widest">Verifica Firebase Auth, reglas de Firestore y variables del servidor</p>
                       </div>
                     </td>
                   </tr>

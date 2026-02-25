@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { DecodedIdToken } from "firebase-admin/auth";
 import { adminAuth } from "@/lib/firebaseAdmin";
 
+const DEFAULT_FIREBASE_WEB_API_KEY = "AIzaSyAkb9GtjFXt2NPjuM_-M41Srd6aUK7Ch2Y";
+const DEFAULT_FIREBASE_PROJECT_ID = "fastpage-7ceb3";
+
 type IdentityToolkitUser = {
   localId?: string;
   email?: string;
@@ -23,7 +26,6 @@ function mapAdminAuthError(error: any): Error {
     code.includes("id-token-expired") ||
     code.includes("id-token-revoked") ||
     code.includes("invalid-id-token") ||
-    code.includes("argument-error") ||
     message.includes("id token has expired") ||
     message.includes("id token has been revoked") ||
     message.includes("decoding firebase id token")
@@ -34,8 +36,24 @@ function mapAdminAuthError(error: any): Error {
   return new Error("SERVICE_UNAVAILABLE: firebase admin verification failed");
 }
 
+function resolveFirebaseWebApiKey(): string {
+  return String(
+    process.env.FIREBASE_WEB_API_KEY ||
+      process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+      DEFAULT_FIREBASE_WEB_API_KEY,
+  ).trim();
+}
+
+function resolveFirebaseProjectId(): string {
+  return String(
+    process.env.FIREBASE_PROJECT_ID ||
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+      DEFAULT_FIREBASE_PROJECT_ID,
+  ).trim();
+}
+
 async function verifyViaIdentityToolkit(token: string): Promise<DecodedIdToken> {
-  const webApiKey = String(process.env.FIREBASE_WEB_API_KEY || process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "").trim();
+  const webApiKey = resolveFirebaseWebApiKey();
   if (!webApiKey) {
     throw new Error("SERVICE_UNAVAILABLE: missing FIREBASE_WEB_API_KEY");
   }
@@ -85,7 +103,7 @@ async function verifyViaIdentityToolkit(token: string): Promise<DecodedIdToken> 
     }
 
     const now = Math.floor(Date.now() / 1000);
-    const projectId = String(process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "").trim();
+    const projectId = resolveFirebaseProjectId();
     const authTime = Number(user?.validSince || now);
     const providerId = String(user?.providerUserInfo?.[0]?.providerId || "custom");
 
@@ -130,7 +148,12 @@ export async function requireFirebaseUser(request: NextRequest): Promise<Decoded
     try {
       return await adminAuth.verifyIdToken(token);
     } catch (error) {
-      throw mapAdminAuthError(error);
+      const mapped = mapAdminAuthError(error);
+      if (mapped.message.startsWith("UNAUTHORIZED")) {
+        throw mapped;
+      }
+      // Fallback path: if Admin SDK cannot validate (credentials/runtime), use Identity Toolkit.
+      return verifyViaIdentityToolkit(token);
     }
   }
 

@@ -1607,8 +1607,8 @@ export default function LinkHubPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8">
-          <section className="space-y-6">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+          <section className="min-w-0 space-y-6">
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <h2 className="text-xl font-bold text-white mb-5">Identidad del perfil</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1672,7 +1672,7 @@ export default function LinkHubPage() {
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Foto de perfil</span>
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
                     <input
                       className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                       value={profile.avatarUrl}
@@ -1707,7 +1707,7 @@ export default function LinkHubPage() {
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">
                     Portadas (hasta {MAX_LINK_HUB_COVER_IMAGES})
                   </span>
-                  <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-2">
+                  <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
                     <input
                       className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                       value={coverUrlInput}
@@ -1857,7 +1857,7 @@ export default function LinkHubPage() {
               <div className="space-y-4">
                 {profile.links.map((link, index) => (
                   <div key={link.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-3">
                       <input
                         className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                         value={link.title}
@@ -1945,7 +1945,7 @@ export default function LinkHubPage() {
                 </div>
               </div>
 
-              <div className="mb-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
+              <div className="mb-4 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3">
                 <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
                   <Search className="w-4 h-4 text-zinc-400" />
                   <input
@@ -1975,7 +1975,7 @@ export default function LinkHubPage() {
                 </div>
                 <div className="space-y-2">
                   {profile.catalogCategories.map((category) => (
-                    <div key={category.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[90px_1fr_auto]">
+                    <div key={category.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[90px_minmax(0,1fr)_auto]">
                       <input
                         className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
                         value={category.emoji || ""}
@@ -2067,7 +2067,7 @@ export default function LinkHubPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="mb-3 grid grid-cols-1 md:grid-cols-[120px_1fr] gap-3">
+                    <div className="mb-3 grid grid-cols-1 md:grid-cols-[120px_minmax(0,1fr)] gap-3">
                       <div className="rounded-xl border border-white/10 bg-black/40 p-2">
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.title || "Producto"} className="h-24 w-full rounded-lg object-cover" />
@@ -2240,7 +2240,7 @@ export default function LinkHubPage() {
               </p>
 
               <div className="mb-5 rounded-2xl border border-white/10 bg-black/30 p-4">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.9fr]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
                   <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">
                       Tema premium de carta (menu)
@@ -2571,7 +2571,7 @@ export default function LinkHubPage() {
 
           </section>
 
-          <aside className="xl:sticky xl:top-28 h-fit">
+          <aside className="min-w-0 h-fit xl:sticky xl:top-28">
             <div className="rounded-[2rem] border p-4" style={previewShellStyle}>
               <div className="overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
                 <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: activeCartaTheme.tokens.mutedText }}>

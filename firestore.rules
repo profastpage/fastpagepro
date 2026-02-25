@@ -9,18 +9,29 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function rootAdminEmail() {
+      return "afiliadosprobusiness@gmail.com";
+    }
+
+    function tokenEmail() {
+      return signedIn() && request.auth.token.email is string
+        ? request.auth.token.email.lower()
+        : "";
+    }
+
     function isAdmin() {
       return signedIn() &&
         (
           request.auth.token.admin == true ||
-          request.auth.token.email == "afiliadosprobusiness@gmail.com"
+          tokenEmail() == rootAdminEmail()
         );
     }
 
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.uid == userId;
+      allow create: if (isOwner(userId) && request.resource.data.uid == userId)
+        || isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
     }
