@@ -375,3 +375,23 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Resultado:
   - se evita error 404 al renderizar mapa cuando el usuario pega formatos mixtos.
   - cada cliente puede pegar su enlace/direccion y ver la ubicacion correctamente en la pagina publica.
+
+## Public Bio Cart + WhatsApp Checkout (2026-02-25)
+
+- Ruta publica ajustada: `/bio/[slug]` en la pestaña `carta/catalogo`.
+- Nuevo flujo de compra para cliente final:
+  - agregar productos/platos al carrito desde cada tarjeta.
+  - boton flotante de carrito en mobile y acceso directo en desktop.
+  - panel `Mi Pedido` tematico segun colores del tema activo.
+  - control de cantidades, eliminacion por item y vaciado de carrito.
+- Checkout integrado:
+  - formulario de nombre y telefono.
+  - opcion de entrega (`domicilio`, `recoger`, `comer en local`).
+  - forma de pago (`efectivo`, `transferencia`, `yape`, `plin`).
+  - cupon con validacion simple (`FAST5`, `FAST10`).
+  - regla de descuento automatico por monto (5% desde `S/80`).
+  - aceptacion obligatoria de terminos antes de enviar.
+- Envio a WhatsApp:
+  - genera mensaje ordenado, amable y con emojis.
+  - incluye detalle por item, cantidades, subtotales, descuentos, total y datos del cliente.
+  - abre `wa.me` al numero configurado en el perfil (`whatsappNumber` con fallback a `phoneNumber`).

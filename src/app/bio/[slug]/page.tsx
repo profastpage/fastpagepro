@@ -23,11 +23,16 @@ import {
   Globe,
   Loader2,
   MapPin,
+  Minus,
   Menu,
   Phone,
+  Plus,
   Search,
+  ShoppingBag,
   Shirt,
   Store,
+  Trash2,
+  XCircle,
   Youtube,
   Instagram,
   Linkedin,
@@ -36,6 +41,40 @@ import {
 } from "lucide-react";
 
 type PublicTab = "contact" | "catalog" | "location";
+type CheckoutStep = "cart" | "checkout";
+type DeliveryMethod = "delivery" | "pickup" | "dinein";
+type PaymentMethod = "cash" | "transfer" | "yape" | "plin";
+
+type CartItem = {
+  id: string;
+  title: string;
+  imageUrl: string;
+  categoryName: string;
+  priceLabel: string;
+  unitPrice: number;
+  quantity: number;
+};
+
+const ORDER_DELIVERY_OPTIONS: Array<{ value: DeliveryMethod; label: string }> = [
+  { value: "delivery", label: "Envio a domicilio" },
+  { value: "pickup", label: "Recoger en local" },
+  { value: "dinein", label: "Comer en el lugar" },
+];
+
+const ORDER_PAYMENT_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
+  { value: "cash", label: "Efectivo" },
+  { value: "transfer", label: "Transferencia" },
+  { value: "yape", label: "Yape" },
+  { value: "plin", label: "Plin" },
+];
+
+const COUPON_DISCOUNTS: Record<string, number> = {
+  FAST5: 0.05,
+  FAST10: 0.1,
+};
+
+const AUTO_DISCOUNT_THRESHOLD = 80;
+const AUTO_DISCOUNT_RATE = 0.05;
 
 const LINK_TYPE_ICON = {
   website: Globe,
@@ -144,6 +183,20 @@ function getTextTonePalette(tone: LinkHubProfile["textTone"], primaryColor: stri
   };
 }
 
+function parsePriceToNumber(raw: string): number {
+  const normalized = raw
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\.(?=.*\.)/g, "")
+    .replace(",", ".");
+  const value = Number.parseFloat(normalized);
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return value;
+}
+
+function formatSoles(value: number): string {
+  return `S/${value.toFixed(2)} SOLES`;
+}
+
 export default function PublicBioPage() {
   const params = useParams<{ slug: string }>();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
@@ -154,6 +207,19 @@ export default function PublicBioPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
   const [shareFeedback, setShareFeedback] = useState("");
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>("cart");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod | "">("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "">("");
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCouponCode, setAppliedCouponCode] = useState("");
+  const [note, setNote] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [cartError, setCartError] = useState("");
+  const [cartFeedback, setCartFeedback] = useState("");
   const catalogScrollRef = useRef<HTMLDivElement | null>(null);
   const catalogStickyRef = useRef<HTMLDivElement | null>(null);
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -313,6 +379,193 @@ export default function PublicBioPage() {
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
     .slice(0, 8);
+  const businessName = profile.displayName || "Negocio";
+  const cartItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const cartSubtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
+  const autoDiscount = cartSubtotal >= AUTO_DISCOUNT_THRESHOLD ? cartSubtotal * AUTO_DISCOUNT_RATE : 0;
+  const couponDiscountRate = appliedCouponCode ? COUPON_DISCOUNTS[appliedCouponCode] || 0 : 0;
+  const couponDiscount = cartSubtotal * couponDiscountRate;
+  const cartTotal = Math.max(0, cartSubtotal - autoDiscount - couponDiscount);
+  const amountToAutoDiscount = Math.max(0, AUTO_DISCOUNT_THRESHOLD - cartSubtotal);
+  const whatsappTargetDigits = (profile.whatsappNumber || profile.phoneNumber).replace(/\D/g, "");
+
+  const deliveryLabelMap: Record<DeliveryMethod, string> = {
+    delivery: "Envio a domicilio",
+    pickup: "Recoger en local",
+    dinein: "Comer en el lugar",
+  };
+  const paymentLabelMap: Record<PaymentMethod, string> = {
+    cash: "Efectivo",
+    transfer: "Transferencia",
+    yape: "Yape",
+    plin: "Plin",
+  };
+
+  function addItemToCart(
+    item: LinkHubProfile["catalogItems"][number],
+    categoryName: string,
+  ) {
+    const unitPrice = parsePriceToNumber(item.price || "0");
+    setCartItems((prev) => {
+      const existing = prev.find((entry) => entry.id === item.id);
+      if (existing) {
+        return prev.map((entry) =>
+          entry.id === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: item.id,
+          title: item.title || "Producto",
+          imageUrl: item.imageUrl || "",
+          categoryName,
+          priceLabel: item.price || "0.00",
+          unitPrice,
+          quantity: 1,
+        },
+      ];
+    });
+    setCartFeedback(`"${item.title || "Producto"}" agregado al pedido.`);
+    setCartError("");
+    window.setTimeout(() => setCartFeedback(""), 1400);
+  }
+
+  function removeCartItem(itemId: string) {
+    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+  }
+
+  function patchCartItemQuantity(itemId: string, nextQty: number) {
+    if (nextQty <= 0) {
+      removeCartItem(itemId);
+      return;
+    }
+    setCartItems((prev) =>
+      prev.map((item) => (item.id === itemId ? { ...item, quantity: nextQty } : item)),
+    );
+  }
+
+  function clearCart() {
+    setCartItems([]);
+    setCheckoutStep("cart");
+    setCouponInput("");
+    setAppliedCouponCode("");
+    setNote("");
+    setAcceptedTerms(false);
+    setCartError("");
+  }
+
+  function applyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) {
+      setAppliedCouponCode("");
+      setCartError("Ingresa un cupon para aplicar descuento.");
+      return;
+    }
+    if (!COUPON_DISCOUNTS[code]) {
+      setAppliedCouponCode("");
+      setCartError("Cupon invalido. Prueba con FAST5 o FAST10.");
+      return;
+    }
+    setAppliedCouponCode(code);
+    setCartError("");
+  }
+
+  function buildWhatsappOrderMessage(): string {
+    const date = new Date();
+    const deliveryLabel =
+      deliveryMethod && deliveryLabelMap[deliveryMethod]
+        ? deliveryLabelMap[deliveryMethod]
+        : "No especificado";
+    const paymentLabel =
+      paymentMethod && paymentLabelMap[paymentMethod]
+        ? paymentLabelMap[paymentMethod]
+        : "No especificado";
+    const itemLines = cartItems
+      .map((item, index) => {
+        const itemSubtotal = item.unitPrice * item.quantity;
+        return [
+          `${index + 1}. ${item.title} ${item.categoryName ? `(${item.categoryName})` : ""}`,
+          `   Cantidad: ${item.quantity}`,
+          `   Precio base: ${formatSoles(item.unitPrice)}`,
+          `   Subtotal item: ${formatSoles(itemSubtotal)}`,
+        ].join("\n");
+      })
+      .join("\n\n");
+
+    const discountLines = [
+      autoDiscount > 0 ? `- Descuento por compra: ${formatSoles(autoDiscount)}` : "",
+      couponDiscount > 0 ? `- Cupon (${appliedCouponCode}): ${formatSoles(couponDiscount)}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const noteLine = note.trim() ? `\nNota adicional: ${note.trim()}` : "";
+
+    return [
+      `Hola ${businessName}! 👋`,
+      "",
+      "Quiero realizar el siguiente pedido por favor 🙌",
+      "",
+      "🛒 *Detalle del pedido*",
+      itemLines,
+      "",
+      "📌 *Datos del cliente*",
+      `- Nombre: ${customerName.trim()}`,
+      `- Telefono: ${customerPhone.trim()}`,
+      `- Entrega: ${deliveryLabel}`,
+      `- Pago: ${paymentLabel}`,
+      noteLine ? noteLine : "",
+      "",
+      "💰 *Resumen*",
+      `- Subtotal: ${formatSoles(cartSubtotal)}`,
+      discountLines || "- Descuentos: S/0.00 SOLES",
+      `- Total: ${formatSoles(cartTotal)}`,
+      "",
+      `🕒 Pedido generado: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+      "",
+      "Muchas gracias! 😊",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  function submitOrderWhatsapp() {
+    if (cartItems.length === 0) {
+      setCartError("Tu carrito esta vacio. Agrega productos para continuar.");
+      return;
+    }
+    if (!customerName.trim()) {
+      setCartError("Ingresa tu nombre para continuar.");
+      return;
+    }
+    if (!customerPhone.trim()) {
+      setCartError("Ingresa tu telefono para continuar.");
+      return;
+    }
+    if (!deliveryMethod) {
+      setCartError("Selecciona una opcion de entrega.");
+      return;
+    }
+    if (!paymentMethod) {
+      setCartError("Selecciona una forma de pago.");
+      return;
+    }
+    if (!acceptedTerms) {
+      setCartError("Debes aceptar los terminos y condiciones para enviar el pedido.");
+      return;
+    }
+    if (!whatsappTargetDigits) {
+      setCartError("Este negocio no tiene WhatsApp configurado aun.");
+      return;
+    }
+
+    const text = buildWhatsappOrderMessage();
+    const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    setCartError("");
+    setCartFeedback("Pedido listo. Te estamos redirigiendo a WhatsApp.");
+  }
 
   async function handleShare() {
     if (!profile) return;
@@ -450,6 +703,19 @@ export default function PublicBioPage() {
     background: "rgba(255,255,255,0.95)",
     color: "#0f172a",
     boxShadow: `0 10px 20px -14px ${hexToRgba(colors.primary, 0.95)}`,
+  };
+
+  const cartPanelStyle = {
+    borderColor: hexToRgba(colors.primary, 0.35),
+    background: prefersDarkText
+      ? `linear-gradient(165deg, ${hexToRgba(colors.primary, 0.14)} 0%, ${hexToRgba(colors.secondary, 0.1)} 55%, rgba(255,255,255,0.9) 100%)`
+      : `linear-gradient(165deg, ${hexToRgba(colors.primary, 0.32)} 0%, ${hexToRgba(colors.secondary, 0.24)} 100%)`,
+  };
+
+  const checkoutInputStyle = {
+    borderColor: hexToRgba(colors.primary, 0.28),
+    color: prefersDarkText ? "#0f172a" : "#ffffff",
+    background: prefersDarkText ? "rgba(255,255,255,0.8)" : "rgba(15,23,42,0.35)",
   };
 
   return (
@@ -707,9 +973,28 @@ export default function PublicBioPage() {
                 <h2 className="text-2xl font-black" style={{ color: textPalette.heading }}>
                   {catalogLabel}
                 </h2>
-                <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
-                  {profile.businessType === "restaurant" ? <Fish className="h-3.5 w-3.5" /> : <Store className="h-3.5 w-3.5" />}
-                  {totalFilteredItems}
+                <div className="inline-flex items-center gap-2">
+                  <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
+                    {profile.businessType === "restaurant" ? <Fish className="h-3.5 w-3.5" /> : <Store className="h-3.5 w-3.5" />}
+                    {totalFilteredItems}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCartOpen(true);
+                      setCheckoutStep("cart");
+                    }}
+                    className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] ${buttonRadiusClass}`}
+                    style={interactiveStyle}
+                  >
+                    <ShoppingBag className="h-4 w-4" />
+                    Mi pedido
+                    {cartItemsCount > 0 && (
+                      <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-slate-900">
+                        {cartItemsCount}
+                      </span>
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -822,6 +1107,15 @@ export default function PublicBioPage() {
                                     S/{item.price}
                                   </span>
                                 </div>
+                                <button
+                                  type="button"
+                                  onClick={() => addItemToCart(item, section.name)}
+                                  className={`mt-3 inline-flex items-center justify-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] transition ${buttonRadiusClass}`}
+                                  style={interactiveStyle}
+                                >
+                                  <ShoppingBag className="h-3.5 w-3.5" />
+                                  Agregar
+                                </button>
                               </div>
                             </div>
                           </article>
@@ -893,6 +1187,28 @@ export default function PublicBioPage() {
 
       </div>
 
+      {activeTab === "catalog" && (
+        <div className="md:hidden fixed right-4 bottom-24 z-40">
+          <button
+            type="button"
+            onClick={() => {
+              setIsCartOpen(true);
+              setCheckoutStep("cart");
+            }}
+            className={`inline-flex items-center gap-2 border px-4 py-3 text-xs font-black uppercase tracking-[0.08em] shadow-xl ${buttonRadiusClass}`}
+            style={interactiveStyle}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            Pedido
+            {cartItemsCount > 0 && (
+              <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-slate-900">
+                {cartItemsCount}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
       <div className="md:hidden fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
         <div className="mx-auto w-full max-w-md rounded-2xl border p-1 backdrop-blur-xl" style={navSurfaceStyle}>
           <div className="grid grid-cols-3 gap-1">
@@ -946,6 +1262,349 @@ export default function PublicBioPage() {
           </div>
         </div>
       </div>
+
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-2 md:p-6">
+          <div
+            className="mx-auto flex h-full w-full max-w-xl flex-col overflow-hidden rounded-3xl border"
+            style={cartPanelStyle}
+          >
+            <div className="border-b px-4 py-3 md:px-6" style={{ borderColor: hexToRgba(colors.primary, 0.24) }}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-3xl font-black leading-tight" style={{ color: textPalette.heading }}>
+                    {checkoutStep === "cart" ? "Mi Pedido" : "Completa tu pedido"}
+                  </p>
+                  <p className="text-sm" style={{ color: textPalette.muted }}>
+                    {profile.displayName}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCartOpen(false);
+                    setCheckoutStep("cart");
+                    setCartError("");
+                  }}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border"
+                  style={{
+                    borderColor: hexToRgba(colors.primary, 0.35),
+                    color: textPalette.heading,
+                    background: "rgba(239,68,68,0.92)",
+                  }}
+                  aria-label="Cerrar carrito"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5">
+              {checkoutStep === "cart" && (
+                <div className="space-y-4">
+                  {cartItems.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed p-5 text-sm" style={{ borderColor: hexToRgba(colors.primary, 0.35), color: textPalette.muted }}>
+                      Tu carrito esta vacio. Agrega productos desde la carta para continuar.
+                    </div>
+                  ) : (
+                    <>
+                      {cartItems.map((item) => {
+                        const itemSubtotal = item.unitPrice * item.quantity;
+                        return (
+                          <article
+                            key={item.id}
+                            className="rounded-2xl border p-3"
+                            style={{ borderColor: hexToRgba(colors.primary, 0.3), ...itemSurfaceStyle }}
+                          >
+                            <div className="flex gap-3">
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-xl object-cover" />
+                              ) : (
+                                <div className="h-20 w-20 rounded-xl border flex items-center justify-center text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.35) }}>
+                                  ITEM
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="text-xl font-extrabold leading-tight" style={{ color: textPalette.heading }}>
+                                    {item.title}
+                                  </h4>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeCartItem(item.id)}
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border"
+                                    style={{ borderColor: hexToRgba(colors.primary, 0.28), color: "#ef4444" }}
+                                    aria-label="Eliminar item"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                                <p className="mt-1 text-sm" style={{ color: textPalette.muted }}>
+                                  Cantidad: {item.quantity}
+                                </p>
+                                <p className="mt-1 text-sm font-semibold" style={{ color: textPalette.muted }}>
+                                  Precio base: {formatSoles(item.unitPrice)}
+                                </p>
+                                <div className="mt-2 flex items-center justify-between gap-2">
+                                  <div className="inline-flex items-center gap-1 rounded-xl border px-1 py-1" style={{ borderColor: hexToRgba(colors.primary, 0.32) }}>
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border"
+                                      style={{ borderColor: hexToRgba(colors.primary, 0.24) }}
+                                      onClick={() => patchCartItemQuantity(item.id, item.quantity - 1)}
+                                      aria-label="Disminuir cantidad"
+                                    >
+                                      <Minus className="h-3.5 w-3.5" />
+                                    </button>
+                                    <span className="min-w-8 text-center text-sm font-bold">{item.quantity}</span>
+                                    <button
+                                      type="button"
+                                      className="inline-flex h-7 w-7 items-center justify-center rounded-md border"
+                                      style={{ borderColor: hexToRgba(colors.primary, 0.24) }}
+                                      onClick={() => patchCartItemQuantity(item.id, item.quantity + 1)}
+                                      aria-label="Aumentar cantidad"
+                                    >
+                                      <Plus className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                  <p className="text-xl font-black" style={{ color: textTone === "blackGold" ? textPalette.key : hexToRgba(colors.primary, 0.95) }}>
+                                    {formatSoles(itemSubtotal)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+
+                      <div className="rounded-2xl border p-4" style={{ borderColor: hexToRgba(colors.primary, 0.24), ...cardSurfaceStyle }}>
+                        <p className="text-base font-semibold" style={{ color: textPalette.muted }}>
+                          Subtotal: {formatSoles(cartSubtotal)}
+                        </p>
+                        <div
+                          className="mt-3 rounded-xl px-3 py-3 text-sm font-semibold"
+                          style={{
+                            background: `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.56)} 0%, ${hexToRgba(colors.secondary, 0.5)} 100%)`,
+                            color: "#f8fafc",
+                          }}
+                        >
+                          {amountToAutoDiscount > 0
+                            ? `🎁 ¡Agrega ${formatSoles(amountToAutoDiscount)} mas para obtener 5% de descuento!`
+                            : "🎉 ¡Excelente! Ya tienes 5% de descuento por monto acumulado."}
+                        </div>
+                        <div className="mt-3 border-t pt-3 text-3xl font-black" style={{ borderColor: hexToRgba(colors.primary, 0.2), color: textPalette.heading }}>
+                          Total: {formatSoles(cartTotal)}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {cartFeedback && (
+                    <p className="text-sm font-semibold text-emerald-300">{cartFeedback}</p>
+                  )}
+                  {cartError && <p className="text-sm font-semibold text-red-300">{cartError}</p>}
+
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={clearCart}
+                      className={`border px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] ${buttonRadiusClass}`}
+                      style={{ borderColor: hexToRgba(colors.primary, 0.3), color: textPalette.heading }}
+                    >
+                      Vaciar carrito
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (cartItems.length === 0) {
+                          setCartError("Tu carrito esta vacio. Agrega productos antes de continuar.");
+                          return;
+                        }
+                        setCheckoutStep("checkout");
+                        setCartError("");
+                      }}
+                      className={`border px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] ${buttonRadiusClass}`}
+                      style={interactiveStyle}
+                    >
+                      Completar pedido
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {checkoutStep === "checkout" && (
+                <div className="space-y-4">
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutStep("cart")}
+                    className="text-sm font-semibold"
+                    style={{ color: textPalette.muted }}
+                  >
+                    ← Regresar al carrito
+                  </button>
+
+                  <div className="space-y-3">
+                    <label className="block space-y-1">
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Nombre:</span>
+                      <input
+                        value={customerName}
+                        onChange={(event) => setCustomerName(event.target.value)}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        style={checkoutInputStyle}
+                        placeholder="Tu nombre completo"
+                      />
+                    </label>
+                    <label className="block space-y-1">
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Telefono:</span>
+                      <input
+                        value={customerPhone}
+                        onChange={(event) => setCustomerPhone(event.target.value)}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        style={checkoutInputStyle}
+                        placeholder="999 999 999"
+                      />
+                    </label>
+                    <label className="block space-y-1">
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Opciones de entrega:</span>
+                      <select
+                        value={deliveryMethod}
+                        onChange={(event) => setDeliveryMethod(event.target.value as DeliveryMethod)}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        style={checkoutInputStyle}
+                      >
+                        <option value="">Selecciona una opcion</option>
+                        {ORDER_DELIVERY_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block space-y-1">
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Formas de pago:</span>
+                      <select
+                        value={paymentMethod}
+                        onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        style={checkoutInputStyle}
+                      >
+                        <option value="">Selecciona una opcion</option>
+                        {ORDER_PAYMENT_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="space-y-1">
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>
+                        ¿Tienes un cupon de descuento?
+                      </span>
+                      <div className="flex gap-2">
+                        <input
+                          value={couponInput}
+                          onChange={(event) => setCouponInput(event.target.value)}
+                          className={`min-w-0 flex-1 border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                          style={checkoutInputStyle}
+                          placeholder="Ingresa el codigo"
+                        />
+                        <button
+                          type="button"
+                          onClick={applyCoupon}
+                          className={`border px-4 py-3 text-sm font-bold ${buttonRadiusClass}`}
+                          style={interactiveStyle}
+                        >
+                          Aplicar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border p-4" style={{ borderColor: hexToRgba(colors.primary, 0.24), ...cardSurfaceStyle }}>
+                      <p className="text-lg font-semibold" style={{ color: textPalette.heading }}>Resumen del pedido</p>
+                      <div
+                        className="mt-3 rounded-xl px-3 py-3 text-sm font-semibold"
+                        style={{
+                          background: `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.56)} 0%, ${hexToRgba(colors.secondary, 0.5)} 100%)`,
+                          color: "#f8fafc",
+                        }}
+                      >
+                        {amountToAutoDiscount > 0
+                          ? `🎁 ¡Estas cerca! Te faltan ${formatSoles(amountToAutoDiscount)} para obtener 5% de descuento`
+                          : "🎉 Descuento de 5% activado por monto acumulado."}
+                      </div>
+                      <div className="mt-3 space-y-1 text-sm" style={{ color: textPalette.muted }}>
+                        <div className="flex items-center justify-between">
+                          <span>Subtotal:</span>
+                          <span>{formatSoles(cartSubtotal)}</span>
+                        </div>
+                        {autoDiscount > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span>Descuento por monto:</span>
+                            <span>- {formatSoles(autoDiscount)}</span>
+                          </div>
+                        )}
+                        {couponDiscount > 0 && (
+                          <div className="flex items-center justify-between">
+                            <span>Cupon ({appliedCouponCode}):</span>
+                            <span>- {formatSoles(couponDiscount)}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-3 border-t pt-3 text-2xl font-black" style={{ borderColor: hexToRgba(colors.primary, 0.2), color: textPalette.heading }}>
+                        Total: {formatSoles(cartTotal)}
+                      </div>
+                    </div>
+
+                    <label className="block space-y-1">
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Nota adicional:</span>
+                      <textarea
+                        rows={3}
+                        value={note}
+                        onChange={(event) => setNote(event.target.value)}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        style={checkoutInputStyle}
+                        placeholder="Ejemplo: sin cebolla, tocar timbre, etc."
+                      />
+                    </label>
+
+                    <label className="flex items-start gap-2 text-sm" style={{ color: textPalette.muted }}>
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(event) => setAcceptedTerms(event.target.checked)}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        Acepto los <a href="#" className="underline">terminos y condiciones</a>.
+                      </span>
+                    </label>
+
+                    <div className="rounded-xl border-l-2 px-3 py-2 text-xs" style={{ borderColor: hexToRgba(colors.primary, 0.7), color: textPalette.muted }}>
+                      ℹ️ Importante: al enviar este pedido, se abrirá WhatsApp con el mensaje listo para confirmar.
+                    </div>
+
+                    {cartFeedback && (
+                      <p className="text-sm font-semibold text-emerald-300">{cartFeedback}</p>
+                    )}
+                    {cartError && <p className="text-sm font-semibold text-red-300">{cartError}</p>}
+
+                    <button
+                      type="button"
+                      onClick={submitOrderWhatsapp}
+                      className={`inline-flex w-full items-center justify-center gap-2 border px-4 py-3 text-base font-black ${buttonRadiusClass}`}
+                      style={{
+                        borderColor: "rgba(34,197,94,0.55)",
+                        background: "linear-gradient(135deg, #16a34a 0%, #4ade80 100%)",
+                        color: "#ffffff",
+                      }}
+                    >
+                      <MessageCircleIcon className="h-5 w-5" />
+                      Enviar pedido
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
