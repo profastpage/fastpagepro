@@ -655,3 +655,12 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - el servicio de suscripciones ahora usa fallback transparente a Firestore (`users/{uid}`) para lectura/escritura de plan cuando Prisma falla.
   - el panel `/admin` ahora aplica plan con fallback directo por cliente a Firestore si la API de planes falla.
   - `/api/subscription/session` deja de romper con `500` si falta secreto de cookie y responde modo degradado sin cookie.
+
+## Super Admin Firestore-First Plan Apply (2026-02-25)
+
+- Ruta ajustada: `/admin`.
+- Cambio de estrategia en activacion/desactivacion:
+  - el panel aplica primero el plan en Firestore (`users/{uid}`) como fuente primaria de estado visible.
+  - la llamada a `/api/subscription/admin/manage` queda como sincronizacion best-effort para historial SQL/billing.
+- Resultado:
+  - si la API de suscripciones cae con `500`, el plan igual queda aplicado y visible en el panel.

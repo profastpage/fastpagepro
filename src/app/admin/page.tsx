@@ -186,78 +186,84 @@ export default function AdminPanel() {
     setPlanMessageByUserId((previous) => ({ ...previous, [userId]: "" }));
 
     try {
-      const idToken = await currentUser.getIdToken();
-      const response = await fetch("/api/subscription/admin/manage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          userId,
-          plan: requestedPlan,
-          mode,
-          durationDays: requestedPlan === "FREE" ? 3650 : 30,
-        }),
-      });
+      const targetPlan: PlanType = mode === "DEACTIVATE" ? "FREE" : requestedPlan;
+      const durationDays = targetPlan === "FREE" ? 3650 : 30;
+      const startAtMs = Date.now();
+      const endAtMs = startAtMs + durationDays * 24 * 60 * 60 * 1000;
 
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(String(payload?.error || "No se pudo actualizar el plan."));
-      }
-
-      const subscription = payload?.subscription as PlanSummary | undefined;
-      if (subscription?.userId) {
-        setPlanByUserId((previous) => ({ ...previous, [subscription.userId]: subscription }));
-        setPlanDraftByUserId((previous) => ({ ...previous, [subscription.userId]: subscription.plan }));
-      } else {
-        await fetchPlanSummaries([userId]);
-      }
-
-      setPlanMessageByUserId((previous) => ({
-        ...previous,
-        [userId]: mode === "DEACTIVATE" ? "Plan cambiado a FREE." : `Plan ${requestedPlan} activo.`,
-      }));
-    } catch (requestError: any) {
-      try {
-        const fallbackPlan: PlanType = mode === "DEACTIVATE" ? "FREE" : requestedPlan;
-        const durationDays = fallbackPlan === "FREE" ? 3650 : 30;
-        const startAtMs = Date.now();
-        const endAtMs = startAtMs + durationDays * 24 * 60 * 60 * 1000;
-
-        await updateDoc(doc(db, "users", userId), {
-          subscriptionPlan: fallbackPlan,
+      // Source of truth for /admin table is Firestore users collection.
+      await setDoc(
+        doc(db, "users", userId),
+        {
+          subscriptionPlan: targetPlan,
           subscriptionStatus: "ACTIVE",
           subscriptionStartAt: startAtMs,
           subscriptionEndAt: endAtMs,
           subscriptionUpdatedAt: Date.now(),
+        },
+        { merge: true },
+      );
+
+      const localSummary: PlanSummary = {
+        userId,
+        plan: targetPlan,
+        status: "ACTIVE",
+        startDate: new Date(startAtMs).toISOString(),
+        endDate: new Date(endAtMs).toISOString(),
+        isActive: true,
+      };
+
+      setPlanByUserId((previous) => ({ ...previous, [userId]: localSummary }));
+      setPlanDraftByUserId((previous) => ({ ...previous, [userId]: targetPlan }));
+      setPlanMessageByUserId((previous) => ({
+        ...previous,
+        [userId]:
+          mode === "DEACTIVATE"
+            ? "Plan cambiado a FREE (Firestore)."
+            : `Plan ${targetPlan} aplicado.`,
+      }));
+
+      // Best-effort sync with SQL-backed API for billing history.
+      try {
+        const idToken = await currentUser.getIdToken();
+        const response = await fetch("/api/subscription/admin/manage", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            userId,
+            plan: requestedPlan,
+            mode,
+            durationDays: requestedPlan === "FREE" ? 3650 : 30,
+          }),
         });
 
-        const fallbackSummary: PlanSummary = {
-          userId,
-          plan: fallbackPlan,
-          status: "ACTIVE",
-          startDate: new Date(startAtMs).toISOString(),
-          endDate: new Date(endAtMs).toISOString(),
-          isActive: true,
-        };
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(String(payload?.error || "No se pudo sincronizar el plan con SQL."));
+        }
 
-        setPlanByUserId((previous) => ({ ...previous, [userId]: fallbackSummary }));
-        setPlanDraftByUserId((previous) => ({ ...previous, [userId]: fallbackPlan }));
-        setPlanSyncError("API de planes no disponible. Se aplicó modo Firestore.");
+        const subscription = payload?.subscription as PlanSummary | undefined;
+        if (subscription?.userId) {
+          setPlanByUserId((previous) => ({ ...previous, [subscription.userId]: subscription }));
+          setPlanDraftByUserId((previous) => ({ ...previous, [subscription.userId]: subscription.plan }));
+        }
+        setPlanSyncError(null);
+      } catch (syncError: any) {
+        setPlanSyncError("API de planes no disponible. El plan quedó aplicado en Firestore.");
         setPlanMessageByUserId((previous) => ({
           ...previous,
-          [userId]: `Plan ${fallbackPlan} aplicado (fallback Firestore).`,
+          [userId]: `${mode === "DEACTIVATE" ? "FREE" : targetPlan} aplicado. Sincronización SQL pendiente.`,
         }));
-      } catch (fallbackError: any) {
-        setPlanMessageByUserId((previous) => ({
-          ...previous,
-          [userId]:
-            fallbackError?.message ||
-            requestError?.message ||
-            "No se pudo actualizar el plan.",
-        }));
+        console.warn("[Admin] Plan sync warning:", syncError);
       }
+    } catch (error: any) {
+      setPlanMessageByUserId((previous) => ({
+        ...previous,
+        [userId]: error?.message || "No se pudo actualizar el plan.",
+      }));
     } finally {
       setPlanLoadingByUserId((previous) => ({ ...previous, [userId]: false }));
     }
