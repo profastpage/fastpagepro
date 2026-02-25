@@ -55,6 +55,34 @@ service cloud.firestore {
       allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
     }
 
+    match /projects/{projectId} {
+      allow get, list: if isAdmin()
+        || (signedIn() && resource.data.userId == request.auth.uid);
+
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+        );
+
+      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+    }
+
+    match /analytics/{projectId} {
+      function ownsAnalyticsProject() {
+        return signedIn()
+          && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
+      }
+
+      allow get, list: if isAdmin() || ownsAnalyticsProject();
+      allow create, update: if isAdmin() || ownsAnalyticsProject();
+      allow delete: if isAdmin();
+    }
+
     match /store_orders/{orderId} {
       allow create: if request.resource.data.storeId is string
         && request.resource.data.storeSlug is string

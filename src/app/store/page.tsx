@@ -17,6 +17,17 @@ import {
   type StoreThemeId,
 } from "@/lib/storefrontGenerator";
 import {
+  EditorProvider,
+  ensureAnalyticsDocument,
+  publishEditorDraft,
+  saveEditorDraft,
+  useAutosave,
+  useEditorState,
+  usePublish,
+} from "@/editor-core";
+import InlineEditable from "@/components/editor/InlineEditable";
+import EditorSidebar from "@/components/editor/EditorSidebar";
+import {
   ArrowLeft,
   ExternalLink,
   Loader2,
@@ -49,6 +60,7 @@ const FIREBASE_PUBLIC_CONFIG = {
 
 type VisualSort = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
 type VisualContent = NonNullable<StoreConfig["content"]>;
+type StoreEditorSnapshot = { config: StoreConfig; products: StoreProduct[] };
 
 const DEFAULT_CONFIG: StoreConfig = {
   storeName: "Couture Perú",
@@ -199,9 +211,23 @@ async function compressImage(file: File, maxSide = 1400, quality = 0.84) {
 }
 
 export default function StorePage() {
+  return (
+    <EditorProvider<StoreEditorSnapshot>
+      projectId="store-draft"
+      projectType="store"
+      initialStatus="draft"
+      initialData={{ config: DEFAULT_CONFIG, products: DEFAULT_PRODUCTS }}
+    >
+      <StoreEditorPage />
+    </EditorProvider>
+  );
+}
+
+function StoreEditorPage() {
   const { user, loading: authLoading } = useAuth(true);
   const router = useRouter();
   const hydratedRef = useRef(false);
+  const editor = useEditorState<StoreEditorSnapshot>();
 
   const [projectId, setProjectId] = useState<string | null>(null);
   const [config, setConfig] = useState<StoreConfig>(DEFAULT_CONFIG);
@@ -219,47 +245,53 @@ export default function StorePage() {
   const [savedToast, setSavedToast] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const content = (config.content || {}) as VisualContent;
-  const themeVars = getVisualStoreVars(config);
-  const visualTheme = getVisualStoreTheme(config);
-  const publicStoreSlug = useMemo(() => resolveStoreSlug(config, projectId || "draft"), [config, projectId]);
+  const liveConfig = editor.state.previewData?.config || config;
+  const liveProducts = editor.state.previewData?.products || products;
+  const content = (liveConfig.content || {}) as VisualContent;
+  const themeVars = getVisualStoreVars(liveConfig);
+  const visualTheme = getVisualStoreTheme(liveConfig);
+  const publicStoreSlug = useMemo(() => resolveStoreSlug(liveConfig, projectId || "draft"), [liveConfig, projectId]);
 
   const categories = useMemo(() => {
     const set = new Set<string>(["Todos"]);
-    products.forEach((p) => set.add(String(p.category || "General")));
+    liveProducts.forEach((p) => set.add(String(p.category || "General")));
     return Array.from(set);
-  }, [products]);
+  }, [liveProducts]);
 
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const base = products.filter((p) => p.active).filter((p) => {
+    const base = liveProducts.filter((p) => p.active).filter((p) => {
       if (category !== "Todos" && String(p.category || "General") !== category) return false;
       if (!term) return true;
       return [p.name, p.description, p.badge || "", p.category || ""].join(" ").toLowerCase().includes(term);
     });
     return sortProducts(base, sortBy);
-  }, [products, category, search, sortBy]);
+  }, [liveProducts, category, search, sortBy]);
 
-  const offerProducts = useMemo(() => products.filter((p) => p.active && isOfferProduct(p)), [products]);
+  const offerProducts = useMemo(() => liveProducts.filter((p) => p.active && isOfferProduct(p)), [liveProducts]);
 
   const storefrontHtml = useMemo(() => {
     try {
       return generateStorefrontHtml({
         storeId: projectId || "draft",
-        config,
-        products,
+        config: liveConfig,
+        products: liveProducts,
         firebaseConfig: FIREBASE_PUBLIC_CONFIG,
       });
     } catch {
       return "<!doctype html><html><body>Store</body></html>";
     }
-  }, [projectId, config, products]);
+  }, [projectId, liveConfig, liveProducts]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = localStorage.getItem("fastpage_store_project_id");
     if (saved) setProjectId(saved);
   }, []);
+
+  useEffect(() => {
+    editor.setProjectMeta(projectId || "store-draft", "store");
+  }, [editor, projectId]);
 
   useEffect(() => {
     if (authLoading || !user?.uid || !projectId) return;
@@ -280,28 +312,35 @@ export default function StorePage() {
           setProducts(data.storeProducts as StoreProduct[]);
         }
         setIsDirty(false);
+        editor.replaceData(
+          {
+            config: data?.storeConfig ? ({ ...DEFAULT_CONFIG, ...(data.storeConfig as StoreConfig) } as StoreConfig) : config,
+            products:
+              Array.isArray(data?.storeProducts) && data.storeProducts.length
+                ? (data.storeProducts as StoreProduct[])
+                : products,
+          },
+          { markDirty: false, syncPreview: true, changeKind: "bulk" },
+        );
+        editor.markSaved(data?.status === "published" ? "published" : "draft");
       } catch (e: any) {
         setError(e?.message || "No se pudo cargar.");
+        editor.setError(e?.message || "No se pudo cargar.");
       } finally {
         setLoadingProject(false);
       }
     })();
-  }, [authLoading, user?.uid, projectId]);
+  }, [authLoading, config, editor, products, projectId, user?.uid]);
 
   useEffect(() => {
     if (!hydratedRef.current) {
       hydratedRef.current = true;
+      editor.replaceData({ config, products }, { markDirty: false, syncPreview: true, changeKind: "bulk" });
       return;
     }
     setIsDirty(true);
-  }, [config, products]);
-
-  useEffect(() => {
-    if (!isDirty) return;
-    const t = setTimeout(() => void saveProject(false), 15000);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDirty]);
+    editor.replaceData({ config, products }, { markDirty: true, syncPreview: true, changeKind: "bulk" });
+  }, [config, editor, products]);
 
   useEffect(() => {
     if (!categories.includes(category)) setCategory("Todos");
@@ -379,6 +418,24 @@ export default function StorePage() {
       if (!projectId) payload.createdAt = now;
       if (publishNow) payload.publishedAt = now;
       await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
+      const snapshot: StoreEditorSnapshot = { config: nextConfig, products };
+      if (publishNow) {
+        await publishEditorDraft({
+          projectId: id,
+          userId: user.uid,
+          projectType: "store",
+          data: snapshot,
+          publishedUrl: `/t/${storeSlug}`,
+        });
+        await ensureAnalyticsDocument(id);
+      } else {
+        await saveEditorDraft({
+          projectId: id,
+          userId: user.uid,
+          projectType: "store",
+          data: snapshot,
+        });
+      }
 
       if (!projectId) {
         setProjectId(id);
@@ -387,6 +444,7 @@ export default function StorePage() {
       if (config.storeSlug !== storeSlug) setConfig((prev) => ({ ...prev, storeSlug }));
 
       setIsDirty(false);
+      editor.markSaved(publishNow ? "published" : "draft");
       if (publishNow) router.push(`/published?highlight=${id}&kind=site`);
       else {
         setSavedToast(true);
@@ -394,11 +452,25 @@ export default function StorePage() {
       }
     } catch (e: any) {
       setError(e?.message || "No se pudo guardar.");
+      editor.setError(e?.message || "No se pudo guardar.");
     } finally {
       setSaving(false);
       setPublishing(false);
     }
   };
+
+  useAutosave<StoreEditorSnapshot>({
+    enabled: Boolean(user?.uid) && !loadingProject,
+    onSave: async () => {
+      await saveProject(false);
+    },
+  });
+
+  const publishFlow = usePublish<StoreEditorSnapshot>({
+    onPublish: async () => {
+      await saveProject(true);
+    },
+  });
 
   return (
     <div className="min-h-screen pt-20 pb-8" style={{ ...themeVars, background: "var(--vs-page)", color: "var(--vs-text)" }}>
@@ -411,7 +483,13 @@ export default function StorePage() {
               </button>
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: "var(--vs-muted)" }}>Editor visual ecommerce</p>
-                <input value={config.storeName} onChange={(e) => setConfig((p) => ({ ...p, storeName: e.target.value }))} className="w-full bg-transparent text-lg font-black outline-none" />
+                <InlineEditable
+                  value={config.storeName}
+                  field="storeName"
+                  projectId={projectId || "store-draft"}
+                  onChange={(value: string) => setConfig((p) => ({ ...p, storeName: value }))}
+                  className="text-lg font-black"
+                />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -421,7 +499,7 @@ export default function StorePage() {
               </div>
               <button onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><ExternalLink className="h-4 w-4" />Ver tienda</button>
               <button onClick={() => saveProject(false)} disabled={saving || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold disabled:opacity-60" style={{ borderColor: "var(--vs-border)" }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Guardar</button>
-              <button onClick={() => saveProject(true)} disabled={publishing || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-dark)" }}>{publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}Publicar</button>
+              <button onClick={() => void publishFlow.publish()} disabled={publishing || publishFlow.publishing || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-dark)" }}>{publishing || publishFlow.publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}Publicar</button>
             </div>
           </div>
         </header>
@@ -499,6 +577,13 @@ export default function StorePage() {
           </section>
 
           <aside className="space-y-3">
+            <EditorSidebar
+              contentTab={<p className="text-xs text-zinc-600">Contenido editable rapido + panel avanzado sincronizados.</p>}
+              designTab={<p className="text-xs text-zinc-600">Tema, colores y layout desktop/mobile.</p>}
+              aiTab={<p className="text-xs text-zinc-600">IA por plan: basic en Business, advanced en Pro.</p>}
+              seoTab={<p className="text-xs text-zinc-600">SEO aplicado al publicar en /t/{'{slug}'}.</p>}
+              settingsTab={<p className="text-xs text-zinc-600">Autosave inteligente activo.</p>}
+            />
             <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinámico</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Blanco + acentos personalizables.</p>

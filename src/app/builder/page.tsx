@@ -10,6 +10,15 @@ import { injectMetricsTracking } from "@/lib/metricsTracking";
 import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
 import MobileSavePublishBar from "@/components/MobileSavePublishBar";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
+import {
+  EditorProvider,
+  ensureAnalyticsDocument,
+  publishEditorDraft,
+  saveEditorDraft,
+  useAutosave,
+  useEditorState,
+  usePublish,
+} from "@/editor-core";
 import { 
   Plus, 
   Trash2, 
@@ -44,6 +53,12 @@ interface Block {
   type: BlockType;
   content: any;
 }
+
+type BuilderEditorSnapshot = {
+  blocks: Block[];
+  primaryColor: string;
+  secondaryColor: string;
+};
 
 const DEFAULT_BLOCKS: Record<BlockType, any> = {
   hero: {
@@ -95,9 +110,27 @@ const DEFAULT_BLOCKS: Record<BlockType, any> = {
 };
 
 export default function BuilderPage() {
+  return (
+    <EditorProvider<BuilderEditorSnapshot>
+      projectId="builder-draft"
+      projectType="builder"
+      initialStatus="draft"
+      initialData={{
+        blocks: [],
+        primaryColor: "#fbbf24",
+        secondaryColor: "#d97706",
+      }}
+    >
+      <BuilderEditorPage />
+    </EditorProvider>
+  );
+}
+
+function BuilderEditorPage() {
   const { user, loading } = useAuth(true);
   const { t } = useLanguage();
   const router = useRouter();
+  const editor = useEditorState<BuilderEditorSnapshot>();
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [activeTab, setActiveTab] = useState<"add" | "styles">("add");
@@ -139,6 +172,10 @@ export default function BuilderPage() {
   }, []);
 
   useEffect(() => {
+    editor.setProjectMeta(builderProjectId || "builder-draft", "builder");
+  }, [builderProjectId, editor]);
+
+  useEffect(() => {
     if (loading || !user?.uid || !builderProjectId) return;
 
     (async () => {
@@ -159,11 +196,21 @@ export default function BuilderPage() {
         if (typeof data.builderSecondaryColor === "string") {
           setSecondaryColor(data.builderSecondaryColor);
         }
+        editor.replaceData(
+          {
+            blocks: Array.isArray(data.builderBlocks) ? (data.builderBlocks as Block[]) : [],
+            primaryColor: typeof data.builderPrimaryColor === "string" ? data.builderPrimaryColor : primaryColor,
+            secondaryColor:
+              typeof data.builderSecondaryColor === "string" ? data.builderSecondaryColor : secondaryColor,
+          },
+          { markDirty: false, syncPreview: true, changeKind: "bulk" },
+        );
+        editor.markSaved(data?.status === "published" ? "published" : "draft");
       } catch (error) {
         console.error("[Builder] Failed to load saved project:", error);
       }
     })();
-  }, [loading, user?.uid, builderProjectId]);
+  }, [builderProjectId, editor, loading, primaryColor, secondaryColor, user?.uid]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -189,6 +236,14 @@ export default function BuilderPage() {
   useEffect(() => {
     if (!isClient) return;
     setProjectStatus("dirty");
+    editor.replaceData(
+      {
+        blocks,
+        primaryColor,
+        secondaryColor,
+      },
+      { markDirty: true, syncPreview: true, changeKind: "bulk" },
+    );
   }, [blocks, primaryColor, secondaryColor, isClient]);
 
   const hexToRgb = (hex: string) => {
@@ -353,21 +408,58 @@ export default function BuilderPage() {
     if (publishNow) payload.publishedAt = now;
 
     await setDoc(firestoreDoc(db, "cloned_sites", projectId), payload, { merge: true });
+    const snapshot: BuilderEditorSnapshot = {
+      blocks,
+      primaryColor,
+      secondaryColor,
+    };
+
+    if (publishNow) {
+      await publishEditorDraft({
+        projectId,
+        userId: user.uid,
+        projectType: "builder",
+        data: snapshot,
+      });
+      await ensureAnalyticsDocument(projectId);
+    } else {
+      await saveEditorDraft({
+        projectId,
+        userId: user.uid,
+        projectType: "builder",
+        data: snapshot,
+      });
+    }
 
     if (!builderProjectId) {
       setBuilderProjectId(projectId);
       localStorage.setItem("fastpage_builder_project_id", projectId);
     }
     setProjectStatus("saved");
+    editor.markSaved(publishNow ? "published" : "draft");
     return projectId;
   };
+
+  const autosave = useAutosave<BuilderEditorSnapshot>({
+    enabled: Boolean(user?.uid) && isClient && blocks.length > 0,
+    onSave: async () => {
+      await upsertBuilderProject(false);
+    },
+  });
+
+  const publishFlow = usePublish<BuilderEditorSnapshot>({
+    onPublish: async () => {
+      const projectId = await upsertBuilderProject(true);
+      router.push(`/published?highlight=${projectId}&kind=site`);
+    },
+  });
 
   const handleSaveProject = async () => {
     if (savingProject) return;
     setSavingProject(true);
     setProjectError(null);
     try {
-      await upsertBuilderProject(false);
+      await autosave.saveNow();
     } catch (error: any) {
       setProjectError(error?.message || "No se pudo guardar el proyecto.");
     } finally {
@@ -376,12 +468,14 @@ export default function BuilderPage() {
   };
 
   const handlePublishProject = async () => {
-    if (publishingProject) return;
+    if (publishingProject || publishFlow.publishing) return;
     setPublishingProject(true);
     setProjectError(null);
     try {
-      const projectId = await upsertBuilderProject(true);
-      router.push(`/published?highlight=${projectId}&kind=site`);
+      const ok = await publishFlow.publish();
+      if (!ok) {
+        throw new Error(editor.state.lastError || "No se pudo publicar el proyecto.");
+      }
     } catch (error: any) {
       setProjectError(error?.message || "No se pudo publicar el proyecto.");
     } finally {

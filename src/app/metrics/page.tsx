@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -38,6 +39,7 @@ import {
 
 export default function MetricsPage() {
   const { user, loading: authLoading } = useAuth(true);
+  const permissions = usePlanPermissions(Boolean(user?.uid));
   const router = useRouter();
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
@@ -83,7 +85,7 @@ export default function MetricsPage() {
     return () => clearInterval(interval);
   }, [fetchMetrics]);
 
-  if (loading || authLoading) {
+  if (loading || authLoading || permissions.loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -94,7 +96,26 @@ export default function MetricsPage() {
     );
   }
 
-  const stats = [
+  if (permissions.analyticsLevel === "none") {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
+        <div className="w-full max-w-2xl rounded-3xl border border-amber-300/25 bg-zinc-950/80 p-8 text-center">
+          <h1 className="text-3xl font-black text-white">Metricas avanzadas bloqueadas en Starter</h1>
+          <p className="mt-3 text-zinc-300">
+            Actualiza a plan Business o Pro para desbloquear visitas, clicks y conversion con reportes por proyecto.
+          </p>
+          <button
+            onClick={() => router.push("/dashboard/billing")}
+            className="mt-6 rounded-xl bg-amber-400 px-5 py-3 text-sm font-black uppercase tracking-wider text-black hover:bg-amber-300"
+          >
+            Actualizar a Business o Pro
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const allStats = [
     { 
       label: "Visitas Totales", 
       value: data?.summary?.totalVisits || "0", 
@@ -128,6 +149,10 @@ export default function MetricsPage() {
       color: "amber"
     },
   ];
+  const stats =
+    permissions.analyticsLevel === "basic"
+      ? allStats.filter((stat) => stat.label !== "Tiempo en Pagina")
+      : allStats;
 
   const filteredProjects = data?.details?.filter((p: any) => {
     if (activeMetric === "all") return true;

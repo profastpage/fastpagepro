@@ -12,14 +12,41 @@ import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
+import {
+  EditorProvider,
+  ensureAnalyticsDocument,
+  publishEditorDraft,
+  saveEditorDraft,
+  useAutosave,
+  useEditorState,
+  usePublish,
+} from "@/editor-core";
+
+type HtmlEditorSnapshot = {
+  html: string;
+};
 
 export default function EditorPage() {
+  return (
+    <EditorProvider<HtmlEditorSnapshot>
+      projectId="clone-draft"
+      projectType="clone"
+      initialStatus="draft"
+      initialData={{ html: "" }}
+    >
+      <EditorPageContent />
+    </EditorProvider>
+  );
+}
+
+function EditorPageContent() {
   const { user: session, loading: authLoading } = useAuth(true);
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useLanguage();
+  const editor = useEditorState<HtmlEditorSnapshot>();
   const [html, setHtml] = useState<string | null>(null);
 
   const navLinks = [
@@ -43,6 +70,10 @@ export default function EditorPage() {
   const [error, setError] = useState<string | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    editor.setProjectMeta(id || "clone-draft", "clone");
+  }, [editor, id]);
 
   const handleBackNav = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -165,7 +196,10 @@ export default function EditorPage() {
   };
 
   const [isDirty, setIsDirty] = useState(false);
-  const markAsDirty = () => setIsDirty(true);
+  const markAsDirty = () => {
+    setIsDirty(true);
+    editor.markDirty("text");
+  };
 
   const [selectedEl, setSelectedEl] = useState<HTMLElement | null>(null);
 
@@ -207,18 +241,6 @@ export default function EditorPage() {
     markAsDirty();
   };
 
-  // Auto-save logic
-  useEffect(() => {
-    if (!isDirty) return;
-    
-    const timer = setTimeout(() => {
-      handleSave();
-      setIsDirty(false);
-    }, 15000); // Auto-save every 15 seconds if dirty
-
-    return () => clearTimeout(timer);
-  }, [isDirty]);
-
   useEffect(() => {
     if (authLoading) return;
     if (!session?.uid) {
@@ -241,9 +263,12 @@ export default function EditorPage() {
           throw new Error("Proyecto sin contenido.");
         }
         setHtml(data.html);
+        editor.replaceData({ html: data.html }, { markDirty: false, syncPreview: true, changeKind: "bulk" });
+        editor.markSaved("draft");
       } catch (error: any) {
         console.error("Error loading site:", error);
         setError(error?.message || "No se pudo cargar el proyecto desde Firebase.");
+        editor.setError(error?.message || "No se pudo cargar el proyecto desde Firebase.");
       } finally {
         setLoading(false);
       }

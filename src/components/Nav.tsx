@@ -6,18 +6,24 @@ import { useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronLeft, ChevronRight, Zap, LogOut } from "lucide-react";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import { ChevronLeft, ChevronRight, Zap, LogOut, Lock } from "lucide-react";
 
 export default function Nav() {
   const { user: session, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [desktopLockedOpen, setDesktopLockedOpen] = useState<string | null>(null);
+  const [mobileLockedOpen, setMobileLockedOpen] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useLanguage();
+  const permissions = usePlanPermissions(Boolean(session?.uid));
 
   // Close menu when route changes
   useEffect(() => {
     setIsOpen(false);
+    setDesktopLockedOpen(null);
+    setMobileLockedOpen(null);
   }, [pathname]);
 
   // Lock scroll when menu is open
@@ -37,19 +43,22 @@ export default function Nav() {
       return [];
     }
 
+    const isStarter = permissions.canonicalPlan === "starter";
+    const starterLockedRoutes = new Set(["/builder", "/templates", "/cloner/web", "/store"]);
+
     return [
       { name: t("nav.hub"), href: "/hub", emoji: "" },
-      { name: t("nav.builder"), href: "/builder", emoji: "" },
-      { name: t("nav.templates"), href: "/templates", emoji: "" },
-      { name: t("nav.cloner"), href: "/cloner/web", emoji: "" },
-      { name: t("nav.store"), href: "/store", emoji: "" },
+      { name: t("nav.builder"), href: "/builder", emoji: "", locked: isStarter && starterLockedRoutes.has("/builder") },
+      { name: t("nav.templates"), href: "/templates", emoji: "", locked: isStarter && starterLockedRoutes.has("/templates") },
+      { name: t("nav.cloner"), href: "/cloner/web", emoji: "", locked: isStarter && starterLockedRoutes.has("/cloner/web") },
+      { name: t("nav.store"), href: "/store", emoji: "", locked: isStarter && starterLockedRoutes.has("/store") },
       { name: t("nav.linkhub"), href: "/linkhub", emoji: "" },
       { name: t("nav.published"), href: "/published", emoji: "" },
       { name: t("nav.metrics"), href: "/metrics", emoji: "" },
       { name: "Billing", href: "/dashboard/billing", emoji: "" },
       { name: t("nav.settings"), href: "/settings", emoji: "" },
     ];
-  }, [session, t]);
+  }, [permissions.canonicalPlan, session, t]);
 
   if (
     pathname === "/auth" ||
@@ -79,17 +88,46 @@ export default function Nav() {
         {/* Center Minimalist Nav */}
         <nav className="fixed top-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-8 bg-transparent">
           {navLinks.map((link) => (
-            <Link
+            <div
               key={link.href}
-              href={link.href}
-              className={`nav-link-glow text-[11px] uppercase tracking-[0.2em] font-bold transition-all ${
-                pathname === link.href
-                  ? "text-amber-400 drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]"
-                  : "text-zinc-400 hover:text-white"
-              }`}
+              className="relative"
+              onMouseEnter={() => link.locked && setDesktopLockedOpen(link.href)}
+              onMouseLeave={() => link.locked && setDesktopLockedOpen((current) => (current === link.href ? null : current))}
             >
-              {link.name}
-            </Link>
+              {link.locked ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDesktopLockedOpen((current) => (current === link.href ? null : link.href))
+                    }
+                    className="nav-link-glow inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] font-bold text-zinc-400 transition-all hover:text-amber-200"
+                    title="Disponible en Business o Pro"
+                  >
+                    {link.name}
+                    <Lock className="h-3.5 w-3.5 text-amber-300" />
+                  </button>
+                  <div
+                    className={`absolute left-1/2 top-full mt-2 w-64 -translate-x-1/2 rounded-xl border border-amber-300/30 bg-black/95 px-3 py-2 text-[11px] font-semibold text-amber-100 shadow-2xl transition-opacity ${
+                      desktopLockedOpen === link.href ? "opacity-100" : "pointer-events-none opacity-0"
+                    }`}
+                  >
+                    Actualiza a plan Business o Pro para desbloquear esta funcion.
+                  </div>
+                </>
+              ) : (
+                <Link
+                  href={link.href}
+                  className={`nav-link-glow text-[11px] uppercase tracking-[0.2em] font-bold transition-all ${
+                    pathname === link.href
+                      ? "text-amber-400 drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              )}
+            </div>
           ))}
         </nav>
 
@@ -264,13 +302,34 @@ export default function Nav() {
 
                 <div className="flex flex-col gap-2">
                   {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
-                    >
-                      {link.name}
-                    </Link>
+                    <div key={link.href} className="space-y-2">
+                      {link.locked ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setMobileLockedOpen((current) => (current === link.href ? null : link.href))
+                            }
+                            className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
+                          >
+                            <span>{link.name}</span>
+                            <Lock className="h-4 w-4 text-amber-300" />
+                          </button>
+                          {mobileLockedOpen === link.href ? (
+                            <div className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm text-amber-100">
+                              Actualiza a plan Business o Pro para desbloquear esta funcion.
+                            </div>
+                          ) : null}
+                        </>
+                      ) : (
+                        <Link
+                          href={link.href}
+                          className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
+                        >
+                          {link.name}
+                        </Link>
+                      )}
+                    </div>
                   ))}
                 </div>
 

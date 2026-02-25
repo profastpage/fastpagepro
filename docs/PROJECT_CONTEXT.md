@@ -800,3 +800,33 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
     - `Productos ilimitados`
     - `Branding removible`
     - `IA avanzada`
+
+## Unified Editor Core + Starter Lock (2026-02-26)
+
+- Nuevo modulo transversal: `src/editor-core`
+  - `EditorProvider`
+  - `useEditorState`
+  - `useAutosave`
+  - `usePublish`
+  - `usePlanPermissions` (re-export centralizado)
+  - `useAIAssistant`
+  - persistencia draft/published en `projects/{id}` via `storage.ts`
+- Nuevo set de componentes reutilizables:
+  - `src/components/editor/InlineEditable.tsx`
+  - `src/components/editor/EditorSidebar.tsx`
+- Integraciones iniciales del core:
+  - `/builder`: sincroniza estado con `editor-core`, autosave y publish unificado con espejo en `projects`.
+  - `/editor/[id]`: envuelto con `EditorProvider`, sincroniza dirty state con editor-core.
+  - `/store`: envuelto con `EditorProvider`, autosave + publish unificado, sincronizacion en `projects`.
+- Navegacion con bloqueo Starter:
+  - `Nav` muestra `candado` en `Builder`, `Templates`, `Cloner` y `Online Store` para plan `starter`.
+  - hover/click en item bloqueado muestra mensaje de upgrade a `Business` o `Pro`.
+- Bloqueo real por middleware:
+  - rutas `/builder`, `/templates` y `/store` ahora requieren feature `fullStore`.
+  - `starter` es redirigido a `/dashboard/billing`.
+- Firestore rules extendidas:
+  - nueva coleccion `projects` con ownership/admin para draft/published.
+  - nueva coleccion `analytics` ligada a ownership del proyecto.
+- Metrics por nivel:
+  - `starter`: pantalla de upsell (sin metricas).
+  - `business/pro`: habilitado; pro mantiene modo completo.
