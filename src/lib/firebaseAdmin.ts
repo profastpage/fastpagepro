@@ -1,43 +1,84 @@
-import * as admin from 'firebase-admin';
+import * as admin from "firebase-admin";
 
 let isInitialized = false;
 let initWarningShown = false;
 
-function parseServiceAccount(raw: string) {
+type ServiceAccountLike = {
+  project_id: string;
+  client_email: string;
+  private_key: string;
+};
+
+function toAdminServiceAccount(input: Partial<ServiceAccountLike> | null | undefined): admin.ServiceAccount | null {
+  const projectId = String(input?.project_id || "").trim();
+  const clientEmail = String(input?.client_email || "").trim();
+  const privateKey = String(input?.private_key || "").trim();
+  if (!projectId || !clientEmail || !privateKey) {
+    return null;
+  }
+  return {
+    projectId,
+    clientEmail,
+    privateKey,
+  };
+}
+
+function parseServiceAccount(raw: string): admin.ServiceAccount | null {
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw) as Partial<ServiceAccountLike>;
+    return toAdminServiceAccount(parsed);
   } catch {
     try {
       const decoded = Buffer.from(raw, "base64").toString("utf8");
-      return JSON.parse(decoded);
+      const parsed = JSON.parse(decoded) as Partial<ServiceAccountLike>;
+      return toAdminServiceAccount(parsed);
     } catch {
       return null;
     }
   }
 }
 
+function buildServiceAccountFromEnv(): admin.ServiceAccount | null {
+  const serviceAccountKey = String(process.env.FIREBASE_SERVICE_ACCOUNT_KEY || "").trim();
+  if (serviceAccountKey) {
+    return parseServiceAccount(serviceAccountKey);
+  }
+
+  const projectId = String(
+    process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "",
+  ).trim();
+  const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || "").trim();
+  const privateKey = String(process.env.FIREBASE_PRIVATE_KEY || "")
+    .replace(/\\n/g, "\n")
+    .trim();
+
+  if (!projectId || !clientEmail || !privateKey) {
+    return null;
+  }
+
+  return {
+    projectId,
+    clientEmail,
+    privateKey,
+  };
+}
+
 if (!admin.apps.length) {
   try {
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-      const serviceAccount = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+    const serviceAccount = buildServiceAccountFromEnv();
 
-      if (!serviceAccount) {
-        if (!initWarningShown) {
-          console.warn("[FirebaseAdmin] FIREBASE_SERVICE_ACCOUNT_KEY inválida. Admin SDK deshabilitado.");
-          initWarningShown = true;
-        }
-      } else {
-        admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-          projectId: serviceAccount.project_id || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        });
-        isInitialized = true;
-        console.log("[FirebaseAdmin] Initialized with Service Account Key");
+    if (!serviceAccount) {
+      if (!initWarningShown) {
+        console.warn("[FirebaseAdmin] No Firebase Admin credentials found. Admin SDK disabled.");
+        initWarningShown = true;
       }
     } else {
-      // Do not initialize Admin SDK without explicit credentials.
-      // This avoids runtime failures like "Could not load the default credentials".
-      console.warn("[FirebaseAdmin] No FIREBASE_SERVICE_ACCOUNT_KEY found. Admin SDK disabled.");
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        projectId: serviceAccount.projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      });
+      isInitialized = true;
+      console.log("[FirebaseAdmin] Initialized");
     }
   } catch (error) {
     console.error("[FirebaseAdmin] Initialization error:", error);
@@ -46,6 +87,5 @@ if (!admin.apps.length) {
   isInitialized = true;
 }
 
-// Exportamos los servicios solo si la inicialización fue exitosa
 export const adminDb = isInitialized ? admin.firestore() : null;
 export const adminAuth = isInitialized ? admin.auth() : null;

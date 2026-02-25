@@ -598,3 +598,21 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - `contacto` -> abre tab Contacto.
   - `llamar/telefono` -> ejecuta llamada (si hay telefono).
   - `whatsapp/pedido/reservas` -> abre WhatsApp (si esta configurado).
+
+## Super Admin Auth Reliability Fix (2026-02-25)
+
+- Rutas afectadas:
+  - `/api/subscription/session`
+  - `/api/subscription/admin/summaries`
+  - `/api/subscription/admin/manage`
+  - `/api/subscription/current`
+  - `/api/subscription/request`
+  - `/api/ai/theme-recommender`
+- Problema corregido:
+  - respuestas `503` por `SERVICE_UNAVAILABLE` cuando Firebase Admin SDK no estaba inicializado.
+- Cambios aplicados:
+  - `src/lib/firebaseAdmin.ts` ahora soporta 2 estrategias de credenciales:
+    - `FIREBASE_SERVICE_ACCOUNT_KEY` (JSON o base64)
+    - variables separadas: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`
+  - `src/lib/server/requireFirebaseUser.ts` incorpora fallback seguro de verificacion de token via Identity Toolkit cuando `adminAuth` no esta disponible.
+  - se mantiene autorizacion estricta de super admin por correo root (`afiliadosprobusiness@gmail.com`).
