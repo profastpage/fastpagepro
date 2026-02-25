@@ -352,7 +352,13 @@ function StoreEditorPage() {
   const { user, loading: authLoading } = useAuth(true);
   const router = useRouter();
   const hydratedRef = useRef(false);
-  const editor = useEditorState<StoreEditorSnapshot>();
+  const {
+    state: editorState,
+    setProjectMeta,
+    replaceData,
+    markSaved,
+    setError: setEditorError,
+  } = useEditorState<StoreEditorSnapshot>();
 
   const [projectId, setProjectId] = useState<string | null>(null);
   const [config, setConfig] = useState<StoreConfig>(() => cloneDefaultConfig());
@@ -370,8 +376,8 @@ function StoreEditorPage() {
   const [savedToast, setSavedToast] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const liveConfig = editor.state.previewData?.config || config;
-  const liveProducts = editor.state.previewData?.products || products;
+  const liveConfig = editorState.previewData?.config || config;
+  const liveProducts = editorState.previewData?.products || products;
   const content = (liveConfig.content || {}) as VisualContent;
   const themeVars = getVisualStoreVars(liveConfig);
   const visualTheme = getVisualStoreTheme(liveConfig);
@@ -415,8 +421,8 @@ function StoreEditorPage() {
   }, []);
 
   useEffect(() => {
-    editor.setProjectMeta(projectId || "store-draft", "store");
-  }, [editor, projectId]);
+    setProjectMeta(projectId || "store-draft", "store");
+  }, [projectId, setProjectMeta]);
 
   useEffect(() => {
     if (authLoading || !user?.uid || !projectId) return;
@@ -438,18 +444,18 @@ function StoreEditorPage() {
         setConfig(loadedConfig);
         setProducts(loadedProducts);
         setIsDirty(false);
-        editor.replaceData(
+        replaceData(
           {
             config: loadedConfig,
             products: loadedProducts,
           },
           { markDirty: false, syncPreview: true, changeKind: "bulk" },
         );
-        editor.markSaved(data?.status === "published" ? "published" : "draft");
+        markSaved(data?.status === "published" ? "published" : "draft");
       } catch (e: any) {
         if (cancelled) return;
         setError(e?.message || "No se pudo cargar.");
-        editor.setError(e?.message || "No se pudo cargar.");
+        setEditorError(e?.message || "No se pudo cargar.");
       } finally {
         if (!cancelled) setLoadingProject(false);
       }
@@ -457,17 +463,17 @@ function StoreEditorPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, editor, projectId, user?.uid]);
+  }, [authLoading, markSaved, projectId, replaceData, setEditorError, user?.uid]);
 
   useEffect(() => {
     if (!hydratedRef.current) {
       hydratedRef.current = true;
-      editor.replaceData({ config, products }, { markDirty: false, syncPreview: true, changeKind: "bulk" });
+      replaceData({ config, products }, { markDirty: false, syncPreview: true, changeKind: "bulk" });
       return;
     }
     setIsDirty(true);
-    editor.replaceData({ config, products }, { markDirty: true, syncPreview: true, changeKind: "bulk" });
-  }, [config, editor, products]);
+    replaceData({ config, products }, { markDirty: true, syncPreview: true, changeKind: "bulk" });
+  }, [config, products, replaceData]);
 
   useEffect(() => {
     if (!categories.includes(category)) setCategory("Todos");
@@ -582,7 +588,7 @@ function StoreEditorPage() {
       if (config.storeSlug !== storeSlug) setConfig((prev) => ({ ...prev, storeSlug }));
 
       setIsDirty(false);
-      editor.markSaved(publishNow ? "published" : "draft");
+      markSaved(publishNow ? "published" : "draft");
       if (publishNow) router.push(`/published?highlight=${id}&kind=site`);
       else {
         setSavedToast(true);
@@ -590,7 +596,7 @@ function StoreEditorPage() {
       }
     } catch (e: any) {
       setError(e?.message || "No se pudo guardar.");
-      editor.setError(e?.message || "No se pudo guardar.");
+      setEditorError(e?.message || "No se pudo guardar.");
     } finally {
       setSaving(false);
       setPublishing(false);

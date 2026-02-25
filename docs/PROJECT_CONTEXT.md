@@ -847,6 +847,7 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Ruta privada ajustada: `/store`.
 - Correccion aplicada:
   - se elimina loop de recarga del proyecto que podia dejar el estado `loadingProject` activo de forma continua.
+  - causa raiz: efecto de carga dependia del objeto `editor` completo (identidad cambiante por render), provocando relanzamiento continuo del fetch.
   - la carga inicial de `cloned_sites` ahora se ejecuta solo por `projectId` + `user`, con cancelacion segura.
 - API ajustada: `/api/subscription/current`
   - ante error interno no-auth, devuelve fallback `FREE` con estado degradado (`200`) en lugar de `500`.
