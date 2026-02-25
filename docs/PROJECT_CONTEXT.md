@@ -841,3 +841,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - placeholders y estados vacios mejorados en portada, logo y tarjetas de producto.
 - Persistencia:
   - al cargar proyectos legacy desde `cloned_sites`, se completa config y productos con defaults para evitar pantallas incompletas.
+
+## Store Loading Loop + Subscription Current Fallback (2026-02-26)
+
+- Ruta privada ajustada: `/store`.
+- Correccion aplicada:
+  - se elimina loop de recarga del proyecto que podia dejar el estado `loadingProject` activo de forma continua.
+  - la carga inicial de `cloned_sites` ahora se ejecuta solo por `projectId` + `user`, con cancelacion segura.
+- API ajustada: `/api/subscription/current`
+  - ante error interno no-auth, devuelve fallback `FREE` con estado degradado (`200`) en lugar de `500`.
+  - evita que el frontend quede en estado inestable cuando falla temporalmente Prisma o servicios de suscripcion.

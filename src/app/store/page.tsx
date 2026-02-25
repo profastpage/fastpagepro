@@ -420,12 +420,13 @@ function StoreEditorPage() {
 
   useEffect(() => {
     if (authLoading || !user?.uid || !projectId) return;
+    let cancelled = false;
     setLoadingProject(true);
     setError(null);
     (async () => {
       try {
         const snap = await getDoc(firestoreDoc(db, "cloned_sites", projectId));
-        if (!snap.exists()) return;
+        if (!snap.exists() || cancelled) return;
         const data = snap.data() as any;
         if (data?.userId && data.userId !== user.uid) throw new Error("No tienes permisos.");
         const loadedConfig = mergeConfigWithDefaults(
@@ -433,9 +434,8 @@ function StoreEditorPage() {
           sanitizeStoreSlug(String(data?.storeSlug || (data?.storeConfig as any)?.storeSlug || "")) || undefined,
         );
         const loadedProducts = mergeProductsWithDefaults(data?.storeProducts as StoreProduct[] | undefined);
-        if (data?.storeConfig) {
-          setConfig(loadedConfig);
-        }
+        if (cancelled) return;
+        setConfig(loadedConfig);
         setProducts(loadedProducts);
         setIsDirty(false);
         editor.replaceData(
@@ -447,13 +447,17 @@ function StoreEditorPage() {
         );
         editor.markSaved(data?.status === "published" ? "published" : "draft");
       } catch (e: any) {
+        if (cancelled) return;
         setError(e?.message || "No se pudo cargar.");
         editor.setError(e?.message || "No se pudo cargar.");
       } finally {
-        setLoadingProject(false);
+        if (!cancelled) setLoadingProject(false);
       }
     })();
-  }, [authLoading, config, editor, products, projectId, user?.uid]);
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, editor, projectId, user?.uid]);
 
   useEffect(() => {
     if (!hydratedRef.current) {
