@@ -7,6 +7,28 @@ import {
 } from "@/lib/subscription/sessionToken";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 12;
+const DEFAULT_COOKIE_BASE_DOMAINS = ["fastpagespro.com", "fastpagepro.com"];
+
+function resolveCookieDomain(request: NextRequest): string | undefined {
+  const envDomains = String(process.env.SUBSCRIPTION_COOKIE_BASE_DOMAINS || "")
+    .split(",")
+    .map((domain) => domain.trim().toLowerCase())
+    .filter(Boolean);
+  const baseDomains = envDomains.length ? envDomains : DEFAULT_COOKIE_BASE_DOMAINS;
+
+  const hostHeader =
+    request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  const host = hostHeader.split(",")[0]?.trim().split(":")[0]?.toLowerCase();
+  if (!host) return undefined;
+
+  for (const baseDomain of baseDomains) {
+    if (host === baseDomain || host.endsWith(`.${baseDomain}`)) {
+      return `.${baseDomain}`;
+    }
+  }
+
+  return undefined;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +65,7 @@ export async function POST(request: NextRequest) {
       status: summary.status,
       endDate: summary.endDate,
     });
+    const cookieDomain = resolveCookieDomain(request);
 
     response.cookies.set(SUBSCRIPTION_SESSION_COOKIE, token, {
       httpOnly: true,
@@ -50,6 +73,7 @@ export async function POST(request: NextRequest) {
       secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: SESSION_TTL_SECONDS,
+      ...(cookieDomain ? { domain: cookieDomain } : {}),
     });
 
     return response;

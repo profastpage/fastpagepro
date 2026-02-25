@@ -19,18 +19,23 @@ import {
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
-const DEFAULT_AUTH_CANONICAL_HOST = "fastpage-eight.vercel.app";
+const DEFAULT_AUTH_CANONICAL_HOST = "fastpagespro.com";
 const CANONICAL_AUTH_HOST = (
   process.env.NEXT_PUBLIC_AUTH_CANONICAL_HOST || DEFAULT_AUTH_CANONICAL_HOST
 )
   .trim()
   .toLowerCase();
+const DEFAULT_AUTH_ALIAS_HOSTS =
+  "www.fastpagespro.com,fastpagepro.com,www.fastpagepro.com,fastpage-eight.vercel.app,fastpage2-0.vercel.app";
 const AUTH_ALIAS_HOSTS = (
-  process.env.NEXT_PUBLIC_AUTH_ALIAS_HOSTS || "fastpage2-0.vercel.app"
+  process.env.NEXT_PUBLIC_AUTH_ALIAS_HOSTS || DEFAULT_AUTH_ALIAS_HOSTS
 )
   .split(",")
   .map((host) => host.trim().toLowerCase())
   .filter(Boolean);
+const RECOMMENDED_FIREBASE_AUTH_DOMAINS = Array.from(
+  new Set([CANONICAL_AUTH_HOST, ...AUTH_ALIAS_HOSTS].filter(Boolean)),
+);
 
 export default function AuthPage() {
   return (
@@ -84,7 +89,7 @@ function AuthContent() {
 
   useEffect(() => {
     if (!isCanonicalRedirectNeeded()) return;
-    showToast("Redirigiendo al dominio seguro de autenticación...");
+    showToast(`Redirigiendo al dominio seguro: ${CANONICAL_AUTH_HOST}`);
     setTimeout(() => redirectToCanonicalAuthHost(), 700);
   }, []);
 
@@ -334,7 +339,7 @@ function AuthContent() {
           showToast("Dominio no autorizado para Google. Redirigiendo...");
           setTimeout(() => redirectToCanonicalAuthHost(), 700);
         } else {
-          showToast("Dominio no autorizado en Firebase. Agrega este dominio en Authentication > Authorized domains.");
+          showToast(`Dominio no autorizado en Firebase. Agrega en Authorized domains: ${RECOMMENDED_FIREBASE_AUTH_DOMAINS.join(", ")}`);
         }
       } else if (error.code === 'auth/popup-blocked') {
         showToast("El navegador bloqueó la ventana emergente. Por favor, habilítala.");

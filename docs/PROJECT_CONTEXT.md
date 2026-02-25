@@ -854,3 +854,17 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - evita que el frontend quede en estado inestable cuando falla temporalmente Prisma o servicios de suscripcion.
 - Service worker cleanup:
   - se incremento version de limpieza (`fp_sw_cleanup_v2`) para forzar invalidacion de caches/SW legacy en clientes que seguian con bundle antiguo.
+
+## Custom Domain Auth Sync (2026-02-26)
+
+- Dominio canonico de autenticacion actualizado en frontend:
+  - `fastpagespro.com`
+- Alias de autenticacion soportados:
+  - `www.fastpagespro.com`
+  - `fastpagepro.com`
+  - `www.fastpagepro.com`
+  - aliases legacy de Vercel
+- Ruta ajustada:
+  - `/auth` ahora redirige hosts alias hacia el dominio canonico antes de OAuth Google.
+- Sesion de suscripcion:
+  - `/api/subscription/session` ahora fija `cookie domain` dinamico para compartir sesion entre `www` y apex (`.fastpagespro.com` y fallback `.fastpagepro.com`).
