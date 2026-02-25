@@ -550,3 +550,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - cards de productos/items en mini.
   - barra inferior de 3 tabs (Contacto/Carta-Ubicacion) con color activo del tema.
 - El color dinamico del tema se concentra en menu/chips/nav para que el editor refleje el resultado esperado de la carta.
+
+## Carta Digital Naming + Cleanup in Editor (2026-02-25)
+
+- Ruta ajustada: `/linkhub`.
+- Cambios de UX en dashboard:
+  - se elimino del editor la seccion visual `Catalogo digital online (planes)` para simplificar la configuracion.
+  - se mantuvo foco en identidad, carta/catalogo, contacto, ubicacion y preview mobile.
+- Renombrado visible en UI:
+  - textos principales migrados de `Link Hub` a `Carta Digital` en el editor.
+  - etiquetas relacionadas actualizadas tambien en vistas de publicados y estado de perfil publico para mantener consistencia de marca.

@@ -40,7 +40,7 @@ const translations: Record<string, Record<Language, string>> = {
   "nav.templates": { es: "Plantillas", en: "Templates", pt: "Modelos" },
   "nav.cloner": { es: "Clonador", en: "Cloner", pt: "Clonador" },
   "nav.store": { es: "Tienda Online", en: "Online Store", pt: "Loja Online" },
-  "nav.linkhub": { es: "Link Hub", en: "Link Hub", pt: "Link Hub" },
+  "nav.linkhub": { es: "Carta Digital", en: "Digital Menu", pt: "Cardapio Digital" },
   "nav.published": { es: "Publicados", en: "Published", pt: "Publicados" },
   "nav.metrics": { es: "MÃ©tricas Pro", en: "Pro Metrics", pt: "MÃ©tricas Pro" },
   "nav.hub": { es: "Hub", en: "Hub", pt: "Hub" },
@@ -330,13 +330,13 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Crie uma loja ecommerce profissional com produtos, carrinho e checkout, pronta para publicar.",
   },
   "hub.store.action": { es: "Crear Tienda", en: "Create Store", pt: "Criar Loja" },
-  "hub.linkhub.title": { es: "Link Hub", en: "Link Hub", pt: "Link Hub" },
+  "hub.linkhub.title": { es: "Carta Digital", en: "Digital Menu", pt: "Cardapio Digital" },
   "hub.linkhub.desc": {
-    es: "Crea tu perfil estilo Linktree con foto, redes sociales y enlace pÃºblico listo para compartir.",
-    en: "Build your Linktree-style profile with avatar, social links, and a public URL ready to share.",
-    pt: "Crie seu perfil estilo Linktree com foto, redes sociais e URL publica pronta para compartilhar.",
+    es: "Crea tu Carta Digital con contacto, carta/catalogo y ubicacion en una URL lista para compartir.",
+    en: "Build your Digital Menu with contact, menu/catalog and location in one shareable URL.",
+    pt: "Crie seu Cardapio Digital com contato, cardapio/catalogo e localizacao em uma URL para compartilhar.",
   },
-  "hub.linkhub.action": { es: "Abrir Link Hub", en: "Open Link Hub", pt: "Abrir Link Hub" },
+  "hub.linkhub.action": { es: "Abrir Carta Digital", en: "Open Digital Menu", pt: "Abrir Cardapio Digital" },
   "hub.published.title": { es: "Proyectos Publicados", en: "Published Projects", pt: "Projetos Publicados" },
   "hub.published.desc": {
     es: "Gestiona todos tus proyectos publicados en una sola vista profesional.",
@@ -590,6 +590,7 @@ export function useLanguage() {
   }
   return context;
 }
+
 
 
 

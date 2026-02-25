@@ -1490,7 +1490,7 @@ export default function LinkHubPage() {
         type: "success",
         text:
           mode === "publish"
-            ? "Link Hub publicado. Ya puedes compartir tu URL."
+            ? "Carta Digital publicada. Ya puedes compartir tu URL."
             : "Borrador guardado correctamente.",
       });
       if (mode === "publish") {
@@ -1516,7 +1516,7 @@ export default function LinkHubPage() {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
         <div className="max-w-lg rounded-3xl border border-red-400/30 bg-red-500/10 p-8 text-center">
-          <h1 className="text-2xl font-black">No se pudo abrir Link Hub</h1>
+          <h1 className="text-2xl font-black">No se pudo abrir Carta Digital</h1>
           <p className="mt-3 text-red-100/90">
             Ocurrio un problema de permisos o conexion. Recarga la pagina e intenta nuevamente.
           </p>
@@ -1544,8 +1544,8 @@ export default function LinkHubPage() {
                 onClick={() => saveProfile("publish")}
                 disabled={isSaving}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-sm font-bold text-emerald-100"
-                title="Publicar Link Hub"
-                aria-label="Publicar Link Hub"
+                title="Publicar Carta Digital"
+                aria-label="Publicar Carta Digital"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
               </button>
@@ -1565,12 +1565,12 @@ export default function LinkHubPage() {
       <div className="mx-auto w-full max-w-md md:max-w-7xl">
         <div className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Link Hub</h1>
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Carta Digital</h1>
             <PlanBadge plan={activePlan} />
           </div>
           <p className="mt-2 text-zinc-400 max-w-3xl">
             Crea una landing mobile-first con 3 secciones: contacto, {catalogLabel?.toLowerCase()} y ubicacion.
-            Incluye catalogo digital online con 3 planes para activacion de clientes.
+            Diseñada para mostrar tu carta o catalogo con experiencia premium.
           </p>
           <div className="mt-4">
             <SubscriptionExpiryBanner
@@ -2434,7 +2434,7 @@ export default function LinkHubPage() {
                     Color de texto publico
                   </p>
                   <p className="mt-1 text-xs text-zinc-400">
-                    Elige como se veran titulos, etiquetas y textos en el Link Hub publicado.
+                    Elige como se veran titulos, etiquetas y textos en la Carta Digital publicada.
                   </p>
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {TEXT_TONE_OPTIONS.map((option) => {
@@ -2492,117 +2492,6 @@ export default function LinkHubPage() {
                     RGB aleatorio
                   </button>
                 </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-bold text-white">Catalogo digital online (planes)</h2>
-                <label className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-200">
-                  <input
-                    type="checkbox"
-                    checked={profile.pricing.enabled}
-                    onChange={(event) => patchPricing("enabled", event.target.checked)}
-                    className="h-4 w-4 rounded border border-white/20 bg-black"
-                  />
-                  Mostrar planes
-                </label>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Titulo</span>
-                  <input
-                    className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                    value={profile.pricing.title}
-                    onChange={(event) => patchPricing("title", event.target.value)}
-                  />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Subtitulo</span>
-                  <input
-                    className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                    value={profile.pricing.subtitle}
-                    onChange={(event) => patchPricing("subtitle", event.target.value)}
-                  />
-                </label>
-                <label className="space-y-2 md:col-span-2">
-                  <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">Etiqueta seccion</span>
-                  <input
-                    className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                    value={profile.sectionLabels.pricing}
-                    onChange={(event) => patchSectionLabel("pricing", event.target.value)}
-                    placeholder="Catalogo digital online"
-                  />
-                </label>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {profile.pricing.plans.slice(0, 3).map((plan, index) => (
-                  <article
-                    key={plan.id}
-                    className={`rounded-2xl border p-4 ${
-                      plan.highlighted ? "border-amber-300/60 bg-amber-500/10" : "border-white/10 bg-black/30"
-                    }`}
-                  >
-                    <p className="text-xs uppercase tracking-[0.14em] text-zinc-300 font-bold">Plan {index + 1}</p>
-                    <div className="mt-3 space-y-2">
-                      <input
-                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={plan.title}
-                        onChange={(event) => patchPlan(plan.id, { title: event.target.value })}
-                        placeholder="Plan"
-                      />
-                      <div className="grid grid-cols-3 gap-2">
-                        <input
-                          className="rounded-xl border border-white/10 bg-zinc-900/80 px-2 py-2 text-sm text-white"
-                          value={plan.currency}
-                          onChange={(event) => patchPlan(plan.id, { currency: event.target.value })}
-                          placeholder="S/."
-                        />
-                        <input
-                          className="rounded-xl border border-white/10 bg-zinc-900/80 px-2 py-2 text-sm text-white"
-                          value={plan.normalPrice}
-                          onChange={(event) => patchPlan(plan.id, { normalPrice: event.target.value })}
-                          placeholder="450"
-                        />
-                        <input
-                          className="rounded-xl border border-white/10 bg-zinc-900/80 px-2 py-2 text-sm text-white"
-                          value={plan.price}
-                          onChange={(event) => patchPlan(plan.id, { price: event.target.value })}
-                          placeholder="350"
-                        />
-                      </div>
-                      <textarea
-                        rows={4}
-                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white resize-none"
-                        value={formatMultiline(plan.features)}
-                        onChange={(event) => patchPlan(plan.id, { features: parseMultiline(event.target.value) })}
-                        placeholder="Una caracteristica por linea"
-                      />
-                      <input
-                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={plan.ctaLabel}
-                        onChange={(event) => patchPlan(plan.id, { ctaLabel: event.target.value })}
-                        placeholder="Mas detalles"
-                      />
-                      <input
-                        className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={plan.ctaUrl}
-                        onChange={(event) => patchPlan(plan.id, { ctaUrl: event.target.value })}
-                        placeholder="https://..."
-                      />
-                      <label className="inline-flex items-center gap-2 text-xs text-zinc-300">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(plan.highlighted)}
-                          onChange={(event) => patchPlan(plan.id, { highlighted: event.target.checked })}
-                        />
-                        Destacar
-                      </label>
-                    </div>
-                  </article>
-                ))}
               </div>
             </div>
 
@@ -2802,11 +2691,11 @@ export default function LinkHubPage() {
                 onClick={() => saveProfile("publish")}
                 disabled={isSaving}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300/40 bg-emerald-400/10 px-5 py-3 text-sm font-bold text-emerald-100"
-                title="Publicar Link Hub"
-                aria-label="Publicar Link Hub"
+                title="Publicar Carta Digital"
+                aria-label="Publicar Carta Digital"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-                <span>Publicar Link Hub</span>
+                <span>Publicar Carta Digital</span>
               </button>
               <button
                 onClick={copyPublicUrl}

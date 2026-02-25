@@ -118,9 +118,9 @@ function PublishedProjectsContent() {
             linkHubItems.push({
               id: `linkhub-${user.uid}`,
               kind: "linkhub",
-              title: String(data.displayName || "Link Hub"),
+              title: String(data.displayName || "Carta Digital"),
               subtitle: `@${String(data.slug)}`,
-              sourceLabel: "Link Hub",
+              sourceLabel: "Carta Digital",
               publishedAt: Number(data.publishedAt || data.updatedAt || data.createdAt || 0),
               publishedUrl: `/bio/${String(data.slug)}`,
               editPath: "/linkhub",
@@ -218,7 +218,7 @@ function PublishedProjectsContent() {
                 Proyectos Publicados
               </h1>
               <p className="mt-3 text-zinc-300 max-w-3xl">
-                Centro unificado para todas tus publicaciones: Link Hub, landings y tiendas.
+                Centro unificado para todas tus publicaciones: Carta Digital, landings y tiendas.
               </p>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -228,7 +228,7 @@ function PublishedProjectsContent() {
               </div>
               <div className="rounded-2xl border border-sky-300/30 bg-sky-400/10 px-4 py-3 text-center">
                 <p className="text-xl font-black text-sky-100">{counters.linkhub}</p>
-                <p className="text-[10px] uppercase tracking-[0.2em] text-sky-200/80">Link Hub</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-sky-200/80">Carta Digital</p>
               </div>
               <div className="rounded-2xl border border-emerald-300/30 bg-emerald-400/10 px-4 py-3 text-center">
                 <p className="text-xl font-black text-emerald-100">{counters.site}</p>
@@ -267,7 +267,7 @@ function PublishedProjectsContent() {
                 : "border-white/15 bg-white/[0.03] text-zinc-300 hover:text-white"
             }`}
           >
-            Link Hub
+            Carta Digital
           </a>
         </section>
 
@@ -282,7 +282,7 @@ function PublishedProjectsContent() {
             <Rocket className="w-10 h-10 text-amber-300 mx-auto" />
             <h2 className="mt-4 text-2xl font-black text-white">Aun no tienes publicaciones</h2>
             <p className="mt-2 text-zinc-400">
-              Publica un proyecto desde Builder, Cloner, Store o Link Hub para verlo aqui.
+              Publica un proyecto desde Builder, Cloner, Store o Carta Digital para verlo aqui.
             </p>
           </div>
         ) : (
