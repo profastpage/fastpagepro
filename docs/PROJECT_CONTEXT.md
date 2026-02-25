@@ -664,3 +664,15 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - la llamada a `/api/subscription/admin/manage` queda como sincronizacion best-effort para historial SQL/billing.
 - Resultado:
   - si la API de suscripciones cae con `500`, el plan igual queda aplicado y visible en el panel.
+
+## Service Worker Cleanup + Admin Plan Stability (2026-02-25)
+
+- Rutas/archivos ajustados:
+  - `src/components/ServiceWorkerCleanup.tsx`
+  - `src/app/layout.tsx`
+  - `/admin`
+- Cambios aplicados:
+  - se agrega limpieza automatica de service workers y caches legacy al cargar la app para evitar interceptores obsoletos (`sw.js`) que rompen requests `POST`.
+  - el panel super admin elimina dependencia operativa de `/api/subscription/admin/*` para activacion de plan y trabaja en modo Firestore-first (`users/{uid}`).
+- Resultado:
+  - activacion `FREE / BUSINESS / PRO` estable desde el panel, incluso con APIs de suscripcion temporalmente inestables.

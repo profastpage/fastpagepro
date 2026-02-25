@@ -132,47 +132,8 @@ export default function AdminPanel() {
       setPlanByUserId({});
       return;
     }
-
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    try {
-      const idToken = await currentUser.getIdToken();
-      const response = await fetch("/api/subscription/admin/summaries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ userIds }),
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(String(payload?.error || "No se pudo cargar el estado de planes."));
-      }
-
-      const summaries = Array.isArray(payload?.summaries) ? (payload.summaries as PlanSummary[]) : [];
-      setPlanSyncError(null);
-      setPlanByUserId((previous) => {
-        const next: Record<string, PlanSummary> = { ...previous };
-        for (const summary of summaries) {
-          if (!summary?.userId) continue;
-          next[summary.userId] = summary;
-        }
-        return next;
-      });
-      setPlanDraftByUserId((previous) => {
-        const next = { ...previous };
-        for (const summary of summaries) {
-          if (!summary?.userId || next[summary.userId]) continue;
-          next[summary.userId] = summary.plan;
-        }
-        return next;
-      });
-    } catch (requestError: any) {
-      setPlanSyncError(requestError?.message || "No se pudo cargar el estado de planes.");
-    }
+    // Panel admin ahora opera Firestore-first para evitar fallos por APIs de suscripción.
+    setPlanSyncError(null);
   }, []);
 
   const applyPlanAction = useCallback(async (userId: string, requestedPlan: PlanType, mode: PlanMode) => {
@@ -223,42 +184,7 @@ export default function AdminPanel() {
             : `Plan ${targetPlan} aplicado.`,
       }));
 
-      // Best-effort sync with SQL-backed API for billing history.
-      try {
-        const idToken = await currentUser.getIdToken();
-        const response = await fetch("/api/subscription/admin/manage", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            userId,
-            plan: requestedPlan,
-            mode,
-            durationDays: requestedPlan === "FREE" ? 3650 : 30,
-          }),
-        });
-
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(String(payload?.error || "No se pudo sincronizar el plan con SQL."));
-        }
-
-        const subscription = payload?.subscription as PlanSummary | undefined;
-        if (subscription?.userId) {
-          setPlanByUserId((previous) => ({ ...previous, [subscription.userId]: subscription }));
-          setPlanDraftByUserId((previous) => ({ ...previous, [subscription.userId]: subscription.plan }));
-        }
-        setPlanSyncError(null);
-      } catch (syncError: any) {
-        setPlanSyncError("API de planes no disponible. El plan quedó aplicado en Firestore.");
-        setPlanMessageByUserId((previous) => ({
-          ...previous,
-          [userId]: `${mode === "DEACTIVATE" ? "FREE" : targetPlan} aplicado. Sincronización SQL pendiente.`,
-        }));
-        console.warn("[Admin] Plan sync warning:", syncError);
-      }
+      setPlanSyncError(null);
     } catch (error: any) {
       setPlanMessageByUserId((previous) => ({
         ...previous,

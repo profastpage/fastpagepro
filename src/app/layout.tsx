@@ -3,6 +3,7 @@ import Nav from "@/components/Nav"
 import { ThemeProvider } from "@/providers/ThemeProvider"
 import { LanguageProvider } from "@/context/LanguageContext"
 import FloatingControls from "@/components/FloatingControls"
+import ServiceWorkerCleanup from "@/components/ServiceWorkerCleanup"
 
 export const metadata = {
   title: "Fast Page",
@@ -24,6 +25,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
+            <ServiceWorkerCleanup />
             <Nav />
             {children}
             <FloatingControls />
