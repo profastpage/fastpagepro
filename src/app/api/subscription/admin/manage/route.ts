@@ -14,10 +14,16 @@ interface ManageBody {
 
 function toPlanType(value: string): PlanType | null {
   const normalized = String(value || "").trim().toUpperCase();
-  if (normalized === "FREE" || normalized === "BUSINESS" || normalized === "PRO") {
-    return normalized;
-  }
+  if (normalized === "FREE" || normalized === "STARTER") return "FREE";
+  if (normalized === "BUSINESS") return "BUSINESS";
+  if (normalized === "PRO" || normalized === "AGENCY") return "PRO";
   return null;
+}
+
+function toCanonicalPlanLabel(value: PlanType): "starter" | "business" | "pro" {
+  if (value === "BUSINESS") return "business";
+  if (value === "PRO") return "pro";
+  return "starter";
 }
 
 function toMode(value: string): "ACTIVATE" | "DEACTIVATE" | null {
@@ -52,7 +58,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "userId es requerido." }, { status: 400 });
     }
     if (!plan) {
-      return NextResponse.json({ error: "Plan invalido. Usa FREE, BUSINESS o PRO." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Plan invalido. Usa STARTER/FREE, BUSINESS, PRO o AGENCY." },
+        { status: 400 },
+      );
     }
     if (!mode) {
       return NextResponse.json({ error: "Modo invalido. Usa ACTIVATE o DEACTIVATE." }, { status: 400 });
@@ -70,12 +79,13 @@ export async function POST(request: NextRequest) {
       success: true,
       message:
         mode === "DEACTIVATE"
-          ? "Plan premium desactivado. Usuario movido a FREE."
-          : "Plan actualizado correctamente.",
+          ? "Plan premium desactivado. Usuario movido a STARTER."
+          : `Plan ${subscription.plan} actualizado correctamente.`,
       subscription: {
         id: subscription.id,
         userId: subscription.userId,
         plan: subscription.plan,
+        canonicalPlan: toCanonicalPlanLabel(subscription.plan),
         status: subscription.status,
         paymentMethod: subscription.paymentMethod,
         startDate: subscription.startDate.toISOString(),

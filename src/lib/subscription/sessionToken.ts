@@ -1,4 +1,4 @@
-type PlanTypeLike = "FREE" | "BUSINESS" | "PRO";
+type PlanTypeLike = "FREE" | "BUSINESS" | "PRO" | "AGENCY";
 type SubscriptionStatusLike = "ACTIVE" | "EXPIRED" | "PENDING";
 
 export const SUBSCRIPTION_SESSION_COOKIE = "fp_sub_session";

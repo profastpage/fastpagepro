@@ -13,6 +13,8 @@ export interface SubscriptionClientSummary {
   limits: {
     maxPublishedPages: number | null;
     maxBasicThemes: number | null;
+    maxProjects: number | null;
+    maxProductsPerProject: number | null;
   };
   usage: {
     publishedPages: number;
@@ -23,7 +25,7 @@ export interface SubscriptionClientSummary {
 export async function fetchCurrentSubscriptionSummary(): Promise<SubscriptionClientSummary> {
   const currentUser = auth.currentUser;
   if (!currentUser) {
-    throw new Error("Debes iniciar sesión para validar tu plan.");
+    throw new Error("Debes iniciar sesion para validar tu plan.");
   }
 
   const token = await currentUser.getIdToken();
@@ -36,7 +38,7 @@ export async function fetchCurrentSubscriptionSummary(): Promise<SubscriptionCli
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || !data?.summary) {
-    throw new Error(data?.error || "No se pudo validar la suscripción.");
+    throw new Error(data?.error || "No se pudo validar la suscripcion.");
   }
   return data.summary as SubscriptionClientSummary;
 }
@@ -46,8 +48,9 @@ export async function assertCanPublishPageByPlan() {
   const limit = summary.limits.maxPublishedPages;
   if (limit != null && summary.usage.publishedPages >= limit) {
     throw new Error(
-      `Límite alcanzado: tu plan ${summary.plan} permite ${limit} página(s) publicadas.`,
+      `Limite alcanzado: tu plan ${summary.plan} permite ${limit} proyecto(s) publicados.`,
     );
   }
   return summary;
 }
+

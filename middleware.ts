@@ -15,6 +15,7 @@ const GUARDS: Guard[] = [
   { pattern: /^\/api\/ai(?:\/|$)/, feature: "aiOptimization", mode: "api" },
   { pattern: /^\/metrics(?:\/|$)/, feature: "basicMetrics", mode: "page" },
   { pattern: /^\/api\/metrics(?:\/|$)/, feature: "basicMetrics", mode: "api" },
+  { pattern: /^\/cloner\/web(?:\/|$)/, feature: "clonerAccess", mode: "page" },
   { pattern: /^\/dashboard\/domain(?:\/|$)/, feature: "customDomain", mode: "page" },
   { pattern: /^\/dashboard\/team(?:\/|$)/, feature: "multiUser", mode: "page" },
   { pattern: /^\/dashboard\/branding(?:\/|$)/, feature: "removeBranding", mode: "page" },

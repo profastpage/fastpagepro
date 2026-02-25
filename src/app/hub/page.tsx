@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import {
@@ -25,6 +26,7 @@ import {
 export default function HubPage() {
   const { user, loading, logout } = useAuth(true);
   const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
+  const planPermissions = usePlanPermissions(Boolean(user?.uid));
   const router = useRouter();
   const { t } = useLanguage();
   const userName = user?.name || "Creador";
@@ -108,7 +110,7 @@ export default function HubPage() {
     },
     {
       title: "Billing",
-      description: "Gestiona planes FREE, BUSINESS y PRO, pagos y renovaciones.",
+      description: "Gestiona planes Starter, Business y Pro, pagos y renovaciones.",
       icon: <CreditCard className="w-8 h-8 text-emerald-300" />,
       action: "Abrir Facturación",
       href: "/dashboard/billing",
@@ -173,7 +175,13 @@ export default function HubPage() {
             {panels.map((panel, index) => (
               <div
                 key={index}
-                onClick={() => router.push(panel.href)}
+                onClick={() => {
+                  if (panel.href === "/cloner/web" && !planPermissions.canUseCloner) {
+                    router.push("/dashboard/billing?requiredFeature=clonerAccess");
+                    return;
+                  }
+                  router.push(panel.href);
+                }}
                 className={`group relative p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 bg-gradient-to-br ${panel.gradient} cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 ${panel.border} overflow-hidden`}
               >
                 {/* Hover Glow */}

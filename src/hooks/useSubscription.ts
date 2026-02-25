@@ -35,9 +35,14 @@ const ALL_FEATURES: SubscriptionFeature[] = [
   "ctaOptimization",
   "advancedColorCustomization",
   "supportPriority",
+  "fullStore",
+  "clonerAccess",
+  "insightsAutomation",
+  "whiteLabel",
 ];
 
 type FirestorePlanPayload = {
+  plan?: string;
   subscriptionPlan?: string;
   subscriptionStatus?: string;
   subscriptionStartAt?: number | string;
@@ -74,10 +79,10 @@ function buildSummaryFromFirestore(
   payload: FirestorePlanPayload,
   baseSummary?: SubscriptionClientSummary | null,
 ): SubscriptionClientSummary | null {
-  const rawPlan = String(payload.subscriptionPlan || "").trim();
+  const rawPlan = String(payload.plan || payload.subscriptionPlan || "").trim();
   if (!rawPlan) return null;
 
-  const plan = toPlanType(rawPlan.toUpperCase());
+  const plan = toPlanType(rawPlan);
   const status = toSubscriptionStatus(payload.subscriptionStatus);
   const now = new Date();
   const startDate = parseDateValue(payload.subscriptionStartAt, now);
@@ -209,3 +214,4 @@ export function useSubscription(enabled = true) {
     [summary, pendingRequests, loading, error, reload, hasFeature],
   );
 }
+

@@ -1,30 +1,99 @@
 "use client";
 
-import { Check, X } from "lucide-react";
-import { PLAN_DEFINITIONS } from "@/lib/subscription/plans";
-import { SubscriptionFeature } from "@/lib/permissions";
+import { Fragment } from "react";
+import { Check } from "lucide-react";
+import { PLAN_DEFINITIONS, PlanType } from "@/lib/subscription/plans";
 
-type PlanType = "FREE" | "BUSINESS" | "PRO";
-
-type PlanFeatureRow = {
-  id: SubscriptionFeature;
+type ComparisonRow = {
   label: string;
+  values: Record<PlanType, string>;
 };
 
-const FEATURE_ROWS: PlanFeatureRow[] = [
-  { id: "premiumThemes", label: "Temas premium" },
-  { id: "aiOptimization", label: "IA de personalización" },
-  { id: "advancedMetrics", label: "Analíticas avanzadas" },
-  { id: "customDomain", label: "Dominio personalizado" },
-  { id: "removeBranding", label: "Eliminar branding Fast Page" },
-  { id: "conversionOptimizationAdvanced", label: "Optimización de conversión avanzada" },
-  { id: "multiUser", label: "Multi usuario" },
+const EMPHASIS_REGEX = /(50 productos|Productos ilimitados|Branding removible|IA avanzada)/gi;
+const EMPHASIS_TOKENS = new Set([
+  "50 productos",
+  "productos ilimitados",
+  "branding removible",
+  "ia avanzada",
+]);
+
+const COMPARISON_ROWS: ComparisonRow[] = [
+  {
+    label: "Proyectos activos",
+    values: {
+      FREE: "1 proyecto",
+      BUSINESS: "5 proyectos",
+      PRO: "20 proyectos",
+    },
+  },
+  {
+    label: "Productos por proyecto",
+    values: {
+      FREE: "10 productos",
+      BUSINESS: "50 productos",
+      PRO: "Productos ilimitados",
+    },
+  },
+  {
+    label: "Branding",
+    values: {
+      FREE: "Visible obligatorio",
+      BUSINESS: "Visible (no removible)",
+      PRO: "Branding removible",
+    },
+  },
+  {
+    label: "Dominio propio",
+    values: {
+      FREE: "No",
+      BUSINESS: "Permitido (cliente compra dominio)",
+      PRO: "Permitido",
+    },
+  },
+  {
+    label: "IA",
+    values: {
+      FREE: "Sin IA",
+      BUSINESS: "IA basica",
+      PRO: "IA avanzada",
+    },
+  },
+  {
+    label: "Metricas",
+    values: {
+      FREE: "Sin metricas avanzadas",
+      BUSINESS: "Visitas, clicks y conversion media",
+      PRO: "Metricas PRO + insights automaticos",
+    },
+  },
+  {
+    label: "Clonador",
+    values: {
+      FREE: "No",
+      BUSINESS: "No",
+      PRO: "Habilitado",
+    },
+  },
 ];
 
 interface PricingTableProps {
   activePlan?: PlanType;
   onSelectPlan?: (plan: PlanType) => void;
   loadingPlan?: PlanType | null;
+}
+
+function renderEmphasis(text: string) {
+  const parts = text.split(EMPHASIS_REGEX);
+  return parts.map((part, index) => {
+    if (!part) return null;
+    const highlighted = EMPHASIS_TOKENS.has(part.toLowerCase());
+    if (!highlighted) return <Fragment key={`${part}-${index}`}>{part}</Fragment>;
+    return (
+      <strong key={`${part}-${index}`} className="font-black text-white">
+        {part}
+      </strong>
+    );
+  });
 }
 
 export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: PricingTableProps) {
@@ -48,7 +117,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
                 {plan.bulletPoints.map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
-                    <span>{item}</span>
+                    <span>{renderEmphasis(item)}</span>
                   </li>
                 ))}
               </ul>
@@ -74,30 +143,23 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-zinc-300">
-                <th className="py-2 pr-4 font-semibold">Feature</th>
+                <th className="py-2 pr-4 font-semibold">Capacidad</th>
                 {PLAN_DEFINITIONS.map((plan) => (
-                  <th key={plan.id} className="py-2 px-3 text-center font-semibold">
+                  <th key={plan.id} className="px-3 py-2 text-center font-semibold">
                     {plan.name}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {FEATURE_ROWS.map((row) => (
-                <tr key={row.id} className="border-b border-white/5">
+              {COMPARISON_ROWS.map((row) => (
+                <tr key={row.label} className="border-b border-white/5">
                   <td className="py-2 pr-4 text-zinc-200">{row.label}</td>
-                  {PLAN_DEFINITIONS.map((plan) => {
-                    const enabled = plan.features.includes(row.id);
-                    return (
-                      <td key={`${row.id}-${plan.id}`} className="py-2 px-3 text-center">
-                        {enabled ? (
-                          <Check className="mx-auto h-4 w-4 text-emerald-300" />
-                        ) : (
-                          <X className="mx-auto h-4 w-4 text-zinc-500" />
-                        )}
-                      </td>
-                    );
-                  })}
+                  {PLAN_DEFINITIONS.map((plan) => (
+                    <td key={`${row.label}-${plan.id}`} className="px-3 py-2 text-center text-zinc-100">
+                      {renderEmphasis(row.values[plan.id])}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -107,3 +169,4 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
     </div>
   );
 }
+

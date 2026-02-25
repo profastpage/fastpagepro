@@ -752,3 +752,51 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
     - paginacion
     - footer oscuro social
     - carrito flotante + drawer + checkout MVP por WhatsApp
+
+## Billing Rules Refresh + Plan Permissions Hook (2026-02-25)
+
+- Rutas/modulos ajustados:
+  - `/dashboard/billing`
+  - `src/lib/permissions.ts`
+  - `src/hooks/usePlanPermissions.ts`
+  - `src/components/subscription/PricingTable.tsx`
+  - `src/lib/subscription/plans.ts`
+  - `src/lib/subscription/service.ts`
+  - `middleware.ts`
+- Reglas de negocio aplicadas:
+  - branding removible: solo `PRO` (y preparado para `AGENCY`).
+  - dominio propio: habilitado desde `BUSINESS`.
+  - IA por nivel: `none` (Starter), `basic` (Business), `advanced` (Pro).
+  - metricas por nivel: `none` (Starter), `basic` (Business), `pro` (Pro).
+  - limites:
+    - Starter: `1` proyecto, `10` productos por proyecto
+    - Business: `5` proyectos, `50` productos por proyecto
+    - Pro: `20` proyectos, productos ilimitados
+- Hook central nuevo:
+  - `usePlanPermissions()` expone:
+    - `canRemoveBranding`
+    - `canUseCustomDomain`
+    - `canUseCloner`
+    - `aiLevel`
+    - `analyticsLevel`
+    - `maxProjects`
+    - `maxProductsPerProject`
+  - calcula uso real publicado y alerta de upsell al `80%` de limites.
+- Firestore model compat:
+  - se soporta `users/{uid}.plan` (`starter/business/pro/agency`) sin romper `subscriptionPlan` legacy.
+  - sincronizacion escribe ambos campos para convivencia progresiva.
+- Upsell inteligente:
+  - Billing muestra upgrade contextual por:
+    - intento de IA sin plan apto
+    - intento de quitar branding sin Pro
+    - acceso a insights Pro sin Pro
+    - intento de cloner sin Pro
+    - cercania al 80% de limites
+  - Hub redirige a Billing con contexto si se intenta abrir `/cloner/web` sin permiso.
+- Pricing copy actualizado:
+  - Starter / Business / Pro con precios oficiales (`S/0`, `S/59`, `S/99`).
+  - enfasis visual de:
+    - `50 productos`
+    - `Productos ilimitados`
+    - `Branding removible`
+    - `IA avanzada`

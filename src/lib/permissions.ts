@@ -1,4 +1,17 @@
-export type PlanTypeLike = "FREE" | "BUSINESS" | "PRO";
+export type LegacyPlanType = "FREE" | "BUSINESS" | "PRO";
+export type CanonicalPlanType = "starter" | "business" | "pro" | "agency";
+
+export type PlanTypeLike =
+  | LegacyPlanType
+  | CanonicalPlanType
+  | Uppercase<CanonicalPlanType>
+  | Lowercase<LegacyPlanType>
+  | null
+  | undefined
+  | string;
+
+export type AiLevel = "none" | "basic" | "advanced";
+export type AnalyticsLevel = "none" | "basic" | "pro";
 
 export type SubscriptionFeature =
   | "premiumThemes"
@@ -12,96 +25,190 @@ export type SubscriptionFeature =
   | "conversionOptimizationAdvanced"
   | "ctaOptimization"
   | "advancedColorCustomization"
-  | "supportPriority";
+  | "supportPriority"
+  | "fullStore"
+  | "clonerAccess"
+  | "insightsAutomation"
+  | "whiteLabel";
 
 export interface PlanLimits {
   maxPublishedPages: number | null;
   maxBasicThemes: number | null;
+  maxProjects: number | null;
+  maxProductsPerProject: number | null;
 }
 
-const FEATURE_MATRIX: Record<PlanTypeLike, Record<SubscriptionFeature, boolean>> = {
-  FREE: {
-    premiumThemes: false,
-    categoryThemes: false,
-    aiOptimization: false,
-    advancedMetrics: false,
-    basicMetrics: false,
-    removeBranding: false,
-    customDomain: false,
-    multiUser: false,
-    conversionOptimizationAdvanced: false,
-    ctaOptimization: false,
-    advancedColorCustomization: false,
-    supportPriority: false,
+interface PlanCapability {
+  aiLevel: AiLevel;
+  analyticsLevel: AnalyticsLevel;
+  limits: PlanLimits;
+  features: Record<SubscriptionFeature, boolean>;
+}
+
+const FEATURE_LIST: SubscriptionFeature[] = [
+  "premiumThemes",
+  "categoryThemes",
+  "aiOptimization",
+  "advancedMetrics",
+  "basicMetrics",
+  "removeBranding",
+  "customDomain",
+  "multiUser",
+  "conversionOptimizationAdvanced",
+  "ctaOptimization",
+  "advancedColorCustomization",
+  "supportPriority",
+  "fullStore",
+  "clonerAccess",
+  "insightsAutomation",
+  "whiteLabel",
+];
+
+function createFeatureMap(active: Partial<Record<SubscriptionFeature, boolean>>): Record<SubscriptionFeature, boolean> {
+  return FEATURE_LIST.reduce<Record<SubscriptionFeature, boolean>>((acc, feature) => {
+    acc[feature] = Boolean(active[feature]);
+    return acc;
+  }, {} as Record<SubscriptionFeature, boolean>);
+}
+
+const PLAN_CAPABILITIES: Record<CanonicalPlanType, PlanCapability> = {
+  starter: {
+    aiLevel: "none",
+    analyticsLevel: "none",
+    limits: {
+      maxPublishedPages: 1,
+      maxBasicThemes: 3,
+      maxProjects: 1,
+      maxProductsPerProject: 10,
+    },
+    features: createFeatureMap({}),
   },
-  BUSINESS: {
-    premiumThemes: true,
-    categoryThemes: true,
-    aiOptimization: false,
-    advancedMetrics: false,
-    basicMetrics: true,
-    removeBranding: true,
-    customDomain: false,
-    multiUser: false,
-    conversionOptimizationAdvanced: false,
-    ctaOptimization: true,
-    advancedColorCustomization: true,
-    supportPriority: true,
+  business: {
+    aiLevel: "basic",
+    analyticsLevel: "basic",
+    limits: {
+      maxPublishedPages: 5,
+      maxBasicThemes: null,
+      maxProjects: 5,
+      maxProductsPerProject: 50,
+    },
+    features: createFeatureMap({
+      premiumThemes: true,
+      categoryThemes: true,
+      basicMetrics: true,
+      customDomain: true,
+      ctaOptimization: true,
+      advancedColorCustomization: true,
+      supportPriority: true,
+      fullStore: true,
+    }),
   },
-  PRO: {
-    premiumThemes: true,
-    categoryThemes: true,
-    aiOptimization: true,
-    advancedMetrics: true,
-    basicMetrics: true,
-    removeBranding: true,
-    customDomain: true,
-    multiUser: true,
-    conversionOptimizationAdvanced: true,
-    ctaOptimization: true,
-    advancedColorCustomization: true,
-    supportPriority: true,
+  pro: {
+    aiLevel: "advanced",
+    analyticsLevel: "pro",
+    limits: {
+      maxPublishedPages: 20,
+      maxBasicThemes: null,
+      maxProjects: 20,
+      maxProductsPerProject: null,
+    },
+    features: createFeatureMap({
+      premiumThemes: true,
+      categoryThemes: true,
+      aiOptimization: true,
+      advancedMetrics: true,
+      basicMetrics: true,
+      removeBranding: true,
+      customDomain: true,
+      conversionOptimizationAdvanced: true,
+      ctaOptimization: true,
+      advancedColorCustomization: true,
+      supportPriority: true,
+      fullStore: true,
+      clonerAccess: true,
+      insightsAutomation: true,
+    }),
+  },
+  agency: {
+    aiLevel: "advanced",
+    analyticsLevel: "pro",
+    limits: {
+      maxPublishedPages: null,
+      maxBasicThemes: null,
+      maxProjects: null,
+      maxProductsPerProject: null,
+    },
+    features: createFeatureMap({
+      premiumThemes: true,
+      categoryThemes: true,
+      aiOptimization: true,
+      advancedMetrics: true,
+      basicMetrics: true,
+      removeBranding: true,
+      customDomain: true,
+      multiUser: true,
+      conversionOptimizationAdvanced: true,
+      ctaOptimization: true,
+      advancedColorCustomization: true,
+      supportPriority: true,
+      fullStore: true,
+      clonerAccess: true,
+      insightsAutomation: true,
+      whiteLabel: true,
+    }),
   },
 };
 
-const PLAN_LIMITS: Record<PlanTypeLike, PlanLimits> = {
-  FREE: {
-    maxPublishedPages: 1,
-    maxBasicThemes: 3,
-  },
-  BUSINESS: {
-    maxPublishedPages: 5,
-    maxBasicThemes: null,
-  },
-  PRO: {
-    maxPublishedPages: null,
-    maxBasicThemes: null,
-  },
+const CANONICAL_ALIAS: Record<string, CanonicalPlanType> = {
+  starter: "starter",
+  free: "starter",
+  business: "business",
+  pro: "pro",
+  agency: "agency",
 };
 
-export function toPlanType(input?: string | null): PlanTypeLike {
-  if (input === "BUSINESS" || input === "PRO" || input === "FREE") return input;
-  return "FREE";
+const LEGACY_BY_CANONICAL: Record<CanonicalPlanType, LegacyPlanType> = {
+  starter: "FREE",
+  business: "BUSINESS",
+  pro: "PRO",
+  // Compatibility fallback while backend enums are still FREE/BUSINESS/PRO.
+  agency: "PRO",
+};
+
+export function toCanonicalPlanType(input?: PlanTypeLike): CanonicalPlanType {
+  const normalized = String(input || "").trim().toLowerCase();
+  return CANONICAL_ALIAS[normalized] || "starter";
+}
+
+export function toPlanType(input?: PlanTypeLike): LegacyPlanType {
+  return LEGACY_BY_CANONICAL[toCanonicalPlanType(input)];
+}
+
+export function getPlanLimits(userPlan?: PlanTypeLike): PlanLimits {
+  return PLAN_CAPABILITIES[toCanonicalPlanType(userPlan)].limits;
+}
+
+export function getPlanAiLevel(userPlan?: PlanTypeLike): AiLevel {
+  return PLAN_CAPABILITIES[toCanonicalPlanType(userPlan)].aiLevel;
+}
+
+export function getPlanAnalyticsLevel(userPlan?: PlanTypeLike): AnalyticsLevel {
+  return PLAN_CAPABILITIES[toCanonicalPlanType(userPlan)].analyticsLevel;
 }
 
 export function canAccessFeature(
-  userPlan: PlanTypeLike | string | null | undefined,
+  userPlan: PlanTypeLike,
   feature: SubscriptionFeature,
 ): boolean {
-  const normalized = toPlanType(typeof userPlan === "string" ? userPlan.toUpperCase() : userPlan);
-  return FEATURE_MATRIX[normalized][feature];
-}
-
-export function getPlanLimits(userPlan: PlanTypeLike | string | null | undefined): PlanLimits {
-  const normalized = toPlanType(typeof userPlan === "string" ? userPlan.toUpperCase() : userPlan);
-  return PLAN_LIMITS[normalized];
+  return Boolean(PLAN_CAPABILITIES[toCanonicalPlanType(userPlan)].features[feature]);
 }
 
 export function isThemeAllowedForPlan(
-  userPlan: PlanTypeLike | string | null | undefined,
+  userPlan: PlanTypeLike,
   themeIndex: number,
 ): boolean {
   const limits = getPlanLimits(userPlan);
   if (limits.maxBasicThemes == null) return true;
   return themeIndex < limits.maxBasicThemes;
 }
+

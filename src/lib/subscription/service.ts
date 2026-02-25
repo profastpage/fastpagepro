@@ -67,11 +67,23 @@ function getDaysRemaining(endDate: Date): number {
 }
 
 function toPlanType(value: unknown): PlanType | null {
-  const normalized = String(value || "").trim().toUpperCase();
-  if (normalized === "FREE" || normalized === "BUSINESS" || normalized === "PRO") {
-    return normalized as PlanType;
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "free" || normalized === "starter") {
+    return "FREE";
+  }
+  if (normalized === "business") {
+    return "BUSINESS";
+  }
+  if (normalized === "pro" || normalized === "agency") {
+    return "PRO";
   }
   return null;
+}
+
+function toCanonicalPlanLabel(plan: PlanType): "starter" | "business" | "pro" {
+  if (plan === "BUSINESS") return "business";
+  if (plan === "PRO") return "pro";
+  return "starter";
 }
 
 function toSubscriptionStatus(value: unknown): SubscriptionStatus | null {
@@ -178,7 +190,9 @@ async function readFirestoreSubscriptionRecord(userId: string): Promise<Subscrip
     const data = snapshot.data();
     if (!data) return null;
 
-    const plan = toPlanType((data as Record<string, unknown>).subscriptionPlan);
+    const plan = toPlanType(
+      (data as Record<string, unknown>).plan || (data as Record<string, unknown>).subscriptionPlan,
+    );
     if (!plan) return null;
 
     const now = getNow();
@@ -213,6 +227,7 @@ async function saveSubscriptionRecordToFirestore(record: SubscriptionRecord): Pr
 
   await adminDb.collection("users").doc(record.userId).set(
     {
+      plan: toCanonicalPlanLabel(record.plan),
       subscriptionId: record.id,
       subscriptionPlan: record.plan,
       subscriptionStatus: record.status,
@@ -231,12 +246,30 @@ export async function countPublishedPagesByUser(userId: string): Promise<number>
     return 0;
   }
   try {
-    const snapshot = await adminDb
-      .collection("cloned_sites")
-      .where("userId", "==", userId)
-      .where("published", "==", true)
-      .get();
-    return snapshot.size;
+    let publishedProjects = 0;
+
+    try {
+      const byStatus = await adminDb
+        .collection("cloned_sites")
+        .where("userId", "==", userId)
+        .where("status", "==", "published")
+        .get();
+      publishedProjects += byStatus.size;
+    } catch {
+      const byLegacyFlag = await adminDb
+        .collection("cloned_sites")
+        .where("userId", "==", userId)
+        .where("published", "==", true)
+        .get();
+      publishedProjects += byLegacyFlag.size;
+    }
+
+    const linkProfile = await adminDb.collection("link_profiles").doc(userId).get();
+    if (linkProfile.exists && linkProfile.data()?.published === true) {
+      publishedProjects += 1;
+    }
+
+    return publishedProjects;
   } catch (error) {
     console.error("[Subscription] countPublishedPagesByUser warning:", error);
     return 0;
@@ -480,6 +513,10 @@ export async function buildSubscriptionSummary(userId: string): Promise<Subscrip
     "ctaOptimization",
     "advancedColorCustomization",
     "supportPriority",
+    "fullStore",
+    "clonerAccess",
+    "insightsAutomation",
+    "whiteLabel",
   ];
 
   const featureFlags = allFeatures.reduce<Record<SubscriptionFeature, boolean>>((acc, feature) => {

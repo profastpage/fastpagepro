@@ -33,6 +33,7 @@ interface UserData {
   status?: 'active' | 'suspended' | 'disabled';
   photoURL?: string;
   role?: string;
+  plan?: string;
   subscriptionPlan?: string;
   subscriptionStatus?: string;
   subscriptionStartAt?: number | string;
@@ -64,6 +65,8 @@ function parsePlanType(value: unknown): PlanType | null {
   if (normalized === "FREE" || normalized === "BUSINESS" || normalized === "PRO") {
     return normalized as PlanType;
   }
+  if (normalized === "STARTER") return "FREE";
+  if (normalized === "AGENCY") return "PRO";
   return null;
 }
 
@@ -93,7 +96,7 @@ function parseDateValue(value: unknown): Date | null {
 }
 
 function buildPlanSummaryFromUser(user: UserData): PlanSummary | null {
-  const plan = parsePlanType(user.subscriptionPlan);
+  const plan = parsePlanType(user.plan || user.subscriptionPlan);
   if (!plan) return null;
 
   const status = parsePlanStatus(user.subscriptionStatus) || "ACTIVE";
@@ -156,6 +159,12 @@ export default function AdminPanel() {
       await setDoc(
         doc(db, "users", userId),
         {
+          plan:
+            targetPlan === "FREE"
+              ? "starter"
+              : targetPlan === "BUSINESS"
+                ? "business"
+                : "pro",
           subscriptionPlan: targetPlan,
           subscriptionStatus: "ACTIVE",
           subscriptionStartAt: startAtMs,
