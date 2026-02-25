@@ -1,29 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { isRootAdminEmail, ROOT_ADMIN_EMAIL } from "@/lib/adminAccess";
 import { 
   collection, 
   doc, 
   setDoc,
   updateDoc, 
   deleteDoc, 
-  query, 
-  orderBy,
   onSnapshot
 } from "firebase/firestore";
 import { 
   Users, 
   ShieldAlert, 
-  UserMinus, 
   UserCheck, 
   UserX, 
   Search,
   LogOut,
   RefreshCw,
-  MoreVertical,
   Trash2
 } from "lucide-react";
 
@@ -38,6 +35,25 @@ interface UserData {
   role?: string;
 }
 
+type PlanType = "FREE" | "BUSINESS" | "PRO";
+type PlanStatus = "ACTIVE" | "EXPIRED" | "PENDING";
+type PlanMode = "ACTIVATE" | "DEACTIVATE";
+
+interface PlanSummary {
+  userId: string;
+  plan: PlanType;
+  status: PlanStatus;
+  startDate: string | null;
+  endDate: string | null;
+  isActive: boolean;
+}
+
+const PLAN_BADGE_STYLES: Record<PlanType, string> = {
+  FREE: "border-zinc-500/40 bg-zinc-600/20 text-zinc-200",
+  BUSINESS: "border-amber-400/50 bg-amber-500/20 text-amber-100",
+  PRO: "border-fuchsia-400/50 bg-fuchsia-500/20 text-fuchsia-100",
+};
+
 export default function AdminPanel() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,57 +62,136 @@ export default function AdminPanel() {
   const [debugInfo, setDebugInfo] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
   const [authorized, setAuthorized] = useState(false);
+  const [planByUserId, setPlanByUserId] = useState<Record<string, PlanSummary>>({});
+  const [planDraftByUserId, setPlanDraftByUserId] = useState<Record<string, PlanType>>({});
+  const [planLoadingByUserId, setPlanLoadingByUserId] = useState<Record<string, boolean>>({});
+  const [planMessageByUserId, setPlanMessageByUserId] = useState<Record<string, string>>({});
   const router = useRouter();
-
-  const loadData = async () => {
-    setRefreshing(true);
-    const usersRef = collection(db, "users");
-    try {
-      setDebugInfo("Actualizando lista...");
-      const unsubscribeSnapshot = onSnapshot(usersRef, (querySnapshot) => {
-        const usersData: UserData[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          usersData.push({ uid: doc.id, ...data } as UserData);
-        });
-        usersData.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
-        setUsers(usersData);
-        setDebugInfo(`Última actualización: ${new Date().toLocaleTimeString()}`);
-        setLoading(false);
-        setRefreshing(false);
-      }, (err) => {
-        setError(`Error en tiempo real: ${err.message}`);
-        setLoading(false);
-        setRefreshing(false);
-      });
-      return unsubscribeSnapshot;
-    } catch (err: any) {
-      setError(`Error al conectar: ${err.message}`);
-      setLoading(false);
-      setRefreshing(false);
+  const fetchPlanSummaries = useCallback(async (userIds: string[]) => {
+    if (userIds.length === 0) {
+      setPlanByUserId({});
+      return;
     }
-  };
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch("/api/subscription/admin/summaries", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ userIds }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(String(payload?.error || "No se pudo cargar el estado de planes."));
+      }
+
+      const summaries = Array.isArray(payload?.summaries) ? (payload.summaries as PlanSummary[]) : [];
+      setPlanByUserId((previous) => {
+        const next: Record<string, PlanSummary> = { ...previous };
+        for (const summary of summaries) {
+          if (!summary?.userId) continue;
+          next[summary.userId] = summary;
+        }
+        return next;
+      });
+      setPlanDraftByUserId((previous) => {
+        const next = { ...previous };
+        for (const summary of summaries) {
+          if (!summary?.userId || next[summary.userId]) continue;
+          next[summary.userId] = summary.plan;
+        }
+        return next;
+      });
+    } catch (requestError: any) {
+      setError(requestError?.message || "No se pudo cargar el estado de planes.");
+    }
+  }, []);
+
+  const applyPlanAction = useCallback(async (userId: string, requestedPlan: PlanType, mode: PlanMode) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setError("Sesion invalida. Vuelve a iniciar sesion.");
+      return;
+    }
+
+    setPlanLoadingByUserId((previous) => ({ ...previous, [userId]: true }));
+    setPlanMessageByUserId((previous) => ({ ...previous, [userId]: "" }));
+
+    try {
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch("/api/subscription/admin/manage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          userId,
+          plan: requestedPlan,
+          mode,
+          durationDays: requestedPlan === "FREE" ? 3650 : 30,
+        }),
+      });
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(String(payload?.error || "No se pudo actualizar el plan."));
+      }
+
+      const subscription = payload?.subscription as PlanSummary | undefined;
+      if (subscription?.userId) {
+        setPlanByUserId((previous) => ({ ...previous, [subscription.userId]: subscription }));
+        setPlanDraftByUserId((previous) => ({ ...previous, [subscription.userId]: subscription.plan }));
+      } else {
+        await fetchPlanSummaries([userId]);
+      }
+
+      setPlanMessageByUserId((previous) => ({
+        ...previous,
+        [userId]: mode === "DEACTIVATE" ? "Plan cambiado a FREE." : `Plan ${requestedPlan} activo.`,
+      }));
+    } catch (requestError: any) {
+      setPlanMessageByUserId((previous) => ({
+        ...previous,
+        [userId]: requestError?.message || "No se pudo actualizar el plan.",
+      }));
+    } finally {
+      setPlanLoadingByUserId((previous) => ({ ...previous, [userId]: false }));
+    }
+  }, [fetchPlanSummaries]);
 
   useEffect(() => {
     // Verificación de sesión local primero
     const session = localStorage.getItem("fp_session");
     if (session) {
-      const userData = JSON.parse(session);
-      if (userData.email === "afiliadosprobusiness@gmail.com") {
-        setAuthorized(true);
-      } else {
-        router.replace("/hub");
-        return;
+      try {
+        const userData = JSON.parse(session);
+        if (isRootAdminEmail(userData?.email)) {
+          setAuthorized(true);
+        } else {
+          router.replace("/hub");
+          return;
+        }
+      } catch {
+        localStorage.removeItem("fp_session");
       }
     }
 
+    let unsubscribeSnapshot: (() => void) | null = null;
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.replace("/auth");
         return;
       }
   
-      if (user.email !== "afiliadosprobusiness@gmail.com") {
+      if (!isRootAdminEmail(user.email)) {
         router.replace("/hub");
         return;
       }
@@ -121,8 +216,11 @@ export default function AdminPanel() {
       // Cargar lista de usuarios
       const usersRef = collection(db, "users");
       setDebugInfo("Conectando con Firestore...");
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
       
-      const unsubscribeSnapshot = onSnapshot(usersRef, (querySnapshot) => {
+      unsubscribeSnapshot = onSnapshot(usersRef, (querySnapshot) => {
         console.log("Admin: Snapshot recibido con", querySnapshot.size, "documentos");
         
         if (querySnapshot.empty) {
@@ -150,18 +248,32 @@ export default function AdminPanel() {
         setLoading(false);
       });
 
-      return () => unsubscribeSnapshot();
     });
 
-    return () => unsubscribeAuth();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+    };
   }, [router]);
+
+  useEffect(() => {
+    if (!authorized) return;
+    const userIds = users.map((user) => user.uid).filter(Boolean);
+    if (userIds.length === 0) {
+      setPlanByUserId({});
+      return;
+    }
+    fetchPlanSummaries(userIds);
+  }, [users, authorized, fetchPlanSummaries]);
 
   // Ya no necesitamos fetchUsers manual ya que onSnapshot se encarga
 
   const updateUserStatus = async (uid: string, status: UserData['status']) => {
     try {
       await updateDoc(doc(db, "users", uid), { status });
-      setUsers(users.map(u => u.uid === uid ? { ...u, status } : u));
+      setUsers((previous) => previous.map((entry) => (entry.uid === uid ? { ...entry, status } : entry)));
     } catch (error) {
       console.error("Error updating user status:", error);
     }
@@ -171,7 +283,7 @@ export default function AdminPanel() {
     if (!window.confirm("¿Estás seguro de eliminar este usuario? Esta acción no se puede deshacer.")) return;
     try {
       await deleteDoc(doc(db, "users", uid));
-      setUsers(users.filter(u => u.uid !== uid));
+      setUsers((previous) => previous.filter((entry) => entry.uid !== uid));
     } catch (error) {
       console.error("Error deleting user:", error);
     }
@@ -206,7 +318,7 @@ export default function AdminPanel() {
 
         <div className="flex items-center gap-6">
           <div className="hidden md:block text-right">
-            <p className="text-sm font-bold">afiliadosprobusiness@gmail.com</p>
+            <p className="text-sm font-bold">{ROOT_ADMIN_EMAIL}</p>
             <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Sesión de Administrador</p>
           </div>
           <button 
@@ -308,82 +420,142 @@ export default function AdminPanel() {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user) => (
-                    <tr key={user.uid} className="hover:bg-white/5 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center flex-shrink-0">
-                            {user.photoURL ? (
-                              <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                  filteredUsers.map((user) => {
+                    const summary = planByUserId[user.uid];
+                    const currentPlan: PlanType = summary?.plan || "FREE";
+                    const selectedPlan = planDraftByUserId[user.uid] || currentPlan;
+                    const planLoading = Boolean(planLoadingByUserId[user.uid]);
+                    const planMessage = planMessageByUserId[user.uid];
+
+                    return (
+                      <tr key={user.uid} className="hover:bg-white/5 transition-colors group">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-zinc-800 border border-white/10 overflow-hidden flex items-center justify-center flex-shrink-0">
+                              {user.photoURL ? (
+                                <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <Users className="w-5 h-5 text-zinc-500" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-white">
+                                {user.name || "Sin nombre"}
+                                {isRootAdminEmail(user.email) && (
+                                  <span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">ROOT</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-zinc-500">{user.email}</p>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <span
+                                  className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold tracking-[0.12em] ${PLAN_BADGE_STYLES[currentPlan]}`}
+                                >
+                                  {currentPlan}
+                                </span>
+                                <span className="rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[10px] font-semibold text-zinc-300">
+                                  {summary?.status || "ACTIVE"}
+                                </span>
+                                {summary?.endDate && (
+                                  <span className="text-[10px] text-zinc-500">
+                                    vence: {new Date(summary.endDate).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            user.status === 'suspended' ? 'bg-orange-500/10 text-orange-500' :
+                            user.status === 'disabled' ? 'bg-red-500/10 text-red-500' :
+                            'bg-emerald-500/10 text-emerald-500'
+                          }`}>
+                            {user.status || 'active'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-xs text-zinc-400">
+                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-xs text-zinc-400">
+                            {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Nunca"}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex flex-wrap items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                            {!isRootAdminEmail(user.email) ? (
+                              <>
+                                <select
+                                  value={selectedPlan}
+                                  onChange={(event) =>
+                                    setPlanDraftByUserId((previous) => ({
+                                      ...previous,
+                                      [user.uid]: event.target.value as PlanType,
+                                    }))
+                                  }
+                                  className="h-9 min-w-[120px] rounded-lg border border-white/15 bg-black/40 px-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-100 outline-none focus:border-amber-500/50"
+                                  aria-label={`Plan de ${user.email}`}
+                                >
+                                  <option value="FREE">FREE</option>
+                                  <option value="BUSINESS">BUSINESS</option>
+                                  <option value="PRO">PRO</option>
+                                </select>
+
+                                <button
+                                  onClick={() => applyPlanAction(user.uid, selectedPlan, "ACTIVATE")}
+                                  disabled={planLoading}
+                                  className="h-9 rounded-lg border border-emerald-400/30 bg-emerald-500/15 px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-200 transition-colors hover:bg-emerald-500/25 disabled:cursor-not-allowed disabled:opacity-60"
+                                  title="Activar plan seleccionado"
+                                >
+                                  {planLoading ? "Aplicando..." : "Activar"}
+                                </button>
+
+                                <button
+                                  onClick={() => applyPlanAction(user.uid, "FREE", "DEACTIVATE")}
+                                  disabled={planLoading}
+                                  className="h-9 rounded-lg border border-zinc-400/30 bg-zinc-500/10 px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-200 transition-colors hover:bg-zinc-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                                  title="Quitar Business/Pro y pasar a Free"
+                                >
+                                  Free
+                                </button>
+
+                                <button 
+                                  onClick={() => updateUserStatus(user.uid, user.status === 'suspended' ? 'active' : 'suspended')}
+                                  className={`p-2 rounded-lg transition-all ${user.status === 'suspended' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' : 'bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white'}`}
+                                  title={user.status === 'suspended' ? "Reactivar" : "Suspender"}
+                                >
+                                  {user.status === 'suspended' ? <UserCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+                                </button>
+                                
+                                <button 
+                                  onClick={() => updateUserStatus(user.uid, user.status === 'disabled' ? 'active' : 'disabled')}
+                                  className={`p-2 rounded-lg transition-all ${user.status === 'disabled' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' : 'bg-zinc-500/10 text-zinc-500 hover:bg-zinc-500 hover:text-white'}`}
+                                  title={user.status === 'disabled' ? "Habilitar" : "Deshabilitar"}
+                                >
+                                  {user.status === 'disabled' ? <UserCheck className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
+                                </button>
+
+                                <button 
+                                  onClick={() => deleteUser(user.uid)}
+                                  className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                                  title="Eliminar Permanente"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                                {planMessage && (
+                                  <p className="w-full text-right text-[10px] text-zinc-400">{planMessage}</p>
+                                )}
+                              </>
                             ) : (
-                              <Users className="w-5 h-5 text-zinc-500" />
+                              <span className="text-[10px] text-zinc-600 font-medium px-2 py-1">SISTEMA PROTEGIDO</span>
                             )}
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-white">
-                              {user.name || "Sin nombre"}
-                              {user.email === "afiliadosprobusiness@gmail.com" && (
-                                <span className="ml-2 text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">ROOT</span>
-                              )}
-                            </p>
-                            <p className="text-xs text-zinc-500">{user.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          user.status === 'suspended' ? 'bg-orange-500/10 text-orange-500' :
-                          user.status === 'disabled' ? 'bg-red-500/10 text-red-500' :
-                          'bg-emerald-500/10 text-emerald-500'
-                        }`}>
-                          {user.status || 'active'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-xs text-zinc-400">
-                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-xs text-zinc-400">
-                          {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Nunca"}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {user.email !== "afiliadosprobusiness@gmail.com" ? (
-                            <>
-                              <button 
-                                onClick={() => updateUserStatus(user.uid, user.status === 'suspended' ? 'active' : 'suspended')}
-                                className={`p-2 rounded-lg transition-all ${user.status === 'suspended' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' : 'bg-orange-500/10 text-orange-500 hover:bg-orange-500 hover:text-white'}`}
-                                title={user.status === 'suspended' ? "Reactivar" : "Suspender"}
-                              >
-                                {user.status === 'suspended' ? <UserCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
-                              </button>
-                              
-                              <button 
-                                onClick={() => updateUserStatus(user.uid, user.status === 'disabled' ? 'active' : 'disabled')}
-                                className={`p-2 rounded-lg transition-all ${user.status === 'disabled' ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white' : 'bg-zinc-500/10 text-zinc-500 hover:bg-zinc-500 hover:text-white'}`}
-                                title={user.status === 'disabled' ? "Habilitar" : "Deshabilitar"}
-                              >
-                                {user.status === 'disabled' ? <UserCheck className="w-4 h-4" /> : <UserX className="w-4 h-4" />}
-                              </button>
-
-                              <button 
-                                onClick={() => deleteUser(user.uid)}
-                                className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-all"
-                                title="Eliminar Permanente"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </>
-                          ) : (
-                            <span className="text-[10px] text-zinc-600 font-medium px-2 py-1">SISTEMA PROTEGIDO</span>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -393,3 +565,6 @@ export default function AdminPanel() {
     </div>
   );
 }
+
+
+

@@ -13,6 +13,11 @@ import { getPlanDefinition } from "@/lib/subscription/plans";
 
 const FREE_PLAN_HORIZON_DAYS = 3650;
 const EXPIRY_WARNING_DAYS = 7;
+const PLAN_DEFAULT_DURATION_DAYS: Record<PlanType, number> = {
+  FREE: FREE_PLAN_HORIZON_DAYS,
+  BUSINESS: 30,
+  PRO: 30,
+};
 
 export interface SubscriptionSummary {
   userId: string;
@@ -66,6 +71,37 @@ export async function getLatestSubscription(userId: string): Promise<Subscriptio
   });
 }
 
+export async function getLatestSubscriptionsByUsers(userIds: string[]): Promise<Subscription[]> {
+  const cleaned = Array.from(
+    new Set(
+      userIds
+        .map((entry) => String(entry || "").trim())
+        .filter(Boolean),
+    ),
+  );
+  if (cleaned.length === 0) return [];
+
+  const rows = await prisma.subscription.findMany({
+    where: {
+      userId: {
+        in: cleaned,
+      },
+    },
+    orderBy: [{ createdAt: "desc" }],
+  });
+
+  const latestByUser = new Map<string, Subscription>();
+  for (const row of rows) {
+    if (!latestByUser.has(row.userId)) {
+      latestByUser.set(row.userId, row);
+    }
+  }
+
+  return cleaned
+    .map((userId) => latestByUser.get(userId))
+    .filter((entry): entry is Subscription => Boolean(entry));
+}
+
 export async function createDefaultFreeSubscription(userId: string): Promise<Subscription> {
   const now = getNow();
   return prisma.subscription.create({
@@ -78,6 +114,79 @@ export async function createDefaultFreeSubscription(userId: string): Promise<Sub
       endDate: addDays(now, FREE_PLAN_HORIZON_DAYS),
     },
   });
+}
+
+function getPlanDurationDays(plan: PlanType, durationDays?: number): number {
+  if (plan === "FREE") return PLAN_DEFAULT_DURATION_DAYS.FREE;
+  const fromInput = Number(durationDays || 0);
+  if (Number.isFinite(fromInput) && fromInput > 0) {
+    return Math.floor(fromInput);
+  }
+  return PLAN_DEFAULT_DURATION_DAYS[plan];
+}
+
+export async function assignSubscriptionPlanByAdmin(input: {
+  userId: string;
+  plan: PlanType;
+  mode?: "ACTIVATE" | "DEACTIVATE";
+  durationDays?: number;
+  paymentMethod?: PaymentMethod;
+}): Promise<Subscription> {
+  const userId = String(input.userId || "").trim();
+  if (!userId) {
+    throw new Error("USER_ID_REQUIRED");
+  }
+
+  const mode = input.mode || "ACTIVATE";
+  const targetPlan: PlanType = mode === "DEACTIVATE" ? "FREE" : input.plan;
+  const now = getNow();
+  const durationDays = getPlanDurationDays(targetPlan, input.durationDays);
+  const endDate = addDays(now, durationDays);
+  const paymentMethod = input.paymentMethod || "TRANSFERENCIA";
+
+  const assignedSubscription = await prisma.$transaction(async (tx) => {
+    await tx.subscription.updateMany({
+      where: {
+        userId,
+        status: {
+          in: ["ACTIVE", "PENDING"],
+        },
+      },
+      data: {
+        status: "EXPIRED",
+      },
+    });
+
+    return tx.subscription.create({
+      data: {
+        userId,
+        plan: targetPlan,
+        status: "ACTIVE",
+        paymentMethod,
+        startDate: now,
+        endDate,
+      },
+    });
+  });
+
+  if (adminDb) {
+    try {
+      await adminDb.collection("users").doc(userId).set(
+        {
+          subscriptionPlan: assignedSubscription.plan,
+          subscriptionStatus: assignedSubscription.status,
+          subscriptionStartAt: assignedSubscription.startDate.getTime(),
+          subscriptionEndAt: assignedSubscription.endDate.getTime(),
+          subscriptionUpdatedAt: Date.now(),
+        },
+        { merge: true },
+      );
+    } catch (error) {
+      console.error("[Subscription Admin Sync] Firestore sync warning:", error);
+    }
+  }
+
+  return assignedSubscription;
 }
 
 export async function resolveUserSubscription(userId: string): Promise<Subscription> {

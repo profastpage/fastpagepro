@@ -494,3 +494,22 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - UI publica `/bio/[slug]`:
   - migracion de chips, menu inferior, botones, buscador, cards, badges, header y checkout a variables de tema.
   - microinteracciones estandarizadas (hover/active/focus) con look premium.
+
+## Super Admin Plan Control Lock (2026-02-25)
+
+- Ruta privada reforzada: `/admin`.
+- Nuevos endpoints admin para suscripcion:
+  - `POST /api/subscription/admin/summaries`
+  - `POST /api/subscription/admin/manage`
+- Seguridad:
+  - solo el correo `afiliadosprobusiness@gmail.com` puede aprobar/asignar planes.
+  - control server-side unificado con helper `assertSuperAdmin`.
+- Gestion real de planes en Prisma desde panel super admin:
+  - activar `BUSINESS` o `PRO` al usuario final.
+  - desactivar premium y pasar a `FREE`.
+  - al asignar plan se expiran suscripciones `ACTIVE/PENDING` previas del usuario para evitar conflictos.
+- Panel `/admin`:
+  - muestra plan actual por usuario (badge + estado + vencimiento).
+  - selector de plan por fila (`FREE/BUSINESS/PRO`).
+  - acciones directas: `Activar` y `Free`.
+  - feedback inmediato por usuario y sincronizacion de estado.
