@@ -11,6 +11,7 @@ export default function FloatingControls() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const pathname = usePathname();
   const isPublicBio = pathname?.startsWith("/bio/");
+  const hideLanguageToggle = pathname?.startsWith("/bio/") || pathname?.startsWith("/linkhub");
 
   useEffect(() => {
     setMounted(true);
@@ -58,15 +59,17 @@ export default function FloatingControls() {
       )}
 
       {/* Language Toggle */}
-      <button
-        onClick={toggleLanguage}
-        className={languageButtonClass}
-        aria-label={t("floating.toggleLanguage")}
-      >
-        <span className={`font-bold text-white transition-colors ${isPublicBio ? "text-[11px]" : "text-[10px] md:text-xs group-hover:text-yellow-400"}`}>
-          {language === "es" ? "EN" : "ES"}
-        </span>
-      </button>
+      {!hideLanguageToggle && (
+        <button
+          onClick={toggleLanguage}
+          className={languageButtonClass}
+          aria-label={t("floating.toggleLanguage")}
+        >
+          <span className={`font-bold text-white transition-colors ${isPublicBio ? "text-[11px]" : "text-[10px] md:text-xs group-hover:text-yellow-400"}`}>
+            {language === "es" ? "EN" : "ES"}
+          </span>
+        </button>
+      )}
     </div>
   );
 }
