@@ -2779,36 +2779,36 @@ export default function LinkHubPage() {
                 </div>
               </div>
             </div>
-            <div className="mt-4 hidden md:grid gap-3 rounded-3xl border border-white/10 bg-zinc-950/70 p-4 backdrop-blur-xl">
+            <div className="mt-4 hidden md:grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-zinc-950/70 p-2.5 backdrop-blur-xl">
               <button
                 onClick={() => saveProfile("draft")}
                 disabled={isSaving}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-bold text-white"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 text-[11px] font-bold text-white"
                 title="Guardar borrador"
                 aria-label="Guardar borrador"
               >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                <span>Guardar borrador</span>
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                <span className="truncate">Guardar</span>
               </button>
               <button
                 onClick={() => saveProfile("publish")}
                 disabled={isSaving}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-300/40 bg-emerald-400/10 px-5 py-3 text-sm font-bold text-emerald-100"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-2.5 text-[11px] font-bold text-emerald-100"
                 title="Publicar Carta Digital"
                 aria-label="Publicar Carta Digital"
               >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-                <span>Publicar Carta Digital</span>
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Rocket className="w-3.5 h-3.5" />}
+                <span className="truncate">Publicar</span>
               </button>
               <button
                 onClick={copyPublicUrl}
                 disabled={!publicUrl}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-5 py-3 text-sm font-bold text-sky-100 disabled:opacity-50"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-sky-300/40 bg-sky-400/10 px-2.5 text-[11px] font-bold text-sky-100 disabled:opacity-50"
                 title="Copiar URL"
                 aria-label="Copiar URL"
               >
-                <Copy className="w-4 h-4" />
-                <span>Copiar URL</span>
+                <Copy className="w-3.5 h-3.5" />
+                <span className="truncate">Copiar</span>
               </button>
             </div>
           </aside>
