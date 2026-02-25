@@ -11,6 +11,7 @@ Persistencia en Firestore:
 
 - Documento: `link_profiles/{uid}`
 - Campo: `cartaThemeId`
+- Campo adicional: `cartaBackgroundMode` (`white` | `theme`)
 
 ## Agregar un nuevo tema
 
@@ -83,6 +84,9 @@ my_theme: {
 
 - Ruta: `/linkhub`
 - Selector: bloque `Tema premium de carta (menu)`
+- Selector adicional: `Fondo de carta`
+  - `Fondo blanco`
+  - `Fondo del tema`
 - Vista previa: se actualiza en vivo en `Preview Mobile`.
 - Guardado: al usar `Guardar borrador` o `Publicar Carta Digital`.
 

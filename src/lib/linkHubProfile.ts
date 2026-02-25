@@ -275,6 +275,7 @@ export type LinkHubThemeCategory = "food" | "fashion" | "technology";
 export type LinkHubButtonShape = "rounded" | "pill" | "square";
 export type LinkHubCardStyle = "glass" | "solid" | "outline";
 export type LinkHubTextTone = "white" | "black" | "gold" | "blackGold";
+export type LinkHubCartaBackgroundMode = "white" | "theme";
 
 export const LINK_HUB_THEME_CATEGORY_LABELS: Record<LinkHubThemeCategory, string> = {
   food: "Comida",
@@ -376,6 +377,7 @@ export interface LinkHubProfile {
   cardStyle: LinkHubCardStyle;
   textTone: LinkHubTextTone;
   cartaThemeId: CartaThemeId;
+  cartaBackgroundMode: LinkHubCartaBackgroundMode;
   sectionLabels: LinkHubSectionLabels;
   theme: LinkHubTheme;
   themePrimaryColor?: string;
@@ -454,6 +456,11 @@ export function getSafeLinkHubCardStyle(type?: string): LinkHubCardStyle {
 
 export function getSafeLinkHubTextTone(type?: string): LinkHubTextTone {
   if (type === "black" || type === "gold" || type === "blackGold" || type === "white") return type;
+  return "white";
+}
+
+export function getSafeLinkHubCartaBackgroundMode(type?: string): LinkHubCartaBackgroundMode {
+  if (type === "theme" || type === "white") return type;
   return "white";
 }
 
@@ -845,6 +852,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     cardStyle: "glass",
     textTone: "white",
     cartaThemeId: recommendCartaThemeIdByRubro(rubroHint),
+    cartaBackgroundMode: "white",
     sectionLabels: getDefaultLinkHubSectionLabels(),
     theme: "midnight",
     themePrimaryColor: baseTheme.primary,
@@ -1061,6 +1069,9 @@ export function normalizeLinkHubProfile(
     cardStyle: getSafeLinkHubCardStyle(safeText(input.cardStyle) || base.cardStyle),
     textTone: getSafeLinkHubTextTone(safeText(input.textTone) || base.textTone),
     cartaThemeId,
+    cartaBackgroundMode: getSafeLinkHubCartaBackgroundMode(
+      safeText((input as Record<string, unknown>)["cartaBackgroundMode"]) || base.cartaBackgroundMode,
+    ),
     sectionLabels,
     theme: safeTheme,
     themePrimaryColor: colors.primary,

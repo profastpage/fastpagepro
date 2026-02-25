@@ -572,3 +572,18 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - fallback de titulo comercial interno cambiado a `Carta Digital`.
 - Documentacion nueva:
   - `docs/CARTA_THEMING.md` con guia corta para agregar temas y mapearlos por rubro.
+
+## Carta Background Mode Toggle (2026-02-25)
+
+- Rutas ajustadas:
+  - Dashboard: `/linkhub`
+  - Publica: `/bio/[slug]`
+- Nueva preferencia por usuario en `link_profiles`:
+  - `cartaBackgroundMode: "white" | "theme"`
+- UX:
+  - nuevo control en `Tema visual deluxe` para elegir:
+    - `Fondo blanco` (estilo limpio)
+    - `Fondo del tema` (respeta el preset completo, incluido background)
+  - el `Preview Mobile` ahora refleja esta eleccion en vivo.
+- Render publico:
+  - `/bio/[slug]` aplica la eleccion persistida para fondo, superficies y menu.

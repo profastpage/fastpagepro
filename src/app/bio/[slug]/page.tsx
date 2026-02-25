@@ -4,6 +4,7 @@ import { CSSProperties, ComponentType, useEffect, useMemo, useRef, useState } fr
 import { useParams } from "next/navigation";
 import {
   getLinkHubThemeColors,
+  getSafeLinkHubCartaBackgroundMode,
   getSafeLinkHubTheme,
   getPublishedLinkHubProfileBySlug,
   getSafeLinkHubFontFamily,
@@ -16,7 +17,7 @@ import {
   sanitizeSlug,
 } from "@/lib/linkHubProfile";
 import CartaThemeProvider from "@/theme/CartaThemeProvider";
-import { getSafeCartaThemeId, recommendCartaThemeIdByRubro } from "@/theme/cartaThemes";
+import { getCartaTheme, getSafeCartaThemeId, recommendCartaThemeIdByRubro } from "@/theme/cartaThemes";
 import {
   AtSign,
   Facebook,
@@ -385,20 +386,23 @@ export default function PublicBioPage() {
   const cartaThemeId = getSafeCartaThemeId(
     profile.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint),
   );
+  const activeCartaTheme = getCartaTheme(cartaThemeId);
+  const cartaBackgroundMode = getSafeLinkHubCartaBackgroundMode(profile.cartaBackgroundMode);
+  const useWhiteCartaBackground = cartaBackgroundMode === "white";
   const textTone = getSafeLinkHubTextTone(profile.textTone);
   const _legacyTextPalette = getTextTonePalette(textTone, colors.primary);
   const textPalette = {
-    base: "#0f172a",
-    muted: "#475569",
-    soft: "#64748b",
-    heading: "#0f172a",
-    key: colors.primary,
-    inactive: "#64748b",
-    active: colors.primary,
-    accent: colors.primary,
-    searchPlaceholder: "#94a3b8",
+    base: useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.text,
+    muted: useWhiteCartaBackground ? "#475569" : activeCartaTheme.tokens.mutedText,
+    soft: useWhiteCartaBackground ? "#64748b" : activeCartaTheme.tokens.mutedText,
+    heading: useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.text,
+    key: activeCartaTheme.tokens.primary,
+    inactive: useWhiteCartaBackground ? "#64748b" : activeCartaTheme.tokens.navText,
+    active: activeCartaTheme.tokens.primary,
+    accent: activeCartaTheme.tokens.accent,
+    searchPlaceholder: useWhiteCartaBackground ? "#94a3b8" : activeCartaTheme.tokens.placeholder,
   };
-  const accentWordColor = colors.primary;
+  const accentWordColor = activeCartaTheme.tokens.primary;
   const safeFont = getSafeLinkHubFontFamily(profile.fontFamily);
   const fontFamily = LINK_HUB_FONT_FAMILIES[safeFont].stack;
 
@@ -657,70 +661,76 @@ export default function PublicBioPage() {
     }
   }
 
-  const menuGradientSoft = `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 100%)`;
-  const menuGradientActive = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
-  const menuBorder = hexToRgba(colors.primary, 0.35);
+  const menuGradientSoft = useWhiteCartaBackground
+    ? `linear-gradient(135deg, ${hexToRgba(activeCartaTheme.tokens.primary, 0.18)} 0%, ${hexToRgba(activeCartaTheme.tokens.accent, 0.14)} 100%)`
+    : activeCartaTheme.tokens.navBg;
+  const menuGradientActive = activeCartaTheme.tokens.navActiveBg;
+  const menuBorder = activeCartaTheme.tokens.chipBorder;
 
   const pageStyle: CSSProperties = {
-    "--carta-bg": "#e7ebf0",
-    "--carta-surface": "#ffffff",
-    "--carta-surface-2": "#ffffff",
-    "--carta-text": "#0f172a",
-    "--carta-muted-text": "#475569",
-    "--carta-border": "rgba(15,23,42,0.12)",
-    "--carta-shadow": "0 18px 34px -26px rgba(15,23,42,0.28)",
-    "--carta-input-bg": "#ffffff",
-    "--carta-input-text": "#0f172a",
-    "--carta-placeholder": "#94a3b8",
-    "--carta-input-border": "rgba(15,23,42,0.16)",
-    "--carta-button-bg": "#ffffff",
-    "--carta-button-text": "#0f172a",
-    "--carta-button-secondary-bg": "#ffffff",
-    "--carta-gradient-hero": "#ffffff",
-    "--carta-chip-bg": "#ffffff",
-    "--carta-chip-text": "#0f172a",
+    "--carta-bg": useWhiteCartaBackground ? "#e7ebf0" : activeCartaTheme.tokens.background,
+    "--carta-surface": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.surface,
+    "--carta-surface-2": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.surface2,
+    "--carta-text": useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.text,
+    "--carta-muted-text": useWhiteCartaBackground ? "#475569" : activeCartaTheme.tokens.mutedText,
+    "--carta-border": useWhiteCartaBackground ? "rgba(15,23,42,0.12)" : activeCartaTheme.tokens.border,
+    "--carta-shadow": useWhiteCartaBackground
+      ? "0 18px 34px -26px rgba(15,23,42,0.28)"
+      : activeCartaTheme.tokens.shadow,
+    "--carta-input-bg": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.inputBg,
+    "--carta-input-text": useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.inputText,
+    "--carta-placeholder": useWhiteCartaBackground ? "#94a3b8" : activeCartaTheme.tokens.placeholder,
+    "--carta-input-border": useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.inputBorder,
+    "--carta-button-bg": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.buttonBg,
+    "--carta-button-text": useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.buttonText,
+    "--carta-button-secondary-bg": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.buttonSecondaryBg,
+    "--carta-gradient-hero": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.gradientHero,
+    "--carta-chip-bg": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.chipBg,
+    "--carta-chip-text": useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.chipText,
     "--carta-chip-active-bg": menuGradientActive,
-    "--carta-chip-active-text": "#ffffff",
+    "--carta-chip-active-text": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.chipActiveText,
     "--carta-chip-border": menuBorder,
-    "--carta-nav-bg": "#ffffff",
+    "--carta-nav-bg": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.navBg,
     "--carta-nav-active-bg": menuGradientActive,
-    "--carta-nav-active-text": "#ffffff",
-    "--carta-nav-text": "#0f172a",
-    "--carta-badge-bg": "linear-gradient(135deg, #fb7185 0%, #f97316 100%)",
-    "--carta-badge-text": "#ffffff",
-    "--carta-accent": colors.primary,
-    "--carta-primary": colors.primary,
-    "--carta-primary-hover": colors.secondary,
+    "--carta-nav-active-text": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.navActiveText,
+    "--carta-nav-text": useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.navText,
+    "--carta-badge-bg": useWhiteCartaBackground
+      ? "linear-gradient(135deg, #fb7185 0%, #f97316 100%)"
+      : activeCartaTheme.tokens.badgeBg,
+    "--carta-badge-text": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.badgeText,
+    "--carta-accent": activeCartaTheme.tokens.accent,
+    "--carta-primary": activeCartaTheme.tokens.primary,
+    "--carta-primary-hover": activeCartaTheme.tokens.primaryHover,
     background: "var(--carta-bg)",
   } as CSSProperties;
 
   const wrapperStyle = {
-    borderColor: "rgba(15,23,42,0.12)",
+    borderColor: "var(--carta-border)",
     fontFamily,
-    color: "#0f172a",
-    background: "#ffffff",
-    boxShadow: "0 24px 50px -36px rgba(15,23,42,0.4)",
+    color: "var(--carta-text)",
+    background: "var(--carta-surface)",
+    boxShadow: useWhiteCartaBackground ? "0 24px 50px -36px rgba(15,23,42,0.4)" : "var(--carta-shadow)",
   };
 
   const interactiveStyle = {
     borderColor: menuBorder,
     background: menuGradientActive,
-    boxShadow: "0 12px 24px -18px rgba(15,23,42,0.32)",
-    color: "#ffffff",
+    boxShadow: useWhiteCartaBackground ? "0 12px 24px -18px rgba(15,23,42,0.32)" : "var(--carta-shadow)",
+    color: "var(--carta-nav-active-text)",
   };
 
   const chipActiveStyle = {
     borderColor: menuBorder,
     background: menuGradientActive,
-    boxShadow: "0 12px 24px -18px rgba(15,23,42,0.28)",
-    color: "#ffffff",
+    boxShadow: useWhiteCartaBackground ? "0 12px 24px -18px rgba(15,23,42,0.28)" : "var(--carta-shadow)",
+    color: "var(--carta-chip-active-text)",
   };
 
   const navActiveStyle = {
     borderColor: menuBorder,
     background: menuGradientActive,
-    boxShadow: "0 14px 24px -18px rgba(15,23,42,0.3)",
-    color: "#ffffff",
+    boxShadow: useWhiteCartaBackground ? "0 14px 24px -18px rgba(15,23,42,0.3)" : "var(--carta-shadow)",
+    color: "var(--carta-nav-active-text)",
   };
 
   const badgeStyle = {
@@ -730,8 +740,8 @@ export default function PublicBioPage() {
   };
 
   const headerBarStyle = {
-    borderColor: "rgba(15,23,42,0.12)",
-    background: "#ffffff",
+    borderColor: "var(--carta-border)",
+    background: "var(--carta-gradient-hero)",
   };
 
   const avatarFallbackStyle = {
@@ -742,25 +752,25 @@ export default function PublicBioPage() {
   const cardSurfaceStyle =
     profile.cardStyle === "solid"
       ? {
-          background: "#ffffff",
+          background: "var(--carta-surface-2)",
         }
       : profile.cardStyle === "outline"
-      ? { background: "#ffffff" }
+      ? { background: "transparent" }
       : {
-          background: "#ffffff",
-          backdropFilter: "none",
+          background: "var(--carta-surface)",
+          backdropFilter: useWhiteCartaBackground ? "none" : "blur(12px)",
         };
 
   const catalogStickyStyle = {
-    borderColor: "rgba(15,23,42,0.12)",
-    background: "#ffffff",
-    boxShadow: "0 10px 18px -16px rgba(15,23,42,0.36)",
+    borderColor: "var(--carta-border)",
+    background: "var(--carta-surface)",
+    boxShadow: useWhiteCartaBackground ? "0 10px 18px -16px rgba(15,23,42,0.36)" : "var(--carta-shadow)",
   };
 
   const searchSurfaceStyle = {
-    borderColor: "rgba(15,23,42,0.16)",
-    background: "#ffffff",
-    color: "#0f172a",
+    borderColor: "var(--carta-input-border)",
+    background: "var(--carta-input-bg)",
+    color: "var(--carta-input-text)",
   };
 
   const navSurfaceStyle = {
@@ -770,25 +780,25 @@ export default function PublicBioPage() {
 
   const itemSurfaceStyle = {
     background: "var(--carta-surface-2)",
-    boxShadow: "0 10px 22px -18px rgba(15,23,42,0.35)",
+    boxShadow: useWhiteCartaBackground ? "0 10px 22px -18px rgba(15,23,42,0.35)" : "var(--carta-shadow)",
   };
 
   const contactActionStyle = {
-    borderColor: "rgba(15,23,42,0.16)",
-    background: "#ffffff",
-    color: "#0f172a",
-    boxShadow: "0 10px 18px -16px rgba(15,23,42,0.3)",
+    borderColor: "var(--carta-input-border)",
+    background: "var(--carta-button-bg)",
+    color: "var(--carta-button-text)",
+    boxShadow: useWhiteCartaBackground ? "0 10px 18px -16px rgba(15,23,42,0.3)" : "var(--carta-shadow)",
   };
 
   const cartPanelStyle = {
-    borderColor: "rgba(15,23,42,0.12)",
-    background: "#ffffff",
+    borderColor: "var(--carta-border)",
+    background: "var(--carta-surface)",
   };
 
   const checkoutInputStyle = {
-    borderColor: "rgba(15,23,42,0.16)",
-    color: "#0f172a",
-    background: "#ffffff",
+    borderColor: "var(--carta-input-border)",
+    color: "var(--carta-input-text)",
+    background: "var(--carta-input-bg)",
   };
 
   return (
@@ -844,7 +854,14 @@ export default function PublicBioPage() {
               <Share2 className="h-4 w-4" />
             </button>
           </div>
-          {shareFeedback && <p className="mt-2 text-xs font-semibold text-emerald-200">{shareFeedback}</p>}
+          {shareFeedback && (
+            <p
+              className="mt-2 text-xs font-semibold"
+              style={{ color: useWhiteCartaBackground ? "#16a34a" : "#86efac" }}
+            >
+              {shareFeedback}
+            </p>
+          )}
         </div>
 
         {activeTab === "contact" ? (

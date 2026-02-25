@@ -8,6 +8,7 @@ import {
   buildDefaultLinkHubProfile,
   createLinkHubCatalogCategory,
   createLinkHubCatalogItem,
+  getSafeLinkHubCartaBackgroundMode,
   getLinkHubProfileByUserId,
   getLinkHubThemeColors,
   getSafeLinkHubThemeCategory,
@@ -586,6 +587,11 @@ export default function LinkHubPage() {
   }, [profile?.businessType, profile?.cartaThemeId, profile?.categoryLabel]);
 
   const activeCartaTheme = useMemo(() => getCartaTheme(resolvedCartaThemeId), [resolvedCartaThemeId]);
+  const resolvedCartaBackgroundMode = useMemo(
+    () => getSafeLinkHubCartaBackgroundMode(profile?.cartaBackgroundMode),
+    [profile?.cartaBackgroundMode],
+  );
+  const useWhiteCartaBackground = resolvedCartaBackgroundMode === "white";
 
   const previewItems = useMemo(() => {
     if (!profile) return [];
@@ -617,38 +623,43 @@ export default function LinkHubPage() {
 
   const previewMenuBorder = useMemo(() => activeCartaTheme.tokens.chipBorder, [activeCartaTheme.tokens.chipBorder]);
   const previewMenuGradientSoft = useMemo(
-    () => activeCartaTheme.tokens.surface2,
-    [activeCartaTheme.tokens.surface2],
+    () =>
+      useWhiteCartaBackground
+        ? `linear-gradient(135deg, ${hexToRgba(activeCartaTheme.tokens.primary, 0.16)} 0%, ${hexToRgba(activeCartaTheme.tokens.accent, 0.14)} 100%)`
+        : activeCartaTheme.tokens.surface2,
+    [activeCartaTheme.tokens.accent, activeCartaTheme.tokens.primary, activeCartaTheme.tokens.surface2, useWhiteCartaBackground],
   );
   const previewShellStyle = useMemo(
     () => ({
       borderColor: previewMenuBorder,
-      background: activeCartaTheme.tokens.background,
+      background: useWhiteCartaBackground
+        ? "radial-gradient(110% 110% at 10% 0%, rgba(148,163,184,0.22) 0%, transparent 56%), linear-gradient(180deg, #e2e8f0 0%, #dbe4ee 100%)"
+        : activeCartaTheme.tokens.background,
     }),
-    [activeCartaTheme.tokens.background, previewMenuBorder],
+    [activeCartaTheme.tokens.background, previewMenuBorder, useWhiteCartaBackground],
   );
   const previewPanelStyle = useMemo(
     () => ({
-      borderColor: activeCartaTheme.tokens.border,
-      background: activeCartaTheme.tokens.surface,
+      borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.14)" : activeCartaTheme.tokens.border,
+      background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.surface,
       boxShadow: activeCartaTheme.tokens.shadow,
     }),
-    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.shadow, activeCartaTheme.tokens.surface],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.shadow, activeCartaTheme.tokens.surface, useWhiteCartaBackground],
   );
   const previewHeaderStyle = useMemo(
     () => ({
-      borderColor: activeCartaTheme.tokens.border,
-      background: activeCartaTheme.tokens.gradientHero,
+      borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.1)" : activeCartaTheme.tokens.border,
+      background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.gradientHero,
     }),
-    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.gradientHero],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.gradientHero, useWhiteCartaBackground],
   );
   const previewChipBaseStyle = useMemo(
     () => ({
-      borderColor: activeCartaTheme.tokens.chipBorder,
-      background: activeCartaTheme.tokens.chipBg,
-      color: activeCartaTheme.tokens.chipText,
+      borderColor: useWhiteCartaBackground ? previewMenuBorder : activeCartaTheme.tokens.chipBorder,
+      background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.chipBg,
+      color: useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.chipText,
     }),
-    [activeCartaTheme.tokens.chipBg, activeCartaTheme.tokens.chipBorder, activeCartaTheme.tokens.chipText],
+    [activeCartaTheme.tokens.chipBg, activeCartaTheme.tokens.chipBorder, activeCartaTheme.tokens.chipText, previewMenuBorder, useWhiteCartaBackground],
   );
   const previewChipActiveStyle = useMemo(
     () => ({
@@ -667,25 +678,25 @@ export default function LinkHubPage() {
   const previewSearchStyle = useMemo(
     () => ({
       borderColor: activeCartaTheme.tokens.inputBorder,
-      background: activeCartaTheme.tokens.inputBg,
-      color: activeCartaTheme.tokens.inputText,
+      background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.inputBg,
+      color: useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.inputText,
     }),
-    [activeCartaTheme.tokens.inputBg, activeCartaTheme.tokens.inputBorder, activeCartaTheme.tokens.inputText],
+    [activeCartaTheme.tokens.inputBg, activeCartaTheme.tokens.inputBorder, activeCartaTheme.tokens.inputText, useWhiteCartaBackground],
   );
   const previewBottomNavStyle = useMemo(
     () => ({
-      borderColor: activeCartaTheme.tokens.border,
-      background: activeCartaTheme.tokens.navBg,
+      borderColor: useWhiteCartaBackground ? previewMenuBorder : activeCartaTheme.tokens.border,
+      background: useWhiteCartaBackground ? previewMenuGradientSoft : activeCartaTheme.tokens.navBg,
     }),
-    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.navBg],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.navBg, previewMenuBorder, previewMenuGradientSoft, useWhiteCartaBackground],
   );
   const previewItemCardStyle = useMemo(
     () => ({
-      borderColor: activeCartaTheme.tokens.border,
-      background: activeCartaTheme.tokens.surface2,
+      borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.12)" : activeCartaTheme.tokens.border,
+      background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.surface2,
       boxShadow: activeCartaTheme.tokens.shadow,
     }),
-    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.shadow, activeCartaTheme.tokens.surface2],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.shadow, activeCartaTheme.tokens.surface2, useWhiteCartaBackground],
   );
   const previewCoverUrl = useMemo(
     () => profile?.coverImageUrls?.[0] || profile?.coverImageUrl || "",
@@ -2243,6 +2254,35 @@ export default function LinkHubPage() {
                     <p className="text-xs text-zinc-400">
                       Se aplica en la pagina publicada: header, chips, tarjetas, botones y barra inferior.
                     </p>
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-400">
+                        Fondo de carta
+                      </span>
+                      <div className="inline-flex w-full rounded-xl border border-white/10 bg-black/25 p-1">
+                        <button
+                          type="button"
+                          onClick={() => patchProfile("cartaBackgroundMode", "white")}
+                          className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
+                            resolvedCartaBackgroundMode === "white"
+                              ? "bg-white text-zinc-900 shadow-[0_8px_18px_-14px_rgba(255,255,255,0.8)]"
+                              : "text-zinc-300 hover:text-white"
+                          }`}
+                        >
+                          Fondo blanco
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => patchProfile("cartaBackgroundMode", "theme")}
+                          className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
+                            resolvedCartaBackgroundMode === "theme"
+                              ? "bg-amber-400/15 text-amber-100 shadow-[0_8px_18px_-14px_rgba(250,204,21,0.7)]"
+                              : "text-zinc-300 hover:text-white"
+                          }`}
+                        >
+                          Fondo del tema
+                        </button>
+                      </div>
+                    </div>
                     <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
                       {CARTA_THEME_OPTIONS.map((themeOption) => {
                         const isActive = resolvedCartaThemeId === themeOption.id;
