@@ -303,6 +303,20 @@ function rgbToHex(rgb?: { r: number; g: number; b: number }) {
 
 const SOFT_INPUT_BORDER = "#ecf1f7";
 
+function isPermissionDeniedError(error: unknown) {
+  const message = String((error as any)?.message || "").toLowerCase();
+  const code = String((error as any)?.code || "").toLowerCase();
+  return (
+    message.includes("permission") ||
+    message.includes("insufficient") ||
+    code.includes("permission-denied")
+  );
+}
+
+function scopedStoreProjectKey(userId: string) {
+  return `fastpage_store_project_id:${userId}`;
+}
+
 async function compressImage(file: File, maxSide = 1400, quality = 0.84) {
   const data = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();
@@ -417,10 +431,21 @@ function StoreEditorPage() {
   }, [projectId, liveConfig, liveProducts]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = localStorage.getItem("fastpage_store_project_id");
-    if (saved) setProjectId(saved);
-  }, []);
+    if (typeof window === "undefined" || !user?.uid) return;
+    const scoped = localStorage.getItem(scopedStoreProjectKey(user.uid));
+    const legacy = localStorage.getItem("fastpage_store_project_id");
+    if (scoped) {
+      setProjectId(scoped);
+      return;
+    }
+    if (legacy) {
+      setProjectId(legacy);
+      localStorage.setItem(scopedStoreProjectKey(user.uid), legacy);
+      localStorage.removeItem("fastpage_store_project_id");
+      return;
+    }
+    setProjectId(null);
+  }, [user?.uid]);
 
   useEffect(() => {
     setProjectMeta(projectId || "store-draft", "store");
@@ -456,6 +481,17 @@ function StoreEditorPage() {
         markSaved(data?.status === "published" ? "published" : "draft");
       } catch (e: any) {
         if (cancelled) return;
+        if (isPermissionDeniedError(e) || String(e?.message || "").toLowerCase().includes("no tienes permisos")) {
+          setConfig(cloneDefaultConfig());
+          setProducts(cloneDefaultProducts());
+          setProjectId(null);
+          if (typeof window !== "undefined" && user?.uid) {
+            localStorage.removeItem(scopedStoreProjectKey(user.uid));
+            localStorage.removeItem("fastpage_store_project_id");
+          }
+          setError("Se detecto un borrador de otra cuenta. Se inicio un borrador nuevo.");
+          return;
+        }
         setError(e?.message || "No se pudo cargar.");
         setEditorError(e?.message || "No se pudo cargar.");
       } finally {
@@ -483,6 +519,21 @@ function StoreEditorPage() {
 
   const setContent = (patch: Partial<VisualContent>) =>
     setConfig((prev) => ({ ...prev, content: { ...(prev.content || {}), ...patch } }));
+
+  const applyThemePreset = (themeId: StoreThemeId) => {
+    const preset = STORE_THEMES.find((theme) => theme.id === themeId);
+    setConfig((prev) => ({
+      ...prev,
+      themeId,
+      customRgb: preset
+        ? {
+            ...(prev.customRgb || {}),
+            accent: hexToRgb(preset.accent),
+            accent2: hexToRgb(preset.accent2),
+          }
+        : prev.customRgb,
+    }));
+  };
 
   const updateProduct = (id: string, patch: Partial<StoreProduct>) => {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -540,13 +591,13 @@ function StoreEditorPage() {
       if (!user?.uid) throw new Error("Debes iniciar sesión.");
       if (publishNow) await assertCanPublishPageByPlan();
 
-      const id = projectId || newId();
-      const storeSlug = resolveStoreSlug(config, id);
-      const nextConfig = mergeConfigWithDefaults(config, storeSlug);
+      let id = projectId || newId();
+      let storeSlug = resolveStoreSlug(config, id);
       const nextProducts = mergeProductsWithDefaults(products);
       const now = Date.now();
-      const html = publishNow ? injectMetricsTracking(storefrontHtml, id) : storefrontHtml;
-      const payload: Record<string, any> = {
+      let nextConfig = mergeConfigWithDefaults(config, storeSlug);
+      let html = publishNow ? injectMetricsTracking(storefrontHtml, id) : storefrontHtml;
+      let payload: Record<string, any> = {
         id,
         userId: user.uid,
         source: "store-builder",
@@ -563,7 +614,27 @@ function StoreEditorPage() {
       };
       if (!projectId) payload.createdAt = now;
       if (publishNow) payload.publishedAt = now;
-      await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
+
+      try {
+        await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
+      } catch (writeError: any) {
+        if (!(projectId && isPermissionDeniedError(writeError))) throw writeError;
+        id = newId();
+        storeSlug = resolveStoreSlug(config, id);
+        nextConfig = mergeConfigWithDefaults(config, storeSlug);
+        html = publishNow ? injectMetricsTracking(storefrontHtml, id) : storefrontHtml;
+        payload = {
+          ...payload,
+          id,
+          url: `/t/${storeSlug}`,
+          storeConfig: nextConfig,
+          storeSlug,
+          html,
+          createdAt: now,
+          updatedAt: now,
+        };
+        await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
+      }
       const snapshot: StoreEditorSnapshot = { config: nextConfig, products: nextProducts };
       if (publishNow) {
         await publishEditorDraft({
@@ -583,9 +654,10 @@ function StoreEditorPage() {
         });
       }
 
-      if (!projectId) {
+      if (projectId !== id) {
         setProjectId(id);
-        localStorage.setItem("fastpage_store_project_id", id);
+        localStorage.setItem(scopedStoreProjectKey(user.uid), id);
+        localStorage.removeItem("fastpage_store_project_id");
       }
       if (config.storeSlug !== storeSlug) setConfig((prev) => ({ ...prev, storeSlug }));
 
@@ -619,9 +691,9 @@ function StoreEditorPage() {
   });
 
   return (
-    <div className="min-h-screen overflow-x-hidden pt-20 pb-8" style={{ ...themeVars, background: "var(--vs-page)", color: "var(--vs-text)" }}>
+    <div className="min-h-screen overflow-x-hidden pt-24 md:pt-28 pb-10 md:pb-12" style={{ ...themeVars, background: "var(--vs-page)", color: "var(--vs-text)" }}>
       <div className="mx-auto max-w-[1600px] px-3 md:px-6">
-        <header className="sticky top-16 z-40 rounded-2xl border bg-white/90 px-3 py-3 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+        <header className="sticky top-[72px] md:top-20 z-40 rounded-2xl border bg-white/90 px-3 py-3 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <button onClick={() => (window.history.length > 1 ? router.back() : router.push("/hub"))} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
@@ -651,8 +723,8 @@ function StoreEditorPage() {
           </div>
         </header>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-          <section className="order-1 rounded-3xl border bg-white p-3 md:p-5 xl:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+        <div className="mt-6 grid grid-cols-1 items-start gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+          <section className="order-1 min-w-0 rounded-3xl border bg-white p-3 md:p-5 xl:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
             <div className="mb-4 rounded-2xl border bg-white px-4 py-3 text-xs font-semibold" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>
               Haz clic en cualquier campo para editar. Encontraras texto base de marketing listo para personalizar y fotos demo para reemplazar.
             </div>
@@ -687,7 +759,7 @@ function StoreEditorPage() {
                     <div className={viewMode === "mobile" ? "mt-4 grid grid-flow-col auto-cols-[85%] min-[430px]:auto-cols-[48%] gap-3 overflow-x-auto pb-2 pr-1 snap-x snap-mandatory" : "mt-4 grid grid-cols-3 gap-4"}>
                       {offerProducts.map((p) => (
                         <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
-                          <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-black uppercase text-white">{p.badge || "Oferta"}</span></div>
+                          <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: "var(--vs-accent)" }}>{p.badge || "Oferta"}</span></div>
                           <div className="p-3"><p className="font-black">{p.name}</p><p className="mt-1 text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatMoney(p.priceCents, config.currency)}</p><button className="mt-2 h-10 w-full rounded-xl text-sm font-black text-white" style={{ background: "var(--vs-accent)" }}>{p.ctaLabel || "Ver oferta"}</button></div>
                         </article>
                       ))}
@@ -726,7 +798,7 @@ function StoreEditorPage() {
             </div>
           </section>
 
-          <aside className="order-2 space-y-3 xl:order-1">
+          <aside className="order-2 space-y-4 self-start xl:order-1 xl:sticky xl:top-[150px]">
             <EditorSidebar
               contentTab={<p className="text-xs text-zinc-600">Contenido editable rapido + panel avanzado sincronizados.</p>}
               designTab={<p className="text-xs text-zinc-600">Tema, colores y layout desktop/mobile.</p>}
@@ -737,7 +809,7 @@ function StoreEditorPage() {
             <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinámico</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Blanco + acentos personalizables.</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">{STORE_THEMES.map((t) => <button key={t.id} onClick={() => setConfig((p) => ({ ...p, themeId: t.id as StoreThemeId }))} className="rounded-xl border px-3 py-2 text-left text-xs font-bold" style={config.themeId === t.id ? { borderColor: "var(--vs-accent)", background: "color-mix(in srgb,var(--vs-accent) 12%,white)" } : { borderColor: "var(--vs-border)" }}>{t.name}</button>)}</div>
+              <div className="mt-3 grid grid-cols-2 gap-2">{STORE_THEMES.map((t) => <button key={t.id} onClick={() => applyThemePreset(t.id as StoreThemeId)} className="rounded-xl border px-3 py-2 text-left text-xs font-bold" style={config.themeId === t.id ? { borderColor: "var(--vs-accent)", background: "color-mix(in srgb,var(--vs-accent) 12%,white)" } : { borderColor: "var(--vs-border)" }}>{t.name}</button>)}</div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="text-xs font-semibold">Primario<input type="color" value={rgbToHex(config.customRgb?.accent)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
                 <label className="text-xs font-semibold">Secundario<input type="color" value={rgbToHex(config.customRgb?.accent2)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent2: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
@@ -748,7 +820,7 @@ function StoreEditorPage() {
         </div>
       </div>
 
-      {error && <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 shadow-xl">{error}</div>}
+      {error && <div className="fixed bottom-20 left-1/2 z-50 w-[min(92vw,460px)] -translate-x-1/2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 shadow-xl md:bottom-6 md:left-auto md:right-24 md:w-auto md:translate-x-0">{error}</div>}
       {savedToast && <div className="fixed bottom-5 left-5 z-50 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-black text-emerald-700 shadow-xl">Cambios guardados</div>}
       {loadingProject && <div className="fixed inset-0 z-50 grid place-items-center bg-black/30"><div className="rounded-2xl bg-white p-6 shadow-2xl"><Loader2 className="h-7 w-7 animate-spin" /></div></div>}
     </div>

@@ -5,11 +5,14 @@ import { Zap } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 const FOOTER_LINKS = [
-  { labelKey: "nav.hub", href: "/hub" },
-  { labelKey: "nav.builder", href: "/builder" },
-  { labelKey: "nav.templates", href: "/templates" },
-  { labelKey: "nav.cloner", href: "/cloner/web" },
-  { labelKey: "nav.store", href: "/store" },
+  { labelKey: "nav.hub", fallback: "HUB", href: "/hub" },
+  { labelKey: "nav.builder", fallback: "BUILDER", href: "/builder" },
+  { labelKey: "nav.templates", fallback: "TEMPLATES", href: "/templates" },
+  { labelKey: "nav.cloner", fallback: "CLONER", href: "/cloner/web" },
+  { labelKey: "nav.store", fallback: "ONLINE STORE", href: "/store" },
+  { labelKey: "nav.linkhub", fallback: "CARTA DIGITAL", href: "/linkhub" },
+  { labelKey: "nav.pricing", fallback: "PRICING", href: "/dashboard/billing" },
+  { labelKey: "nav.login", fallback: "LOGIN", href: "/auth?tab=login" },
 ];
 
 export default function Footer() {
@@ -43,7 +46,7 @@ export default function Footer() {
                 href={item.href}
                 className="transition-colors hover:text-amber-300"
               >
-                {t(item.labelKey)}
+                {t(item.labelKey) === item.labelKey ? item.fallback : t(item.labelKey)}
               </Link>
             ))}
           </nav>

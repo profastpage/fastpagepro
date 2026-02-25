@@ -881,3 +881,31 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - inputs de descripcion/metadata forzados a fondo blanco y texto oscuro para evitar contraste negro sobre negro.
 - Modo desktop:
   - panel lateral de edicion movido al lado izquierdo con layout uniforme en pantalla amplia.
+
+## Landing SaaS Conversion Revamp (2026-02-26)
+
+- Ruta ajustada: `/` (home principal).
+- Refactor completo de landing con foco conversion SaaS:
+  - hero orientado a resultado con selector de intencion (`Landing`, `Online Store`, `Carta Digital`, `Cloner`).
+  - CTA principal y secundarios con tracking (`cta_primary_click`, `view_demo_click`, `view_pricing_click`).
+  - seccion de modulos del ecosistema con eventos `module_click_*` para Builder, Templates, Cloner, Store, Menu, Metrics e IA.
+  - bloques de conversion: como funciona, casos de uso, demos, pricing comparativo, FAQ y CTA final.
+- SEO:
+  - `src/app/page.tsx` ahora define metadata de pagina (title, description, canonical y OpenGraph) para App Router.
+- Footer:
+  - agrega enlaces directos a `CARTA DIGITAL`, `PRICING` y `LOGIN` sin romper enlaces existentes.
+
+## Store Theme Sync + Permission Recovery (2026-02-26)
+
+- Ruta ajustada: `/store`.
+- Tema dinamico:
+  - al seleccionar preset visual, ahora se sincronizan `themeId + customRgb(accent, accent2)` para que todos los acentos cambien inmediatamente.
+  - se reemplaza badge de oferta hardcodeado en rojo por color basado en `--vs-accent`.
+- Persistencia y permisos:
+  - `projectId` del editor ahora usa key de localStorage por usuario (`fastpage_store_project_id:{uid}`).
+  - compatibilidad con key legacy y migracion automatica.
+  - si se detecta borrador de otra cuenta o `permission-denied`, el editor limpia el id conflictivo y crea un borrador nuevo para evitar bloqueo de guardado.
+- Layout PC/Mobile:
+  - mayor separacion entre header, sidebar y canvas para evitar choques visuales.
+  - ajustes de `sticky top` y `grid gaps` para mantener orden profesional en desktop y mobile.
+  - toast de error reubicado para no superponerse con controles flotantes.
