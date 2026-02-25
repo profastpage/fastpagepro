@@ -11,11 +11,12 @@ import {
   hexToRgba,
   isValidExternalUrl,
   LINK_HUB_FONT_FAMILIES,
-  LINK_HUB_THEME_STYLES,
   LinkHubLinkType,
   LinkHubProfile,
   sanitizeSlug,
 } from "@/lib/linkHubProfile";
+import CartaThemeProvider from "@/theme/CartaThemeProvider";
+import { getSafeCartaThemeId, recommendCartaThemeIdByRubro } from "@/theme/cartaThemes";
 import {
   AtSign,
   Facebook,
@@ -125,9 +126,9 @@ function getButtonRadiusClass(shape: LinkHubProfile["buttonShape"]): string {
 }
 
 function getCardClass(style: LinkHubProfile["cardStyle"]): string {
-  if (style === "solid") return "border-transparent";
-  if (style === "outline") return "border-white/25 bg-transparent";
-  return "border-white/10 backdrop-blur";
+  if (style === "solid") return "border-[color:var(--carta-border)]";
+  if (style === "outline") return "border-[color:var(--carta-border)] bg-transparent";
+  return "border-[color:var(--carta-border)] backdrop-blur";
 }
 
 function getTextTonePalette(tone: LinkHubProfile["textTone"], primaryColor: string) {
@@ -362,8 +363,12 @@ export default function PublicBioPage() {
   }
 
   const themeKey = getSafeLinkHubTheme(profile.theme);
-  const theme = LINK_HUB_THEME_STYLES[themeKey];
   const colors = getLinkHubThemeColors(themeKey, profile.themePrimaryColor, profile.themeSecondaryColor);
+  const rubroHint =
+    profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General");
+  const cartaThemeId = getSafeCartaThemeId(
+    profile.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint),
+  );
   const textTone = getSafeLinkHubTextTone(profile.textTone);
   const textPalette = getTextTonePalette(textTone, colors.primary);
   const prefersDarkText = textTone === "black" || textTone === "blackGold";
@@ -626,87 +631,111 @@ export default function PublicBioPage() {
   }
 
   const pageStyle = {
-    backgroundColor: "#02040a",
-    backgroundImage: `radial-gradient(120% 110% at 8% 0%, ${hexToRgba(colors.primary, 0.16)} 0%, transparent 54%), radial-gradient(130% 120% at 100% 100%, ${hexToRgba(colors.secondary, 0.18)} 0%, transparent 58%), linear-gradient(165deg, rgba(2,6,23,0.98) 0%, rgba(3,7,18,0.99) 48%, rgba(0,0,0,1) 100%)`,
+    background: "var(--carta-bg)",
   };
 
   const wrapperStyle = {
-    borderColor: hexToRgba(colors.primary, 0.5),
+    borderColor: "var(--carta-border)",
     fontFamily,
-    color: textPalette.base,
-    background: `linear-gradient(120deg, rgba(255,255,255,0.06) 0%, rgba(148,163,184,0.05) 24%, transparent 52%), linear-gradient(220deg, ${hexToRgba(colors.primary, 0.22)} 0%, ${hexToRgba(colors.secondary, 0.16)} 36%, rgba(2,6,23,0.96) 72%, rgba(0,0,0,0.98) 100%)`,
-    boxShadow: `0 28px 48px -34px ${hexToRgba(colors.primary, 0.72)}`,
+    color: "var(--carta-text)",
+    background: "var(--carta-surface)",
+    boxShadow: "var(--carta-shadow)",
   };
 
   const interactiveStyle = {
-    borderColor: hexToRgba(colors.primary, 0.5),
-    background: `linear-gradient(132deg, rgba(255,255,255,0.06) 0%, ${hexToRgba(colors.primary, 0.22)} 24%, ${hexToRgba(colors.secondary, 0.18)} 62%, rgba(2,6,23,0.9) 100%)`,
-    boxShadow: `0 10px 24px -18px ${hexToRgba(colors.primary, 0.86)}`,
-    color: textPalette.active,
+    borderColor: "var(--carta-chip-border)",
+    background: "var(--carta-button-bg)",
+    boxShadow: "var(--carta-shadow)",
+    color: "var(--carta-button-text)",
+  };
+
+  const chipActiveStyle = {
+    borderColor: "var(--carta-chip-border)",
+    background: "var(--carta-chip-active-bg)",
+    boxShadow: "var(--carta-shadow)",
+    color: "var(--carta-chip-active-text)",
+  };
+
+  const navActiveStyle = {
+    borderColor: "var(--carta-chip-border)",
+    background: "var(--carta-nav-active-bg)",
+    boxShadow: "var(--carta-shadow)",
+    color: "var(--carta-nav-active-text)",
+  };
+
+  const badgeStyle = {
+    borderColor: "var(--carta-chip-border)",
+    background: "var(--carta-badge-bg)",
+    color: "var(--carta-badge-text)",
   };
 
   const headerBarStyle = {
-    borderColor: hexToRgba(colors.primary, 0.26),
-    background: `linear-gradient(100deg, rgba(3,7,18,0.96) 0%, ${hexToRgba(colors.primary, 0.12)} 36%, ${hexToRgba(colors.secondary, 0.1)} 64%, rgba(2,6,23,0.96) 100%), linear-gradient(120deg, rgba(255,255,255,0.05) 0%, transparent 38%)`,
+    borderColor: "var(--carta-border)",
+    background: "var(--carta-gradient-hero)",
   };
 
   const avatarFallbackStyle = {
-    borderColor: hexToRgba(colors.primary, 0.85),
-    background: `linear-gradient(130deg, ${hexToRgba(colors.primary, 0.4)} 0%, ${hexToRgba(colors.secondary, 0.3)} 100%)`,
+    borderColor: "var(--carta-chip-border)",
+    background: "var(--carta-button-bg)",
   };
 
   const cardSurfaceStyle =
     profile.cardStyle === "solid"
       ? {
-          background: `linear-gradient(130deg, rgba(255,255,255,0.045) 0%, ${hexToRgba(colors.primary, 0.16)} 26%, ${hexToRgba(colors.secondary, 0.14)} 58%, rgba(2,6,23,0.78) 100%)`,
+          background: "var(--carta-surface-2)",
         }
       : profile.cardStyle === "outline"
-      ? { background: "rgba(2,6,23,0.3)" }
+      ? { background: "transparent" }
       : {
-          background: `linear-gradient(130deg, rgba(255,255,255,0.05) 0%, ${hexToRgba(colors.primary, 0.12)} 22%, ${hexToRgba(colors.secondary, 0.1)} 58%, rgba(2,6,23,0.74) 100%)`,
+          background: "var(--carta-surface)",
           backdropFilter: "blur(10px)",
         };
 
   const catalogStickyStyle = {
-    borderColor: hexToRgba(colors.primary, 0.28),
-    background: `linear-gradient(180deg, rgba(2,6,23,0.96) 0%, ${hexToRgba(colors.primary, 0.12)} 52%, rgba(2,6,23,0.96) 100%), linear-gradient(120deg, rgba(255,255,255,0.04) 0%, transparent 42%)`,
-    boxShadow: `0 12px 24px -22px ${hexToRgba(colors.primary, 0.72)}`,
+    borderColor: "var(--carta-border)",
+    background: "var(--carta-nav-bg)",
+    boxShadow: "var(--carta-shadow)",
   };
 
   const searchSurfaceStyle = {
-    borderColor: hexToRgba(colors.primary, 0.4),
-    background: `linear-gradient(120deg, rgba(255,255,255,0.045) 0%, ${hexToRgba(colors.primary, 0.12)} 32%, ${hexToRgba(colors.secondary, 0.09)} 100%)`,
+    borderColor: "var(--carta-input-border)",
+    background: "var(--carta-input-bg)",
+    color: "var(--carta-input-text)",
   };
 
   const navSurfaceStyle = {
-    borderColor: hexToRgba(colors.primary, 0.38),
-    background: `linear-gradient(120deg, rgba(255,255,255,0.06) 0%, ${hexToRgba(colors.primary, 0.18)} 30%, ${hexToRgba(colors.secondary, 0.12)} 100%)`,
+    borderColor: "var(--carta-border)",
+    background: "var(--carta-nav-bg)",
   };
 
   const itemSurfaceStyle = {
-    background: `linear-gradient(145deg, rgba(255,255,255,0.04) 0%, ${hexToRgba(colors.primary, 0.12)} 28%, ${hexToRgba(colors.secondary, 0.09)} 66%, rgba(2,6,23,0.84) 100%)`,
+    background: "var(--carta-surface-2)",
   };
 
   const contactActionStyle = {
-    borderColor: hexToRgba(colors.primary, 0.34),
-    background: `linear-gradient(130deg, rgba(255,255,255,0.08) 0%, ${hexToRgba(colors.primary, 0.12)} 36%, rgba(2,6,23,0.9) 100%)`,
-    color: "#f8fafc",
-    boxShadow: `0 10px 20px -14px ${hexToRgba(colors.primary, 0.68)}`,
+    borderColor: "var(--carta-chip-border)",
+    background: "var(--carta-button-bg)",
+    color: "var(--carta-button-text)",
+    boxShadow: "var(--carta-shadow)",
   };
 
   const cartPanelStyle = {
-    borderColor: hexToRgba(colors.primary, 0.36),
-    background: `linear-gradient(165deg, rgba(255,255,255,0.06) 0%, ${hexToRgba(colors.primary, 0.16)} 26%, ${hexToRgba(colors.secondary, 0.12)} 62%, rgba(2,6,23,0.92) 100%)`,
+    borderColor: "var(--carta-border)",
+    background: "var(--carta-surface)",
   };
 
   const checkoutInputStyle = {
-    borderColor: hexToRgba(colors.primary, 0.28),
-    color: prefersDarkText ? "#e2e8f0" : "#ffffff",
-    background: `linear-gradient(130deg, rgba(255,255,255,0.04) 0%, ${hexToRgba(colors.primary, 0.08)} 36%, rgba(2,6,23,0.88) 100%)`,
+    borderColor: "var(--carta-input-border)",
+    color: "var(--carta-input-text)",
+    background: "var(--carta-input-bg)",
   };
 
   return (
-    <div className="h-[100dvh] overflow-hidden px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
+    <CartaThemeProvider
+      themeId={cartaThemeId}
+      className="h-[100dvh] overflow-hidden px-2 py-3 md:px-6 md:py-8"
+      style={pageStyle}
+    >
       <div
         className="mx-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-[2.25rem] border md:max-w-5xl md:rounded-[2.5rem]"
         style={wrapperStyle}
@@ -747,8 +776,8 @@ export default function PublicBioPage() {
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border hover:bg-white/10"
-              style={{ borderColor: hexToRgba(colors.primary, 0.35), color: textPalette.heading }}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
+              style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
               aria-label="Compartir"
             >
               <Share2 className="h-4 w-4" />
@@ -776,8 +805,8 @@ export default function PublicBioPage() {
                     <div
                       className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border px-2 py-1 backdrop-blur"
                       style={{
-                        borderColor: hexToRgba(colors.primary, 0.35),
-                        background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.35)} 0%, ${hexToRgba(colors.secondary, 0.28)} 100%)`,
+                        borderColor: "var(--carta-chip-border)",
+                        background: "var(--carta-button-bg)",
                       }}
                     >
                       {coverImages.map((_, index) => (
@@ -795,7 +824,7 @@ export default function PublicBioPage() {
                 <div
                   className="h-40 md:h-64 w-full"
                   style={{
-                    background: `linear-gradient(130deg, ${hexToRgba(colors.primary, 0.5)} 0%, ${hexToRgba(colors.secondary, 0.44)} 100%)`,
+                    background: "var(--carta-gradient-hero)",
                   }}
                 />
               )}
@@ -807,7 +836,7 @@ export default function PublicBioPage() {
                     alt={profile.displayName}
                     className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 object-cover"
                     style={{
-                      borderColor: hexToRgba(colors.primary, 0.95),
+                      borderColor: "var(--carta-chip-border)",
                       background: avatarFallbackStyle.background,
                     }}
                   />
@@ -815,7 +844,7 @@ export default function PublicBioPage() {
                   <div
                     className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black"
                     style={{
-                      borderColor: hexToRgba(colors.primary, 0.95),
+                      borderColor: "var(--carta-chip-border)",
                       background: avatarFallbackStyle.background,
                     }}
                   >
@@ -829,7 +858,7 @@ export default function PublicBioPage() {
               <h1 className="text-4xl md:text-6xl font-black tracking-tight" style={{ color: textPalette.heading }}>
                 {profile.displayName}
               </h1>
-              <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: hexToRgba(colors.primary, 0.95) }}>
+              <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: "var(--carta-accent)" }}>
                 {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
               </p>
               {profile.bio && (
@@ -849,7 +878,7 @@ export default function PublicBioPage() {
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg border border-white/20 transition hover:scale-[1.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    className="inline-flex h-11 w-11 md:h-12 md:w-12 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:scale-[1.04] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)]"
                     style={{
                       background: brandStyle.background,
                       color: brandStyle.color,
@@ -873,10 +902,10 @@ export default function PublicBioPage() {
             className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
             style={
               activeTab === "contact"
-                ? interactiveStyle
+                ? navActiveStyle
                 : {
-                    borderColor: hexToRgba(colors.primary, 0.32),
-                    color: textPalette.inactive,
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-nav-text)",
                   }
             }
           >
@@ -888,10 +917,10 @@ export default function PublicBioPage() {
             className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
             style={
               activeTab === "catalog"
-                ? interactiveStyle
+                ? navActiveStyle
                 : {
-                    borderColor: hexToRgba(colors.primary, 0.32),
-                    color: textPalette.inactive,
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-nav-text)",
                   }
             }
           >
@@ -903,10 +932,10 @@ export default function PublicBioPage() {
             className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
             style={
               activeTab === "location"
-                ? interactiveStyle
+                ? navActiveStyle
                 : {
-                    borderColor: hexToRgba(colors.primary, 0.32),
-                    color: textPalette.inactive,
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-nav-text)",
                   }
             }
           >
@@ -918,7 +947,7 @@ export default function PublicBioPage() {
           {activeTab === "contact" && (
             <section
               className={`flex h-full min-h-0 flex-col rounded-3xl border p-4 md:p-6 ${cardClass}`}
-              style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}
+              style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}
             >
               <h2 className="text-2xl font-black" style={{ color: textPalette.heading }}>
                 {profile.sectionLabels.contact}
@@ -931,7 +960,7 @@ export default function PublicBioPage() {
                 {callHref && (
                   <a
                     href={callHref}
-                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold md:min-h-[3.25rem] ${!whatsappHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
+                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[3.25rem] ${!whatsappHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
                     style={contactActionStyle}
                   >
                     <Phone className="h-4 w-4" />
@@ -943,7 +972,7 @@ export default function PublicBioPage() {
                     href={whatsappHref}
                     target="_blank"
                     rel="noreferrer"
-                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold md:min-h-[3.25rem] ${!callHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
+                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[3.25rem] ${!callHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
                     style={contactActionStyle}
                   >
                     <MessageCircleIcon className="h-4 w-4" />
@@ -955,13 +984,13 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "catalog" && (
-            <section className={`flex h-full flex-col overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
+            <section className={`flex h-full flex-col overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
               <div className="hidden md:flex items-center justify-between gap-3">
                 <h2 className="text-2xl font-black" style={{ color: textPalette.heading }}>
                   {catalogLabel}
                 </h2>
                 <div className="inline-flex items-center gap-2">
-                  <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
+                  <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-chip-text)" }}>
                     {profile.businessType === "restaurant" ? <Fish className="h-3.5 w-3.5" /> : <Store className="h-3.5 w-3.5" />}
                     {totalFilteredItems}
                   </div>
@@ -977,7 +1006,7 @@ export default function PublicBioPage() {
                     <ShoppingBag className="h-4 w-4" />
                     Mi pedido
                     {cartItemsCount > 0 && (
-                      <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-slate-900">
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: "var(--carta-chip-active-bg)", color: "var(--carta-chip-active-text)" }}>
                         {cartItemsCount}
                       </span>
                     )}
@@ -1001,8 +1030,8 @@ export default function PublicBioPage() {
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
                       placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
-                      className="w-full bg-transparent text-sm focus:outline-none"
-                      style={{ color: textPalette.base }}
+                      className="w-full bg-transparent text-sm focus:outline-none placeholder:[color:var(--carta-placeholder)]"
+                      style={{ color: "var(--carta-input-text)" }}
                     />
                   </label>
 
@@ -1015,11 +1044,11 @@ export default function PublicBioPage() {
                           categoryChipRefs.current[category.id] = node;
                         }}
                         onClick={() => scrollToCategory(category.id)}
-                        className={`shrink-0 border px-3 py-2 text-xs font-bold transition ${buttonRadiusClass}`}
+                        className={`shrink-0 border px-3 py-2 text-xs font-bold transition hover:-translate-y-0.5 active:scale-[0.98] ${buttonRadiusClass}`}
                         style={
                           selectedCategoryId === category.id
-                            ? interactiveStyle
-                            : { borderColor: hexToRgba(colors.primary, 0.35), color: textPalette.base }
+                            ? chipActiveStyle
+                            : { borderColor: "var(--carta-chip-border)", background: "var(--carta-chip-bg)", color: "var(--carta-chip-text)" }
                         }
                       >
                         <span className="mr-1">{category.emoji || category.name.slice(0, 1).toUpperCase()}</span>
@@ -1030,7 +1059,7 @@ export default function PublicBioPage() {
                 </div>
 
                 {categorySections.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-white/25 p-4 text-sm" style={{ color: textPalette.muted }}>
+                  <div className="rounded-2xl border border-dashed p-4 text-sm" style={{ borderColor: "var(--carta-border)", color: textPalette.muted }}>
                     No hay productos para el filtro actual.
                   </div>
                 )}
@@ -1052,7 +1081,7 @@ export default function PublicBioPage() {
                           <article
                             key={item.id}
                             className={`rounded-2xl border p-3 ${cardClass}`}
-                            style={{ borderColor: hexToRgba(colors.primary, 0.26), ...itemSurfaceStyle }}
+                            style={{ borderColor: "var(--carta-border)", ...itemSurfaceStyle }}
                           >
                             <div className="flex gap-3">
                               {item.imageUrl ? (
@@ -1074,7 +1103,7 @@ export default function PublicBioPage() {
                                     {item.title}
                                   </h4>
                                   {item.badge && (
-                                    <span className="rounded-full border px-2 py-1 text-[10px] font-black uppercase" style={interactiveStyle}>
+                                    <span className="rounded-full border px-2 py-1 text-[10px] font-black uppercase" style={badgeStyle}>
                                       {item.badge}
                                     </span>
                                   )}
@@ -1090,14 +1119,14 @@ export default function PublicBioPage() {
                                       S/{item.compareAtPrice}
                                     </span>
                                   )}
-                                  <span className="text-lg" style={{ color: textTone === "blackGold" ? textPalette.key : hexToRgba(colors.primary, 0.98) }}>
+                                  <span className="text-lg" style={{ color: "var(--carta-accent)" }}>
                                     S/{item.price}
                                   </span>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => addItemToCart(item, section.name)}
-                                  className={`mt-3 inline-flex items-center justify-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] transition ${buttonRadiusClass}`}
+                                  className={`mt-3 inline-flex items-center justify-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:-translate-y-0.5 active:scale-[0.98] ${buttonRadiusClass}`}
                                   style={interactiveStyle}
                                 >
                                   <ShoppingBag className="h-3.5 w-3.5" />
@@ -1116,12 +1145,12 @@ export default function PublicBioPage() {
           )}
 
           {activeTab === "location" && (
-            <section className={`h-full overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
+            <section className={`h-full overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
               <h2 className="hidden md:block text-2xl font-black" style={{ color: textPalette.heading }}>
                 {profile.sectionLabels.location}
               </h2>
 
-              <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: hexToRgba(colors.primary, 0.36) }}>
+              <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: "var(--carta-border)" }}>
                 {profile.location.mapEmbedUrl ? (
                   <iframe
                     title={`Mapa de ${profile.displayName}`}
@@ -1188,7 +1217,7 @@ export default function PublicBioPage() {
             <ShoppingBag className="h-4 w-4" />
             Pedido
             {cartItemsCount > 0 && (
-              <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-slate-900">
+              <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: "var(--carta-chip-active-bg)", color: "var(--carta-chip-active-text)" }}>
                 {cartItemsCount}
               </span>
             )}
@@ -1205,8 +1234,8 @@ export default function PublicBioPage() {
               className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
               style={
                 activeTab === "contact"
-                  ? interactiveStyle
-                  : { color: textPalette.inactive }
+                  ? navActiveStyle
+                  : { color: "var(--carta-nav-text)" }
               }
             >
               <div className="mx-auto mb-1 h-4 w-4">
@@ -1221,8 +1250,8 @@ export default function PublicBioPage() {
               className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
               style={
                 activeTab === "catalog"
-                  ? interactiveStyle
-                  : { color: textPalette.inactive }
+                  ? navActiveStyle
+                  : { color: "var(--carta-nav-text)" }
               }
             >
               <div className="mx-auto mb-1 h-4 w-4">
@@ -1237,8 +1266,8 @@ export default function PublicBioPage() {
               className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
               style={
                 activeTab === "location"
-                  ? interactiveStyle
-                  : { color: textPalette.inactive }
+                  ? navActiveStyle
+                  : { color: "var(--carta-nav-text)" }
               }
             >
               <div className="mx-auto mb-1 h-4 w-4">
@@ -1256,7 +1285,7 @@ export default function PublicBioPage() {
             className="mx-auto flex h-full w-full max-w-xl flex-col overflow-hidden rounded-3xl border"
             style={cartPanelStyle}
           >
-            <div className="border-b px-4 py-3 md:px-6" style={{ borderColor: hexToRgba(colors.primary, 0.24) }}>
+            <div className="border-b px-4 py-3 md:px-6" style={{ borderColor: "var(--carta-border)" }}>
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-3xl font-black leading-tight" style={{ color: textPalette.heading }}>
@@ -1275,9 +1304,9 @@ export default function PublicBioPage() {
                   }}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-full border"
                   style={{
-                    borderColor: hexToRgba(colors.primary, 0.35),
-                    color: textPalette.heading,
-                    background: "rgba(239,68,68,0.92)",
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-button-text)",
+                    background: "var(--carta-badge-bg)",
                   }}
                   aria-label="Cerrar carrito"
                 >
@@ -1290,7 +1319,7 @@ export default function PublicBioPage() {
               {checkoutStep === "cart" && (
                 <div className="space-y-4">
                   {cartItems.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed p-5 text-sm" style={{ borderColor: hexToRgba(colors.primary, 0.35), color: textPalette.muted }}>
+                    <div className="rounded-2xl border border-dashed p-5 text-sm" style={{ borderColor: "var(--carta-border)", color: textPalette.muted }}>
                       Tu carrito esta vacio. Agrega productos desde la carta para continuar.
                     </div>
                   ) : (
@@ -1301,13 +1330,13 @@ export default function PublicBioPage() {
                           <article
                             key={item.id}
                             className="rounded-2xl border p-3"
-                            style={{ borderColor: hexToRgba(colors.primary, 0.3), ...itemSurfaceStyle }}
+                            style={{ borderColor: "var(--carta-border)", ...itemSurfaceStyle }}
                           >
                             <div className="flex gap-3">
                               {item.imageUrl ? (
                                 <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-xl object-cover" />
                               ) : (
-                                <div className="h-20 w-20 rounded-xl border flex items-center justify-center text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.35) }}>
+                                <div className="h-20 w-20 rounded-xl border flex items-center justify-center text-xs font-bold" style={{ borderColor: "var(--carta-chip-border)" }}>
                                   ITEM
                                 </div>
                               )}
@@ -1320,7 +1349,7 @@ export default function PublicBioPage() {
                                     type="button"
                                     onClick={() => removeCartItem(item.id)}
                                     className="inline-flex h-8 w-8 items-center justify-center rounded-lg border"
-                                    style={{ borderColor: hexToRgba(colors.primary, 0.28), color: "#ef4444" }}
+                                    style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-badge-text)", background: "var(--carta-badge-bg)" }}
                                     aria-label="Eliminar item"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -1333,11 +1362,11 @@ export default function PublicBioPage() {
                                   Precio base: {formatSoles(item.unitPrice)}
                                 </p>
                                 <div className="mt-2 flex items-center justify-between gap-2">
-                                  <div className="inline-flex items-center gap-1 rounded-xl border px-1 py-1" style={{ borderColor: hexToRgba(colors.primary, 0.32) }}>
+                                  <div className="inline-flex items-center gap-1 rounded-xl border px-1 py-1" style={{ borderColor: "var(--carta-chip-border)" }}>
                                     <button
                                       type="button"
                                       className="inline-flex h-7 w-7 items-center justify-center rounded-md border"
-                                      style={{ borderColor: hexToRgba(colors.primary, 0.24) }}
+                                      style={{ borderColor: "var(--carta-chip-border)" }}
                                       onClick={() => patchCartItemQuantity(item.id, item.quantity - 1)}
                                       aria-label="Disminuir cantidad"
                                     >
@@ -1347,14 +1376,14 @@ export default function PublicBioPage() {
                                     <button
                                       type="button"
                                       className="inline-flex h-7 w-7 items-center justify-center rounded-md border"
-                                      style={{ borderColor: hexToRgba(colors.primary, 0.24) }}
+                                      style={{ borderColor: "var(--carta-chip-border)" }}
                                       onClick={() => patchCartItemQuantity(item.id, item.quantity + 1)}
                                       aria-label="Aumentar cantidad"
                                     >
                                       <Plus className="h-3.5 w-3.5" />
                                     </button>
                                   </div>
-                                  <p className="text-xl font-black" style={{ color: textTone === "blackGold" ? textPalette.key : hexToRgba(colors.primary, 0.95) }}>
+                                  <p className="text-xl font-black" style={{ color: "var(--carta-accent)" }}>
                                     {formatSoles(itemSubtotal)}
                                   </p>
                                 </div>
@@ -1364,22 +1393,22 @@ export default function PublicBioPage() {
                         );
                       })}
 
-                      <div className="rounded-2xl border p-4" style={{ borderColor: hexToRgba(colors.primary, 0.24), ...cardSurfaceStyle }}>
+                      <div className="rounded-2xl border p-4" style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
                         <p className="text-base font-semibold" style={{ color: textPalette.muted }}>
                           Subtotal: {formatSoles(cartSubtotal)}
                         </p>
                         <div
                           className="mt-3 rounded-xl px-3 py-3 text-sm font-semibold"
                           style={{
-                            background: `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.56)} 0%, ${hexToRgba(colors.secondary, 0.5)} 100%)`,
-                            color: "#f8fafc",
+                            background: "var(--carta-badge-bg)",
+                            color: "var(--carta-badge-text)",
                           }}
                         >
                           {amountToAutoDiscount > 0
                             ? `🎁 ¡Agrega ${formatSoles(amountToAutoDiscount)} mas para obtener 5% de descuento!`
                             : "🎉 ¡Excelente! Ya tienes 5% de descuento por monto acumulado."}
                         </div>
-                        <div className="mt-3 border-t pt-3 text-3xl font-black" style={{ borderColor: hexToRgba(colors.primary, 0.2), color: textPalette.heading }}>
+                        <div className="mt-3 border-t pt-3 text-3xl font-black" style={{ borderColor: "var(--carta-border)", color: textPalette.heading }}>
                           Total: {formatSoles(cartTotal)}
                         </div>
                       </div>
@@ -1396,7 +1425,7 @@ export default function PublicBioPage() {
                       type="button"
                       onClick={clearCart}
                       className={`border px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] ${buttonRadiusClass}`}
-                      style={{ borderColor: hexToRgba(colors.primary, 0.3), color: textPalette.heading }}
+                      style={{ borderColor: "var(--carta-border)", color: textPalette.heading }}
                     >
                       Vaciar carrito
                     </button>
@@ -1436,7 +1465,7 @@ export default function PublicBioPage() {
                       <input
                         value={customerName}
                         onChange={(event) => setCustomerName(event.target.value)}
-                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] placeholder:[color:var(--carta-placeholder)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
                         placeholder="Tu nombre completo"
                       />
@@ -1446,7 +1475,7 @@ export default function PublicBioPage() {
                       <input
                         value={customerPhone}
                         onChange={(event) => setCustomerPhone(event.target.value)}
-                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] placeholder:[color:var(--carta-placeholder)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
                         placeholder="999 999 999"
                       />
@@ -1456,7 +1485,7 @@ export default function PublicBioPage() {
                       <select
                         value={deliveryMethod}
                         onChange={(event) => setDeliveryMethod(event.target.value as DeliveryMethod)}
-                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
                       >
                         <option value="">Selecciona una opcion</option>
@@ -1470,7 +1499,7 @@ export default function PublicBioPage() {
                       <select
                         value={paymentMethod}
                         onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
-                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
                       >
                         <option value="">Selecciona una opcion</option>
@@ -1488,7 +1517,7 @@ export default function PublicBioPage() {
                         <input
                           value={couponInput}
                           onChange={(event) => setCouponInput(event.target.value)}
-                          className={`min-w-0 flex-1 border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                          className={`min-w-0 flex-1 border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] placeholder:[color:var(--carta-placeholder)] ${buttonRadiusClass}`}
                           style={checkoutInputStyle}
                           placeholder="Ingresa el codigo"
                         />
@@ -1503,13 +1532,13 @@ export default function PublicBioPage() {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl border p-4" style={{ borderColor: hexToRgba(colors.primary, 0.24), ...cardSurfaceStyle }}>
+                    <div className="rounded-2xl border p-4" style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
                       <p className="text-lg font-semibold" style={{ color: textPalette.heading }}>Resumen del pedido</p>
                       <div
                         className="mt-3 rounded-xl px-3 py-3 text-sm font-semibold"
                         style={{
-                          background: `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.56)} 0%, ${hexToRgba(colors.secondary, 0.5)} 100%)`,
-                          color: "#f8fafc",
+                          background: "var(--carta-badge-bg)",
+                          color: "var(--carta-badge-text)",
                         }}
                       >
                         {amountToAutoDiscount > 0
@@ -1534,7 +1563,7 @@ export default function PublicBioPage() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-3 border-t pt-3 text-2xl font-black" style={{ borderColor: hexToRgba(colors.primary, 0.2), color: textPalette.heading }}>
+                      <div className="mt-3 border-t pt-3 text-2xl font-black" style={{ borderColor: "var(--carta-border)", color: textPalette.heading }}>
                         Total: {formatSoles(cartTotal)}
                       </div>
                     </div>
@@ -1545,7 +1574,7 @@ export default function PublicBioPage() {
                         rows={3}
                         value={note}
                         onChange={(event) => setNote(event.target.value)}
-                        className={`w-full border px-3 py-3 text-sm focus:outline-none ${buttonRadiusClass}`}
+                        className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] placeholder:[color:var(--carta-placeholder)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
                         placeholder="Ejemplo: sin cebolla, tocar timbre, etc."
                       />
@@ -1563,7 +1592,7 @@ export default function PublicBioPage() {
                       </span>
                     </label>
 
-                    <div className="rounded-xl border-l-2 px-3 py-2 text-xs" style={{ borderColor: hexToRgba(colors.primary, 0.7), color: textPalette.muted }}>
+                    <div className="rounded-xl border-l-2 px-3 py-2 text-xs" style={{ borderColor: "var(--carta-accent)", color: textPalette.muted }}>
                       ℹ️ Importante: al enviar este pedido, se abrirá WhatsApp con el mensaje listo para confirmar.
                     </div>
 
@@ -1575,11 +1604,12 @@ export default function PublicBioPage() {
                     <button
                       type="button"
                       onClick={submitOrderWhatsapp}
-                      className={`inline-flex w-full items-center justify-center gap-2 border px-4 py-3 text-base font-black ${buttonRadiusClass}`}
+                      className={`inline-flex w-full items-center justify-center gap-2 border px-4 py-3 text-base font-black transition hover:-translate-y-0.5 active:scale-[0.98] ${buttonRadiusClass}`}
                       style={{
-                        borderColor: "rgba(34,197,94,0.55)",
-                        background: "linear-gradient(135deg, #16a34a 0%, #4ade80 100%)",
-                        color: "#ffffff",
+                        borderColor: "var(--carta-chip-border)",
+                        background: "var(--carta-button-bg)",
+                        color: "var(--carta-button-text)",
+                        boxShadow: "var(--carta-shadow)",
                       }}
                     >
                       <MessageCircleIcon className="h-5 w-5" />
@@ -1592,6 +1622,6 @@ export default function PublicBioPage() {
           </div>
         </div>
       )}
-    </div>
+    </CartaThemeProvider>
   );
 }

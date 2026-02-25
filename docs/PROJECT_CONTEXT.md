@@ -466,3 +466,31 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - inputs de checkout ajustados a apariencia dark para evitar bloques claros.
 - Resultado:
   - la pagina publica se mantiene alineada con el preview premium oscuro y con mejor percepcion deluxe.
+
+## Carta Theming Premium System (2026-02-25)
+
+- Nuevo modulo: `src/theme/cartaThemes.ts`
+  - sistema de design tokens para Carta Digital:
+    - `background`, `surface`, `surface2`
+    - `text`, `mutedText`
+    - `primary`, `primaryHover`, `primaryText`
+    - `accent`, `accentHover`
+    - `border`, `ring`, `shadow`
+    - `chip*`, `nav*`, `badge*`, `button*`, `input*`, `gradientHero`
+  - 8 presets premium:
+    - `gourmet`, `cafe`, `sushi`, `fastfood`
+    - `polleria_parrilla`, `healthy`, `desserts`, `bar_drinks`
+  - mapeo de rubro a tema default: `DEFAULT_THEME_BY_RUBRO`
+  - helper de recomendacion: `recommendCartaThemeIdByRubro`
+- Nuevo provider: `src/theme/CartaThemeProvider.tsx`
+  - aplica tokens como CSS variables en contenedor de carta publica.
+- Persistencia:
+  - `LinkHubProfile` incluye `cartaThemeId`
+  - normalizacion y defaults actualizados para sugerencia automatica por rubro
+  - se guarda en `link_profiles/{uid}`.
+- UI dashboard `/linkhub`:
+  - selector de tema de carta con preview mini en vivo.
+  - accion `Sugerir por rubro`.
+- UI publica `/bio/[slug]`:
+  - migracion de chips, menu inferior, botones, buscador, cards, badges, header y checkout a variables de tema.
+  - microinteracciones estandarizadas (hover/active/focus) con look premium.

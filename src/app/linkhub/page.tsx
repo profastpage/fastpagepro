@@ -39,6 +39,13 @@ import {
   MAX_LINK_HUB_LINKS,
 } from "@/lib/linkHubProfile";
 import { isThemeAllowedForPlan } from "@/lib/permissions";
+import {
+  CARTA_THEME_OPTIONS,
+  CartaThemeId,
+  getCartaTheme,
+  getSafeCartaThemeId,
+  recommendCartaThemeIdByRubro,
+} from "@/theme/cartaThemes";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import {
@@ -559,6 +566,15 @@ export default function LinkHubPage() {
   const catalogLabel =
     profile?.businessType === "restaurant" ? profile?.sectionLabels.menu : profile?.sectionLabels.catalog;
 
+  const resolvedCartaThemeId = useMemo(() => {
+    const rubroHint =
+      profile?.categoryLabel ||
+      (profile?.businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General");
+    return getSafeCartaThemeId(profile?.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint));
+  }, [profile?.businessType, profile?.cartaThemeId, profile?.categoryLabel]);
+
+  const activeCartaTheme = useMemo(() => getCartaTheme(resolvedCartaThemeId), [resolvedCartaThemeId]);
+
   const previewItems = useMemo(() => {
     if (!profile) return [];
     return profile.catalogItems.filter((item) => {
@@ -762,9 +778,13 @@ export default function LinkHubPage() {
       const allowedThemes = LINK_HUB_THEME_CATEGORY_MAP[nextThemeCategory];
       const nextTheme = allowedThemes.includes(prev.theme) ? prev.theme : allowedThemes[0];
       const nextPreset = LINK_HUB_THEME_STYLES[nextTheme];
+      const recommendedCartaThemeId = recommendCartaThemeIdByRubro(
+        nextType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General",
+      );
       const baseNext = {
         ...prev,
         businessType: nextType,
+        cartaThemeId: prev.cartaThemeId || recommendedCartaThemeId,
         themeCategory: nextThemeCategory,
         sectionLabels: {
           ...prev.sectionLabels,
@@ -2167,6 +2187,78 @@ export default function LinkHubPage() {
                 ({availableThemeKeys.length} temas exclusivos)
               </p>
 
+              <div className="mb-5 rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_0.9fr]">
+                  <label className="space-y-2">
+                    <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">
+                      Tema premium de carta (menu)
+                    </span>
+                    <select
+                      className="w-full rounded-xl border border-white/15 bg-zinc-900/85 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-300/40"
+                      value={resolvedCartaThemeId}
+                      onChange={(event) => patchProfile("cartaThemeId", event.target.value as CartaThemeId)}
+                    >
+                      {CARTA_THEME_OPTIONS.map((themeOption) => (
+                        <option key={themeOption.id} value={themeOption.id}>
+                          {themeOption.name} - {themeOption.rubro}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-zinc-400">
+                      Se aplica en la pagina publicada: header, chips, tarjetas, botones y barra inferior.
+                    </p>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-100 hover:border-amber-300/40 hover:text-amber-100"
+                      onClick={() =>
+                        patchProfile(
+                          "cartaThemeId",
+                          recommendCartaThemeIdByRubro(
+                            profile.categoryLabel ||
+                              (profile.businessType === "restaurant"
+                                ? "Restaurante / Cafeteria"
+                                : "Tienda / General"),
+                          ),
+                        )
+                      }
+                    >
+                      Sugerir por rubro
+                    </button>
+                  </label>
+
+                  <div className="rounded-2xl border p-3" style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.surface }}>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: activeCartaTheme.tokens.mutedText }}>
+                      Preview tema carta
+                    </p>
+                    <div className="mt-2 rounded-xl border px-3 py-2 text-sm font-semibold" style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.gradientHero, color: activeCartaTheme.tokens.text }}>
+                      {activeCartaTheme.name}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span className="rounded-full border px-3 py-1 text-[11px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipBg, color: activeCartaTheme.tokens.chipText }}>
+                        Ceviches
+                      </span>
+                      <span className="rounded-full border px-3 py-1 text-[11px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipActiveBg, color: activeCartaTheme.tokens.chipActiveText }}>
+                        Sudados
+                      </span>
+                    </div>
+                    <div className="mt-2 rounded-xl border px-3 py-2 text-sm font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.buttonBg, color: activeCartaTheme.tokens.buttonText }}>
+                      Agregar al carrito
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-1 rounded-xl border p-1" style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.navBg }}>
+                      <span className="rounded-lg px-2 py-1 text-center text-[10px] font-bold" style={{ background: activeCartaTheme.tokens.navActiveBg, color: activeCartaTheme.tokens.navActiveText }}>
+                        Contacto
+                      </span>
+                      <span className="rounded-lg px-2 py-1 text-center text-[10px] font-bold" style={{ color: activeCartaTheme.tokens.navText }}>
+                        Carta
+                      </span>
+                      <span className="rounded-lg px-2 py-1 text-center text-[10px] font-bold" style={{ color: activeCartaTheme.tokens.navText }}>
+                        Ubicacion
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {availableThemeKeys.map((themeKey, index) => {
                   const theme = LINK_HUB_THEME_STYLES[themeKey];
@@ -2539,6 +2631,26 @@ export default function LinkHubPage() {
                       </div>
                     );
                   })}
+                </div>
+
+                <div
+                  className="mt-5 rounded-xl border p-3"
+                  style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.surface2 }}
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: activeCartaTheme.tokens.mutedText }}>
+                    Carta Theme
+                  </p>
+                  <p className="mt-1 text-xs font-semibold" style={{ color: activeCartaTheme.tokens.text }}>
+                    {activeCartaTheme.name}
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <span className="rounded-full border px-2 py-1 text-[10px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipBg, color: activeCartaTheme.tokens.chipText }}>
+                      Categoria
+                    </span>
+                    <span className="rounded-full border px-2 py-1 text-[10px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipActiveBg, color: activeCartaTheme.tokens.chipActiveText }}>
+                      Activa
+                    </span>
+                  </div>
                 </div>
 
                 {publicUrl && (

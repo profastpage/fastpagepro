@@ -1,0 +1,460 @@
+export type CartaThemeTokens = {
+  background: string;
+  surface: string;
+  surface2: string;
+  text: string;
+  mutedText: string;
+  primary: string;
+  primaryHover: string;
+  primaryText: string;
+  accent: string;
+  accentHover: string;
+  border: string;
+  ring: string;
+  shadow: string;
+  chipBg: string;
+  chipText: string;
+  chipActiveBg: string;
+  chipActiveText: string;
+  chipBorder: string;
+  navBg: string;
+  navActiveBg: string;
+  navActiveText: string;
+  navText: string;
+  badgeBg: string;
+  badgeText: string;
+  buttonBg: string;
+  buttonText: string;
+  buttonSecondaryBg: string;
+  inputBg: string;
+  inputText: string;
+  placeholder: string;
+  inputBorder: string;
+  gradientHero: string;
+};
+
+export type CartaThemePreset = {
+  id: string;
+  name: string;
+  rubro: string;
+  tokens: CartaThemeTokens;
+};
+
+export const CARTA_THEMES = {
+  gourmet: {
+    id: "gourmet",
+    name: "Gourmet Noir",
+    rubro: "Gourmet / Fine Dining",
+    tokens: {
+      background: "#05070d",
+      surface: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(250,204,21,0.08) 34%, rgba(3,7,18,0.92) 100%)",
+      surface2: "linear-gradient(145deg, rgba(2,6,23,0.95) 0%, rgba(180,83,9,0.16) 100%)",
+      text: "#f8fafc",
+      mutedText: "#cbd5e1",
+      primary: "#d4a84f",
+      primaryHover: "#e4bf70",
+      primaryText: "#0b1220",
+      accent: "#b45309",
+      accentHover: "#c66a1a",
+      border: "rgba(212,168,79,0.34)",
+      ring: "rgba(212,168,79,0.46)",
+      shadow: "0 18px 36px -24px rgba(212,168,79,0.55)",
+      chipBg: "rgba(12,18,30,0.88)",
+      chipText: "#e2e8f0",
+      chipActiveBg: "linear-gradient(130deg, rgba(212,168,79,0.34) 0%, rgba(180,83,9,0.26) 100%)",
+      chipActiveText: "#fff7ed",
+      chipBorder: "rgba(212,168,79,0.42)",
+      navBg: "linear-gradient(120deg, rgba(3,7,18,0.95) 0%, rgba(10,15,27,0.95) 100%)",
+      navActiveBg: "linear-gradient(125deg, rgba(212,168,79,0.34) 0%, rgba(180,83,9,0.28) 100%)",
+      navActiveText: "#fff7ed",
+      navText: "#cbd5e1",
+      badgeBg: "linear-gradient(120deg, rgba(127,29,29,0.9) 0%, rgba(212,168,79,0.36) 100%)",
+      badgeText: "#fef2f2",
+      buttonBg: "linear-gradient(130deg, rgba(212,168,79,0.34) 0%, rgba(180,83,9,0.3) 100%)",
+      buttonText: "#fff7ed",
+      buttonSecondaryBg: "rgba(11,18,32,0.88)",
+      inputBg: "rgba(9,14,26,0.86)",
+      inputText: "#f8fafc",
+      placeholder: "#94a3b8",
+      inputBorder: "rgba(212,168,79,0.34)",
+      gradientHero: "linear-gradient(120deg, rgba(3,7,18,0.96) 0%, rgba(212,168,79,0.22) 42%, rgba(180,83,9,0.2) 100%)",
+    },
+  },
+  cafe: {
+    id: "cafe",
+    name: "Cafe Crema",
+    rubro: "Cafe / Bakery",
+    tokens: {
+      background: "#f5ede2",
+      surface: "linear-gradient(150deg, rgba(255,255,255,0.88) 0%, rgba(210,180,140,0.2) 100%)",
+      surface2: "linear-gradient(140deg, rgba(255,255,255,0.95) 0%, rgba(205,133,63,0.18) 100%)",
+      text: "#3a281f",
+      mutedText: "#6c5648",
+      primary: "#6f4e37",
+      primaryHover: "#5b3f2d",
+      primaryText: "#fff7ed",
+      accent: "#b86f50",
+      accentHover: "#9f5f45",
+      border: "rgba(111,78,55,0.24)",
+      ring: "rgba(111,78,55,0.38)",
+      shadow: "0 16px 30px -24px rgba(111,78,55,0.35)",
+      chipBg: "rgba(255,250,244,0.92)",
+      chipText: "#4a3226",
+      chipActiveBg: "linear-gradient(130deg, rgba(111,78,55,0.92) 0%, rgba(91,63,45,0.9) 100%)",
+      chipActiveText: "#fff7ed",
+      chipBorder: "rgba(111,78,55,0.26)",
+      navBg: "linear-gradient(120deg, rgba(255,249,242,0.92) 0%, rgba(241,226,206,0.92) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(111,78,55,0.9) 0%, rgba(91,63,45,0.88) 100%)",
+      navActiveText: "#fff7ed",
+      navText: "#6c5648",
+      badgeBg: "linear-gradient(120deg, rgba(184,111,80,0.92) 0%, rgba(111,78,55,0.84) 100%)",
+      badgeText: "#fff7ed",
+      buttonBg: "linear-gradient(130deg, rgba(111,78,55,0.92) 0%, rgba(91,63,45,0.9) 100%)",
+      buttonText: "#fff7ed",
+      buttonSecondaryBg: "rgba(111,78,55,0.12)",
+      inputBg: "rgba(255,252,247,0.92)",
+      inputText: "#3a281f",
+      placeholder: "#8b6e5c",
+      inputBorder: "rgba(111,78,55,0.24)",
+      gradientHero: "linear-gradient(120deg, rgba(255,248,238,0.95) 0%, rgba(210,180,140,0.38) 45%, rgba(184,111,80,0.28) 100%)",
+    },
+  },
+  sushi: {
+    id: "sushi",
+    name: "Sushi Noir",
+    rubro: "Sushi / Asian",
+    tokens: {
+      background: "#08090c",
+      surface: "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(185,28,28,0.16) 42%, rgba(10,10,10,0.92) 100%)",
+      surface2: "linear-gradient(145deg, rgba(10,10,10,0.95) 0%, rgba(153,27,27,0.18) 100%)",
+      text: "#f5f5f4",
+      mutedText: "#d6d3d1",
+      primary: "#b91c1c",
+      primaryHover: "#991b1b",
+      primaryText: "#fff7ed",
+      accent: "#f1f5f9",
+      accentHover: "#e2e8f0",
+      border: "rgba(185,28,28,0.34)",
+      ring: "rgba(185,28,28,0.46)",
+      shadow: "0 18px 36px -24px rgba(185,28,28,0.45)",
+      chipBg: "rgba(24,24,27,0.9)",
+      chipText: "#e7e5e4",
+      chipActiveBg: "linear-gradient(130deg, rgba(185,28,28,0.9) 0%, rgba(127,29,29,0.84) 100%)",
+      chipActiveText: "#fff7ed",
+      chipBorder: "rgba(185,28,28,0.38)",
+      navBg: "linear-gradient(120deg, rgba(9,9,11,0.95) 0%, rgba(24,24,27,0.95) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(185,28,28,0.86) 0%, rgba(127,29,29,0.84) 100%)",
+      navActiveText: "#fff7ed",
+      navText: "#d6d3d1",
+      badgeBg: "linear-gradient(120deg, rgba(185,28,28,0.95) 0%, rgba(239,68,68,0.8) 100%)",
+      badgeText: "#fff5f5",
+      buttonBg: "linear-gradient(130deg, rgba(185,28,28,0.9) 0%, rgba(127,29,29,0.88) 100%)",
+      buttonText: "#fff7ed",
+      buttonSecondaryBg: "rgba(24,24,27,0.88)",
+      inputBg: "rgba(24,24,27,0.9)",
+      inputText: "#f5f5f4",
+      placeholder: "#a8a29e",
+      inputBorder: "rgba(185,28,28,0.32)",
+      gradientHero: "linear-gradient(120deg, rgba(9,9,11,0.96) 0%, rgba(185,28,28,0.24) 45%, rgba(245,245,244,0.08) 100%)",
+    },
+  },
+  fastfood: {
+    id: "fastfood",
+    name: "Fast Food Prime",
+    rubro: "Fast Food / Burger",
+    tokens: {
+      background: "#11151b",
+      surface: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(251,146,60,0.18) 44%, rgba(15,23,42,0.92) 100%)",
+      surface2: "linear-gradient(145deg, rgba(30,41,59,0.94) 0%, rgba(251,191,36,0.16) 100%)",
+      text: "#f8fafc",
+      mutedText: "#cbd5e1",
+      primary: "#f97316",
+      primaryHover: "#ea580c",
+      primaryText: "#fff7ed",
+      accent: "#fbbf24",
+      accentHover: "#f59e0b",
+      border: "rgba(249,115,22,0.34)",
+      ring: "rgba(249,115,22,0.46)",
+      shadow: "0 18px 36px -24px rgba(249,115,22,0.45)",
+      chipBg: "rgba(15,23,42,0.88)",
+      chipText: "#f1f5f9",
+      chipActiveBg: "linear-gradient(130deg, rgba(249,115,22,0.9) 0%, rgba(245,158,11,0.84) 100%)",
+      chipActiveText: "#fff7ed",
+      chipBorder: "rgba(249,115,22,0.38)",
+      navBg: "linear-gradient(120deg, rgba(15,23,42,0.96) 0%, rgba(30,41,59,0.95) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(249,115,22,0.9) 0%, rgba(245,158,11,0.84) 100%)",
+      navActiveText: "#fff7ed",
+      navText: "#cbd5e1",
+      badgeBg: "linear-gradient(120deg, rgba(220,38,38,0.92) 0%, rgba(249,115,22,0.84) 100%)",
+      badgeText: "#fff7ed",
+      buttonBg: "linear-gradient(130deg, rgba(249,115,22,0.9) 0%, rgba(245,158,11,0.84) 100%)",
+      buttonText: "#fff7ed",
+      buttonSecondaryBg: "rgba(15,23,42,0.88)",
+      inputBg: "rgba(15,23,42,0.88)",
+      inputText: "#f8fafc",
+      placeholder: "#94a3b8",
+      inputBorder: "rgba(249,115,22,0.32)",
+      gradientHero: "linear-gradient(120deg, rgba(15,23,42,0.95) 0%, rgba(249,115,22,0.24) 48%, rgba(251,191,36,0.2) 100%)",
+    },
+  },
+  polleria_parrilla: {
+    id: "polleria_parrilla",
+    name: "Parrilla Carbon",
+    rubro: "Polleria / Parrilla",
+    tokens: {
+      background: "#080a0d",
+      surface: "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(245,158,11,0.16) 40%, rgba(10,10,10,0.95) 100%)",
+      surface2: "linear-gradient(145deg, rgba(15,23,42,0.95) 0%, rgba(217,119,6,0.18) 100%)",
+      text: "#f8fafc",
+      mutedText: "#d1d5db",
+      primary: "#f59e0b",
+      primaryHover: "#d97706",
+      primaryText: "#fff7ed",
+      accent: "#b91c1c",
+      accentHover: "#991b1b",
+      border: "rgba(245,158,11,0.34)",
+      ring: "rgba(245,158,11,0.46)",
+      shadow: "0 18px 36px -24px rgba(245,158,11,0.46)",
+      chipBg: "rgba(17,24,39,0.9)",
+      chipText: "#f3f4f6",
+      chipActiveBg: "linear-gradient(130deg, rgba(245,158,11,0.9) 0%, rgba(217,119,6,0.86) 100%)",
+      chipActiveText: "#fff7ed",
+      chipBorder: "rgba(245,158,11,0.38)",
+      navBg: "linear-gradient(120deg, rgba(3,7,18,0.96) 0%, rgba(17,24,39,0.95) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(245,158,11,0.88) 0%, rgba(217,119,6,0.84) 100%)",
+      navActiveText: "#fff7ed",
+      navText: "#d1d5db",
+      badgeBg: "linear-gradient(120deg, rgba(185,28,28,0.9) 0%, rgba(127,29,29,0.84) 100%)",
+      badgeText: "#fef2f2",
+      buttonBg: "linear-gradient(130deg, rgba(245,158,11,0.9) 0%, rgba(217,119,6,0.84) 100%)",
+      buttonText: "#fff7ed",
+      buttonSecondaryBg: "rgba(17,24,39,0.9)",
+      inputBg: "rgba(17,24,39,0.9)",
+      inputText: "#f8fafc",
+      placeholder: "#9ca3af",
+      inputBorder: "rgba(245,158,11,0.32)",
+      gradientHero: "linear-gradient(120deg, rgba(3,7,18,0.96) 0%, rgba(245,158,11,0.22) 44%, rgba(185,28,28,0.18) 100%)",
+    },
+  },
+  healthy: {
+    id: "healthy",
+    name: "Healthy Forest",
+    rubro: "Healthy / Vegano",
+    tokens: {
+      background: "#f7faf8",
+      surface: "linear-gradient(155deg, rgba(255,255,255,0.95) 0%, rgba(22,163,74,0.08) 100%)",
+      surface2: "linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(132,204,22,0.12) 100%)",
+      text: "#1f2937",
+      mutedText: "#4b5563",
+      primary: "#166534",
+      primaryHover: "#14532d",
+      primaryText: "#f0fdf4",
+      accent: "#84cc16",
+      accentHover: "#65a30d",
+      border: "rgba(22,101,52,0.24)",
+      ring: "rgba(22,101,52,0.34)",
+      shadow: "0 16px 30px -24px rgba(22,101,52,0.34)",
+      chipBg: "rgba(255,255,255,0.95)",
+      chipText: "#1f2937",
+      chipActiveBg: "linear-gradient(130deg, rgba(22,101,52,0.92) 0%, rgba(21,128,61,0.9) 100%)",
+      chipActiveText: "#f0fdf4",
+      chipBorder: "rgba(22,101,52,0.24)",
+      navBg: "linear-gradient(120deg, rgba(255,255,255,0.94) 0%, rgba(240,253,244,0.94) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(22,101,52,0.9) 0%, rgba(21,128,61,0.88) 100%)",
+      navActiveText: "#f0fdf4",
+      navText: "#4b5563",
+      badgeBg: "linear-gradient(120deg, rgba(101,163,13,0.9) 0%, rgba(22,101,52,0.82) 100%)",
+      badgeText: "#f7fee7",
+      buttonBg: "linear-gradient(130deg, rgba(22,101,52,0.9) 0%, rgba(21,128,61,0.88) 100%)",
+      buttonText: "#f0fdf4",
+      buttonSecondaryBg: "rgba(22,101,52,0.1)",
+      inputBg: "rgba(255,255,255,0.96)",
+      inputText: "#1f2937",
+      placeholder: "#6b7280",
+      inputBorder: "rgba(22,101,52,0.2)",
+      gradientHero: "linear-gradient(120deg, rgba(255,255,255,0.98) 0%, rgba(22,163,74,0.14) 48%, rgba(132,204,22,0.12) 100%)",
+    },
+  },
+  desserts: {
+    id: "desserts",
+    name: "Desserts Velvet",
+    rubro: "Postres / Heladeria",
+    tokens: {
+      background: "#fff5f7",
+      surface: "linear-gradient(155deg, rgba(255,255,255,0.96) 0%, rgba(244,114,182,0.12) 100%)",
+      surface2: "linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(210,105,30,0.1) 100%)",
+      text: "#4a1d2b",
+      mutedText: "#7a4b58",
+      primary: "#be185d",
+      primaryHover: "#9d174d",
+      primaryText: "#fff1f2",
+      accent: "#a16207",
+      accentHover: "#854d0e",
+      border: "rgba(190,24,93,0.24)",
+      ring: "rgba(190,24,93,0.34)",
+      shadow: "0 16px 30px -24px rgba(190,24,93,0.34)",
+      chipBg: "rgba(255,255,255,0.95)",
+      chipText: "#4a1d2b",
+      chipActiveBg: "linear-gradient(130deg, rgba(190,24,93,0.9) 0%, rgba(244,114,182,0.84) 100%)",
+      chipActiveText: "#fff1f2",
+      chipBorder: "rgba(190,24,93,0.24)",
+      navBg: "linear-gradient(120deg, rgba(255,255,255,0.95) 0%, rgba(255,241,242,0.95) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(190,24,93,0.9) 0%, rgba(244,114,182,0.84) 100%)",
+      navActiveText: "#fff1f2",
+      navText: "#7a4b58",
+      badgeBg: "linear-gradient(120deg, rgba(161,98,7,0.9) 0%, rgba(190,24,93,0.8) 100%)",
+      badgeText: "#fff7ed",
+      buttonBg: "linear-gradient(130deg, rgba(190,24,93,0.9) 0%, rgba(244,114,182,0.84) 100%)",
+      buttonText: "#fff1f2",
+      buttonSecondaryBg: "rgba(190,24,93,0.1)",
+      inputBg: "rgba(255,255,255,0.96)",
+      inputText: "#4a1d2b",
+      placeholder: "#8b5e67",
+      inputBorder: "rgba(190,24,93,0.2)",
+      gradientHero: "linear-gradient(120deg, rgba(255,255,255,0.98) 0%, rgba(244,114,182,0.18) 48%, rgba(161,98,7,0.12) 100%)",
+    },
+  },
+  bar_drinks: {
+    id: "bar_drinks",
+    name: "Bar Midnight",
+    rubro: "Bar / Drinks",
+    tokens: {
+      background: "#050711",
+      surface: "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(124,58,237,0.18) 44%, rgba(4,10,24,0.94) 100%)",
+      surface2: "linear-gradient(145deg, rgba(2,6,23,0.95) 0%, rgba(14,116,144,0.16) 100%)",
+      text: "#e2e8f0",
+      mutedText: "#a5b4fc",
+      primary: "#7c3aed",
+      primaryHover: "#6d28d9",
+      primaryText: "#eef2ff",
+      accent: "#0891b2",
+      accentHover: "#0e7490",
+      border: "rgba(124,58,237,0.3)",
+      ring: "rgba(124,58,237,0.44)",
+      shadow: "0 18px 36px -24px rgba(124,58,237,0.44)",
+      chipBg: "rgba(2,6,23,0.9)",
+      chipText: "#c7d2fe",
+      chipActiveBg: "linear-gradient(130deg, rgba(124,58,237,0.9) 0%, rgba(8,145,178,0.82) 100%)",
+      chipActiveText: "#eef2ff",
+      chipBorder: "rgba(124,58,237,0.34)",
+      navBg: "linear-gradient(120deg, rgba(2,6,23,0.95) 0%, rgba(15,23,42,0.95) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(124,58,237,0.9) 0%, rgba(8,145,178,0.82) 100%)",
+      navActiveText: "#eef2ff",
+      navText: "#a5b4fc",
+      badgeBg: "linear-gradient(120deg, rgba(30,64,175,0.9) 0%, rgba(124,58,237,0.82) 100%)",
+      badgeText: "#eef2ff",
+      buttonBg: "linear-gradient(130deg, rgba(124,58,237,0.9) 0%, rgba(8,145,178,0.82) 100%)",
+      buttonText: "#eef2ff",
+      buttonSecondaryBg: "rgba(2,6,23,0.88)",
+      inputBg: "rgba(2,6,23,0.88)",
+      inputText: "#e2e8f0",
+      placeholder: "#94a3b8",
+      inputBorder: "rgba(124,58,237,0.3)",
+      gradientHero: "linear-gradient(120deg, rgba(2,6,23,0.96) 0%, rgba(124,58,237,0.22) 42%, rgba(8,145,178,0.18) 100%)",
+    },
+  },
+} as const satisfies Record<string, CartaThemePreset>;
+
+export type CartaThemeId = keyof typeof CARTA_THEMES;
+
+export const DEFAULT_THEME_BY_RUBRO: Record<string, CartaThemeId> = {
+  "Gourmet / Fine Dining": "gourmet",
+  "Cafe / Bakery": "cafe",
+  "Sushi / Asian": "sushi",
+  "Fast Food / Burger": "fastfood",
+  "Polleria / Parrilla": "polleria_parrilla",
+  "Healthy / Vegano": "healthy",
+  "Postres / Heladeria": "desserts",
+  "Bar / Drinks": "bar_drinks",
+  "Restaurante / Cafeteria": "cafe",
+  "Tienda / General": "gourmet",
+};
+
+export const CARTA_THEME_OPTIONS = Object.values(CARTA_THEMES).map((theme) => ({
+  id: theme.id as CartaThemeId,
+  name: theme.name,
+  rubro: theme.rubro,
+  preview: [theme.tokens.primary, theme.tokens.accent, theme.tokens.background],
+}));
+
+export function getSafeCartaThemeId(value?: string | null): CartaThemeId {
+  if (!value) return "gourmet";
+  if (value in CARTA_THEMES) return value as CartaThemeId;
+  return "gourmet";
+}
+
+export function getCartaTheme(themeId?: string | null): CartaThemePreset {
+  return CARTA_THEMES[getSafeCartaThemeId(themeId)];
+}
+
+export function recommendCartaThemeIdByRubro(rubro?: string | null): CartaThemeId {
+  const source = String(rubro || "").toLowerCase().trim();
+  if (!source) return "gourmet";
+
+  const direct = DEFAULT_THEME_BY_RUBRO[rubro || ""];
+  if (direct) return direct;
+
+  if (source.includes("sushi") || source.includes("asian") || source.includes("nikkei") || source.includes("ramen")) {
+    return "sushi";
+  }
+  if (source.includes("cafe") || source.includes("cafeteria") || source.includes("bakery") || source.includes("panader")) {
+    return "cafe";
+  }
+  if (source.includes("burger") || source.includes("fast") || source.includes("hamburg")) {
+    return "fastfood";
+  }
+  if (source.includes("polleria") || source.includes("parrilla") || source.includes("brasa") || source.includes("grill")) {
+    return "polleria_parrilla";
+  }
+  if (source.includes("vegan") || source.includes("vegano") || source.includes("healthy") || source.includes("salud")) {
+    return "healthy";
+  }
+  if (source.includes("postre") || source.includes("helad") || source.includes("dessert") || source.includes("pasteler")) {
+    return "desserts";
+  }
+  if (source.includes("bar") || source.includes("drink") || source.includes("cocktail") || source.includes("coctel")) {
+    return "bar_drinks";
+  }
+  if (source.includes("gourmet") || source.includes("fine")) {
+    return "gourmet";
+  }
+  return "gourmet";
+}
+
+export function buildCartaThemeCssVars(themeId?: string | null): Record<string, string> {
+  const { tokens } = getCartaTheme(themeId);
+  return {
+    "--carta-bg": tokens.background,
+    "--carta-surface": tokens.surface,
+    "--carta-surface-2": tokens.surface2,
+    "--carta-text": tokens.text,
+    "--carta-muted-text": tokens.mutedText,
+    "--carta-primary": tokens.primary,
+    "--carta-primary-hover": tokens.primaryHover,
+    "--carta-primary-text": tokens.primaryText,
+    "--carta-accent": tokens.accent,
+    "--carta-accent-hover": tokens.accentHover,
+    "--carta-border": tokens.border,
+    "--carta-ring": tokens.ring,
+    "--carta-shadow": tokens.shadow,
+    "--carta-chip-bg": tokens.chipBg,
+    "--carta-chip-text": tokens.chipText,
+    "--carta-chip-active-bg": tokens.chipActiveBg,
+    "--carta-chip-active-text": tokens.chipActiveText,
+    "--carta-chip-border": tokens.chipBorder,
+    "--carta-nav-bg": tokens.navBg,
+    "--carta-nav-active-bg": tokens.navActiveBg,
+    "--carta-nav-active-text": tokens.navActiveText,
+    "--carta-nav-text": tokens.navText,
+    "--carta-badge-bg": tokens.badgeBg,
+    "--carta-badge-text": tokens.badgeText,
+    "--carta-button-bg": tokens.buttonBg,
+    "--carta-button-text": tokens.buttonText,
+    "--carta-button-secondary-bg": tokens.buttonSecondaryBg,
+    "--carta-input-bg": tokens.inputBg,
+    "--carta-input-text": tokens.inputText,
+    "--carta-placeholder": tokens.placeholder,
+    "--carta-input-border": tokens.inputBorder,
+    "--carta-gradient-hero": tokens.gradientHero,
+  };
+}

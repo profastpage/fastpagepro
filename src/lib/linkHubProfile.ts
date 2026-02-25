@@ -9,6 +9,11 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
+import {
+  CartaThemeId,
+  getSafeCartaThemeId,
+  recommendCartaThemeIdByRubro,
+} from "@/theme/cartaThemes";
 
 export const LINK_HUB_COLLECTION = "link_profiles";
 export const MAX_LINK_HUB_LINKS = 12;
@@ -370,6 +375,7 @@ export interface LinkHubProfile {
   buttonShape: LinkHubButtonShape;
   cardStyle: LinkHubCardStyle;
   textTone: LinkHubTextTone;
+  cartaThemeId: CartaThemeId;
   sectionLabels: LinkHubSectionLabels;
   theme: LinkHubTheme;
   themePrimaryColor?: string;
@@ -819,6 +825,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
   const baseTheme = LINK_HUB_THEME_STYLES.midnight;
   const businessType: LinkHubBusinessType = "restaurant";
   const categories = createDefaultCatalogCategories(businessType);
+  const rubroHint = businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General";
 
   return {
     userId: safeText(user.uid),
@@ -837,6 +844,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     buttonShape: "rounded",
     cardStyle: "glass",
     textTone: "white",
+    cartaThemeId: recommendCartaThemeIdByRubro(rubroHint),
     sectionLabels: getDefaultLinkHubSectionLabels(),
     theme: "midnight",
     themePrimaryColor: baseTheme.primary,
@@ -1005,6 +1013,12 @@ export function normalizeLinkHubProfile(
 
   const safeTheme = getSafeLinkHubTheme(safeText(input.theme) || base.theme);
   const themePreset = LINK_HUB_THEME_STYLES[safeTheme] || LINK_HUB_THEME_STYLES.midnight;
+  const rubroHint =
+    safeText(input.categoryLabel) ||
+    (businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General");
+  const cartaThemeId = getSafeCartaThemeId(
+    safeText((input as Record<string, unknown>)["cartaThemeId"]) || recommendCartaThemeIdByRubro(rubroHint),
+  );
   const colors = getLinkHubThemeColors(
     safeTheme,
     safeText(input.themePrimaryColor) || themePreset.primary,
@@ -1046,6 +1060,7 @@ export function normalizeLinkHubProfile(
     buttonShape: getSafeLinkHubButtonShape(safeText(input.buttonShape) || base.buttonShape),
     cardStyle: getSafeLinkHubCardStyle(safeText(input.cardStyle) || base.cardStyle),
     textTone: getSafeLinkHubTextTone(safeText(input.textTone) || base.textTone),
+    cartaThemeId,
     sectionLabels,
     theme: safeTheme,
     themePrimaryColor: colors.primary,
