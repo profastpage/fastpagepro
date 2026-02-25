@@ -7,11 +7,13 @@ import { db } from "@/lib/firebase";
 import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
+import { resolveStoreSlug, sanitizeStoreSlug } from "@/lib/publicStorefront";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
 import {
   ArrowLeft,
   CheckCircle,
   DollarSign,
+  ExternalLink,
   FileText,
   Loader2,
   Monitor,
@@ -579,7 +581,17 @@ export default function StoreBuilderPage() {
         if (data?.userId && data.userId !== user.uid) {
           throw new Error("No tienes permisos para abrir este proyecto.");
         }
-        if (data?.storeConfig) setConfig(data.storeConfig as StoreConfig);
+        if (data?.storeConfig) {
+          const loadedConfig = data.storeConfig as StoreConfig;
+          const resolvedLoadedSlug = sanitizeStoreSlug(
+            String((loadedConfig as any)?.storeSlug || data?.storeSlug || ""),
+          );
+          setConfig(
+            resolvedLoadedSlug
+              ? { ...loadedConfig, storeSlug: resolvedLoadedSlug }
+              : loadedConfig,
+          );
+        }
         if (Array.isArray(data?.storeProducts)) {
           setProducts(data.storeProducts as StoreProduct[]);
         }
@@ -621,6 +633,11 @@ export default function StoreBuilderPage() {
     }, 50);
     return () => clearTimeout(t);
   }, [viewMode, projectId]);
+
+  const publicStoreSlug = useMemo(
+    () => resolveStoreSlug(config, projectId || "draft"),
+    [config, projectId],
+  );
 
   const storefrontHtml = useMemo(() => {
     const id = projectId || "draft";
@@ -796,6 +813,8 @@ export default function StoreBuilderPage() {
       }
 
       const id = projectId || newId();
+      const storeSlug = resolveStoreSlug(config, id);
+      const nextConfig = config.storeSlug === storeSlug ? config : { ...config, storeSlug };
       const now = Date.now();
       const htmlToStore = publishNow
         ? injectMetricsTracking(storefrontHtml, id)
@@ -806,9 +825,10 @@ export default function StoreBuilderPage() {
         userId: user.uid,
         source: "store-builder",
         type: "ecommerce",
-        templateName: config.storeName || "Tienda Online",
-        url: "store://deluxe",
-        storeConfig: config,
+        templateName: nextConfig.storeName || "Tienda Online",
+        url: `/t/${storeSlug}`,
+        storeConfig: nextConfig,
+        storeSlug,
         storeProducts: products,
         html: htmlToStore,
         updatedAt: now,
@@ -819,6 +839,9 @@ export default function StoreBuilderPage() {
       if (publishNow) payload.publishedAt = now;
 
       await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
+      if (config.storeSlug !== storeSlug) {
+        setConfig((prev) => ({ ...prev, storeSlug }));
+      }
 
       if (!projectId) {
         setProjectId(id);
@@ -919,6 +942,17 @@ export default function StoreBuilderPage() {
                 </button>
               </div>
             )}
+
+            <button
+              onClick={() => {
+                if (typeof window === "undefined") return;
+                window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer");
+              }}
+              className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>Ver tienda</span>
+            </button>
 
             <button
               onClick={() => saveProject(false)}

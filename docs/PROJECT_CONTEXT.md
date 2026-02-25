@@ -697,3 +697,33 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - cuando existe `subscriptionPlan` en Firestore, ese valor se usa como fuente efectiva para plan/features (`FREE`, `BUSINESS`, `PRO`) en Digital Menu.
 - Resultado:
   - funciones premium en `/linkhub` (temas premium, IA, personalizacion avanzada) se habilitan segun el plan elegido en Super Admin.
+
+## Online Store Public Storefront Split (2026-02-25)
+
+- Ruta nueva publica:
+  - `/t/[slug]`
+- Objetivo:
+  - separar completamente el editor de Online Store (`/store`) del storefront publico.
+  - mantener el editor actual sin mezclar con Carta Digital.
+- Persistencia:
+  - `cloned_sites` ahora guarda `storeSlug` para proyectos `source: "store-builder"`.
+  - URL publica de tienda para proyectos store-builder: `/t/{storeSlug}`.
+- UX storefront implementada (mobile-first):
+  - mini header (logo/nombre/carrito)
+  - hero compacto
+  - chips de categorias con scroll horizontal
+  - bloque de ofertas especiales (cuando aplica)
+  - buscador + ordenar
+  - grid responsive ecommerce (`2` movil, `3` tablet, `4` desktop)
+  - carrito flotante + `Cart Drawer`
+  - checkout MVP (nombre, celular, direccion, nota)
+  - envio por WhatsApp y guardado de pedidos en Firestore
+  - footer oscuro con enlaces de contacto
+- Theming:
+  - storefront usa variables CSS derivadas de `STORE_THEMES` + `customRgb` (sin hardcodear colores de marca fija).
+- Integraciones de dashboard:
+  - `/store` agrega boton `Ver tienda` que abre `/t/{slug}` en nueva pestana.
+  - `/published` para `source: "store-builder"` apunta a `/t/{storeSlug}` en lugar de `/preview/{id}`.
+- Reglas Firestore ajustadas:
+  - lectura publica solo para `cloned_sites` publicados de `source: "store-builder"`.
+  - nueva coleccion `store_orders` con `create` publico validado para checkout y lectura restringida a admin/owner.

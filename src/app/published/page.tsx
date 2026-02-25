@@ -103,7 +103,10 @@ function PublishedProjectsContent() {
               subtitle,
               sourceLabel: normalizeSourceLabel(source),
               publishedAt: Number(data.publishedAt || data.updatedAt || data.createdAt || 0),
-              publishedUrl: `/preview/${id}`,
+              publishedUrl:
+                source === "store-builder"
+                  ? `/t/${String(data.storeSlug || id)}`
+                  : `/preview/${id}`,
               editPath: source === "store-builder" ? "/store" : source === "builder" ? "/builder" : `/editor/${id}`,
               source,
             };

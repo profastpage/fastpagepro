@@ -38,6 +38,7 @@ export type StoreRgb = {
 
 export type StoreConfig = {
   storeName: string;
+  storeSlug?: string;
   tagline: string;
   currency: "PEN" | "USD" | "EUR";
   themeId: StoreThemeId;
