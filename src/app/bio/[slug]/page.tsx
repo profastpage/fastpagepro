@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentType, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   getLinkHubThemeColors,
@@ -344,19 +344,19 @@ export default function PublicBioPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-amber-300" />
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-slate-700" />
       </div>
     );
   }
 
   if (notFound || !profile) {
     return (
-      <div className="min-h-screen bg-black px-6 text-white flex items-center justify-center">
-        <div className="max-w-md rounded-3xl border border-white/10 bg-zinc-950/70 p-8 text-center">
-          <p className="text-xs uppercase tracking-[0.25em] text-zinc-400 font-bold">Link Hub</p>
+      <div className="min-h-screen bg-slate-100 px-6 text-slate-900 flex items-center justify-center">
+        <div className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-[0_20px_45px_-35px_rgba(15,23,42,0.35)]">
+          <p className="text-xs uppercase tracking-[0.25em] text-slate-500 font-bold">Link Hub</p>
           <h1 className="mt-3 text-3xl font-black">Perfil no disponible</h1>
-          <p className="mt-3 text-zinc-400">Este enlace no existe o aun no fue publicado.</p>
+          <p className="mt-3 text-slate-600">Este enlace no existe o aun no fue publicado.</p>
         </div>
       </div>
     );
@@ -370,8 +370,18 @@ export default function PublicBioPage() {
     profile.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint),
   );
   const textTone = getSafeLinkHubTextTone(profile.textTone);
-  const textPalette = getTextTonePalette(textTone, colors.primary);
-  const prefersDarkText = textTone === "black" || textTone === "blackGold";
+  const _legacyTextPalette = getTextTonePalette(textTone, colors.primary);
+  const textPalette = {
+    base: "#0f172a",
+    muted: "#475569",
+    soft: "#64748b",
+    heading: "#0f172a",
+    key: colors.primary,
+    inactive: "#64748b",
+    active: colors.primary,
+    accent: colors.primary,
+    searchPlaceholder: "#94a3b8",
+  };
   const safeFont = getSafeLinkHubFontFamily(profile.fontFamily);
   const fontFamily = LINK_HUB_FONT_FAMILIES[safeFont].stack;
 
@@ -630,37 +640,70 @@ export default function PublicBioPage() {
     }
   }
 
-  const pageStyle = {
+  const menuGradientSoft = `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 100%)`;
+  const menuGradientActive = `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`;
+  const menuBorder = hexToRgba(colors.primary, 0.35);
+
+  const pageStyle: CSSProperties = {
+    "--carta-bg": "#e7ebf0",
+    "--carta-surface": "#ffffff",
+    "--carta-surface-2": "#ffffff",
+    "--carta-text": "#0f172a",
+    "--carta-muted-text": "#475569",
+    "--carta-border": "rgba(15,23,42,0.12)",
+    "--carta-shadow": "0 18px 34px -26px rgba(15,23,42,0.28)",
+    "--carta-input-bg": "#ffffff",
+    "--carta-input-text": "#0f172a",
+    "--carta-placeholder": "#94a3b8",
+    "--carta-input-border": "rgba(15,23,42,0.16)",
+    "--carta-button-bg": "#ffffff",
+    "--carta-button-text": "#0f172a",
+    "--carta-button-secondary-bg": "#ffffff",
+    "--carta-gradient-hero": "#ffffff",
+    "--carta-chip-bg": "#ffffff",
+    "--carta-chip-text": "#0f172a",
+    "--carta-chip-active-bg": menuGradientActive,
+    "--carta-chip-active-text": "#ffffff",
+    "--carta-chip-border": menuBorder,
+    "--carta-nav-bg": "#ffffff",
+    "--carta-nav-active-bg": menuGradientActive,
+    "--carta-nav-active-text": "#ffffff",
+    "--carta-nav-text": "#0f172a",
+    "--carta-badge-bg": "linear-gradient(135deg, #fb7185 0%, #f97316 100%)",
+    "--carta-badge-text": "#ffffff",
+    "--carta-accent": colors.primary,
+    "--carta-primary": colors.primary,
+    "--carta-primary-hover": colors.secondary,
     background: "var(--carta-bg)",
-  };
+  } as CSSProperties;
 
   const wrapperStyle = {
-    borderColor: "var(--carta-border)",
+    borderColor: "rgba(15,23,42,0.12)",
     fontFamily,
-    color: "var(--carta-text)",
-    background: "var(--carta-surface)",
-    boxShadow: "var(--carta-shadow)",
+    color: "#0f172a",
+    background: "#ffffff",
+    boxShadow: "0 24px 50px -36px rgba(15,23,42,0.4)",
   };
 
   const interactiveStyle = {
-    borderColor: "var(--carta-chip-border)",
-    background: "var(--carta-button-bg)",
-    boxShadow: "var(--carta-shadow)",
-    color: "var(--carta-button-text)",
+    borderColor: menuBorder,
+    background: menuGradientActive,
+    boxShadow: "0 12px 24px -18px rgba(15,23,42,0.32)",
+    color: "#ffffff",
   };
 
   const chipActiveStyle = {
-    borderColor: "var(--carta-chip-border)",
-    background: "var(--carta-chip-active-bg)",
-    boxShadow: "var(--carta-shadow)",
-    color: "var(--carta-chip-active-text)",
+    borderColor: menuBorder,
+    background: menuGradientActive,
+    boxShadow: "0 12px 24px -18px rgba(15,23,42,0.28)",
+    color: "#ffffff",
   };
 
   const navActiveStyle = {
-    borderColor: "var(--carta-chip-border)",
-    background: "var(--carta-nav-active-bg)",
-    boxShadow: "var(--carta-shadow)",
-    color: "var(--carta-nav-active-text)",
+    borderColor: menuBorder,
+    background: menuGradientActive,
+    boxShadow: "0 14px 24px -18px rgba(15,23,42,0.3)",
+    color: "#ffffff",
   };
 
   const badgeStyle = {
@@ -670,42 +713,42 @@ export default function PublicBioPage() {
   };
 
   const headerBarStyle = {
-    borderColor: "var(--carta-border)",
-    background: "var(--carta-gradient-hero)",
+    borderColor: "rgba(15,23,42,0.12)",
+    background: "#ffffff",
   };
 
   const avatarFallbackStyle = {
-    borderColor: "var(--carta-chip-border)",
-    background: "var(--carta-button-bg)",
+    borderColor: menuBorder,
+    background: menuGradientSoft,
   };
 
   const cardSurfaceStyle =
     profile.cardStyle === "solid"
       ? {
-          background: "var(--carta-surface-2)",
+          background: "#ffffff",
         }
       : profile.cardStyle === "outline"
-      ? { background: "transparent" }
+      ? { background: "#ffffff" }
       : {
-          background: "var(--carta-surface)",
-          backdropFilter: "blur(10px)",
+          background: "#ffffff",
+          backdropFilter: "none",
         };
 
   const catalogStickyStyle = {
-    borderColor: "var(--carta-border)",
-    background: "var(--carta-nav-bg)",
-    boxShadow: "var(--carta-shadow)",
+    borderColor: "rgba(15,23,42,0.12)",
+    background: "#ffffff",
+    boxShadow: "0 10px 18px -16px rgba(15,23,42,0.36)",
   };
 
   const searchSurfaceStyle = {
-    borderColor: "var(--carta-input-border)",
-    background: "var(--carta-input-bg)",
-    color: "var(--carta-input-text)",
+    borderColor: "rgba(15,23,42,0.16)",
+    background: "#ffffff",
+    color: "#0f172a",
   };
 
   const navSurfaceStyle = {
-    borderColor: "var(--carta-border)",
-    background: "var(--carta-nav-bg)",
+    borderColor: menuBorder,
+    background: menuGradientSoft,
   };
 
   const itemSurfaceStyle = {
@@ -713,21 +756,21 @@ export default function PublicBioPage() {
   };
 
   const contactActionStyle = {
-    borderColor: "var(--carta-chip-border)",
-    background: "var(--carta-button-bg)",
-    color: "var(--carta-button-text)",
-    boxShadow: "var(--carta-shadow)",
+    borderColor: "rgba(15,23,42,0.16)",
+    background: "#ffffff",
+    color: "#0f172a",
+    boxShadow: "0 10px 18px -16px rgba(15,23,42,0.3)",
   };
 
   const cartPanelStyle = {
-    borderColor: "var(--carta-border)",
-    background: "var(--carta-surface)",
+    borderColor: "rgba(15,23,42,0.12)",
+    background: "#ffffff",
   };
 
   const checkoutInputStyle = {
-    borderColor: "var(--carta-input-border)",
-    color: "var(--carta-input-text)",
-    background: "var(--carta-input-bg)",
+    borderColor: "rgba(15,23,42,0.16)",
+    color: "#0f172a",
+    background: "#ffffff",
   };
 
   return (

@@ -513,3 +513,17 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - selector de plan por fila (`FREE/BUSINESS/PRO`).
   - acciones directas: `Activar` y `Free`.
   - feedback inmediato por usuario y sincronizacion de estado.
+
+## Public Bio White Shell + Themed Menu (2026-02-25)
+
+- Ruta ajustada: `/bio/[slug]`.
+- Cambio visual principal:
+  - base de interfaz ahora en blanco limpio (fondo, tarjetas, paneles, formularios y header).
+  - mejor legibilidad general con texto oscuro estable.
+- Color dinamico por tema concentrado en menu:
+  - chips/categorias activos
+  - tabs de navegacion (desktop y mobile)
+  - barra inferior activa
+- Resultado UX:
+  - apariencia alineada a referencia de carta blanca profesional.
+  - menu conserva identidad de color segun tema elegido por el usuario.
