@@ -560,3 +560,15 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Renombrado visible en UI:
   - textos principales migrados de `Link Hub` a `Carta Digital` en el editor.
   - etiquetas relacionadas actualizadas tambien en vistas de publicados y estado de perfil publico para mantener consistencia de marca.
+
+## Carta Digital Full Prompt Alignment (2026-02-25)
+
+- Ruta ajustada: `/linkhub` (dashboard editor).
+- Alineacion final con el prompt extenso de theming premium:
+  - preview mobile ahora usa tokens reales de `cartaThemeId` (no colores legacy del tema de editor).
+  - selector de tema de carta con mini previews (swatches + nombre + rubro) para cambio en 1 click.
+  - consistencia visual del preview en chips, nav, buscador, tarjetas, textos y CTA.
+- Cleanup de naming residual:
+  - fallback de titulo comercial interno cambiado a `Carta Digital`.
+- Documentacion nueva:
+  - `docs/CARTA_THEMING.md` con guia corta para agregar temas y mapearlos por rubro.

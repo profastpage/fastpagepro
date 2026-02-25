@@ -615,78 +615,77 @@ export default function LinkHubPage() {
     });
   }, [editorItemSearch, profile]);
 
-  const previewMenuBorder = useMemo(() => hexToRgba(activeTheme.primary, 0.34), [activeTheme.primary]);
+  const previewMenuBorder = useMemo(() => activeCartaTheme.tokens.chipBorder, [activeCartaTheme.tokens.chipBorder]);
   const previewMenuGradientSoft = useMemo(
-    () =>
-      `linear-gradient(135deg, ${hexToRgba(activeTheme.primary, 0.16)} 0%, ${hexToRgba(activeTheme.secondary, 0.14)} 100%)`,
-    [activeTheme.primary, activeTheme.secondary],
-  );
-  const previewMenuGradientActive = useMemo(
-    () => `linear-gradient(135deg, ${activeTheme.primary} 0%, ${activeTheme.secondary} 100%)`,
-    [activeTheme.primary, activeTheme.secondary],
+    () => activeCartaTheme.tokens.surface2,
+    [activeCartaTheme.tokens.surface2],
   );
   const previewShellStyle = useMemo(
     () => ({
       borderColor: previewMenuBorder,
-      background:
-        "radial-gradient(110% 110% at 10% 0%, rgba(148,163,184,0.22) 0%, transparent 56%), linear-gradient(180deg, #e2e8f0 0%, #dbe4ee 100%)",
+      background: activeCartaTheme.tokens.background,
     }),
-    [previewMenuBorder],
+    [activeCartaTheme.tokens.background, previewMenuBorder],
   );
   const previewPanelStyle = useMemo(
     () => ({
-      borderColor: "rgba(15,23,42,0.14)",
-      background: "#ffffff",
-      boxShadow: "0 24px 48px -34px rgba(15,23,42,0.42)",
+      borderColor: activeCartaTheme.tokens.border,
+      background: activeCartaTheme.tokens.surface,
+      boxShadow: activeCartaTheme.tokens.shadow,
     }),
-    [],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.shadow, activeCartaTheme.tokens.surface],
   );
   const previewHeaderStyle = useMemo(
     () => ({
-      borderColor: "rgba(15,23,42,0.1)",
-      background: "#ffffff",
+      borderColor: activeCartaTheme.tokens.border,
+      background: activeCartaTheme.tokens.gradientHero,
     }),
-    [],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.gradientHero],
   );
   const previewChipBaseStyle = useMemo(
     () => ({
-      borderColor: previewMenuBorder,
-      background: "#ffffff",
-      color: "#0f172a",
+      borderColor: activeCartaTheme.tokens.chipBorder,
+      background: activeCartaTheme.tokens.chipBg,
+      color: activeCartaTheme.tokens.chipText,
     }),
-    [previewMenuBorder],
+    [activeCartaTheme.tokens.chipBg, activeCartaTheme.tokens.chipBorder, activeCartaTheme.tokens.chipText],
   );
   const previewChipActiveStyle = useMemo(
     () => ({
-      borderColor: previewMenuBorder,
-      background: previewMenuGradientActive,
-      color: "#ffffff",
-      boxShadow: "0 12px 24px -18px rgba(15,23,42,0.32)",
+      borderColor: activeCartaTheme.tokens.chipBorder,
+      background: activeCartaTheme.tokens.chipActiveBg,
+      color: activeCartaTheme.tokens.chipActiveText,
+      boxShadow: activeCartaTheme.tokens.shadow,
     }),
-    [previewMenuBorder, previewMenuGradientActive],
+    [
+      activeCartaTheme.tokens.chipActiveBg,
+      activeCartaTheme.tokens.chipActiveText,
+      activeCartaTheme.tokens.chipBorder,
+      activeCartaTheme.tokens.shadow,
+    ],
   );
   const previewSearchStyle = useMemo(
     () => ({
-      borderColor: "rgba(15,23,42,0.16)",
-      background: "#ffffff",
-      color: "#0f172a",
+      borderColor: activeCartaTheme.tokens.inputBorder,
+      background: activeCartaTheme.tokens.inputBg,
+      color: activeCartaTheme.tokens.inputText,
     }),
-    [],
+    [activeCartaTheme.tokens.inputBg, activeCartaTheme.tokens.inputBorder, activeCartaTheme.tokens.inputText],
   );
   const previewBottomNavStyle = useMemo(
     () => ({
-      borderColor: previewMenuBorder,
-      background: previewMenuGradientSoft,
+      borderColor: activeCartaTheme.tokens.border,
+      background: activeCartaTheme.tokens.navBg,
     }),
-    [previewMenuBorder, previewMenuGradientSoft],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.navBg],
   );
   const previewItemCardStyle = useMemo(
     () => ({
-      borderColor: "rgba(15,23,42,0.12)",
-      background: "#ffffff",
-      boxShadow: "0 10px 20px -18px rgba(15,23,42,0.34)",
+      borderColor: activeCartaTheme.tokens.border,
+      background: activeCartaTheme.tokens.surface2,
+      boxShadow: activeCartaTheme.tokens.shadow,
     }),
-    [],
+    [activeCartaTheme.tokens.border, activeCartaTheme.tokens.shadow, activeCartaTheme.tokens.surface2],
   );
   const previewCoverUrl = useMemo(
     () => profile?.coverImageUrls?.[0] || profile?.coverImageUrl || "",
@@ -1465,7 +1464,7 @@ export default function LinkHubPage() {
           },
           pricing: {
             ...profile.pricing,
-            title: profile.pricing.title.trim() || "Catalogo digital online",
+            title: profile.pricing.title.trim() || "Carta Digital",
             subtitle: profile.pricing.subtitle.trim(),
             plans: cleanedPlans,
           },
@@ -2244,6 +2243,36 @@ export default function LinkHubPage() {
                     <p className="text-xs text-zinc-400">
                       Se aplica en la pagina publicada: header, chips, tarjetas, botones y barra inferior.
                     </p>
+                    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+                      {CARTA_THEME_OPTIONS.map((themeOption) => {
+                        const isActive = resolvedCartaThemeId === themeOption.id;
+                        return (
+                          <button
+                            key={themeOption.id}
+                            type="button"
+                            onClick={() => patchProfile("cartaThemeId", themeOption.id)}
+                            className={`min-w-[145px] rounded-xl border px-2 py-2 text-left transition ${
+                              isActive
+                                ? "border-amber-300/70 bg-amber-400/10"
+                                : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                            }`}
+                            title={`${themeOption.name} (${themeOption.rubro})`}
+                          >
+                            <div className="mb-2 flex items-center gap-1.5">
+                              {themeOption.preview.map((swatch) => (
+                                <span
+                                  key={`${themeOption.id}-${swatch}`}
+                                  className="h-3.5 w-3.5 rounded-full border border-white/20"
+                                  style={{ background: swatch }}
+                                />
+                              ))}
+                            </div>
+                            <p className="truncate text-[11px] font-bold text-white">{themeOption.name}</p>
+                            <p className="truncate text-[10px] text-zinc-400">{themeOption.rubro}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
                     <button
                       type="button"
                       className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-100 hover:border-amber-300/40 hover:text-amber-100"
@@ -2500,7 +2529,7 @@ export default function LinkHubPage() {
           <aside className="xl:sticky xl:top-28 h-fit">
             <div className="rounded-[2rem] border p-4" style={previewShellStyle}>
               <div className="overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
-                <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black text-slate-500">
+                <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: activeCartaTheme.tokens.mutedText }}>
                   Preview Mobile
                 </p>
 
@@ -2516,20 +2545,24 @@ export default function LinkHubPage() {
                         />
                       ) : (
                         <div
-                          className="h-8 w-8 rounded-full border flex items-center justify-center text-[11px] font-black text-slate-700"
-                          style={{ borderColor: previewMenuBorder, background: previewMenuGradientSoft }}
+                          className="h-8 w-8 rounded-full border flex items-center justify-center text-[11px] font-black"
+                          style={{ borderColor: previewMenuBorder, background: previewMenuGradientSoft, color: activeCartaTheme.tokens.text }}
                         >
                           {(profile.displayName || "N").slice(0, 1).toUpperCase()}
                         </div>
                       )}
-                      <p className="truncate text-xs font-semibold text-slate-700">
+                      <p className="truncate text-xs font-semibold" style={{ color: activeCartaTheme.tokens.text }}>
                         {profile.displayName || "Nombre del negocio"}
                       </p>
                     </div>
                     <button
                       type="button"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border text-slate-700"
-                      style={{ borderColor: previewMenuBorder, background: "#ffffff" }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border"
+                      style={{
+                        borderColor: previewMenuBorder,
+                        background: activeCartaTheme.tokens.buttonSecondaryBg,
+                        color: activeCartaTheme.tokens.text,
+                      }}
                       aria-label="Compartir"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -2563,25 +2596,26 @@ export default function LinkHubPage() {
                 </div>
 
                 <div className="px-4 pt-10 pb-2 text-center">
-                  <h3 className="text-[1.55rem] font-black leading-tight text-slate-900">
-                    {highlightLastWord(profile.displayName || "Tu negocio", activeTheme.primary)}
+                  <h3 className="text-[1.55rem] font-black leading-tight" style={{ color: activeCartaTheme.tokens.text }}>
+                    {highlightLastWord(profile.displayName || "Tu negocio", activeCartaTheme.tokens.primary)}
                   </h3>
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: activeTheme.primary }}>
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: activeCartaTheme.tokens.accent }}>
                     {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
                   </p>
                 </div>
 
                 <div className="px-4 pb-2">
-                  <p className="text-center text-xs font-black uppercase tracking-[0.14em]" style={{ color: activeTheme.primary }}>
+                  <p className="text-center text-xs font-black uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
                     {catalogLabel || "Carta"}
                   </p>
                   <label className="mt-2 flex items-center gap-2 rounded-[0.95rem] border px-3 py-2" style={previewSearchStyle}>
-                    <Search className="h-3.5 w-3.5 text-slate-400" />
+                    <Search className="h-3.5 w-3.5" style={{ color: activeCartaTheme.tokens.placeholder }} />
                     <input
                       value={previewSearch}
                       onChange={(event) => setPreviewSearch(event.target.value)}
                       placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
-                      className="w-full bg-transparent text-xs text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                      className="w-full bg-transparent text-xs focus:outline-none"
+                      style={{ color: activeCartaTheme.tokens.inputText }}
                     />
                   </label>
                   <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
@@ -2608,16 +2642,20 @@ export default function LinkHubPage() {
                             <img src={item.imageUrl} alt={item.title} className="h-14 w-14 rounded-[0.75rem] object-cover" />
                           ) : (
                             <div
-                              className="h-14 w-14 rounded-[0.75rem] border flex items-center justify-center text-[9px] font-black text-slate-600"
-                              style={{ borderColor: previewMenuBorder }}
+                              className="h-14 w-14 rounded-[0.75rem] border flex items-center justify-center text-[9px] font-black"
+                              style={{ borderColor: previewMenuBorder, color: activeCartaTheme.tokens.mutedText }}
                             >
                               ITEM
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13px] font-extrabold text-slate-900">{item.title || "Producto"}</p>
-                            <p className="line-clamp-1 text-[11px] text-slate-500">{item.description || "Descripcion comercial"}</p>
-                            <p className="mt-1 text-[12px] font-black" style={{ color: activeTheme.primary }}>
+                            <p className="truncate text-[13px] font-extrabold" style={{ color: activeCartaTheme.tokens.text }}>
+                              {item.title || "Producto"}
+                            </p>
+                            <p className="line-clamp-1 text-[11px]" style={{ color: activeCartaTheme.tokens.mutedText }}>
+                              {item.description || "Descripcion comercial"}
+                            </p>
+                            <p className="mt-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
                               S/{item.price || "0.00"}
                             </p>
                           </div>
@@ -2625,7 +2663,10 @@ export default function LinkHubPage() {
                       </article>
                     ))
                   ) : (
-                    <div className="rounded-[0.95rem] border border-dashed px-3 py-4 text-center text-[11px] text-slate-500" style={{ borderColor: "rgba(15,23,42,0.18)" }}>
+                    <div
+                      className="rounded-[0.95rem] border border-dashed px-3 py-4 text-center text-[11px]"
+                      style={{ borderColor: activeCartaTheme.tokens.border, color: activeCartaTheme.tokens.mutedText }}
+                    >
                       No hay items para el filtro actual.
                     </div>
                   )}
@@ -2633,39 +2674,61 @@ export default function LinkHubPage() {
 
                 <div className="px-3 pb-3">
                   <div className="grid grid-cols-3 gap-1 rounded-[1rem] border p-1" style={previewBottomNavStyle}>
-                    <button type="button" className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase text-slate-700">
+                    <button
+                      type="button"
+                      className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
+                      style={{ color: activeCartaTheme.tokens.navText }}
+                    >
                       {profile.sectionLabels.contact}
                     </button>
                     <button type="button" className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase" style={previewChipActiveStyle}>
                       {catalogLabel}
                     </button>
-                    <button type="button" className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase text-slate-700">
+                    <button
+                      type="button"
+                      className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
+                      style={{ color: activeCartaTheme.tokens.navText }}
+                    >
                       {profile.sectionLabels.location}
                     </button>
                   </div>
                 </div>
               </div>
               {publicUrl && (
-                <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
-                  <p className="font-bold text-slate-900">URL publica</p>
+                <div
+                  className="mt-3 rounded-xl border p-3 text-xs"
+                  style={{
+                    borderColor: activeCartaTheme.tokens.border,
+                    background: activeCartaTheme.tokens.surface2,
+                    color: activeCartaTheme.tokens.mutedText,
+                  }}
+                >
+                  <p className="font-bold" style={{ color: activeCartaTheme.tokens.text }}>
+                    URL publica
+                  </p>
                   <p className="mt-1 break-all">{publicUrl}</p>
                   <a
                     href={publicUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="mt-2 inline-flex items-center gap-1 font-semibold"
-                    style={{ color: activeTheme.primary }}
+                    style={{ color: activeCartaTheme.tokens.primary }}
                   >
                     Abrir pagina
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
               )}
-              <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+              <div
+                className="mt-3 rounded-xl border p-3"
+                style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.surface2 }}
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: activeCartaTheme.tokens.mutedText }}>
                   Carta Theme
                 </p>
-                <p className="mt-1 text-xs font-semibold text-slate-800">{activeCartaTheme.name}</p>
+                <p className="mt-1 text-xs font-semibold" style={{ color: activeCartaTheme.tokens.text }}>
+                  {activeCartaTheme.name}
+                </p>
                 <div className="mt-2 flex gap-2">
                   <span className="rounded-full border px-2 py-1 text-[10px] font-bold" style={previewChipBaseStyle}>
                     Categoria
