@@ -441,3 +441,16 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Resultado:
   - Link Hub queda encasillado y ordenado como en el patron visual de la imagen de referencia.
   - desaparece el corte lateral/overflow en secciones de item y categorias.
+
+## LinkHub Black/Gold Theme Available for Everyone (2026-02-25)
+
+- Archivo ajustado: `src/lib/linkHubProfile.ts`.
+- Se aplico estilo negro + dorado deluxe (bordes y contraste premium) en 3 temas clave:
+  - `midnight` -> `Noir Gold Deluxe` (comida)
+  - `runway` -> `Runway Gold` (ropa)
+  - `obsidian` -> `Obsidian Gold Tech` (tecnologia)
+- Disponibilidad para todos los planes:
+  - se reordeno `LINK_HUB_THEME_CATEGORY_MAP` para que los temas black/gold queden entre los primeros de cada categoria.
+  - esto garantiza visibilidad en plan `FREE` (limite de 3 temas por categoria) y en `BUSINESS/PRO`.
+- Nota:
+  - se mantienen 20 temas totales, sin aumentar el catalogo global.

@@ -18,15 +18,15 @@ export const MAX_LINK_HUB_COVER_IMAGES = 5;
 
 export const LINK_HUB_THEME_STYLES = {
   midnight: {
-    label: "Black Gold Deluxe",
-    primary: "#fbbf24",
+    label: "Noir Gold Deluxe",
+    primary: "#facc15",
     secondary: "#f59e0b",
-    background: "from-zinc-950 via-black to-amber-950",
-    surface: "border-amber-200/25 bg-amber-100/10",
+    background: "from-black via-zinc-950 to-black",
+    surface: "border-amber-300/40 bg-zinc-950/90 shadow-[0_0_26px_rgba(250,204,21,0.2)]",
     button:
-      "border-amber-200/35 bg-gradient-to-r from-amber-300/25 to-yellow-300/20 text-amber-50 hover:brightness-110",
-    muted: "text-amber-100/70",
-    accent: "text-amber-200",
+      "border-amber-300/45 bg-gradient-to-r from-zinc-900/95 to-amber-900/35 text-amber-50 hover:brightness-110",
+    muted: "text-amber-100/75",
+    accent: "text-amber-300",
   },
   graphite: {
     label: "Monochrome Luxe",
@@ -150,15 +150,15 @@ export const LINK_HUB_THEME_STYLES = {
     accent: "text-orange-200",
   },
   obsidian: {
-    label: "Obsidian",
-    primary: "#a855f7",
-    secondary: "#06b6d4",
-    background: "from-zinc-950 via-violet-950 to-cyan-950",
-    surface: "border-violet-200/20 bg-violet-100/10",
+    label: "Obsidian Gold Tech",
+    primary: "#facc15",
+    secondary: "#0ea5e9",
+    background: "from-black via-zinc-950 to-slate-950",
+    surface: "border-amber-300/35 bg-zinc-950/88 shadow-[0_0_24px_rgba(250,204,21,0.16)]",
     button:
-      "border-violet-200/30 bg-gradient-to-r from-violet-300/30 to-cyan-300/30 text-violet-50 hover:brightness-110",
-    muted: "text-violet-100/75",
-    accent: "text-cyan-200",
+      "border-amber-300/40 bg-gradient-to-r from-zinc-900/95 via-zinc-900/85 to-sky-900/30 text-amber-50 hover:brightness-110",
+    muted: "text-amber-100/72",
+    accent: "text-amber-300",
   },
   saffron: {
     label: "Saffron Kitchen",
@@ -183,15 +183,15 @@ export const LINK_HUB_THEME_STYLES = {
     accent: "text-orange-200",
   },
   runway: {
-    label: "Runway Noir",
-    primary: "#111827",
-    secondary: "#9ca3af",
-    background: "from-zinc-950 via-slate-950 to-zinc-900",
-    surface: "border-zinc-200/20 bg-zinc-100/10",
+    label: "Runway Gold",
+    primary: "#facc15",
+    secondary: "#a16207",
+    background: "from-black via-zinc-950 to-zinc-900",
+    surface: "border-amber-300/35 bg-zinc-950/88 shadow-[0_0_22px_rgba(250,204,21,0.16)]",
     button:
-      "border-zinc-200/30 bg-gradient-to-r from-zinc-300/25 to-slate-300/20 text-zinc-50 hover:brightness-110",
-    muted: "text-zinc-200/75",
-    accent: "text-zinc-100",
+      "border-amber-300/40 bg-gradient-to-r from-zinc-900/95 to-amber-900/30 text-amber-50 hover:brightness-110",
+    muted: "text-amber-100/74",
+    accent: "text-amber-300",
   },
   blushBoutique: {
     label: "Blush Boutique",
@@ -279,8 +279,8 @@ export const LINK_HUB_THEME_CATEGORY_LABELS: Record<LinkHubThemeCategory, string
 
 export const LINK_HUB_THEME_CATEGORY_MAP: Record<LinkHubThemeCategory, LinkHubTheme[]> = {
   food: ["midnight", "sunset", "sandstorm", "ruby", "coral", "saffron", "crimsonChef"],
-  fashion: ["graphite", "runway", "blushBoutique", "violet", "jade", "aurora"],
-  technology: ["ocean", "cobalt", "obsidian", "neon", "neonCircuit", "titanTech", "rgb"],
+  fashion: ["runway", "graphite", "blushBoutique", "violet", "jade", "aurora"],
+  technology: ["obsidian", "ocean", "cobalt", "neon", "neonCircuit", "titanTech", "rgb"],
 };
 
 export type LinkHubLinkType =
