@@ -202,6 +202,7 @@ export type LinkHubFontFamily = keyof typeof LINK_HUB_FONT_FAMILIES;
 export type LinkHubBusinessType = "restaurant" | "general";
 export type LinkHubButtonShape = "rounded" | "pill" | "square";
 export type LinkHubCardStyle = "glass" | "solid" | "outline";
+export type LinkHubTextTone = "white" | "black" | "gold" | "blackGold";
 
 export type LinkHubLinkType =
   | "website"
@@ -288,6 +289,7 @@ export interface LinkHubProfile {
   fontFamily: LinkHubFontFamily;
   buttonShape: LinkHubButtonShape;
   cardStyle: LinkHubCardStyle;
+  textTone: LinkHubTextTone;
   sectionLabels: LinkHubSectionLabels;
   theme: LinkHubTheme;
   themePrimaryColor?: string;
@@ -362,6 +364,11 @@ export function getSafeLinkHubButtonShape(type?: string): LinkHubButtonShape {
 export function getSafeLinkHubCardStyle(type?: string): LinkHubCardStyle {
   if (type === "glass" || type === "solid" || type === "outline") return type;
   return "glass";
+}
+
+export function getSafeLinkHubTextTone(type?: string): LinkHubTextTone {
+  if (type === "black" || type === "gold" || type === "blackGold" || type === "white") return type;
+  return "white";
 }
 
 export function createLinkHubCatalogCategory(name = "", emoji = ""): LinkHubCatalogCategory {
@@ -634,6 +641,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     fontFamily: "modern",
     buttonShape: "rounded",
     cardStyle: "glass",
+    textTone: "white",
     sectionLabels: getDefaultLinkHubSectionLabels(),
     theme: "midnight",
     themePrimaryColor: baseTheme.primary,
@@ -827,6 +835,7 @@ export function normalizeLinkHubProfile(
     fontFamily: getSafeLinkHubFontFamily(safeText(input.fontFamily) || base.fontFamily),
     buttonShape: getSafeLinkHubButtonShape(safeText(input.buttonShape) || base.buttonShape),
     cardStyle: getSafeLinkHubCardStyle(safeText(input.cardStyle) || base.cardStyle),
+    textTone: getSafeLinkHubTextTone(safeText(input.textTone) || base.textTone),
     sectionLabels,
     theme: safeTheme,
     themePrimaryColor: colors.primary,

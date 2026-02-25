@@ -326,3 +326,21 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
     - `Black Gold Deluxe` (negro + dorado)
     - `Monochrome Luxe` (blanco/negro)
   - al mantenerse la restriccion FREE por "primeros 3 temas", ambos quedan visibles y seleccionables sin upgrade.
+
+## Public Bio UI Polish + Text Tone Selector (2026-02-25)
+
+- Rutas ajustadas:
+  - dashboard privado: `/linkhub`
+  - pagina publica: `/bio/[slug]`
+- Nuevo control de estilo de texto configurable desde dashboard:
+  - `Texto blanco`
+  - `Texto negro`
+  - `Texto dorado`
+  - `Negro + dorado`
+- Persistencia de perfil:
+  - nuevo campo `textTone` en `LinkHubProfile`
+  - normalizacion backward compatible para perfiles legacy (default: `white`)
+- UX publica optimizada:
+  - barra superior en `carta/catalogo` y `ubicacion` mas compacta en mobile (estilo delgado y encuadrado)
+  - el titulo de seccion (`CARTA`/`UBICACION`) se muestra centrado dentro de la barra superior compacta
+  - botones de contacto mejorados en desktop para evitar recortes y mantener alineacion estable.

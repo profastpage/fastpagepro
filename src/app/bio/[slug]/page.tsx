@@ -7,6 +7,7 @@ import {
   getSafeLinkHubTheme,
   getPublishedLinkHubProfileBySlug,
   getSafeLinkHubFontFamily,
+  getSafeLinkHubTextTone,
   hexToRgba,
   isValidExternalUrl,
   LINK_HUB_FONT_FAMILIES,
@@ -88,6 +89,59 @@ function getCardClass(style: LinkHubProfile["cardStyle"]): string {
   if (style === "solid") return "border-transparent";
   if (style === "outline") return "border-white/25 bg-transparent";
   return "border-white/10 backdrop-blur";
+}
+
+function getTextTonePalette(tone: LinkHubProfile["textTone"], primaryColor: string) {
+  if (tone === "black") {
+    return {
+      base: "#111827",
+      muted: "rgba(17,24,39,0.84)",
+      soft: "rgba(17,24,39,0.72)",
+      heading: "#0f172a",
+      key: "#0f172a",
+      inactive: "rgba(17,24,39,0.75)",
+      active: "#0f172a",
+      accent: "#0f172a",
+      searchPlaceholder: "rgba(17,24,39,0.54)",
+    };
+  }
+  if (tone === "gold") {
+    return {
+      base: "#fef3c7",
+      muted: "#fde68a",
+      soft: "rgba(253,230,138,0.8)",
+      heading: "#fef3c7",
+      key: "#fbbf24",
+      inactive: "rgba(253,230,138,0.78)",
+      active: "#fef3c7",
+      accent: "#fbbf24",
+      searchPlaceholder: "rgba(253,230,138,0.6)",
+    };
+  }
+  if (tone === "blackGold") {
+    return {
+      base: "#0f172a",
+      muted: "rgba(15,23,42,0.82)",
+      soft: "rgba(15,23,42,0.68)",
+      heading: "#fbbf24",
+      key: "#f59e0b",
+      inactive: "rgba(15,23,42,0.72)",
+      active: "#fbbf24",
+      accent: "#fbbf24",
+      searchPlaceholder: "rgba(15,23,42,0.54)",
+    };
+  }
+  return {
+    base: "#f8fafc",
+    muted: "rgba(248,250,252,0.88)",
+    soft: "rgba(226,232,240,0.8)",
+    heading: "#ffffff",
+    key: primaryColor,
+    inactive: "rgba(228,228,231,0.74)",
+    active: "#ffffff",
+    accent: primaryColor,
+    searchPlaceholder: "rgba(212,212,216,0.74)",
+  };
 }
 
 export default function PublicBioPage() {
@@ -244,6 +298,9 @@ export default function PublicBioPage() {
   const themeKey = getSafeLinkHubTheme(profile.theme);
   const theme = LINK_HUB_THEME_STYLES[themeKey];
   const colors = getLinkHubThemeColors(themeKey, profile.themePrimaryColor, profile.themeSecondaryColor);
+  const textTone = getSafeLinkHubTextTone(profile.textTone);
+  const textPalette = getTextTonePalette(textTone, colors.primary);
+  const prefersDarkText = textTone === "black" || textTone === "blackGold";
   const safeFont = getSafeLinkHubFontFamily(profile.fontFamily);
   const fontFamily = LINK_HUB_FONT_FAMILIES[safeFont].stack;
 
@@ -323,13 +380,17 @@ export default function PublicBioPage() {
   const wrapperStyle = {
     borderColor: hexToRgba(colors.primary, 0.45),
     fontFamily,
-    background: `linear-gradient(160deg, ${hexToRgba(colors.primary, 0.22)} 0%, ${hexToRgba(colors.secondary, 0.18)} 55%, ${hexToRgba(colors.primary, 0.14)} 100%)`,
+    color: textPalette.base,
+    background: prefersDarkText
+      ? `linear-gradient(160deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 55%, ${hexToRgba(colors.primary, 0.1)} 100%), linear-gradient(0deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.56) 100%)`
+      : `linear-gradient(160deg, ${hexToRgba(colors.primary, 0.22)} 0%, ${hexToRgba(colors.secondary, 0.18)} 55%, ${hexToRgba(colors.primary, 0.14)} 100%)`,
   };
 
   const interactiveStyle = {
     borderColor: hexToRgba(colors.primary, 0.42),
     background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.36)} 0%, ${hexToRgba(colors.secondary, 0.3)} 100%)`,
     boxShadow: `0 10px 24px -18px ${hexToRgba(colors.primary, 0.95)}`,
+    color: textPalette.active,
   };
 
   const headerBarStyle = {
@@ -344,11 +405,17 @@ export default function PublicBioPage() {
 
   const cardSurfaceStyle =
     profile.cardStyle === "solid"
-      ? { background: `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.22)} 100%)` }
+      ? {
+          background: prefersDarkText
+            ? `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.16)} 0%, ${hexToRgba(colors.secondary, 0.12)} 100%), rgba(255,255,255,0.5)`
+            : `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.22)} 100%)`,
+        }
       : profile.cardStyle === "outline"
       ? { background: "transparent" }
       : {
-          background: `linear-gradient(150deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 100%)`,
+          background: prefersDarkText
+            ? `linear-gradient(150deg, ${hexToRgba(colors.primary, 0.12)} 0%, ${hexToRgba(colors.secondary, 0.08)} 100%), rgba(255,255,255,0.45)`
+            : `linear-gradient(150deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 100%)`,
           backdropFilter: "blur(10px)",
         };
 
@@ -360,16 +427,22 @@ export default function PublicBioPage() {
 
   const searchSurfaceStyle = {
     borderColor: hexToRgba(colors.primary, 0.4),
-    background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%)`,
+    background: prefersDarkText
+      ? `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.2)} 0%, ${hexToRgba(colors.secondary, 0.16)} 100%), rgba(255,255,255,0.52)`
+      : `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%)`,
   };
 
   const navSurfaceStyle = {
     borderColor: hexToRgba(colors.primary, 0.35),
-    background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.42)} 0%, ${hexToRgba(colors.secondary, 0.32)} 100%)`,
+    background: prefersDarkText
+      ? `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.24)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%), rgba(255,255,255,0.68)`
+      : `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.42)} 0%, ${hexToRgba(colors.secondary, 0.32)} 100%)`,
   };
 
   const itemSurfaceStyle = {
-    background: `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.12)} 100%)`,
+    background: prefersDarkText
+      ? `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.1)} 0%, ${hexToRgba(colors.secondary, 0.08)} 100%), rgba(255,255,255,0.58)`
+      : `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.12)} 100%)`,
   };
 
   const contactActionStyle = {
@@ -382,11 +455,14 @@ export default function PublicBioPage() {
   return (
     <div className="h-[100dvh] overflow-hidden px-2 py-3 md:px-6 md:py-8" style={pageStyle}>
       <div
-        className="mx-auto flex h-full w-full max-w-md flex-col rounded-[2.25rem] border overflow-hidden text-white md:max-w-5xl md:rounded-[2.5rem]"
+        className="mx-auto flex h-full w-full max-w-md flex-col overflow-hidden rounded-[2.25rem] border md:max-w-5xl md:rounded-[2.5rem]"
         style={wrapperStyle}
       >
-        <div className="px-4 md:px-8 py-3 border-b" style={headerBarStyle}>
-          <div className="flex items-center justify-between gap-3">
+        <div
+          className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"}`}
+          style={headerBarStyle}
+        >
+          <div className="relative flex items-center justify-between gap-3">
             <div className="inline-flex min-w-0 items-center gap-2">
               {profile.avatarUrl ? (
                 <img
@@ -403,22 +479,28 @@ export default function PublicBioPage() {
                   {profile.displayName.slice(0, 1).toUpperCase()}
                 </div>
               )}
-              <span className="truncate text-xs md:text-sm font-semibold text-zinc-100">{profile.displayName}</span>
+              <span className="truncate text-xs md:text-sm font-semibold" style={{ color: textPalette.muted }}>
+                {profile.displayName}
+              </span>
             </div>
+            {activeTab !== "contact" && (
+              <p
+                className="pointer-events-none absolute left-1/2 top-1/2 w-[46%] -translate-x-1/2 -translate-y-1/2 truncate text-center text-sm font-black uppercase tracking-[0.12em] md:text-base"
+                style={{ color: textPalette.heading }}
+              >
+                {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
+              </p>
+            )}
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/25 bg-white/5 text-white hover:bg-white/10"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border hover:bg-white/10"
+              style={{ borderColor: hexToRgba(colors.primary, 0.35), color: textPalette.heading }}
               aria-label="Compartir"
             >
               <Share2 className="h-4 w-4" />
             </button>
           </div>
-          {activeTab !== "contact" && (
-            <p className="mt-2 text-center text-2xl font-black tracking-tight uppercase md:text-3xl">
-              {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
-            </p>
-          )}
           {shareFeedback && <p className="mt-2 text-xs font-semibold text-emerald-200">{shareFeedback}</p>}
         </div>
 
@@ -491,11 +573,17 @@ export default function PublicBioPage() {
             </div>
 
             <div className="px-5 md:px-8 pt-16 md:pt-20 pb-4 text-center">
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight">{profile.displayName}</h1>
+              <h1 className="text-4xl md:text-6xl font-black tracking-tight" style={{ color: textPalette.heading }}>
+                {profile.displayName}
+              </h1>
               <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: hexToRgba(colors.primary, 0.95) }}>
                 {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
               </p>
-              {profile.bio && <p className="mt-3 text-sm md:text-base text-zinc-100/85">{profile.bio}</p>}
+              {profile.bio && (
+                <p className="mt-3 text-sm md:text-base" style={{ color: textPalette.muted }}>
+                  {profile.bio}
+                </p>
+              )}
             </div>
 
             <div className="px-4 md:px-8 pb-4 flex items-center justify-center flex-wrap gap-2.5">
@@ -529,46 +617,68 @@ export default function PublicBioPage() {
           <button
             type="button"
             onClick={() => setActiveTab("contact")}
-            className={`rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition ${
-              activeTab === "contact" ? "text-white" : "text-zinc-300"
-            }`}
-            style={activeTab === "contact" ? interactiveStyle : { borderColor: hexToRgba(colors.primary, 0.32) }}
+            className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            style={
+              activeTab === "contact"
+                ? interactiveStyle
+                : {
+                    borderColor: hexToRgba(colors.primary, 0.32),
+                    color: textPalette.inactive,
+                  }
+            }
           >
             {profile.sectionLabels.contact}
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("catalog")}
-            className={`rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition ${
-              activeTab === "catalog" ? "text-white" : "text-zinc-300"
-            }`}
-            style={activeTab === "catalog" ? interactiveStyle : { borderColor: hexToRgba(colors.primary, 0.32) }}
+            className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            style={
+              activeTab === "catalog"
+                ? interactiveStyle
+                : {
+                    borderColor: hexToRgba(colors.primary, 0.32),
+                    color: textPalette.inactive,
+                  }
+            }
           >
             {catalogLabel}
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("location")}
-            className={`rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition ${
-              activeTab === "location" ? "text-white" : "text-zinc-300"
-            }`}
-            style={activeTab === "location" ? interactiveStyle : { borderColor: hexToRgba(colors.primary, 0.32) }}
+            className="rounded-2xl border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            style={
+              activeTab === "location"
+                ? interactiveStyle
+                : {
+                    borderColor: hexToRgba(colors.primary, 0.32),
+                    color: textPalette.inactive,
+                  }
+            }
           >
             {profile.sectionLabels.location}
           </button>
         </div>
 
-        <div className="flex-1 overflow-hidden px-4 pb-24 md:px-8 md:pb-8">
+        <div className="flex-1 overflow-hidden px-4 pb-24 md:px-8 md:pb-6">
           {activeTab === "contact" && (
-            <section className={`h-full overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
-              <h2 className="text-2xl font-black">{profile.sectionLabels.contact}</h2>
-              <p className="mt-1 text-sm text-zinc-200/90">Atiende clientes directo desde tu canal favorito.</p>
+            <section
+              className={`flex h-full min-h-0 flex-col rounded-3xl border p-4 md:p-6 ${cardClass}`}
+              style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}
+            >
+              <h2 className="text-2xl font-black" style={{ color: textPalette.heading }}>
+                {profile.sectionLabels.contact}
+              </h2>
+              <p className="mt-1 text-sm" style={{ color: textPalette.muted }}>
+                Atiende clientes directo desde tu canal favorito.
+              </p>
 
-              <div className="mt-4 grid grid-cols-1 gap-3">
+              <div className="mt-4 grid grid-cols-1 gap-3 md:mt-5 md:grid-cols-2 md:gap-4">
                 {callHref && (
                   <a
                     href={callHref}
-                    className={`inline-flex items-center justify-center gap-2 border px-4 py-3 font-bold ${buttonRadiusClass}`}
+                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold md:min-h-[3.25rem] ${!whatsappHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
                     style={contactActionStyle}
                   >
                     <Phone className="h-4 w-4" />
@@ -580,7 +690,7 @@ export default function PublicBioPage() {
                     href={whatsappHref}
                     target="_blank"
                     rel="noreferrer"
-                    className={`inline-flex items-center justify-center gap-2 border px-4 py-3 font-bold ${buttonRadiusClass}`}
+                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold md:min-h-[3.25rem] ${!callHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
                     style={contactActionStyle}
                   >
                     <MessageCircleIcon className="h-4 w-4" />
@@ -594,7 +704,9 @@ export default function PublicBioPage() {
           {activeTab === "catalog" && (
             <section className={`flex h-full flex-col overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
               <div className="hidden md:flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-black">{catalogLabel}</h2>
+                <h2 className="text-2xl font-black" style={{ color: textPalette.heading }}>
+                  {catalogLabel}
+                </h2>
                 <div className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-bold" style={{ borderColor: hexToRgba(colors.primary, 0.4) }}>
                   {profile.businessType === "restaurant" ? <Fish className="h-3.5 w-3.5" /> : <Store className="h-3.5 w-3.5" />}
                   {totalFilteredItems}
@@ -612,12 +724,13 @@ export default function PublicBioPage() {
                   style={catalogStickyStyle}
                 >
                   <label className="flex items-center gap-2 rounded-2xl border px-3 py-2" style={searchSurfaceStyle}>
-                    <Search className="h-4 w-4 text-zinc-400" />
+                    <Search className="h-4 w-4" style={{ color: textPalette.soft }} />
                     <input
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
                       placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
-                      className="w-full bg-transparent text-sm text-white placeholder:text-zinc-400 focus:outline-none"
+                      className="w-full bg-transparent text-sm focus:outline-none"
+                      style={{ color: textPalette.base }}
                     />
                   </label>
 
@@ -630,13 +743,11 @@ export default function PublicBioPage() {
                           categoryChipRefs.current[category.id] = node;
                         }}
                         onClick={() => scrollToCategory(category.id)}
-                        className={`shrink-0 border px-3 py-2 text-xs font-bold transition ${buttonRadiusClass} ${
-                          selectedCategoryId === category.id ? "text-white" : "text-zinc-100"
-                        }`}
+                        className={`shrink-0 border px-3 py-2 text-xs font-bold transition ${buttonRadiusClass}`}
                         style={
                           selectedCategoryId === category.id
                             ? interactiveStyle
-                            : { borderColor: hexToRgba(colors.primary, 0.35) }
+                            : { borderColor: hexToRgba(colors.primary, 0.35), color: textPalette.base }
                         }
                       >
                         <span className="mr-1">{category.emoji || category.name.slice(0, 1).toUpperCase()}</span>
@@ -647,7 +758,7 @@ export default function PublicBioPage() {
                 </div>
 
                 {categorySections.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-white/25 p-4 text-sm text-zinc-200">
+                  <div className="rounded-2xl border border-dashed border-white/25 p-4 text-sm" style={{ color: textPalette.muted }}>
                     No hay productos para el filtro actual.
                   </div>
                 )}
@@ -661,7 +772,9 @@ export default function PublicBioPage() {
                       }}
                       className="scroll-mt-24"
                     >
-                      <h3 className="text-3xl md:text-2xl font-black tracking-tight">{section.name}</h3>
+                      <h3 className="text-3xl md:text-2xl font-black tracking-tight" style={{ color: textPalette.heading }}>
+                        {section.name}
+                      </h3>
                       <div className="mt-3 space-y-3">
                         {section.items.map((item) => (
                           <article
@@ -685,19 +798,27 @@ export default function PublicBioPage() {
 
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-start justify-between gap-2">
-                                  <h4 className="text-xl font-extrabold leading-tight">{item.title}</h4>
+                                  <h4 className="text-xl font-extrabold leading-tight" style={{ color: textPalette.heading }}>
+                                    {item.title}
+                                  </h4>
                                   {item.badge && (
                                     <span className="rounded-full border px-2 py-1 text-[10px] font-black uppercase" style={interactiveStyle}>
                                       {item.badge}
                                     </span>
                                   )}
                                 </div>
-                                {item.description && <p className="mt-1 text-sm text-zinc-200/90">{item.description}</p>}
+                                {item.description && (
+                                  <p className="mt-1 text-sm" style={{ color: textPalette.muted }}>
+                                    {item.description}
+                                  </p>
+                                )}
                                 <div className="mt-2 flex items-center gap-2 text-sm font-bold">
                                   {item.compareAtPrice && (
-                                    <span className="text-zinc-400 line-through">S/{item.compareAtPrice}</span>
+                                    <span className="line-through" style={{ color: textPalette.soft }}>
+                                      S/{item.compareAtPrice}
+                                    </span>
                                   )}
-                                  <span className="text-lg" style={{ color: hexToRgba(colors.primary, 0.98) }}>
+                                  <span className="text-lg" style={{ color: textTone === "blackGold" ? textPalette.key : hexToRgba(colors.primary, 0.98) }}>
                                     S/{item.price}
                                   </span>
                                 </div>
@@ -715,7 +836,9 @@ export default function PublicBioPage() {
 
           {activeTab === "location" && (
             <section className={`h-full overflow-hidden rounded-3xl border p-4 ${cardClass}`} style={{ borderColor: hexToRgba(colors.primary, 0.28), ...cardSurfaceStyle }}>
-              <h2 className="hidden md:block text-2xl font-black">{profile.sectionLabels.location}</h2>
+              <h2 className="hidden md:block text-2xl font-black" style={{ color: textPalette.heading }}>
+                {profile.sectionLabels.location}
+              </h2>
 
               <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: hexToRgba(colors.primary, 0.36) }}>
                 {profile.location.mapEmbedUrl ? (
@@ -727,7 +850,7 @@ export default function PublicBioPage() {
                     referrerPolicy="no-referrer-when-downgrade"
                   />
                 ) : (
-                  <div className="h-64 w-full flex items-center justify-center text-center px-6 text-zinc-300" style={itemSurfaceStyle}>
+                  <div className="h-64 w-full flex items-center justify-center px-6 text-center" style={{ ...itemSurfaceStyle, color: textPalette.muted }}>
                     Agrega un link de Google Maps Embed para mostrar el mapa.
                   </div>
                 )}
@@ -735,14 +858,16 @@ export default function PublicBioPage() {
 
               {profile.location.address && (
                 <div className="mt-4">
-                  <h3 className="text-3xl font-black leading-tight">{profile.location.address}</h3>
+                  <h3 className="text-3xl font-black leading-tight" style={{ color: textPalette.heading }}>
+                    {profile.location.address}
+                  </h3>
                 </div>
               )}
 
               {profile.location.scheduleLines.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-2xl font-black">Horarios</p>
-                  <div className="mt-2 space-y-2 text-sm text-zinc-100">
+                  <p className="text-2xl font-black" style={{ color: textPalette.heading }}>Horarios</p>
+                  <div className="mt-2 space-y-2 text-sm" style={{ color: textPalette.muted }}>
                     {profile.location.scheduleLines.map((line, index) => (
                       <p key={`${line}-${index}`}>{line}</p>
                     ))}
@@ -774,10 +899,12 @@ export default function PublicBioPage() {
             <button
               type="button"
               onClick={() => setActiveTab("contact")}
-              className={`h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight ${
-                activeTab === "contact" ? "text-white" : "text-zinc-300"
-              }`}
-              style={activeTab === "contact" ? interactiveStyle : undefined}
+              className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              style={
+                activeTab === "contact"
+                  ? interactiveStyle
+                  : { color: textPalette.inactive }
+              }
             >
               <div className="mx-auto mb-1 h-4 w-4">
                 <Phone className="h-4 w-4" />
@@ -788,10 +915,12 @@ export default function PublicBioPage() {
             <button
               type="button"
               onClick={() => setActiveTab("catalog")}
-              className={`h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight ${
-                activeTab === "catalog" ? "text-white" : "text-zinc-300"
-              }`}
-              style={activeTab === "catalog" ? interactiveStyle : undefined}
+              className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              style={
+                activeTab === "catalog"
+                  ? interactiveStyle
+                  : { color: textPalette.inactive }
+              }
             >
               <div className="mx-auto mb-1 h-4 w-4">
                 {profile.businessType === "restaurant" ? <Menu className="h-4 w-4" /> : <Shirt className="h-4 w-4" />}
@@ -802,10 +931,12 @@ export default function PublicBioPage() {
             <button
               type="button"
               onClick={() => setActiveTab("location")}
-              className={`h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight ${
-                activeTab === "location" ? "text-white" : "text-zinc-300"
-              }`}
-              style={activeTab === "location" ? interactiveStyle : undefined}
+              className="h-14 rounded-xl px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              style={
+                activeTab === "location"
+                  ? interactiveStyle
+                  : { color: textPalette.inactive }
+              }
             >
               <div className="mx-auto mb-1 h-4 w-4">
                 <MapPin className="h-4 w-4" />

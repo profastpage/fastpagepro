@@ -21,6 +21,7 @@ import {
   LinkHubCatalogItem,
   LinkHubPricingPlan,
   LinkHubProfile,
+  LinkHubTextTone,
   LinkHubTheme,
   MAX_LINK_HUB_CATALOG_CATEGORIES,
   MAX_LINK_HUB_CATALOG_ITEMS,
@@ -223,6 +224,33 @@ const RESTAURANT_DESCRIPTION_HINTS: CatalogDescriptionHint[] = [
       "sabor intenso con combinaciones para todos los gustos",
       "textura dorada y relleno poderoso para disfrutar sin pausa",
     ],
+  },
+];
+
+const TEXT_TONE_OPTIONS: Array<{
+  value: LinkHubTextTone;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "white",
+    label: "Texto blanco",
+    description: "Alto contraste sobre fondos oscuros y modernos.",
+  },
+  {
+    value: "black",
+    label: "Texto negro",
+    description: "Estilo limpio para layouts claros y elegantes.",
+  },
+  {
+    value: "gold",
+    label: "Texto dorado",
+    description: "Apariencia premium llamativa y sofisticada.",
+  },
+  {
+    value: "blackGold",
+    label: "Negro + dorado",
+    description: "Base profesional con acentos deluxe en partes clave.",
   },
 ];
 
@@ -537,6 +565,40 @@ export default function LinkHubPage() {
     }),
     [activeTheme.primary, activeTheme.secondary],
   );
+
+  const previewTextTone = useMemo(() => {
+    const tone = profile?.textTone || "white";
+    if (tone === "black") {
+      return {
+        heading: "#111827",
+        body: "rgba(17,24,39,0.86)",
+        muted: "rgba(17,24,39,0.72)",
+        accent: "#111827",
+      };
+    }
+    if (tone === "gold") {
+      return {
+        heading: "#fef3c7",
+        body: "#fde68a",
+        muted: "rgba(253,230,138,0.86)",
+        accent: "#fbbf24",
+      };
+    }
+    if (tone === "blackGold") {
+      return {
+        heading: "#fbbf24",
+        body: "rgba(15,23,42,0.92)",
+        muted: "rgba(15,23,42,0.78)",
+        accent: "#f59e0b",
+      };
+    }
+    return {
+      heading: "#ffffff",
+      body: "rgba(255,255,255,0.9)",
+      muted: "rgba(228,228,231,0.84)",
+      accent: activeTheme.primary,
+    };
+  }, [activeTheme.primary, profile?.textTone]);
 
   function patchProfile<K extends keyof LinkHubProfile>(field: K, value: LinkHubProfile[K]) {
     setProfile((prev) => {
@@ -2118,6 +2180,33 @@ export default function LinkHubPage() {
                   </label>
                 </div>
 
+                <div className="mt-5 rounded-2xl border border-white/10 bg-zinc-900/40 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.15em] text-zinc-300">
+                    Color de texto publico
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-400">
+                    Elige como se veran titulos, etiquetas y textos en el Link Hub publicado.
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {TEXT_TONE_OPTIONS.map((option) => {
+                      const active = profile.textTone === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => patchProfile("textTone", option.value)}
+                          className={`rounded-xl border px-3 py-2 text-left transition ${
+                            active ? "border-amber-300/70 bg-amber-400/12" : "border-white/10 bg-black/20 hover:border-white/20"
+                          }`}
+                        >
+                          <p className="text-sm font-bold text-white">{option.label}</p>
+                          <p className="mt-0.5 text-[11px] text-zinc-300">{option.description}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2300,11 +2389,13 @@ export default function LinkHubPage() {
                     </div>
                   )}
 
-                  <h3 className="mt-4 text-2xl font-black text-white">{profile.displayName || "Tu nombre"}</h3>
-                  <p className={`mt-2 text-sm ${activeTheme.preset.muted}`}>
+                  <h3 className="mt-4 text-2xl font-black" style={{ color: previewTextTone.heading }}>
+                    {profile.displayName || "Tu nombre"}
+                  </h3>
+                  <p className="mt-2 text-sm" style={{ color: previewTextTone.muted }}>
                     {profile.bio || "Tu descripcion corta aparecera aqui."}
                   </p>
-                  <div className={`mt-2 inline-flex items-center gap-1 text-xs font-bold ${activeTheme.preset.accent}`}>
+                  <div className="mt-2 inline-flex items-center gap-1 text-xs font-bold" style={{ color: previewTextTone.accent }}>
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     {profile.published ? "Publicado" : "Borrador"}
                   </div>
@@ -2321,7 +2412,7 @@ export default function LinkHubPage() {
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="w-4 h-4" />
-                          <span className="font-semibold text-sm">
+                          <span className="font-semibold text-sm" style={{ color: previewTextTone.body }}>
                             {link.title || "Nuevo enlace"}
                           </span>
                         </div>
@@ -2331,8 +2422,8 @@ export default function LinkHubPage() {
                 </div>
 
                 {publicUrl && (
-                  <div className={`mt-6 rounded-xl border border-white/15 bg-black/30 p-3 text-xs ${activeTheme.preset.muted}`}>
-                    <p className="font-bold text-white">URL publica</p>
+                  <div className="mt-6 rounded-xl border border-white/15 bg-black/30 p-3 text-xs" style={{ color: previewTextTone.muted }}>
+                    <p className="font-bold" style={{ color: previewTextTone.heading }}>URL publica</p>
                     <p className="mt-1 break-all">{publicUrl}</p>
                     <a
                       href={publicUrl}
