@@ -38,6 +38,7 @@ import {
   Smartphone,
   Trash2,
   Upload,
+  Wand2,
 } from "lucide-react";
 
 const FIREBASE_PUBLIC_CONFIG = {
@@ -63,8 +64,8 @@ type VisualContent = NonNullable<StoreConfig["content"]>;
 type StoreEditorSnapshot = { config: StoreConfig; products: StoreProduct[] };
 
 const DEFAULT_CONFIG: StoreConfig = {
-  storeName: "Couture Perú",
-  tagline: "El detalle perfecto para tu día a día.",
+  storeName: "Edita aqui: Nombre de tu tienda",
+  tagline: "Escribe aqui una propuesta de valor breve para vender mas.",
   currency: "PEN",
   themeId: "ruby",
   primaryCta: "Comprar ahora",
@@ -74,56 +75,180 @@ const DEFAULT_CONFIG: StoreConfig = {
     accent2: { r: 248, g: 113, b: 113 },
   },
   content: {
-    topStripText: "🎁 10% de Dscto. con el cupón: BIENVENIDA10",
-    heroTitle: "FAST FOOD RESTAURANT",
-    heroSubtitle: "High quality slider in smart, customizable and intuitive design.",
-    offerSectionTitle: "🔥 Ofertas Especiales",
-    searchPlaceholder: "Buscar producto...",
-    scheduleText: "8:00 am - 10:00 pm",
-    businessAddress: "Av. Alfredo Benavides 52, Santiago de Surco",
+    topStripText: "Edita aqui: envio gratis en compras mayores a S/200",
+    kicker: "Edita aqui: ecommerce multirubro",
+    heroTitle: "Edita aqui: Coleccion nueva para vender hoy",
+    heroSubtitle:
+      "Escribe aqui beneficios claros: envio rapido, garantia y pago seguro.",
+    heroPrimaryButton: "Explorar productos",
+    heroSecondaryButton: "Ver carrito",
+    productsTitle: "Edita aqui: Productos destacados",
+    productsSubtitle:
+      "Escribe aqui una frase comercial para impulsar conversion.",
+    tipText: "Edita aqui: soporte rapido por WhatsApp y promociones semanales.",
+    offerSectionTitle: "Ofertas especiales",
+    searchPlaceholder: "Escribe para buscar producto...",
+    scheduleText: "Edita aqui: Atencion 9:00 am - 9:00 pm",
+    businessAddress: "Edita aqui: direccion de tienda o punto de retiro",
     heroImageUrl:
-      "https://images.unsplash.com/photo-1553979459-d2229ba7433b?q=80&w=1600&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1800&auto=format&fit=crop",
     logoImageUrl:
-      "https://images.unsplash.com/photo-1551782450-17144efb9c50?q=80&w=800&auto=format&fit=crop",
-    facebookUrl: "https://facebook.com",
-    instagramUrl: "https://instagram.com",
-    tiktokUrl: "https://tiktok.com",
+      "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=600&auto=format&fit=crop",
+    facebookUrl: "https://facebook.com/",
+    instagramUrl: "https://instagram.com/",
+    tiktokUrl: "https://tiktok.com/",
     whatsappUrl: "https://wa.me/51999999999",
     phoneUrl: "tel:+51999999999",
-    footerLeft: "© 2026 Couture Perú - Todos los derechos reservados.",
+    footerLeft: "Edita aqui: mensaje final, politicas o copyright.",
   },
 };
 
 const DEFAULT_PRODUCTS: StoreProduct[] = [
   {
-    id: "p1",
-    name: "Cartera Veronique",
-    description: "Color camel",
-    category: "Carteras",
-    priceCents: 8700,
-    compareAtPriceCents: 9500,
+    id: "prod-urban-sneakers",
+    name: "Sneakers Urban Edge",
+    description: "Edicion comoda para uso diario y look premium.",
+    category: "Ropa",
+    priceCents: 15900,
+    compareAtPriceCents: 19900,
     imageUrl:
-      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop",
     active: true,
     badge: "Oferta",
     ctaLabel: "Ver producto",
-    sku: "CAR-001",
+    sku: "ROP-001",
   },
   {
-    id: "p2",
-    name: "Cartera Velours",
-    description: "Color plata",
-    category: "Carteras",
-    priceCents: 6500,
-    compareAtPriceCents: 0,
+    id: "prod-smartwatch",
+    name: "Smartwatch Pulse X",
+    description: "Control de salud, notificaciones y bateria extendida.",
+    category: "Tech",
+    priceCents: 23900,
+    compareAtPriceCents: 28900,
     imageUrl:
-      "https://images.unsplash.com/photo-1591561954557-26941169b49e?q=80&w=1200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop",
     active: true,
     badge: "Oferta",
     ctaLabel: "Ver oferta",
-    sku: "CAR-002",
+    sku: "TEC-002",
+  },
+  {
+    id: "prod-backpack",
+    name: "Mochila Tech Pro",
+    description: "Espacios organizados para laptop, cableado y accesorios.",
+    category: "Accesorios",
+    priceCents: 18900,
+    compareAtPriceCents: 0,
+    imageUrl:
+      "https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Top",
+    ctaLabel: "Ver producto",
+    sku: "ACC-003",
+  },
+  {
+    id: "prod-headphones",
+    name: "Auriculares Air Beat",
+    description: "Audio inmersivo con cancelacion de ruido y microfono HD.",
+    category: "Tech",
+    priceCents: 12900,
+    compareAtPriceCents: 15900,
+    imageUrl:
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Oferta",
+    ctaLabel: "Ver producto",
+    sku: "TEC-004",
+  },
+  {
+    id: "prod-bag",
+    name: "Bolso Minimal Leather",
+    description: "Diseno elegante para oficina, eventos y uso casual.",
+    category: "Ropa",
+    priceCents: 17500,
+    compareAtPriceCents: 0,
+    imageUrl:
+      "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Nuevo",
+    ctaLabel: "Ver producto",
+    sku: "ROP-005",
+  },
+  {
+    id: "prod-camera",
+    name: "Camara Pocket 4K",
+    description: "Ideal para creadores que necesitan grabar en movimiento.",
+    category: "Tech",
+    priceCents: 35900,
+    compareAtPriceCents: 39900,
+    imageUrl:
+      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Oferta",
+    ctaLabel: "Ver producto",
+    sku: "TEC-006",
+  },
+  {
+    id: "prod-glasses",
+    name: "Lentes Sunframe",
+    description: "Montura ligera con acabado premium y filtro UV.",
+    category: "Accesorios",
+    priceCents: 8900,
+    compareAtPriceCents: 10900,
+    imageUrl:
+      "https://images.unsplash.com/photo-1577803645773-f96470509666?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Oferta",
+    ctaLabel: "Ver oferta",
+    sku: "ACC-007",
+  },
+  {
+    id: "prod-desk-kit",
+    name: "Set Desk Essentials",
+    description: "Kit de accesorios para productividad y setup profesional.",
+    category: "Accesorios",
+    priceCents: 9900,
+    compareAtPriceCents: 0,
+    imageUrl:
+      "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?q=80&w=1200&auto=format&fit=crop",
+    active: true,
+    badge: "Nuevo",
+    ctaLabel: "Ver producto",
+    sku: "ACC-008",
   },
 ];
+
+function cloneDefaultConfig(): StoreConfig {
+  return JSON.parse(JSON.stringify(DEFAULT_CONFIG)) as StoreConfig;
+}
+
+function cloneDefaultProducts(): StoreProduct[] {
+  return DEFAULT_PRODUCTS.map((product) => ({ ...product }));
+}
+
+function mergeConfigWithDefaults(input?: StoreConfig, slug?: string): StoreConfig {
+  const merged: StoreConfig = {
+    ...cloneDefaultConfig(),
+    ...(input || {}),
+    content: {
+      ...(cloneDefaultConfig().content || {}),
+      ...((input?.content || {}) as VisualContent),
+    },
+  };
+  if (slug) merged.storeSlug = slug;
+  return merged;
+}
+
+function mergeProductsWithDefaults(input?: StoreProduct[]): StoreProduct[] {
+  if (!Array.isArray(input) || !input.length) return cloneDefaultProducts();
+  const defaults = cloneDefaultProducts();
+  return input.map((product, index) => ({
+    ...defaults[index % defaults.length],
+    ...product,
+    id: product.id || newId("prod-"),
+    active: product.active !== false,
+  }));
+}
 
 function newId(prefix = "") {
   const rand =
@@ -216,7 +341,7 @@ export default function StorePage() {
       projectId="store-draft"
       projectType="store"
       initialStatus="draft"
-      initialData={{ config: DEFAULT_CONFIG, products: DEFAULT_PRODUCTS }}
+      initialData={{ config: cloneDefaultConfig(), products: cloneDefaultProducts() }}
     >
       <StoreEditorPage />
     </EditorProvider>
@@ -230,8 +355,8 @@ function StoreEditorPage() {
   const editor = useEditorState<StoreEditorSnapshot>();
 
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [config, setConfig] = useState<StoreConfig>(DEFAULT_CONFIG);
-  const [products, setProducts] = useState<StoreProduct[]>(DEFAULT_PRODUCTS);
+  const [config, setConfig] = useState<StoreConfig>(() => cloneDefaultConfig());
+  const [products, setProducts] = useState<StoreProduct[]>(() => cloneDefaultProducts());
 
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [search, setSearch] = useState("");
@@ -303,22 +428,20 @@ function StoreEditorPage() {
         if (!snap.exists()) return;
         const data = snap.data() as any;
         if (data?.userId && data.userId !== user.uid) throw new Error("No tienes permisos.");
+        const loadedConfig = mergeConfigWithDefaults(
+          data?.storeConfig as StoreConfig | undefined,
+          sanitizeStoreSlug(String(data?.storeSlug || (data?.storeConfig as any)?.storeSlug || "")) || undefined,
+        );
+        const loadedProducts = mergeProductsWithDefaults(data?.storeProducts as StoreProduct[] | undefined);
         if (data?.storeConfig) {
-          const loadedConfig = data.storeConfig as StoreConfig;
-          const slug = sanitizeStoreSlug(String((loadedConfig as any)?.storeSlug || data?.storeSlug || ""));
-          setConfig({ ...DEFAULT_CONFIG, ...loadedConfig, storeSlug: slug || undefined });
+          setConfig(loadedConfig);
         }
-        if (Array.isArray(data?.storeProducts) && data.storeProducts.length) {
-          setProducts(data.storeProducts as StoreProduct[]);
-        }
+        setProducts(loadedProducts);
         setIsDirty(false);
         editor.replaceData(
           {
-            config: data?.storeConfig ? ({ ...DEFAULT_CONFIG, ...(data.storeConfig as StoreConfig) } as StoreConfig) : config,
-            products:
-              Array.isArray(data?.storeProducts) && data.storeProducts.length
-                ? (data.storeProducts as StoreProduct[])
-                : products,
+            config: loadedConfig,
+            products: loadedProducts,
           },
           { markDirty: false, syncPreview: true, changeKind: "bulk" },
         );
@@ -357,14 +480,15 @@ function StoreEditorPage() {
     setProducts((prev) => [
       {
         id: newId("prod-"),
-        name: "Nuevo producto",
-        description: "Descripción",
+        name: "Edita aqui: Nombre del producto",
+        description: "Escribe aqui una descripcion corta orientada a venta.",
         category: "General",
-        priceCents: 4900,
+        priceCents: 9900,
         compareAtPriceCents: 0,
-        imageUrl: "",
+        imageUrl:
+          "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop",
         active: true,
-        badge: "Oferta",
+        badge: "Nuevo",
         ctaLabel: "Ver producto",
         sku: "",
       },
@@ -386,6 +510,15 @@ function StoreEditorPage() {
     }
   };
 
+  const applyMarketingTemplate = () => {
+    setConfig(cloneDefaultConfig());
+    setProducts(cloneDefaultProducts());
+    setSearch("");
+    setCategory("Todos");
+    setSortBy("featured");
+    setError(null);
+  };
+
   const saveProject = async (publishNow: boolean) => {
     if (saving || publishing) return;
     publishNow ? setPublishing(true) : setSaving(true);
@@ -397,7 +530,8 @@ function StoreEditorPage() {
 
       const id = projectId || newId();
       const storeSlug = resolveStoreSlug(config, id);
-      const nextConfig = config.storeSlug === storeSlug ? config : { ...config, storeSlug };
+      const nextConfig = mergeConfigWithDefaults(config, storeSlug);
+      const nextProducts = mergeProductsWithDefaults(products);
       const now = Date.now();
       const html = publishNow ? injectMetricsTracking(storefrontHtml, id) : storefrontHtml;
       const payload: Record<string, any> = {
@@ -409,7 +543,7 @@ function StoreEditorPage() {
         url: `/t/${storeSlug}`,
         storeConfig: nextConfig,
         storeSlug,
-        storeProducts: products,
+        storeProducts: nextProducts,
         html,
         updatedAt: now,
         status: publishNow ? "published" : "draft",
@@ -418,7 +552,7 @@ function StoreEditorPage() {
       if (!projectId) payload.createdAt = now;
       if (publishNow) payload.publishedAt = now;
       await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
-      const snapshot: StoreEditorSnapshot = { config: nextConfig, products };
+      const snapshot: StoreEditorSnapshot = { config: nextConfig, products: nextProducts };
       if (publishNow) {
         await publishEditorDraft({
           projectId: id,
@@ -498,6 +632,7 @@ function StoreEditorPage() {
                 <button onClick={() => setViewMode("mobile")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "mobile" ? "text-white" : "text-slate-700"}`} style={viewMode === "mobile" ? { background: "var(--vs-dark)" } : undefined}><Smartphone className="h-4 w-4" />Móvil</button>
               </div>
               <button onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><ExternalLink className="h-4 w-4" />Ver tienda</button>
+              <button onClick={applyMarketingTemplate} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><Wand2 className="h-4 w-4" />Plantilla marketing</button>
               <button onClick={() => saveProject(false)} disabled={saving || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold disabled:opacity-60" style={{ borderColor: "var(--vs-border)" }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Guardar</button>
               <button onClick={() => void publishFlow.publish()} disabled={publishing || publishFlow.publishing || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-dark)" }}>{publishing || publishFlow.publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}Publicar</button>
             </div>
@@ -506,13 +641,16 @@ function StoreEditorPage() {
 
         <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
           <section className="rounded-3xl border bg-white p-3 md:p-5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
-            <div className={viewMode === "mobile" ? "mx-auto w-[390px] max-w-full" : "w-full"}>
+            <div className="mb-4 rounded-2xl border bg-white px-4 py-3 text-xs font-semibold" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>
+              Haz clic en cualquier campo para editar. Encontraras texto base de marketing listo para personalizar y fotos demo para reemplazar.
+            </div>
+            <div className={viewMode === "mobile" ? "mx-auto w-[430px] max-w-full" : "w-full"}>
               <div className="overflow-hidden rounded-[30px] border bg-[var(--vs-surface)]" style={{ borderColor: "var(--vs-border-strong)" }}>
                 <div className="px-4 py-2 text-center text-sm font-bold text-white" style={{ background: "var(--vs-dark)" }}>
-                  <input value={content.topStripText || ""} onChange={(e) => setContent({ topStripText: e.target.value })} className="w-full bg-transparent text-center outline-none" />
+                  <input value={content.topStripText || ""} onChange={(e) => setContent({ topStripText: e.target.value })} placeholder="Edita aqui: promo principal" className="w-full bg-transparent text-center outline-none" />
                 </div>
                 <div className="relative h-[220px] md:h-[320px]">
-                  {content.heroImageUrl ? <img src={content.heroImageUrl} alt="hero" className="h-full w-full object-cover" /> : null}
+                  {content.heroImageUrl ? <img src={content.heroImageUrl} alt="hero" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center bg-slate-200 text-sm font-semibold text-slate-500">Sube una portada para tu tienda</div>}
                   <label className="absolute right-3 top-3 inline-flex cursor-pointer items-center gap-1 rounded-xl bg-black/70 px-3 py-2 text-xs font-bold text-white"><Upload className="h-3.5 w-3.5" />Portada<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => setContent({ heroImageUrl: img })); e.target.value = ""; }} /></label>
                 </div>
                 <div className="relative px-4 pb-8 pt-16 md:px-8">
@@ -524,16 +662,16 @@ function StoreEditorPage() {
                   </div>
 
                   <div className="mx-auto max-w-3xl text-center">
-                    <input value={config.storeName} onChange={(e) => setConfig((p) => ({ ...p, storeName: e.target.value }))} className="w-full bg-transparent text-center text-4xl font-black outline-none" />
-                    <textarea value={config.tagline} onChange={(e) => setConfig((p) => ({ ...p, tagline: e.target.value }))} className="mt-3 w-full resize-none bg-transparent text-center text-lg outline-none" style={{ color: "var(--vs-muted)" }} />
+                    <input value={config.storeName} onChange={(e) => setConfig((p) => ({ ...p, storeName: e.target.value }))} placeholder="Edita aqui: nombre de la tienda" className="w-full bg-transparent text-center text-4xl font-black outline-none" />
+                    <textarea value={config.tagline} onChange={(e) => setConfig((p) => ({ ...p, tagline: e.target.value }))} placeholder="Escribe aqui: propuesta de valor de tu negocio" className="mt-3 w-full resize-none bg-transparent text-center text-lg outline-none" style={{ color: "var(--vs-muted)" }} />
                     <div className="mx-auto mt-4 max-w-sm rounded-full px-5 py-3 text-lg font-black text-white" style={{ background: "linear-gradient(135deg,var(--vs-accent),var(--vs-accent-2))" }}>
-                      <input value={content.scheduleText || ""} onChange={(e) => setContent({ scheduleText: e.target.value })} className="w-full bg-transparent text-center outline-none" />
+                      <input value={content.scheduleText || ""} onChange={(e) => setContent({ scheduleText: e.target.value })} placeholder="Edita aqui: horario de atencion" className="w-full bg-transparent text-center outline-none" />
                     </div>
-                    <input value={content.businessAddress || ""} onChange={(e) => setContent({ businessAddress: e.target.value })} className="mt-4 w-full bg-transparent text-center text-lg outline-none" />
+                    <input value={content.businessAddress || ""} onChange={(e) => setContent({ businessAddress: e.target.value })} placeholder="Edita aqui: direccion, distrito o punto de retiro" className="mt-4 w-full bg-transparent text-center text-lg outline-none" />
                   </div>
 
                   <div className="mt-8">
-                    <input value={content.offerSectionTitle || ""} onChange={(e) => setContent({ offerSectionTitle: e.target.value })} className="w-full bg-transparent text-4xl font-black outline-none" />
+                    <input value={content.offerSectionTitle || ""} onChange={(e) => setContent({ offerSectionTitle: e.target.value })} placeholder="Edita aqui: titulo de ofertas" className="w-full bg-transparent text-4xl font-black outline-none" />
                     <div className={viewMode === "mobile" ? "mt-4 flex snap-x gap-3 overflow-x-auto pb-2" : "mt-4 grid grid-cols-3 gap-4"}>
                       {offerProducts.map((p) => (
                         <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "min-w-[78%] snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "var(--vs-border)" }}>
@@ -553,17 +691,17 @@ function StoreEditorPage() {
                   <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
                     {filteredProducts.map((p) => (
                       <article key={p.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
-                        <div className="relative h-36 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img })); e.target.value = ""; }} /></label></div>
+                        <div className="relative h-36 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">Sube foto</div>}<label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img })); e.target.value = ""; }} /></label></div>
                         <div className="space-y-2 p-3">
-                          <input value={p.badge || ""} onChange={(e) => updateProduct(p.id, { badge: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs font-bold uppercase outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Badge" />
-                          <input value={p.name} onChange={(e) => updateProduct(p.id, { name: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm font-black outline-none" style={{ borderColor: "var(--vs-border)" }} />
-                          <input value={p.description} onChange={(e) => updateProduct(p.id, { description: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} />
-                          <input value={p.category || ""} onChange={(e) => updateProduct(p.id, { category: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Categoría" />
+                          <input value={p.badge || ""} onChange={(e) => updateProduct(p.id, { badge: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs font-bold uppercase outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: badge" />
+                          <input value={p.name} onChange={(e) => updateProduct(p.id, { name: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm font-black outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: nombre del producto" />
+                          <input value={p.description} onChange={(e) => updateProduct(p.id, { description: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: descripcion comercial" />
+                          <input value={p.category || ""} onChange={(e) => updateProduct(p.id, { category: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: categoria" />
                           <div className="grid grid-cols-2 gap-2">
                             <input value={String((p.priceCents || 0) / 100)} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) return; updateProduct(p.id, { priceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Precio" />
                             <input value={String(((p.compareAtPriceCents || 0) / 100) || "")} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) { updateProduct(p.id, { compareAtPriceCents: 0 }); return; } updateProduct(p.id, { compareAtPriceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Antes" />
                           </div>
-                          <input value={p.ctaLabel || "Ver producto"} onChange={(e) => updateProduct(p.id, { ctaLabel: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="CTA" />
+                          <input value={p.ctaLabel || "Ver producto"} onChange={(e) => updateProduct(p.id, { ctaLabel: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: texto del boton" />
                           <button onClick={() => removeProduct(p.id)} className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold text-red-600" style={{ borderColor: "#fecaca", background: "#fff5f5" }}><Trash2 className="h-3.5 w-3.5" />Eliminar</button>
                         </div>
                       </article>

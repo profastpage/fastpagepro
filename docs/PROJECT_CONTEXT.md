@@ -830,3 +830,14 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Metrics por nivel:
   - `starter`: pantalla de upsell (sin metricas).
   - `business/pro`: habilitado; pro mantiene modo completo.
+
+## Online Store Editable Marketing Template (2026-02-26)
+
+- Ruta privada ajustada: `/store`.
+- Mejora aplicada al editor visual:
+  - plantilla inicial completa con copy de marketing editable (`Edita aqui / Escribe aqui`).
+  - catalogo demo multirubro con fotos reales de productos para arrancar rapido.
+  - boton `Plantilla marketing` para recargar estructura base en un clic.
+  - placeholders y estados vacios mejorados en portada, logo y tarjetas de producto.
+- Persistencia:
+  - al cargar proyectos legacy desde `cloned_sites`, se completa config y productos con defaults para evitar pantallas incompletas.
