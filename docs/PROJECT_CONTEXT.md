@@ -676,3 +676,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - el panel super admin elimina dependencia operativa de `/api/subscription/admin/*` para activacion de plan y trabaja en modo Firestore-first (`users/{uid}`).
 - Resultado:
   - activacion `FREE / BUSINESS / PRO` estable desde el panel, incluso con APIs de suscripcion temporalmente inestables.
+
+## LinkHub Desktop Preview Width + Right Actions (2026-02-25)
+
+- Ruta ajustada: `/linkhub`.
+- Cambios de layout en desktop:
+  - columna derecha del `Preview Mobile` reducida para encajar mejor en PC.
+  - `Preview Mobile` con shell ligeramente mas compacto.
+  - barra de acciones (`Guardar`, `Publicar`, `Copiar`) alineada al extremo derecho y con anchos consistentes por boton.
+- Resultado:
+  - composicion mas ordenada en escritorio, sin sensacion de preview sobredimensionado ni botones desalineados.
