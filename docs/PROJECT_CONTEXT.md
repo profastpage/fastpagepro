@@ -405,3 +405,15 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - barra de acciones `Guardar / Publicar / Copiar` movida a posicion fija debajo del header de Fast Page.
   - permanece visible al hacer scroll hacia arriba o abajo.
   - se mantiene alineada y centrada con el ancho del contenido principal en mobile y desktop.
+
+## Theme Color Persistence Fix (2026-02-25)
+
+- Rutas ajustadas:
+  - dashboard privado: `/linkhub`
+  - normalizacion de perfil: `src/lib/linkHubProfile.ts`
+- Correcciones de persistencia:
+  - fallback de `themePrimaryColor` y `themeSecondaryColor` ahora usa el preset del tema seleccionado (no un tema base fijo).
+  - al ajustar `themeCategory` o `businessType`, si el tema actual sigue siendo valido, ya no se resetean colores.
+- Resultado:
+  - los dos colores del tema se conservan al `guardar`, `publicar` y abrir URL publicada.
+  - la vista publica queda consistente con el preview del dashboard.

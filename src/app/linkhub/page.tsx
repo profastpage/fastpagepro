@@ -514,6 +514,12 @@ export default function LinkHubPage() {
     setProfile((prev) => {
       if (!prev) return prev;
       if (prev.themeCategory === normalizedCategory && prev.theme === safeTheme) return prev;
+      if (prev.theme === safeTheme) {
+        return {
+          ...prev,
+          themeCategory: normalizedCategory,
+        };
+      }
       return {
         ...prev,
         themeCategory: normalizedCategory,
@@ -667,6 +673,12 @@ export default function LinkHubPage() {
       const allowedThemes = LINK_HUB_THEME_CATEGORY_MAP[safeCategory];
       const nextTheme = allowedThemes.includes(prev.theme) ? prev.theme : allowedThemes[0];
       const nextPreset = LINK_HUB_THEME_STYLES[nextTheme];
+      if (nextTheme === prev.theme) {
+        return {
+          ...prev,
+          themeCategory: safeCategory,
+        };
+      }
       return {
         ...prev,
         themeCategory: safeCategory,
@@ -750,18 +762,24 @@ export default function LinkHubPage() {
       const allowedThemes = LINK_HUB_THEME_CATEGORY_MAP[nextThemeCategory];
       const nextTheme = allowedThemes.includes(prev.theme) ? prev.theme : allowedThemes[0];
       const nextPreset = LINK_HUB_THEME_STYLES[nextTheme];
-      return {
+      const baseNext = {
         ...prev,
         businessType: nextType,
         themeCategory: nextThemeCategory,
-        theme: nextTheme,
-        themePrimaryColor: nextPreset.primary,
-        themeSecondaryColor: nextPreset.secondary,
         sectionLabels: {
           ...prev.sectionLabels,
           menu: nextType === "restaurant" ? "Carta" : prev.sectionLabels.menu,
           catalog: nextType === "general" ? "Catalogo" : prev.sectionLabels.catalog,
         },
+      };
+      if (nextTheme === prev.theme) {
+        return baseNext;
+      }
+      return {
+        ...baseNext,
+        theme: nextTheme,
+        themePrimaryColor: nextPreset.primary,
+        themeSecondaryColor: nextPreset.secondary,
       };
     });
   }

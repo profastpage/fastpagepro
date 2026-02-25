@@ -1004,10 +1004,11 @@ export function normalizeLinkHubProfile(
     .slice(0, MAX_LINK_HUB_LINKS);
 
   const safeTheme = getSafeLinkHubTheme(safeText(input.theme) || base.theme);
+  const themePreset = LINK_HUB_THEME_STYLES[safeTheme] || LINK_HUB_THEME_STYLES.midnight;
   const colors = getLinkHubThemeColors(
     safeTheme,
-    safeText(input.themePrimaryColor) || base.themePrimaryColor,
-    safeText(input.themeSecondaryColor) || base.themeSecondaryColor,
+    safeText(input.themePrimaryColor) || themePreset.primary,
+    safeText(input.themeSecondaryColor) || themePreset.secondary,
   );
 
   const rawCoverImageUrls = Array.isArray((input as Record<string, unknown>)["coverImageUrls"])
