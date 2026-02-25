@@ -1451,7 +1451,45 @@ export default function LinkHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground px-4 md:px-8 pt-24 md:pt-28 pb-16">
+    <div className="min-h-screen bg-background text-foreground px-4 md:px-8 pt-40 md:pt-36 pb-16">
+      <div className="fixed inset-x-0 top-16 md:top-20 z-40 px-4 md:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="rounded-3xl border border-white/10 bg-zinc-950/90 p-3 backdrop-blur-xl">
+            <div className="flex flex-row-reverse items-center justify-end gap-2 md:grid md:grid-cols-3 md:gap-3">
+              <button
+                onClick={() => saveProfile("draft")}
+                disabled={isSaving}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-sm font-bold text-white md:h-auto md:w-auto md:gap-2 md:rounded-2xl md:px-5 md:py-3"
+                title="Guardar borrador"
+                aria-label="Guardar borrador"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                <span className="hidden md:inline">Guardar borrador</span>
+              </button>
+              <button
+                onClick={() => saveProfile("publish")}
+                disabled={isSaving}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-sm font-bold text-emerald-100 md:h-auto md:w-auto md:gap-2 md:rounded-2xl md:px-5 md:py-3"
+                title="Publicar Link Hub"
+                aria-label="Publicar Link Hub"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                <span className="hidden md:inline">Publicar Link Hub</span>
+              </button>
+              <button
+                onClick={copyPublicUrl}
+                disabled={!publicUrl}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-300/40 bg-sky-400/10 text-sm font-bold text-sky-100 disabled:opacity-50 md:h-auto md:w-auto md:gap-2 md:rounded-2xl md:px-5 md:py-3"
+                title="Copiar URL"
+                aria-label="Copiar URL"
+              >
+                <Copy className="w-4 h-4" />
+                <span className="hidden md:inline">Copiar URL</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1481,41 +1519,6 @@ export default function LinkHubPage() {
             {message.text}
           </div>
         )}
-
-        <div className="sticky top-24 z-30 mb-6 rounded-3xl border border-white/10 bg-zinc-950/90 p-3 backdrop-blur-xl">
-          <div className="flex flex-row-reverse items-center justify-end gap-2 md:grid md:grid-cols-3 md:gap-3">
-            <button
-              onClick={() => saveProfile("draft")}
-              disabled={isSaving}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-sm font-bold text-white md:h-auto md:w-auto md:gap-2 md:rounded-2xl md:px-5 md:py-3"
-              title="Guardar borrador"
-              aria-label="Guardar borrador"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span className="hidden md:inline">Guardar borrador</span>
-            </button>
-            <button
-              onClick={() => saveProfile("publish")}
-              disabled={isSaving}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-sm font-bold text-emerald-100 md:h-auto md:w-auto md:gap-2 md:rounded-2xl md:px-5 md:py-3"
-              title="Publicar Link Hub"
-              aria-label="Publicar Link Hub"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-              <span className="hidden md:inline">Publicar Link Hub</span>
-            </button>
-            <button
-              onClick={copyPublicUrl}
-              disabled={!publicUrl}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-300/40 bg-sky-400/10 text-sm font-bold text-sky-100 disabled:opacity-50 md:h-auto md:w-auto md:gap-2 md:rounded-2xl md:px-5 md:py-3"
-              title="Copiar URL"
-              aria-label="Copiar URL"
-            >
-              <Copy className="w-4 h-4" />
-              <span className="hidden md:inline">Copiar URL</span>
-            </button>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8">
           <section className="space-y-6">

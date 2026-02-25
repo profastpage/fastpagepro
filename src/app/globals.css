@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
+  /* Prevent accidental horizontal drift without affecting intentional inner carousels */
+  body > * {
+    max-width: 100%;
+  }
+}
+
 :root {
   /* Cosmic Dark Theme (Default) */
   --background: #050505;

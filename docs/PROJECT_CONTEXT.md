@@ -395,3 +395,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - genera mensaje ordenado, amable y con emojis.
   - incluye detalle por item, cantidades, subtotales, descuentos, total y datos del cliente.
   - abre `wa.me` al numero configurado en el perfil (`whatsappNumber` con fallback a `phoneNumber`).
+
+## Global Layout Guard + LinkHub Fixed Top Actions (2026-02-25)
+
+- Global:
+  - se bloquea desplazamiento horizontal accidental en toda la plataforma (`layout` + `globals`).
+  - objetivo: evitar deslizamiento izquierda/derecha fuera de secciones explicitamente horizontales (ej. carruseles/chips internos).
+- LinkHub dashboard (`/linkhub`):
+  - barra de acciones `Guardar / Publicar / Copiar` movida a posicion fija debajo del header de Fast Page.
+  - permanece visible al hacer scroll hacia arriba o abajo.
+  - se mantiene alineada y centrada con el ancho del contenido principal en mobile y desktop.
