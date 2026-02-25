@@ -868,3 +868,16 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - `/auth` ahora redirige hosts alias hacia el dominio canonico antes de OAuth Google.
 - Sesion de suscripcion:
   - `/api/subscription/session` ahora fija `cookie domain` dinamico para compartir sesion entre `www` y apex (`.fastpagespro.com` y fallback `.fastpagepro.com`).
+
+## Store Editor Mobile + Desktop Layout Pass (2026-02-26)
+
+- Ruta ajustada: `/store`.
+- Modo movil:
+  - se bloquea desborde horizontal global para evitar desplazamiento lateral del editor.
+  - bloque de ofertas en modo carrusel interno (snap) con 1-2 tarjetas visibles segun ancho.
+  - grilla de productos en modo movil ajustada a `1` columna y `2` columnas desde anchos mayores para mantener orden visual.
+- Tarjetas de producto (editor):
+  - bordes de campos internos aclarados con estilo casi imperceptible (`soft white/light`) para mejor legibilidad.
+  - inputs de descripcion/metadata forzados a fondo blanco y texto oscuro para evitar contraste negro sobre negro.
+- Modo desktop:
+  - panel lateral de edicion movido al lado izquierdo con layout uniforme en pantalla amplia.

@@ -301,6 +301,8 @@ function rgbToHex(rgb?: { r: number; g: number; b: number }) {
   return `#${r}${g}${b}`;
 }
 
+const SOFT_INPUT_BORDER = "#ecf1f7";
+
 async function compressImage(file: File, maxSide = 1400, quality = 0.84) {
   const data = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();
@@ -617,7 +619,7 @@ function StoreEditorPage() {
   });
 
   return (
-    <div className="min-h-screen pt-20 pb-8" style={{ ...themeVars, background: "var(--vs-page)", color: "var(--vs-text)" }}>
+    <div className="min-h-screen overflow-x-hidden pt-20 pb-8" style={{ ...themeVars, background: "var(--vs-page)", color: "var(--vs-text)" }}>
       <div className="mx-auto max-w-[1600px] px-3 md:px-6">
         <header className="sticky top-16 z-40 rounded-2xl border bg-white/90 px-3 py-3 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -649,12 +651,12 @@ function StoreEditorPage() {
           </div>
         </header>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <section className="rounded-3xl border bg-white p-3 md:p-5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <section className="order-1 rounded-3xl border bg-white p-3 md:p-5 xl:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
             <div className="mb-4 rounded-2xl border bg-white px-4 py-3 text-xs font-semibold" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>
               Haz clic en cualquier campo para editar. Encontraras texto base de marketing listo para personalizar y fotos demo para reemplazar.
             </div>
-            <div className={viewMode === "mobile" ? "mx-auto w-[430px] max-w-full" : "w-full"}>
+            <div className={viewMode === "mobile" ? "mx-auto w-full max-w-[430px] overflow-x-hidden" : "w-full"}>
               <div className="overflow-hidden rounded-[30px] border bg-[var(--vs-surface)]" style={{ borderColor: "var(--vs-border-strong)" }}>
                 <div className="px-4 py-2 text-center text-sm font-bold text-white" style={{ background: "var(--vs-dark)" }}>
                   <input value={content.topStripText || ""} onChange={(e) => setContent({ topStripText: e.target.value })} placeholder="Edita aqui: promo principal" className="w-full bg-transparent text-center outline-none" />
@@ -682,9 +684,9 @@ function StoreEditorPage() {
 
                   <div className="mt-8">
                     <input value={content.offerSectionTitle || ""} onChange={(e) => setContent({ offerSectionTitle: e.target.value })} placeholder="Edita aqui: titulo de ofertas" className="w-full bg-transparent text-4xl font-black outline-none" />
-                    <div className={viewMode === "mobile" ? "mt-4 flex snap-x gap-3 overflow-x-auto pb-2" : "mt-4 grid grid-cols-3 gap-4"}>
+                    <div className={viewMode === "mobile" ? "mt-4 grid grid-flow-col auto-cols-[85%] min-[430px]:auto-cols-[48%] gap-3 overflow-x-auto pb-2 pr-1 snap-x snap-mandatory" : "mt-4 grid grid-cols-3 gap-4"}>
                       {offerProducts.map((p) => (
-                        <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "min-w-[78%] snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "var(--vs-border)" }}>
+                        <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
                           <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-black uppercase text-white">{p.badge || "Oferta"}</span></div>
                           <div className="p-3"><p className="font-black">{p.name}</p><p className="mt-1 text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatMoney(p.priceCents, config.currency)}</p><button className="mt-2 h-10 w-full rounded-xl text-sm font-black text-white" style={{ background: "var(--vs-accent)" }}>{p.ctaLabel || "Ver oferta"}</button></div>
                         </article>
@@ -698,20 +700,20 @@ function StoreEditorPage() {
                     <div className="mt-3 flex items-center justify-between"><p className="text-sm font-semibold" style={{ color: "var(--vs-muted)" }}>Total: {filteredProducts.length} productos</p><select value={sortBy} onChange={(e) => setSortBy(e.target.value as VisualSort)} className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none" style={{ borderColor: "var(--vs-border)" }}><option value="featured">Ordenar por</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option><option value="nameAsc">Nombre A-Z</option></select></div>
                   </div>
 
-                  <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
+                  <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-1 min-[390px]:grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
                     {filteredProducts.map((p) => (
-                      <article key={p.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
+                      <article key={p.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "#edf2f7" }}>
                         <div className="relative h-36 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">Sube foto</div>}<label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img })); e.target.value = ""; }} /></label></div>
                         <div className="space-y-2 p-3">
-                          <input value={p.badge || ""} onChange={(e) => updateProduct(p.id, { badge: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs font-bold uppercase outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: badge" />
-                          <input value={p.name} onChange={(e) => updateProduct(p.id, { name: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-sm font-black outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: nombre del producto" />
-                          <input value={p.description} onChange={(e) => updateProduct(p.id, { description: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: descripcion comercial" />
-                          <input value={p.category || ""} onChange={(e) => updateProduct(p.id, { category: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: categoria" />
+                          <input value={p.badge || ""} onChange={(e) => updateProduct(p.id, { badge: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs font-bold uppercase text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: badge" />
+                          <input value={p.name} onChange={(e) => updateProduct(p.id, { name: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-sm font-black text-slate-800 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: nombre del producto" />
+                          <input value={p.description} onChange={(e) => updateProduct(p.id, { description: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: descripcion comercial" />
+                          <input value={p.category || ""} onChange={(e) => updateProduct(p.id, { category: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: categoria" />
                           <div className="grid grid-cols-2 gap-2">
-                            <input value={String((p.priceCents || 0) / 100)} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) return; updateProduct(p.id, { priceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Precio" />
-                            <input value={String(((p.compareAtPriceCents || 0) / 100) || "")} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) { updateProduct(p.id, { compareAtPriceCents: 0 }); return; } updateProduct(p.id, { compareAtPriceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Antes" />
+                            <input value={String((p.priceCents || 0) / 100)} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) return; updateProduct(p.id, { priceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Precio" />
+                            <input value={String(((p.compareAtPriceCents || 0) / 100) || "")} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) { updateProduct(p.id, { compareAtPriceCents: 0 }); return; } updateProduct(p.id, { compareAtPriceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Antes" />
                           </div>
-                          <input value={p.ctaLabel || "Ver producto"} onChange={(e) => updateProduct(p.id, { ctaLabel: e.target.value })} className="w-full rounded-lg border px-2 py-1 text-xs outline-none" style={{ borderColor: "var(--vs-border)" }} placeholder="Escribe aqui: texto del boton" />
+                          <input value={p.ctaLabel || "Ver producto"} onChange={(e) => updateProduct(p.id, { ctaLabel: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: texto del boton" />
                           <button onClick={() => removeProduct(p.id)} className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold text-red-600" style={{ borderColor: "#fecaca", background: "#fff5f5" }}><Trash2 className="h-3.5 w-3.5" />Eliminar</button>
                         </div>
                       </article>
@@ -724,7 +726,7 @@ function StoreEditorPage() {
             </div>
           </section>
 
-          <aside className="space-y-3">
+          <aside className="order-2 space-y-3 xl:order-1">
             <EditorSidebar
               contentTab={<p className="text-xs text-zinc-600">Contenido editable rapido + panel avanzado sincronizados.</p>}
               designTab={<p className="text-xs text-zinc-600">Tema, colores y layout desktop/mobile.</p>}
