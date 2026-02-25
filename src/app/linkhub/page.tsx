@@ -13,6 +13,7 @@ import {
   getLinkHubThemeColors,
   getSafeLinkHubThemeCategory,
   getSafeLinkHubTheme,
+  recommendCartaThemeIdByLinkTheme,
   hexToRgba,
   isLinkHubSlugAvailable,
   isValidExternalUrl,
@@ -717,11 +718,13 @@ export default function LinkHubPage() {
 
   function applyTheme(theme: LinkHubTheme) {
     const preset = LINK_HUB_THEME_STYLES[theme];
+    const mappedCartaThemeId = recommendCartaThemeIdByLinkTheme(theme);
     setProfile((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
         theme,
+        cartaThemeId: mappedCartaThemeId,
         themePrimaryColor: preset.primary,
         themeSecondaryColor: preset.secondary,
       };
@@ -1460,6 +1463,8 @@ export default function LinkHubPage() {
           phoneNumber: profile.phoneNumber.trim(),
           whatsappNumber: profile.whatsappNumber.trim(),
           theme: safeTheme,
+          cartaThemeId: resolvedCartaThemeId,
+          cartaBackgroundMode: resolvedCartaBackgroundMode,
           themePrimaryColor: safeColors.primary,
           themeSecondaryColor: safeColors.secondary,
           links: preparedLinks.length > 0 ? preparedLinks : [createEmptyLink()],

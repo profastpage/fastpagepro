@@ -616,3 +616,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
     - variables separadas: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`
   - `src/lib/server/requireFirebaseUser.ts` incorpora fallback seguro de verificacion de token via Identity Toolkit cuando `adminAuth` no esta disponible.
   - se mantiene autorizacion estricta de super admin por correo root (`afiliadosprobusiness@gmail.com`).
+
+## Carta Theme Sync on Save/Publish (2026-02-25)
+
+- Rutas ajustadas:
+  - `/linkhub` (editor + preview)
+  - `/bio/[slug]` (publica)
+- Mejora aplicada:
+  - al elegir un tema visual deluxe (grid de 20 temas) ahora se sincroniza automaticamente un `cartaThemeId` compatible.
+  - al guardar/publicar, `cartaThemeId` y `cartaBackgroundMode` se persisten explicitamente.
+  - en la pagina publica, si un perfil antiguo no tiene `cartaThemeId`, se aplica fallback desde el tema visual seleccionado para mantener coherencia.

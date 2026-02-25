@@ -289,6 +289,29 @@ export const LINK_HUB_THEME_CATEGORY_MAP: Record<LinkHubThemeCategory, LinkHubTh
   technology: ["obsidian", "ocean", "cobalt", "neon", "neonCircuit", "titanTech", "rgb"],
 };
 
+export const LINK_HUB_THEME_TO_CARTA_THEME: Record<LinkHubTheme, CartaThemeId> = {
+  midnight: "gourmet",
+  graphite: "gourmet",
+  sunset: "desserts",
+  ocean: "bar_drinks",
+  aurora: "healthy",
+  neon: "fastfood",
+  ruby: "sushi",
+  jade: "healthy",
+  coral: "desserts",
+  violet: "bar_drinks",
+  cobalt: "bar_drinks",
+  sandstorm: "fastfood",
+  obsidian: "bar_drinks",
+  saffron: "polleria_parrilla",
+  crimsonChef: "sushi",
+  runway: "gourmet",
+  blushBoutique: "desserts",
+  neonCircuit: "bar_drinks",
+  titanTech: "bar_drinks",
+  rgb: "bar_drinks",
+};
+
 export type LinkHubLinkType =
   | "website"
   | "instagram"
@@ -660,6 +683,11 @@ export function getSafeLinkHubTheme(theme?: string): LinkHubTheme {
   return "midnight";
 }
 
+export function recommendCartaThemeIdByLinkTheme(theme?: string): CartaThemeId {
+  const safeTheme = getSafeLinkHubTheme(theme);
+  return LINK_HUB_THEME_TO_CARTA_THEME[safeTheme] || "gourmet";
+}
+
 export function normalizeHexColor(input: string | undefined, fallback: string): string {
   const source = safeText(input);
   if (!HEX_COLOR_PATTERN.test(source)) return fallback;
@@ -1024,8 +1052,11 @@ export function normalizeLinkHubProfile(
   const rubroHint =
     safeText(input.categoryLabel) ||
     (businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General");
+  const mappedCartaThemeId = recommendCartaThemeIdByLinkTheme(safeTheme);
   const cartaThemeId = getSafeCartaThemeId(
-    safeText((input as Record<string, unknown>)["cartaThemeId"]) || recommendCartaThemeIdByRubro(rubroHint),
+    safeText((input as Record<string, unknown>)["cartaThemeId"]) ||
+      mappedCartaThemeId ||
+      recommendCartaThemeIdByRubro(rubroHint),
   );
   const colors = getLinkHubThemeColors(
     safeTheme,

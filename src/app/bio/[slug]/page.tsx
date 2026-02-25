@@ -6,6 +6,7 @@ import {
   getLinkHubThemeColors,
   getSafeLinkHubCartaBackgroundMode,
   getSafeLinkHubTheme,
+  recommendCartaThemeIdByLinkTheme,
   getPublishedLinkHubProfileBySlug,
   getSafeLinkHubFontFamily,
   getSafeLinkHubTextTone,
@@ -403,7 +404,7 @@ export default function PublicBioPage() {
   const rubroHint =
     profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General");
   const cartaThemeId = getSafeCartaThemeId(
-    profile.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint),
+    profile.cartaThemeId || recommendCartaThemeIdByLinkTheme(profile.theme) || recommendCartaThemeIdByRubro(rubroHint),
   );
   const activeCartaTheme = getCartaTheme(cartaThemeId);
   const cartaBackgroundMode = getSafeLinkHubCartaBackgroundMode(profile.cartaBackgroundMode);
