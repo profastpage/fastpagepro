@@ -626,29 +626,28 @@ export default function PublicBioPage() {
   }
 
   const pageStyle = {
-    backgroundColor: hexToRgba(colors.secondary, 0.45),
-    backgroundImage: `radial-gradient(120% 110% at 10% 0%, ${hexToRgba(colors.primary, 0.34)} 0%, transparent 55%), radial-gradient(120% 110% at 100% 100%, ${hexToRgba(colors.secondary, 0.4)} 0%, transparent 60%), linear-gradient(165deg, ${hexToRgba(colors.primary, 0.28)} 0%, ${hexToRgba(colors.secondary, 0.26)} 50%, ${hexToRgba(colors.primary, 0.24)} 100%)`,
+    backgroundColor: "#02040a",
+    backgroundImage: `radial-gradient(120% 110% at 8% 0%, ${hexToRgba(colors.primary, 0.16)} 0%, transparent 54%), radial-gradient(130% 120% at 100% 100%, ${hexToRgba(colors.secondary, 0.18)} 0%, transparent 58%), linear-gradient(165deg, rgba(2,6,23,0.98) 0%, rgba(3,7,18,0.99) 48%, rgba(0,0,0,1) 100%)`,
   };
 
   const wrapperStyle = {
-    borderColor: hexToRgba(colors.primary, 0.45),
+    borderColor: hexToRgba(colors.primary, 0.5),
     fontFamily,
     color: textPalette.base,
-    background: prefersDarkText
-      ? `linear-gradient(160deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 55%, ${hexToRgba(colors.primary, 0.1)} 100%), linear-gradient(0deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.56) 100%)`
-      : `linear-gradient(160deg, ${hexToRgba(colors.primary, 0.22)} 0%, ${hexToRgba(colors.secondary, 0.18)} 55%, ${hexToRgba(colors.primary, 0.14)} 100%)`,
+    background: `linear-gradient(120deg, rgba(255,255,255,0.06) 0%, rgba(148,163,184,0.05) 24%, transparent 52%), linear-gradient(220deg, ${hexToRgba(colors.primary, 0.22)} 0%, ${hexToRgba(colors.secondary, 0.16)} 36%, rgba(2,6,23,0.96) 72%, rgba(0,0,0,0.98) 100%)`,
+    boxShadow: `0 28px 48px -34px ${hexToRgba(colors.primary, 0.72)}`,
   };
 
   const interactiveStyle = {
-    borderColor: hexToRgba(colors.primary, 0.42),
-    background: `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.36)} 0%, ${hexToRgba(colors.secondary, 0.3)} 100%)`,
-    boxShadow: `0 10px 24px -18px ${hexToRgba(colors.primary, 0.95)}`,
+    borderColor: hexToRgba(colors.primary, 0.5),
+    background: `linear-gradient(132deg, rgba(255,255,255,0.06) 0%, ${hexToRgba(colors.primary, 0.22)} 24%, ${hexToRgba(colors.secondary, 0.18)} 62%, rgba(2,6,23,0.9) 100%)`,
+    boxShadow: `0 10px 24px -18px ${hexToRgba(colors.primary, 0.86)}`,
     color: textPalette.active,
   };
 
   const headerBarStyle = {
-    borderColor: hexToRgba(colors.primary, 0.2),
-    background: `linear-gradient(90deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%)`,
+    borderColor: hexToRgba(colors.primary, 0.26),
+    background: `linear-gradient(100deg, rgba(3,7,18,0.96) 0%, ${hexToRgba(colors.primary, 0.12)} 36%, ${hexToRgba(colors.secondary, 0.1)} 64%, rgba(2,6,23,0.96) 100%), linear-gradient(120deg, rgba(255,255,255,0.05) 0%, transparent 38%)`,
   };
 
   const avatarFallbackStyle = {
@@ -659,63 +658,51 @@ export default function PublicBioPage() {
   const cardSurfaceStyle =
     profile.cardStyle === "solid"
       ? {
-          background: prefersDarkText
-            ? `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.16)} 0%, ${hexToRgba(colors.secondary, 0.12)} 100%), rgba(255,255,255,0.5)`
-            : `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.22)} 100%)`,
+          background: `linear-gradient(130deg, rgba(255,255,255,0.045) 0%, ${hexToRgba(colors.primary, 0.16)} 26%, ${hexToRgba(colors.secondary, 0.14)} 58%, rgba(2,6,23,0.78) 100%)`,
         }
       : profile.cardStyle === "outline"
-      ? { background: "transparent" }
+      ? { background: "rgba(2,6,23,0.3)" }
       : {
-          background: prefersDarkText
-            ? `linear-gradient(150deg, ${hexToRgba(colors.primary, 0.12)} 0%, ${hexToRgba(colors.secondary, 0.08)} 100%), rgba(255,255,255,0.45)`
-            : `linear-gradient(150deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.14)} 100%)`,
+          background: `linear-gradient(130deg, rgba(255,255,255,0.05) 0%, ${hexToRgba(colors.primary, 0.12)} 22%, ${hexToRgba(colors.secondary, 0.1)} 58%, rgba(2,6,23,0.74) 100%)`,
           backdropFilter: "blur(10px)",
         };
 
   const catalogStickyStyle = {
-    borderColor: hexToRgba(colors.primary, 0.24),
-    background: `linear-gradient(180deg, ${hexToRgba(colors.primary, 0.38)} 0%, ${hexToRgba(colors.secondary, 0.26)} 100%)`,
-    boxShadow: `0 12px 24px -22px ${hexToRgba(colors.primary, 0.95)}`,
+    borderColor: hexToRgba(colors.primary, 0.28),
+    background: `linear-gradient(180deg, rgba(2,6,23,0.96) 0%, ${hexToRgba(colors.primary, 0.12)} 52%, rgba(2,6,23,0.96) 100%), linear-gradient(120deg, rgba(255,255,255,0.04) 0%, transparent 42%)`,
+    boxShadow: `0 12px 24px -22px ${hexToRgba(colors.primary, 0.72)}`,
   };
 
   const searchSurfaceStyle = {
     borderColor: hexToRgba(colors.primary, 0.4),
-    background: prefersDarkText
-      ? `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.2)} 0%, ${hexToRgba(colors.secondary, 0.16)} 100%), rgba(255,255,255,0.52)`
-      : `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.26)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%)`,
+    background: `linear-gradient(120deg, rgba(255,255,255,0.045) 0%, ${hexToRgba(colors.primary, 0.12)} 32%, ${hexToRgba(colors.secondary, 0.09)} 100%)`,
   };
 
   const navSurfaceStyle = {
-    borderColor: hexToRgba(colors.primary, 0.35),
-    background: prefersDarkText
-      ? `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.24)} 0%, ${hexToRgba(colors.secondary, 0.2)} 100%), rgba(255,255,255,0.68)`
-      : `linear-gradient(120deg, ${hexToRgba(colors.primary, 0.42)} 0%, ${hexToRgba(colors.secondary, 0.32)} 100%)`,
+    borderColor: hexToRgba(colors.primary, 0.38),
+    background: `linear-gradient(120deg, rgba(255,255,255,0.06) 0%, ${hexToRgba(colors.primary, 0.18)} 30%, ${hexToRgba(colors.secondary, 0.12)} 100%)`,
   };
 
   const itemSurfaceStyle = {
-    background: prefersDarkText
-      ? `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.1)} 0%, ${hexToRgba(colors.secondary, 0.08)} 100%), rgba(255,255,255,0.58)`
-      : `linear-gradient(145deg, ${hexToRgba(colors.primary, 0.18)} 0%, ${hexToRgba(colors.secondary, 0.12)} 100%)`,
+    background: `linear-gradient(145deg, rgba(255,255,255,0.04) 0%, ${hexToRgba(colors.primary, 0.12)} 28%, ${hexToRgba(colors.secondary, 0.09)} 66%, rgba(2,6,23,0.84) 100%)`,
   };
 
   const contactActionStyle = {
-    borderColor: hexToRgba(colors.primary, 0.22),
-    background: "rgba(255,255,255,0.95)",
-    color: "#0f172a",
-    boxShadow: `0 10px 20px -14px ${hexToRgba(colors.primary, 0.95)}`,
+    borderColor: hexToRgba(colors.primary, 0.34),
+    background: `linear-gradient(130deg, rgba(255,255,255,0.08) 0%, ${hexToRgba(colors.primary, 0.12)} 36%, rgba(2,6,23,0.9) 100%)`,
+    color: "#f8fafc",
+    boxShadow: `0 10px 20px -14px ${hexToRgba(colors.primary, 0.68)}`,
   };
 
   const cartPanelStyle = {
-    borderColor: hexToRgba(colors.primary, 0.35),
-    background: prefersDarkText
-      ? `linear-gradient(165deg, ${hexToRgba(colors.primary, 0.14)} 0%, ${hexToRgba(colors.secondary, 0.1)} 55%, rgba(255,255,255,0.9) 100%)`
-      : `linear-gradient(165deg, ${hexToRgba(colors.primary, 0.32)} 0%, ${hexToRgba(colors.secondary, 0.24)} 100%)`,
+    borderColor: hexToRgba(colors.primary, 0.36),
+    background: `linear-gradient(165deg, rgba(255,255,255,0.06) 0%, ${hexToRgba(colors.primary, 0.16)} 26%, ${hexToRgba(colors.secondary, 0.12)} 62%, rgba(2,6,23,0.92) 100%)`,
   };
 
   const checkoutInputStyle = {
     borderColor: hexToRgba(colors.primary, 0.28),
-    color: prefersDarkText ? "#0f172a" : "#ffffff",
-    background: prefersDarkText ? "rgba(255,255,255,0.8)" : "rgba(15,23,42,0.35)",
+    color: prefersDarkText ? "#e2e8f0" : "#ffffff",
+    background: `linear-gradient(130deg, rgba(255,255,255,0.04) 0%, ${hexToRgba(colors.primary, 0.08)} 36%, rgba(2,6,23,0.88) 100%)`,
   };
 
   return (

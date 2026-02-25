@@ -454,3 +454,15 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - esto garantiza visibilidad en plan `FREE` (limite de 3 temas por categoria) y en `BUSINESS/PRO`.
 - Nota:
   - se mantienen 20 temas totales, sin aumentar el catalogo global.
+
+## Public Bio Dark Satin Visual Pass (2026-02-25)
+
+- Ruta ajustada: `/bio/[slug]`.
+- Mejora visual global aplicada a todos los temas:
+  - base de fondo mas oscura (elimina el look claro/lavado).
+  - overlay satinado/tornasol suave (negro + plata) en contenedor principal y superficies.
+  - tabs, chips, buscador, sticky de catalogo y cards con gradientes dark premium.
+  - botones de contacto y panel de carrito con estilo oscuro consistente.
+  - inputs de checkout ajustados a apariencia dark para evitar bloques claros.
+- Resultado:
+  - la pagina publica se mantiene alineada con el preview premium oscuro y con mejor percepcion deluxe.
