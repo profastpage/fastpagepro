@@ -15,10 +15,13 @@ export async function POST(request: NextRequest) {
     const secret = process.env.SUBSCRIPTION_SESSION_SECRET || process.env.NEXTAUTH_SECRET;
 
     if (!secret) {
-      return NextResponse.json(
-        { error: "Falta SUBSCRIPTION_SESSION_SECRET en el servidor." },
-        { status: 500 },
-      );
+      return NextResponse.json({
+        success: true,
+        plan: summary.plan,
+        status: summary.status,
+        endDate: summary.endDate,
+        warning: "SESSION_COOKIE_DISABLED",
+      });
     }
 
     const now = Math.floor(Date.now() / 1000);

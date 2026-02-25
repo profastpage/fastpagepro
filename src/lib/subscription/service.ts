@@ -1,7 +1,6 @@
 import {
   PaymentMethod,
   PlanType,
-  Subscription,
   SubscriptionRequest,
   SubscriptionRequestStatus,
   SubscriptionStatus,
@@ -34,6 +33,21 @@ export interface SubscriptionSummary {
   features: Record<SubscriptionFeature, boolean>;
 }
 
+type SubscriptionRecordSource = "prisma" | "firestore" | "memory";
+
+export interface SubscriptionRecord {
+  id: string;
+  userId: string;
+  plan: PlanType;
+  status: SubscriptionStatus;
+  startDate: Date;
+  endDate: Date;
+  paymentMethod: PaymentMethod;
+  createdAt: Date;
+  updatedAt: Date;
+  source: SubscriptionRecordSource;
+}
+
 function getNow() {
   return new Date();
 }
@@ -52,26 +66,200 @@ function getDaysRemaining(endDate: Date): number {
   return Math.ceil(diff / (24 * 60 * 60 * 1000));
 }
 
+function toPlanType(value: unknown): PlanType | null {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (normalized === "FREE" || normalized === "BUSINESS" || normalized === "PRO") {
+    return normalized as PlanType;
+  }
+  return null;
+}
+
+function toSubscriptionStatus(value: unknown): SubscriptionStatus | null {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (normalized === "ACTIVE" || normalized === "EXPIRED" || normalized === "PENDING") {
+    return normalized as SubscriptionStatus;
+  }
+  return null;
+}
+
+function toPaymentMethod(value: unknown): PaymentMethod | null {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (normalized === "YAPE" || normalized === "PLIN" || normalized === "TRANSFERENCIA") {
+    return normalized as PaymentMethod;
+  }
+  return null;
+}
+
+function toDateOrFallback(value: unknown, fallback: Date): Date {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+  if (typeof value === "string") {
+    const maybeMs = Number(value);
+    if (Number.isFinite(maybeMs) && value.trim() !== "") {
+      const fromMs = new Date(maybeMs);
+      if (!Number.isNaN(fromMs.getTime())) return fromMs;
+    }
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  if (value && typeof value === "object" && "toDate" in (value as Record<string, unknown>)) {
+    const toDate = (value as { toDate?: () => Date }).toDate;
+    if (typeof toDate === "function") {
+      const parsed = toDate();
+      if (parsed instanceof Date && !Number.isNaN(parsed.getTime())) return parsed;
+    }
+  }
+  return fallback;
+}
+
+function buildSubscriptionRecord(input: {
+  id?: string;
+  userId: string;
+  plan: PlanType;
+  status: SubscriptionStatus;
+  paymentMethod?: PaymentMethod;
+  startDate: Date;
+  endDate: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+  source: SubscriptionRecordSource;
+}): SubscriptionRecord {
+  const createdAt = input.createdAt || getNow();
+  const updatedAt = input.updatedAt || createdAt;
+  return {
+    id: input.id || `${input.source}-${input.userId}-${createdAt.getTime()}`,
+    userId: input.userId,
+    plan: input.plan,
+    status: input.status,
+    paymentMethod: input.paymentMethod || "TRANSFERENCIA",
+    startDate: input.startDate,
+    endDate: input.endDate,
+    createdAt,
+    updatedAt,
+    source: input.source,
+  };
+}
+
+function mapPrismaSubscription(row: {
+  id: string;
+  userId: string;
+  plan: PlanType;
+  status: SubscriptionStatus;
+  paymentMethod: PaymentMethod;
+  startDate: Date;
+  endDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}): SubscriptionRecord {
+  return buildSubscriptionRecord({
+    id: row.id,
+    userId: row.userId,
+    plan: row.plan,
+    status: row.status,
+    paymentMethod: row.paymentMethod,
+    startDate: row.startDate,
+    endDate: row.endDate,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    source: "prisma",
+  });
+}
+
+async function readFirestoreSubscriptionRecord(userId: string): Promise<SubscriptionRecord | null> {
+  if (!adminDb) return null;
+
+  try {
+    const snapshot = await adminDb.collection("users").doc(userId).get();
+    const data = snapshot.data();
+    if (!data) return null;
+
+    const plan = toPlanType((data as Record<string, unknown>).subscriptionPlan);
+    if (!plan) return null;
+
+    const now = getNow();
+    const fallbackEnd = addDays(now, plan === "FREE" ? FREE_PLAN_HORIZON_DAYS : 30);
+    const status = toSubscriptionStatus((data as Record<string, unknown>).subscriptionStatus) || "ACTIVE";
+    const paymentMethod = toPaymentMethod((data as Record<string, unknown>).subscriptionPaymentMethod) || "TRANSFERENCIA";
+    const startDate = toDateOrFallback((data as Record<string, unknown>).subscriptionStartAt, now);
+    const endDate = toDateOrFallback((data as Record<string, unknown>).subscriptionEndAt, fallbackEnd);
+    const updatedAt = toDateOrFallback((data as Record<string, unknown>).subscriptionUpdatedAt, now);
+    const createdAt = toDateOrFallback((data as Record<string, unknown>).subscriptionCreatedAt, updatedAt);
+
+    return buildSubscriptionRecord({
+      id: String((data as Record<string, unknown>).subscriptionId || `firestore-${userId}`).trim(),
+      userId,
+      plan,
+      status,
+      paymentMethod,
+      startDate,
+      endDate,
+      createdAt,
+      updatedAt,
+      source: "firestore",
+    });
+  } catch (error) {
+    console.error("[Subscription Firestore Read] Warning:", error);
+    return null;
+  }
+}
+
+async function saveSubscriptionRecordToFirestore(record: SubscriptionRecord): Promise<void> {
+  if (!adminDb) return;
+
+  await adminDb.collection("users").doc(record.userId).set(
+    {
+      subscriptionId: record.id,
+      subscriptionPlan: record.plan,
+      subscriptionStatus: record.status,
+      subscriptionPaymentMethod: record.paymentMethod,
+      subscriptionStartAt: record.startDate.getTime(),
+      subscriptionEndAt: record.endDate.getTime(),
+      subscriptionCreatedAt: record.createdAt.getTime(),
+      subscriptionUpdatedAt: record.updatedAt.getTime(),
+    },
+    { merge: true },
+  );
+}
+
 export async function countPublishedPagesByUser(userId: string): Promise<number> {
   if (!adminDb) {
     return 0;
   }
-  const snapshot = await adminDb
-    .collection("cloned_sites")
-    .where("userId", "==", userId)
-    .where("published", "==", true)
-    .get();
-  return snapshot.size;
+  try {
+    const snapshot = await adminDb
+      .collection("cloned_sites")
+      .where("userId", "==", userId)
+      .where("published", "==", true)
+      .get();
+    return snapshot.size;
+  } catch (error) {
+    console.error("[Subscription] countPublishedPagesByUser warning:", error);
+    return 0;
+  }
 }
 
-export async function getLatestSubscription(userId: string): Promise<Subscription | null> {
-  return prisma.subscription.findFirst({
-    where: { userId },
-    orderBy: [{ createdAt: "desc" }],
-  });
+export async function getLatestSubscription(userId: string): Promise<SubscriptionRecord | null> {
+  try {
+    const row = await prisma.subscription.findFirst({
+      where: { userId },
+      orderBy: [{ createdAt: "desc" }],
+    });
+    if (row) {
+      return mapPrismaSubscription(row);
+    }
+  } catch (error) {
+    console.error("[Subscription] Prisma read fallback (single):", error);
+  }
+
+  return readFirestoreSubscriptionRecord(userId);
 }
 
-export async function getLatestSubscriptionsByUsers(userIds: string[]): Promise<Subscription[]> {
+export async function getLatestSubscriptionsByUsers(userIds: string[]): Promise<SubscriptionRecord[]> {
   const cleaned = Array.from(
     new Set(
       userIds
@@ -81,39 +269,83 @@ export async function getLatestSubscriptionsByUsers(userIds: string[]): Promise<
   );
   if (cleaned.length === 0) return [];
 
-  const rows = await prisma.subscription.findMany({
-    where: {
-      userId: {
-        in: cleaned,
+  try {
+    const rows = await prisma.subscription.findMany({
+      where: {
+        userId: {
+          in: cleaned,
+        },
       },
-    },
-    orderBy: [{ createdAt: "desc" }],
-  });
+      orderBy: [{ createdAt: "desc" }],
+    });
 
-  const latestByUser = new Map<string, Subscription>();
-  for (const row of rows) {
-    if (!latestByUser.has(row.userId)) {
-      latestByUser.set(row.userId, row);
+    const latestByUser = new Map<string, SubscriptionRecord>();
+    for (const row of rows) {
+      if (!latestByUser.has(row.userId)) {
+        latestByUser.set(row.userId, mapPrismaSubscription(row));
+      }
     }
+
+    return cleaned
+      .map((userId) => latestByUser.get(userId))
+      .filter((entry): entry is SubscriptionRecord => Boolean(entry));
+  } catch (error) {
+    console.error("[Subscription] Prisma read fallback (multi):", error);
   }
 
-  return cleaned
-    .map((userId) => latestByUser.get(userId))
-    .filter((entry): entry is Subscription => Boolean(entry));
+  const firestore = adminDb;
+  if (!firestore) {
+    return [];
+  }
+
+  try {
+    const refs = cleaned.map((userId) => firestore.collection("users").doc(userId));
+    const snapshots = await firestore.getAll(...refs);
+    const result: SubscriptionRecord[] = [];
+    for (const snapshot of snapshots) {
+      const mapped = await readFirestoreSubscriptionRecord(snapshot.id);
+      if (mapped) {
+        result.push(mapped);
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error("[Subscription] Firestore fallback (multi) failed:", error);
+    return [];
+  }
 }
 
-export async function createDefaultFreeSubscription(userId: string): Promise<Subscription> {
+export async function createDefaultFreeSubscription(userId: string): Promise<SubscriptionRecord> {
   const now = getNow();
-  return prisma.subscription.create({
-    data: {
-      userId,
-      plan: "FREE",
-      status: "ACTIVE",
-      paymentMethod: "TRANSFERENCIA",
-      startDate: now,
-      endDate: addDays(now, FREE_PLAN_HORIZON_DAYS),
-    },
+  const fallback = buildSubscriptionRecord({
+    userId,
+    plan: "FREE",
+    status: "ACTIVE",
+    paymentMethod: "TRANSFERENCIA",
+    startDate: now,
+    endDate: addDays(now, FREE_PLAN_HORIZON_DAYS),
+    source: adminDb ? "firestore" : "memory",
   });
+
+  try {
+    const created = await prisma.subscription.create({
+      data: {
+        userId,
+        plan: "FREE",
+        status: "ACTIVE",
+        paymentMethod: "TRANSFERENCIA",
+        startDate: now,
+        endDate: addDays(now, FREE_PLAN_HORIZON_DAYS),
+      },
+    });
+    const mapped = mapPrismaSubscription(created);
+    await saveSubscriptionRecordToFirestore(mapped).catch(() => undefined);
+    return mapped;
+  } catch (error) {
+    console.error("[Subscription] Prisma create fallback (free):", error);
+    await saveSubscriptionRecordToFirestore(fallback).catch(() => undefined);
+    return fallback;
+  }
 }
 
 function getPlanDurationDays(plan: PlanType, durationDays?: number): number {
@@ -131,7 +363,7 @@ export async function assignSubscriptionPlanByAdmin(input: {
   mode?: "ACTIVATE" | "DEACTIVATE";
   durationDays?: number;
   paymentMethod?: PaymentMethod;
-}): Promise<Subscription> {
+}): Promise<SubscriptionRecord> {
   const userId = String(input.userId || "").trim();
   if (!userId) {
     throw new Error("USER_ID_REQUIRED");
@@ -144,52 +376,58 @@ export async function assignSubscriptionPlanByAdmin(input: {
   const endDate = addDays(now, durationDays);
   const paymentMethod = input.paymentMethod || "TRANSFERENCIA";
 
-  const assignedSubscription = await prisma.$transaction(async (tx) => {
-    await tx.subscription.updateMany({
-      where: {
-        userId,
-        status: {
-          in: ["ACTIVE", "PENDING"],
-        },
-      },
-      data: {
-        status: "EXPIRED",
-      },
-    });
+  let assignedSubscription: SubscriptionRecord | null = null;
 
-    return tx.subscription.create({
-      data: {
-        userId,
-        plan: targetPlan,
-        status: "ACTIVE",
-        paymentMethod,
-        startDate: now,
-        endDate,
-      },
-    });
-  });
-
-  if (adminDb) {
-    try {
-      await adminDb.collection("users").doc(userId).set(
-        {
-          subscriptionPlan: assignedSubscription.plan,
-          subscriptionStatus: assignedSubscription.status,
-          subscriptionStartAt: assignedSubscription.startDate.getTime(),
-          subscriptionEndAt: assignedSubscription.endDate.getTime(),
-          subscriptionUpdatedAt: Date.now(),
+  try {
+    const prismaAssigned = await prisma.$transaction(async (tx) => {
+      await tx.subscription.updateMany({
+        where: {
+          userId,
+          status: {
+            in: ["ACTIVE", "PENDING"],
+          },
         },
-        { merge: true },
-      );
-    } catch (error) {
-      console.error("[Subscription Admin Sync] Firestore sync warning:", error);
+        data: {
+          status: "EXPIRED",
+        },
+      });
+
+      return tx.subscription.create({
+        data: {
+          userId,
+          plan: targetPlan,
+          status: "ACTIVE",
+          paymentMethod,
+          startDate: now,
+          endDate,
+        },
+      });
+    });
+    assignedSubscription = mapPrismaSubscription(prismaAssigned);
+  } catch (error) {
+    console.error("[Subscription Admin] Prisma write fallback:", error);
+    if (!adminDb) {
+      throw new Error("SERVICE_UNAVAILABLE: subscription storage unavailable");
     }
+    assignedSubscription = buildSubscriptionRecord({
+      userId,
+      plan: targetPlan,
+      status: "ACTIVE",
+      paymentMethod,
+      startDate: now,
+      endDate,
+      source: "firestore",
+    });
   }
+
+  await saveSubscriptionRecordToFirestore(assignedSubscription).catch((error) => {
+    console.error("[Subscription Admin Sync] Firestore sync warning:", error);
+  });
 
   return assignedSubscription;
 }
 
-export async function resolveUserSubscription(userId: string): Promise<Subscription> {
+export async function resolveUserSubscription(userId: string): Promise<SubscriptionRecord> {
   let current = await getLatestSubscription(userId);
   if (!current) {
     current = await createDefaultFreeSubscription(userId);
@@ -197,10 +435,21 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
   }
 
   if (current.status === "ACTIVE" && current.endDate.getTime() < Date.now()) {
-    current = await prisma.subscription.update({
-      where: { id: current.id },
-      data: { status: "EXPIRED" },
-    });
+    if (current.source === "prisma") {
+      try {
+        const updated = await prisma.subscription.update({
+          where: { id: current.id },
+          data: { status: "EXPIRED" },
+        });
+        current = mapPrismaSubscription(updated);
+      } catch (error) {
+        console.error("[Subscription] Prisma status update fallback:", error);
+        current = { ...current, status: "EXPIRED", updatedAt: getNow() };
+      }
+    } else {
+      current = { ...current, status: "EXPIRED", updatedAt: getNow() };
+      await saveSubscriptionRecordToFirestore(current).catch(() => undefined);
+    }
   }
 
   if (current.status === "EXPIRED") {

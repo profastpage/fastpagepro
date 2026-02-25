@@ -642,3 +642,16 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - reglas de Firestore para `isAdmin()` ahora validan el email root en forma case-insensitive (`lower()`), evitando falsos negativos por mayusculas.
   - `users/{userId}` permite `create` por admin para operaciones de recuperacion/soporte sin bloquear el panel.
   - en `/admin`, un fallo de sincronizacion de planes ya no bloquea la tabla completa de usuarios; se muestra aviso parcial.
+
+## Super Admin Plan Activation Fallback (2026-02-25)
+
+- Rutas/archivos ajustados:
+  - `/admin` (UI de gestion de planes)
+  - `src/lib/subscription/service.ts`
+  - `/api/subscription/session`
+- Problema corregido:
+  - errores `500` en `subscription/admin/summaries`, `subscription/admin/manage` y `subscription/session` cuando Prisma/DB no responde.
+- Correcciones aplicadas:
+  - el servicio de suscripciones ahora usa fallback transparente a Firestore (`users/{uid}`) para lectura/escritura de plan cuando Prisma falla.
+  - el panel `/admin` ahora aplica plan con fallback directo por cliente a Firestore si la API de planes falla.
+  - `/api/subscription/session` deja de romper con `500` si falta secreto de cookie y responde modo degradado sin cookie.

@@ -33,6 +33,11 @@ interface UserData {
   status?: 'active' | 'suspended' | 'disabled';
   photoURL?: string;
   role?: string;
+  subscriptionPlan?: string;
+  subscriptionStatus?: string;
+  subscriptionStartAt?: number | string;
+  subscriptionEndAt?: number | string;
+  subscriptionUpdatedAt?: number | string;
 }
 
 type PlanType = "FREE" | "BUSINESS" | "PRO";
@@ -53,6 +58,60 @@ const PLAN_BADGE_STYLES: Record<PlanType, string> = {
   BUSINESS: "border-amber-400/50 bg-amber-500/20 text-amber-100",
   PRO: "border-fuchsia-400/50 bg-fuchsia-500/20 text-fuchsia-100",
 };
+
+function parsePlanType(value: unknown): PlanType | null {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (normalized === "FREE" || normalized === "BUSINESS" || normalized === "PRO") {
+    return normalized as PlanType;
+  }
+  return null;
+}
+
+function parsePlanStatus(value: unknown): PlanStatus | null {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (normalized === "ACTIVE" || normalized === "EXPIRED" || normalized === "PENDING") {
+    return normalized as PlanStatus;
+  }
+  return null;
+}
+
+function parseDateValue(value: unknown): Date | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  if (typeof value === "string" && value.trim()) {
+    const asNumber = Number(value);
+    if (Number.isFinite(asNumber)) {
+      const parsed = new Date(asNumber);
+      if (!Number.isNaN(parsed.getTime())) return parsed;
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return null;
+}
+
+function buildPlanSummaryFromUser(user: UserData): PlanSummary | null {
+  const plan = parsePlanType(user.subscriptionPlan);
+  if (!plan) return null;
+
+  const status = parsePlanStatus(user.subscriptionStatus) || "ACTIVE";
+  const now = Date.now();
+  const startDate = parseDateValue(user.subscriptionStartAt) || new Date(now);
+  const endDate =
+    parseDateValue(user.subscriptionEndAt) ||
+    new Date(now + (plan === "FREE" ? 3650 : 30) * 24 * 60 * 60 * 1000);
+
+  return {
+    userId: user.uid,
+    plan,
+    status,
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    isActive: status === "ACTIVE" && endDate.getTime() > now,
+  };
+}
 
 export default function AdminPanel() {
   const [users, setUsers] = useState<UserData[]>([]);
@@ -160,10 +219,45 @@ export default function AdminPanel() {
         [userId]: mode === "DEACTIVATE" ? "Plan cambiado a FREE." : `Plan ${requestedPlan} activo.`,
       }));
     } catch (requestError: any) {
-      setPlanMessageByUserId((previous) => ({
-        ...previous,
-        [userId]: requestError?.message || "No se pudo actualizar el plan.",
-      }));
+      try {
+        const fallbackPlan: PlanType = mode === "DEACTIVATE" ? "FREE" : requestedPlan;
+        const durationDays = fallbackPlan === "FREE" ? 3650 : 30;
+        const startAtMs = Date.now();
+        const endAtMs = startAtMs + durationDays * 24 * 60 * 60 * 1000;
+
+        await updateDoc(doc(db, "users", userId), {
+          subscriptionPlan: fallbackPlan,
+          subscriptionStatus: "ACTIVE",
+          subscriptionStartAt: startAtMs,
+          subscriptionEndAt: endAtMs,
+          subscriptionUpdatedAt: Date.now(),
+        });
+
+        const fallbackSummary: PlanSummary = {
+          userId,
+          plan: fallbackPlan,
+          status: "ACTIVE",
+          startDate: new Date(startAtMs).toISOString(),
+          endDate: new Date(endAtMs).toISOString(),
+          isActive: true,
+        };
+
+        setPlanByUserId((previous) => ({ ...previous, [userId]: fallbackSummary }));
+        setPlanDraftByUserId((previous) => ({ ...previous, [userId]: fallbackPlan }));
+        setPlanSyncError("API de planes no disponible. Se aplicó modo Firestore.");
+        setPlanMessageByUserId((previous) => ({
+          ...previous,
+          [userId]: `Plan ${fallbackPlan} aplicado (fallback Firestore).`,
+        }));
+      } catch (fallbackError: any) {
+        setPlanMessageByUserId((previous) => ({
+          ...previous,
+          [userId]:
+            fallbackError?.message ||
+            requestError?.message ||
+            "No se pudo actualizar el plan.",
+        }));
+      }
     } finally {
       setPlanLoadingByUserId((previous) => ({ ...previous, [userId]: false }));
     }
@@ -240,6 +334,27 @@ export default function AdminPanel() {
           // Ordenar por último acceso
           usersData.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
           setUsers(usersData);
+          const fallbackSummaries = usersData
+            .map((entry) => buildPlanSummaryFromUser(entry))
+            .filter((entry): entry is PlanSummary => Boolean(entry));
+          if (fallbackSummaries.length > 0) {
+            setPlanByUserId((previous) => {
+              const next = { ...previous };
+              for (const summary of fallbackSummaries) {
+                next[summary.userId] = summary;
+              }
+              return next;
+            });
+            setPlanDraftByUserId((previous) => {
+              const next = { ...previous };
+              for (const summary of fallbackSummaries) {
+                if (!next[summary.userId]) {
+                  next[summary.userId] = summary.plan;
+                }
+              }
+              return next;
+            });
+          }
           setDebugInfo(`Conectado. Usuarios en tabla: ${querySnapshot.size}`);
         }
         setLoading(false);
