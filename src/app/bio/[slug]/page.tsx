@@ -886,10 +886,10 @@ export default function PublicBioPage() {
   };
 
   const contactActionStyle = {
-    borderColor: "var(--carta-input-border)",
-    background: "var(--carta-button-bg)",
-    color: "var(--carta-button-text)",
-    boxShadow: useWhiteCartaBackground ? "0 10px 18px -16px rgba(15,23,42,0.3)" : "var(--carta-shadow)",
+    borderColor: "var(--carta-chip-border)",
+    background: "var(--carta-nav-active-bg)",
+    color: "var(--carta-nav-active-text)",
+    boxShadow: useWhiteCartaBackground ? "0 12px 22px -18px rgba(15,23,42,0.34)" : "var(--carta-shadow)",
   };
 
   const cartPanelStyle = {
@@ -917,7 +917,7 @@ export default function PublicBioPage() {
           className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"}`}
           style={headerBarStyle}
         >
-          <div className={`relative ${activeTab !== "contact" ? "space-y-1.5 md:space-y-0" : ""}`}>
+          <div className="relative space-y-1.5 md:space-y-0">
             <div className="flex items-center justify-between gap-3">
               <div className="inline-flex min-w-0 items-center gap-2">
               {profile.avatarUrl ? (
@@ -950,14 +950,16 @@ export default function PublicBioPage() {
               </button>
             </div>
 
-            {activeTab !== "contact" && (
-              <p
-                className="pointer-events-none mx-auto max-w-[72%] truncate text-center text-xs font-black uppercase tracking-[0.12em] md:absolute md:left-1/2 md:top-1/2 md:w-[46%] md:-translate-x-1/2 md:-translate-y-1/2 md:text-base"
-                style={{ color: accentWordColor }}
-              >
-                {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
-              </p>
-            )}
+            <p
+              className="pointer-events-none mx-auto max-w-[72%] truncate text-center text-xs font-black uppercase tracking-[0.12em] md:absolute md:left-1/2 md:top-1/2 md:w-[46%] md:-translate-x-1/2 md:-translate-y-1/2 md:text-base"
+              style={{ color: accentWordColor }}
+            >
+              {activeTab === "catalog"
+                ? catalogLabel
+                : activeTab === "location"
+                ? profile.sectionLabels.location
+                : profile.sectionLabels.contact}
+            </p>
           </div>
           {shareFeedback && (
             <p
@@ -967,6 +969,54 @@ export default function PublicBioPage() {
               {shareFeedback}
             </p>
           )}
+        </div>
+
+        <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6 pt-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("contact")}
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            style={
+              activeTab === "contact"
+                ? navActiveStyle
+                : {
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-nav-text)",
+                  }
+            }
+          >
+            {profile.sectionLabels.contact}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("catalog")}
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            style={
+              activeTab === "catalog"
+                ? navActiveStyle
+                : {
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-nav-text)",
+                  }
+            }
+          >
+            {catalogLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("location")}
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            style={
+              activeTab === "location"
+                ? navActiveStyle
+                : {
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-nav-text)",
+                  }
+            }
+          >
+            {profile.sectionLabels.location}
+          </button>
         </div>
 
         {activeTab === "contact" ? (
@@ -1081,64 +1131,16 @@ export default function PublicBioPage() {
           </>
         ) : null}
 
-        <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6 pt-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("contact")}
-            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
-            style={
-              activeTab === "contact"
-                ? navActiveStyle
-                : {
-                    borderColor: "var(--carta-chip-border)",
-                    color: "var(--carta-nav-text)",
-                  }
-            }
-          >
-            {profile.sectionLabels.contact}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("catalog")}
-            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
-            style={
-              activeTab === "catalog"
-                ? navActiveStyle
-                : {
-                    borderColor: "var(--carta-chip-border)",
-                    color: "var(--carta-nav-text)",
-                  }
-            }
-          >
-            {catalogLabel}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("location")}
-            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
-            style={
-              activeTab === "location"
-                ? navActiveStyle
-                : {
-                    borderColor: "var(--carta-chip-border)",
-                    color: "var(--carta-nav-text)",
-                  }
-            }
-          >
-            {profile.sectionLabels.location}
-          </button>
-        </div>
-
         <div className="flex-1 overflow-hidden px-4 pb-24 pt-2 md:px-8 md:pb-6 md:pt-0">
           {activeTab === "contact" && (
             <section
-              className={`flex h-full min-h-0 flex-col overflow-y-auto pr-1 no-scrollbar rounded-[1.9rem] border p-4 md:p-6 ${cardClass}`}
-              style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}
+              className={`flex h-full min-h-0 flex-col overflow-y-auto pr-1 no-scrollbar rounded-[1.9rem] border p-4 md:rounded-none md:border-0 md:bg-transparent md:p-0 ${cardClass}`}
+              style={{ borderColor: "var(--carta-border)", background: "transparent", boxShadow: "none", backdropFilter: "none" }}
             >
-              <h2 className="text-2xl font-black" style={{ color: accentWordColor }}>
+              <h2 className="text-2xl font-black md:hidden" style={{ color: accentWordColor }}>
                 {profile.sectionLabels.contact}
               </h2>
-              <p className="mt-1 text-sm" style={{ color: textPalette.muted }}>
+              <p className="mt-1 text-sm md:hidden" style={{ color: textPalette.muted }}>
                 Atiende clientes directo desde tu canal favorito.
               </p>
 
