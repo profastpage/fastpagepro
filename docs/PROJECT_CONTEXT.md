@@ -1072,3 +1072,11 @@ o-scrollbar para evitar barra visible.
   - `padding-bottom` mobile de seguridad para evitar cobertura por CTAs/barras fijas.
 - Validacion runtime (Playwright + Chromium, localhost):
   - viewport 375 y 1440 en `/`, `/demo/ecommerce/urban-wear`, `/store` => `scrollWidth == clientWidth` (sin x-scroll global).
+
+## Demo Landing Sticky CTA Non-Overlap (2026-02-26)
+
+- Componente ajustado: `src/components/demo/DemoExperience.tsx` (flujo restaurant).
+- Mobile:
+  - `StickyCTA` se reposiciona mas arriba usando safe-area (`bottom-[calc(env(safe-area-inset-bottom)+6.75rem)]`).
+  - evita solape visual con la barra inferior de navegacion del demo (`Contacto/Carta/Ubicacion`).
+- Desktop: sin cambios de layout.

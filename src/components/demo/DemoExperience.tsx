@@ -68,7 +68,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
         <StickyCTA
           vertical={demo.vertical}
           slug={demo.slug}
-          mobileBottomClass="bottom-20"
+          mobileBottomClass="bottom-[calc(env(safe-area-inset-bottom)+6.75rem)]"
           compactMobileLeft
         />
       </main>
