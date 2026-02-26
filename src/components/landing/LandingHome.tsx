@@ -677,11 +677,11 @@ export default function LandingHome() {
 
           <article className="relative rounded-3xl border border-amber-300/45 bg-gradient-to-b from-amber-300/10 to-black/60 p-6">
             <span className="absolute -top-3 right-4 rounded-full border border-amber-300/45 bg-black px-3 py-1 text-xs font-bold text-amber-200">
-              Mas elegido para vender por WhatsApp
+              ⭐ Mas elegido por negocios
             </span>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">BUSINESS</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 59</p>
-            <p className="mt-2 text-sm font-semibold text-amber-100">Para negocios que ya venden y quieren crecer con control.</p>
+            <p className="mt-2 text-sm font-semibold text-amber-100">🔥 Ideal para negocios que quieren vender todos los dias</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 5 proyectos activos</li>
               <li><strong>50 productos</strong> por proyecto</li>
@@ -694,7 +694,7 @@ export default function LandingHome() {
           <article className="rounded-3xl border border-cyan-300/35 bg-gradient-to-b from-cyan-300/10 to-black/60 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">PRO</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 99</p>
-            <p className="mt-2 text-sm font-semibold text-cyan-100">Para marcas que escalan campanas y operacion en serio.</p>
+            <p className="mt-2 text-sm font-semibold text-cyan-100">🚀 Para negocios que quieren escalar en serio</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 20 proyectos activos</li>
               <li><strong>Productos ilimitados</strong></li>
