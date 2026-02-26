@@ -16,9 +16,11 @@ import {
   Palette,
   PlayCircle,
   Rocket,
+  ShieldCheck,
   ShoppingCart,
   Sparkles,
   Store,
+  CheckCircle2,
   UtensilsCrossed,
   WandSparkles,
 } from "lucide-react";
@@ -305,6 +307,40 @@ const TESTIMONIALS = [
   },
 ];
 
+type LiveActivityItem = {
+  name: string;
+  city: string;
+  action: string;
+  timeAgo: string;
+};
+
+const LIVE_ACTIVITY_FEED: LiveActivityItem[] = [
+  { name: "Jorge M.", city: "Piura", action: "conecto su WhatsApp y activo su Carta Digital", timeAgo: "Hace 1 min" },
+  { name: "Valeria R.", city: "Lima", action: "publico su tienda online y recibio 2 pedidos", timeAgo: "Hace 2 min" },
+  { name: "Sushi Prime", city: "Arequipa", action: "convirtio 5 mensajes en ventas", timeAgo: "Hace 3 min" },
+  { name: "Urban Wear", city: "Trujillo", action: "cerro 3 ventas desde WhatsApp", timeAgo: "Hace 4 min" },
+  { name: "Cafe Nativo", city: "Cusco", action: "activo promociones en Carta Digital", timeAgo: "Hace 5 min" },
+  { name: "Luna Store", city: "Chiclayo", action: "recibio su primer carrito por WhatsApp", timeAgo: "Hace 6 min" },
+  { name: "Tacos MX", city: "CDMX", action: "aumento conversion desde menu digital", timeAgo: "Hace 7 min" },
+  { name: "NovaTech", city: "Bogota", action: "convirtio trafico en 4 consultas por WhatsApp", timeAgo: "Hace 8 min" },
+  { name: "Maki House", city: "Quito", action: "activo botones de pedido directo", timeAgo: "Hace 9 min" },
+  { name: "Casa Natura", city: "Medellin", action: "cerro 6 ventas con Online Store", timeAgo: "Hace 10 min" },
+  { name: "Deli Burger", city: "Guayaquil", action: "publico nueva carta y subio pedidos", timeAgo: "Hace 11 min" },
+  { name: "Fit Market", city: "Santiago", action: "activo checkout por WhatsApp", timeAgo: "Hace 12 min" },
+  { name: "Don Anticucho", city: "Lima", action: "logro 9 pedidos en hora punta", timeAgo: "Hace 13 min" },
+  { name: "Trendy Shop", city: "Monterrey", action: "recibio 5 ventas desde anuncios", timeAgo: "Hace 14 min" },
+  { name: "Punto Verde", city: "Santa Cruz", action: "convirtio visitas en ventas por chat", timeAgo: "Hace 15 min" },
+  { name: "Pan & Cafe", city: "La Paz", action: "activo CTA de pedido por WhatsApp", timeAgo: "Hace 16 min" },
+  { name: "Beauty Home", city: "Puebla", action: "publico catalogo y cerro 3 ventas", timeAgo: "Hace 17 min" },
+  { name: "Parrilla 51", city: "Buenos Aires", action: "aumento reservas desde Carta Digital", timeAgo: "Hace 18 min" },
+  { name: "Smart Lab", city: "Cordoba", action: "convirtio 7 leads en conversaciones", timeAgo: "Hace 19 min" },
+  { name: "Moda Street", city: "Asuncion", action: "activo ofertas y vendio por WhatsApp", timeAgo: "Hace 20 min" },
+  { name: "Crustaceo", city: "Piura", action: "subio el ticket promedio con combos", timeAgo: "Hace 21 min" },
+  { name: "Flash Store", city: "Lima", action: "recibio pago confirmado desde chat", timeAgo: "Hace 22 min" },
+  { name: "Sabor Criollo", city: "Arequipa", action: "reactivo clientes con menu digital", timeAgo: "Hace 23 min" },
+  { name: "Electro Home", city: "Trujillo", action: "convirtio mensajes en ventas del dia", timeAgo: "Hace 24 min" },
+];
+
 const DELUXE_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-5 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
 const SOFT_BUTTON_BASE =
@@ -316,6 +352,7 @@ export default function LandingHome() {
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [demoTab, setDemoTab] = useState<BusinessVertical>("restaurant");
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
+  const [activityIndex, setActivityIndex] = useState(0);
   const testimonialsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -337,10 +374,18 @@ export default function LandingHome() {
     });
   }, []);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setActivityIndex((current) => (current + 1) % LIVE_ACTIVITY_FEED.length);
+    }, 3800);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const verticalCopy = useMemo(() => getVerticalCopy(vertical), [vertical]);
   const heroDemoHref = useMemo(() => verticalToDemoHref(vertical), [vertical]);
   const heroSignupHref = useMemo(() => verticalToSignupHref(vertical), [vertical]);
   const demoItems = useMemo(() => getDemoCatalog(demoTab), [demoTab]);
+  const activeLiveActivity = LIVE_ACTIVITY_FEED[activityIndex];
 
   const scrollTestimonials = (direction: "left" | "right") => {
     const container = testimonialsRef.current;
@@ -857,6 +902,33 @@ export default function LandingHome() {
         </div>
       </section>
 
+      <div className="pointer-events-none fixed bottom-6 left-6 z-40 hidden w-[min(360px,calc(100vw-3rem))] max-w-full lg:block">
+        <article className="rounded-2xl border border-amber-300/35 bg-[linear-gradient(145deg,rgba(8,8,10,0.96),rgba(22,16,6,0.96))] p-3 shadow-[0_18px_45px_-24px_rgba(251,191,36,0.65)] backdrop-blur-md">
+          <div className="flex items-start gap-3">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-amber-300/30 bg-black/70 text-amber-300">
+              <span className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.9)]" />
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-300">
+                  ACTIVIDAD EN VIVO
+                </p>
+                <p className="text-[10px] font-semibold text-zinc-400">{activeLiveActivity.timeAgo}</p>
+              </div>
+              <p className="mt-1 truncate text-[1.05rem] font-black text-white">
+                {activeLiveActivity.name}
+                <span className="pl-1 text-sm font-semibold text-zinc-300">de {activeLiveActivity.city}</span>
+              </p>
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-bold leading-snug text-zinc-100">
+                <span>{activeLiveActivity.action}</span>
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+              </p>
+            </div>
+          </div>
+        </article>
+      </div>
+
       <div className="fixed inset-x-0 bottom-3 z-40 px-3 md:hidden">
         <Link
           href={heroSignupHref}
@@ -877,4 +949,3 @@ export default function LandingHome() {
     </main>
   );
 }
-
