@@ -21,6 +21,7 @@ import {
   ShieldAlert,
   Store,
   CreditCard,
+  Lock,
 } from "lucide-react";
 
 export default function HubPage() {
@@ -31,6 +32,7 @@ export default function HubPage() {
   const { t } = useLanguage();
   const userName = user?.name || "Creador";
   const isAdmin = user?.email === "afiliadosprobusiness@gmail.com";
+  const isStarterPlan = planPermissions.canonicalPlan === "starter";
 
   const handleLogout = async () => {
     await logout();
@@ -44,8 +46,9 @@ export default function HubPage() {
     );
   }
 
-  const panels = [
+  const basePanels = [
     {
+      id: "builder",
       title: t("hub.builder.title"),
       description: t("hub.builder.desc"),
       icon: <Layout className="w-8 h-8 text-gold-500" />,
@@ -55,6 +58,7 @@ export default function HubPage() {
       border: "hover:border-gold-500/50",
     },
     {
+      id: "templates",
       title: t("hub.cloner.title"),
       description: t("hub.cloner.desc"),
       icon: <LayoutGrid className="w-8 h-8 text-cyan-400" />,
@@ -64,6 +68,7 @@ export default function HubPage() {
       border: "hover:border-cyan-500/50",
     },
     {
+      id: "cloner",
       title: t("hub.webcloner.title"),
       description: t("hub.webcloner.desc"),
       icon: <Copy className="w-8 h-8 text-cyan-400" />,
@@ -73,6 +78,7 @@ export default function HubPage() {
       border: "hover:border-cyan-500/50",
     },
     {
+      id: "store",
       title: t("hub.store.title"),
       description: t("hub.store.desc"),
       icon: <Store className="w-8 h-8 text-emerald-400" />,
@@ -82,6 +88,7 @@ export default function HubPage() {
       border: "hover:border-emerald-500/50",
     },
     {
+      id: "linkhub",
       title: t("hub.linkhub.title"),
       description: t("hub.linkhub.desc"),
       icon: <Link2 className="w-8 h-8 text-sky-400" />,
@@ -91,6 +98,7 @@ export default function HubPage() {
       border: "hover:border-sky-500/50",
     },
     {
+      id: "published",
       title: t("hub.published.title"),
       description: t("hub.published.desc"),
       icon: <FolderKanban className="w-8 h-8 text-emerald-300" />,
@@ -100,6 +108,7 @@ export default function HubPage() {
       border: "hover:border-emerald-400/50",
     },
     {
+      id: "metrics",
       title: t("hub.metrics.title"),
       description: t("hub.metrics.desc"),
       icon: <BarChart2 className="w-8 h-8 text-purple-400" />,
@@ -109,6 +118,7 @@ export default function HubPage() {
       border: "hover:border-purple-500/50",
     },
     {
+      id: "billing",
       title: "Billing",
       description: "Gestiona planes Starter, Business y Pro, pagos y renovaciones.",
       icon: <CreditCard className="w-8 h-8 text-emerald-300" />,
@@ -118,6 +128,7 @@ export default function HubPage() {
       border: "hover:border-emerald-400/50",
     },
     {
+      id: "settings",
       title: t("hub.config.title"),
       description: t("hub.config.desc"),
       icon: <Settings className="w-8 h-8 text-amber-400" />,
@@ -127,6 +138,29 @@ export default function HubPage() {
       border: "hover:border-amber-500/50",
     },
   ];
+
+  const starterUnlocked = new Set(["linkhub", "published", "billing", "settings"]);
+  const starterPriority: Record<string, number> = {
+    linkhub: 1,
+    published: 2,
+    billing: 3,
+    settings: 4,
+    builder: 10,
+    templates: 11,
+    cloner: 12,
+    store: 13,
+    metrics: 14,
+  };
+
+  const panels = [...basePanels]
+    .map((panel) => ({
+      ...panel,
+      locked: isStarterPlan && !starterUnlocked.has(panel.id),
+    }))
+    .sort((a, b) => {
+      if (!isStarterPlan) return 0;
+      return (starterPriority[a.id] || 99) - (starterPriority[b.id] || 99);
+    });
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -172,28 +206,53 @@ export default function HubPage() {
 
           {/* Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-            {panels.map((panel, index) => (
+            {panels.map((panel) => (
               <div
-                key={index}
+                key={panel.id}
                 onClick={() => {
+                  if (panel.locked) {
+                    const requiredFeature =
+                      panel.id === "cloner"
+                        ? "clonerAccess"
+                        : panel.id === "metrics"
+                          ? "insightsAutomation"
+                          : "";
+                    router.push(
+                      requiredFeature
+                        ? `/dashboard/billing?requiredFeature=${requiredFeature}`
+                        : "/dashboard/billing",
+                    );
+                    return;
+                  }
                   if (panel.href === "/cloner/web" && !planPermissions.canUseCloner) {
                     router.push("/dashboard/billing?requiredFeature=clonerAccess");
                     return;
                   }
                   router.push(panel.href);
                 }}
-                className={`group relative p-6 md:p-8 rounded-2xl md:rounded-3xl border border-white/5 bg-gradient-to-br ${panel.gradient} cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 ${panel.border} overflow-hidden`}
+                className={`group relative p-6 md:p-8 rounded-2xl md:rounded-3xl border bg-gradient-to-br ${panel.gradient} cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 overflow-hidden ${
+                  panel.locked
+                    ? "border-amber-300/35 hover:border-amber-300/55"
+                    : `border-white/5 ${panel.border}`
+                }`}
               >
                 {/* Hover Glow */}
-                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div
+                  className={`absolute inset-0 transition-opacity duration-300 ${
+                    panel.locked
+                      ? "bg-amber-300/5 opacity-100"
+                      : "bg-white/5 opacity-0 group-hover:opacity-100"
+                  }`}
+                />
 
                 <div className="relative z-10 flex flex-col h-full justify-between">
                   <div className="mb-6">
                     <div className="mb-4 p-3 bg-white/5 rounded-2xl w-fit backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform duration-300">
                       {panel.icon}
                     </div>
-                    <h3 className="text-2xl font-bold mb-3 text-white group-hover:text-gold-gradient transition-colors">
-                      {panel.title}
+                    <h3 className="mb-3 flex items-center gap-2 text-2xl font-bold text-white group-hover:text-gold-gradient transition-colors">
+                      <span>{panel.title}</span>
+                      {panel.locked ? <Lock className="h-4 w-4 text-amber-300" /> : null}
                     </h3>
                     <p className="text-zinc-400 leading-relaxed">
                       {panel.description}
@@ -201,9 +260,14 @@ export default function HubPage() {
                   </div>
 
                   <div className="flex items-center text-sm font-semibold tracking-wide uppercase text-zinc-500 group-hover:text-white transition-colors gap-2">
-                    {panel.action}
+                    {panel.locked ? "Disponible en Business o Pro" : panel.action}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
+                  {panel.locked ? (
+                    <div className="mt-3 rounded-xl border border-amber-300/35 bg-black/70 px-3 py-2 text-xs font-semibold text-amber-100">
+                      Actualiza a plan Business o Pro para desbloquear esta funcion.
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ))}
