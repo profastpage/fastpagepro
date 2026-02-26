@@ -157,7 +157,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
             <ShoppingCart className="h-4 w-4" /> Ver carrito ({cartCount})
           </button>
         </div>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
           {["Todos", ...demo.categories].map((itemCategory) => (
             <button
               key={itemCategory}
@@ -180,7 +180,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
         </div>
       </section>
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredProducts.map((product) => (
           <article
             key={product.id}
@@ -262,7 +262,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
       <button
         type="button"
         onClick={() => setCartOpen(true)}
-        className="fixed bottom-24 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-4 py-3 text-sm font-black text-white shadow-2xl"
+        className="fixed bottom-24 right-4 z-40 hidden items-center gap-2 rounded-full bg-[var(--fp-primary)] px-4 py-3 text-sm font-black text-white shadow-2xl md:inline-flex"
       >
         🛒 Ver carrito ({cartCount})
       </button>
@@ -366,4 +366,3 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
     </section>
   );
 }
-

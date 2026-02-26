@@ -984,3 +984,13 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - chips del buscador con 
 o-scrollbar para eliminar barra horizontal gris.
 
+
+## Ecommerce Demo Mobile Vertical Flow (2026-02-26)
+
+- Ruta ajustada: demos Online Store (/demo/ecommerce/*).
+- Layout mobile ahora prioriza flujo estatico de arriba hacia abajo:
+  - grid de productos en 1 columna en mobile (2 columnas desde sm).
+  - chips de categoria con 
+o-scrollbar para evitar barra visible.
+  - boton flotante de carrito oculto en mobile para evitar superposicion; se mantiene en desktop.
+
