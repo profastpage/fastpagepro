@@ -18,6 +18,11 @@ export type VerticalCopy = {
   signupCta: string;
 };
 
+export type DemoSelection = {
+  demoSlug?: string | null;
+  demoTheme?: string | null;
+};
+
 const FALLBACK_VERTICAL: BusinessVertical = "restaurant";
 
 type SupportedLanguage = "es" | "en" | "pt";
@@ -107,9 +112,24 @@ export function getVerticalCopy(
   return VERTICAL_COPY_BY_LANGUAGE[safeLanguage][normalizeVertical(vertical)];
 }
 
-export function verticalToSignupHref(vertical: unknown) {
+function normalizeDemoQueryValue(value: unknown) {
+  const safe = String(value || "").trim();
+  if (!safe) return "";
+  return safe.replace(/[^\w-]/g, "");
+}
+
+function buildVerticalQueryString(vertical: unknown, demo?: DemoSelection) {
   const normalized = normalizeVertical(vertical);
-  return `/signup?vertical=${normalized}`;
+  const params = new URLSearchParams({ vertical: normalized });
+  const safeDemoSlug = normalizeDemoQueryValue(demo?.demoSlug);
+  const safeDemoTheme = normalizeDemoQueryValue(demo?.demoTheme);
+  if (safeDemoSlug) params.set("demoSlug", safeDemoSlug);
+  if (safeDemoTheme) params.set("demoTheme", safeDemoTheme);
+  return params.toString();
+}
+
+export function verticalToSignupHref(vertical: unknown, demo?: DemoSelection) {
+  return `/signup?${buildVerticalQueryString(vertical, demo)}`;
 }
 
 export function verticalToDemoHref(vertical: unknown) {
@@ -117,9 +137,8 @@ export function verticalToDemoHref(vertical: unknown) {
   return `/demo?vertical=${normalized}`;
 }
 
-export function verticalToCreateHref(vertical: unknown) {
-  const normalized = normalizeVertical(vertical);
-  return `/app/new?vertical=${normalized}`;
+export function verticalToCreateHref(vertical: unknown, demo?: DemoSelection) {
+  return `/app/new?${buildVerticalQueryString(vertical, demo)}`;
 }
 
 export function resolveVerticalFromSearchParams(

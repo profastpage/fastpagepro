@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
+import { getThemesByVertical } from "@/lib/themes";
 import MobileSavePublishBar from "@/components/MobileSavePublishBar";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
 import {
@@ -145,6 +146,8 @@ function BuilderEditorPage() {
   const [projectError, setProjectError] = useState<string | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [demoThemeIntent, setDemoThemeIntent] = useState("");
+  const demoThemeAppliedRef = useRef(false);
 
   const [isClient, setIsClient] = useState(false);
   const [primaryColor, setPrimaryColor] = useState("#fbbf24");
@@ -270,6 +273,37 @@ function BuilderEditorPage() {
       }
     }
   }, [isClient]);
+
+  useEffect(() => {
+    if (!isClient) return;
+    const params = new URLSearchParams(window.location.search);
+    setDemoThemeIntent(
+      String(params.get("demoTheme") || "")
+        .trim()
+        .replace(/[^\w-]/g, ""),
+    );
+  }, [isClient]);
+
+  useEffect(() => {
+    if (!isClient || demoThemeAppliedRef.current) return;
+    const requestedDemoTheme = demoThemeIntent;
+    if (!requestedDemoTheme) return;
+
+    const hasExistingProject = Boolean(localStorage.getItem("fastpage_builder_project_id"));
+    const hasExistingDraft = Boolean(localStorage.getItem("fastpage_builder_draft"));
+    if (builderProjectId || hasExistingProject || hasExistingDraft || blocks.length > 0) {
+      demoThemeAppliedRef.current = true;
+      return;
+    }
+
+    const serviceTheme = getThemesByVertical("services").find(
+      (theme) => theme.id === requestedDemoTheme,
+    );
+    demoThemeAppliedRef.current = true;
+    if (!serviceTheme) return;
+    setPrimaryColor(serviceTheme.primary);
+    setSecondaryColor(serviceTheme.secondary);
+  }, [blocks.length, builderProjectId, demoThemeIntent, isClient]);
 
   // Save to local storage
   useEffect(() => {

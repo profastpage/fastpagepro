@@ -503,6 +503,15 @@ const LEGACY_THEME_ALIASES: Record<string, CartaThemeId> = {
   bar_drinks: "bar_drinks",
 };
 
+const RESTAURANT_DEMO_SLUG_THEME_MAP: Record<string, CartaThemeId> = {
+  "sushi-prime": "sushi",
+  "pizza-norte": "desserts",
+  "burger-lab": "fastfood",
+  "coffee-route": "cafe",
+  "brasa-power": "polleria_parrilla",
+  "ceviche-house": "gourmet",
+};
+
 export const CARTA_THEME_OPTIONS = Object.values(CARTA_THEMES)
   .map((theme) => ({
     id: theme.id as CartaThemeId,
@@ -526,6 +535,26 @@ export function getSafeCartaThemeId(value?: string | null): CartaThemeId {
 
 export function getCartaTheme(themeId?: string | null): CartaThemePreset {
   return CARTA_THEMES[getSafeCartaThemeId(themeId)];
+}
+
+export function resolveCartaThemeIdFromDemo(
+  demoThemeId?: string | null,
+  demoSlug?: string | null,
+): CartaThemeId | null {
+  const safeSlug = String(demoSlug || "")
+    .trim()
+    .toLowerCase();
+  if (safeSlug && RESTAURANT_DEMO_SLUG_THEME_MAP[safeSlug]) {
+    return RESTAURANT_DEMO_SLUG_THEME_MAP[safeSlug];
+  }
+
+  const safeThemeId = String(demoThemeId || "").trim();
+  if (!safeThemeId) return null;
+  if (safeThemeId === "sushiPremium") return "sushi";
+  if (safeThemeId === "coffeeLight") return "cafe";
+  if (safeThemeId === "foodWarm") return "fastfood";
+  if (safeThemeId === "darkKitchen") return "polleria_parrilla";
+  return null;
 }
 
 export function recommendCartaThemeIdByRubro(rubro?: string | null): CartaThemeId {

@@ -3,12 +3,18 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { normalizeVertical, persistVerticalChoice } from "@/lib/vertical";
+import { normalizeVertical, persistVerticalChoice, verticalToSignupHref } from "@/lib/vertical";
 
 function routeByVertical(vertical: ReturnType<typeof normalizeVertical>) {
   if (vertical === "restaurant") return "/linkhub";
   if (vertical === "ecommerce") return "/store";
   return "/builder";
+}
+
+function normalizeDemoValue(value: string | null) {
+  const safe = String(value || "").trim();
+  if (!safe) return "";
+  return safe.replace(/[^\w-]/g, "");
 }
 
 export default function AppNewPage() {
@@ -19,13 +25,21 @@ export default function AppNewPage() {
     if (loading) return;
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
     const vertical = normalizeVertical(params?.get("vertical"));
+    const demoSlug = normalizeDemoValue(params?.get("demoSlug") || null);
+    const demoTheme = normalizeDemoValue(params?.get("demoTheme") || null);
     persistVerticalChoice(vertical);
 
     if (!user) {
-      router.replace(`/signup?vertical=${vertical}`);
+      router.replace(verticalToSignupHref(vertical, { demoSlug, demoTheme }));
       return;
     }
-    router.replace(routeByVertical(vertical));
+
+    const nextParams = new URLSearchParams();
+    if (demoSlug) nextParams.set("demoSlug", demoSlug);
+    if (demoTheme) nextParams.set("demoTheme", demoTheme);
+    const targetBase = routeByVertical(vertical);
+    const target = nextParams.size ? `${targetBase}?${nextParams.toString()}` : targetBase;
+    router.replace(target);
   }, [loading, router, user]);
 
   return (

@@ -198,6 +198,12 @@ function AuthContent() {
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
   const planIntent = normalizePlanIntent(searchParams.get("plan"));
   const trialIntent = String(searchParams.get("trial") || "").trim().toLowerCase();
+  const demoSlugIntent = String(searchParams.get("demoSlug") || "")
+    .trim()
+    .replace(/[^\w-]/g, "");
+  const demoThemeIntent = String(searchParams.get("demoTheme") || "")
+    .trim()
+    .replace(/[^\w-]/g, "");
 
   const isCanonicalRedirectNeeded = () => {
     if (typeof window === "undefined") return false;
@@ -296,7 +302,10 @@ function AuthContent() {
       typeof window !== "undefined" && Boolean(window.localStorage.getItem("fp_vertical"));
     if (!fromQuery && !hasStoredVertical) return "/hub";
     const resolvedVertical = normalizeVertical(fromQuery || readVerticalFromClient());
-    return `/app/new?vertical=${resolvedVertical}`;
+    const params = new URLSearchParams({ vertical: resolvedVertical });
+    if (demoSlugIntent) params.set("demoSlug", demoSlugIntent);
+    if (demoThemeIntent) params.set("demoTheme", demoThemeIntent);
+    return `/app/new?${params.toString()}`;
   };
 
   // Funcion centralizada para sincronizar usuario con Firestore
@@ -488,7 +497,7 @@ function AuthContent() {
     };
     checkRedirect();
     return () => unsubscribe();
-  }, [planIntent, preferredVertical, router, tab, trialIntent]);
+  }, [demoSlugIntent, demoThemeIntent, planIntent, preferredVertical, router, tab, trialIntent]);
 
   const handleGoogleLogin = async () => {
     if (isCanonicalRedirectNeeded()) {

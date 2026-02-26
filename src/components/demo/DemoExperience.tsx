@@ -39,8 +39,8 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     [demo.vertical, themeId],
   );
   const createHref = user
-    ? verticalToCreateHref(demo.vertical)
-    : verticalToSignupHref(demo.vertical);
+    ? verticalToCreateHref(demo.vertical, { demoSlug: demo.slug, demoTheme: themeId })
+    : verticalToSignupHref(demo.vertical, { demoSlug: demo.slug, demoTheme: themeId });
 
   if (demo.vertical === "restaurant") {
     return (
@@ -68,6 +68,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
         <StickyCTA
           vertical={demo.vertical}
           slug={demo.slug}
+          demoTheme={themeId}
           mobileBottomClass="bottom-[calc(env(safe-area-inset-bottom)+6.75rem)]"
           compactMobileLeft
         />
@@ -130,7 +131,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
           </section>
         </aside>
       </div>
-      <StickyCTA vertical={demo.vertical} slug={demo.slug} />
+      <StickyCTA vertical={demo.vertical} slug={demo.slug} demoTheme={themeId} />
     </main>
   );
 }

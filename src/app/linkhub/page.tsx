@@ -47,6 +47,7 @@ import {
   getCartaTheme,
   getSafeCartaThemeId,
   recommendCartaThemeIdByRubro,
+  resolveCartaThemeIdFromDemo,
 } from "@/theme/cartaThemes";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
@@ -192,6 +193,12 @@ async function optimizeImageFile(
   }
 
   return encoded;
+}
+
+function sanitizeDemoParam(value: string | null) {
+  return String(value || "")
+    .trim()
+    .replace(/[^\w-]/g, "");
 }
 
 function parseMultiline(input: string): string[] {
@@ -424,6 +431,9 @@ export default function LinkHubPage() {
   const [coverUrlInput, setCoverUrlInput] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const descriptionSeedRef = useRef<number>(Date.now());
+  const [demoSlugIntent, setDemoSlugIntent] = useState("");
+  const [demoThemeIntent, setDemoThemeIntent] = useState("");
+  const hasAppliedIncomingDemoTheme = useRef(false);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
   const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
@@ -431,6 +441,12 @@ export default function LinkHubPage() {
 
   useEffect(() => {
     setOrigin(window.location.origin);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setDemoSlugIntent(sanitizeDemoParam(params.get("demoSlug")));
+    setDemoThemeIntent(sanitizeDemoParam(params.get("demoTheme")));
   }, []);
 
   useEffect(() => {
@@ -511,6 +527,15 @@ export default function LinkHubPage() {
       // Ignore storage errors (private mode/quota).
     }
   }, [profile, user?.uid]);
+
+  useEffect(() => {
+    if (!profile || hasAppliedIncomingDemoTheme.current) return;
+    hasAppliedIncomingDemoTheme.current = true;
+    if (!demoSlugIntent && !demoThemeIntent) return;
+    const nextCartaThemeId = resolveCartaThemeIdFromDemo(demoThemeIntent, demoSlugIntent);
+    if (!nextCartaThemeId || nextCartaThemeId === profile.cartaThemeId) return;
+    setProfile((prev) => (prev ? { ...prev, cartaThemeId: nextCartaThemeId } : prev));
+  }, [demoSlugIntent, demoThemeIntent, profile]);
 
   useEffect(() => {
     if (!profile) return;
@@ -1642,7 +1667,7 @@ export default function LinkHubPage() {
           </div>
           <p className="mt-2 text-zinc-400 max-w-3xl">
             Crea una landing mobile-first con 3 secciones: contacto, {catalogLabel?.toLowerCase()} y ubicacion.
-            Diseñada para mostrar tu carta o catalogo con experiencia premium.
+            Diseñada para mostrar tu carta con experiencia premium.
           </p>
           <div className="mt-4">
             <SubscriptionExpiryBanner
@@ -1667,10 +1692,10 @@ export default function LinkHubPage() {
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
           <section className="min-w-0 space-y-6">
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
-              <h2 className="text-xl font-bold text-white mb-5">Identidad del perfil</h2>
+              <h2 className="text-xl font-bold text-white mb-5">Identidad del Negocio</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Nombre</span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Nombre de negocio</span>
                   <input
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                     value={profile.displayName}
@@ -1679,43 +1704,13 @@ export default function LinkHubPage() {
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Slug publico</span>
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Alias publico</span>
                   <input
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                     value={profile.slug}
                     onChange={(event) => patchProfile("slug", sanitizeSlug(event.target.value))}
                     placeholder="tu-nombre"
                   />
-                </label>
-                <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Rubro</span>
-                  <select
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                    value={profile.businessType}
-                    onChange={(event) => changeBusinessType(event.target.value as LinkHubBusinessType)}
-                  >
-                    <option value="restaurant">Restaurante / Cafeteria</option>
-                  </select>
-                </label>
-                <label className="space-y-2">
-                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Categoria visual</span>
-                  <select
-                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:opacity-70"
-                    value={activeThemeCategory}
-                    onChange={(event) => changeThemeCategory(event.target.value as LinkHubThemeCategory)}
-                    disabled={profile.businessType === "restaurant"}
-                  >
-                    {Object.entries(LINK_HUB_THEME_CATEGORY_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  {profile.businessType === "restaurant" && (
-                    <p className="text-[11px] text-zinc-400">
-                      En restaurantes se aplica automaticamente la categoria de temas para comida.
-                    </p>
-                  )}
                 </label>
                 <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Etiqueta del rubro</span>
@@ -2896,3 +2891,4 @@ export default function LinkHubPage() {
     </div>
   );
 }
+

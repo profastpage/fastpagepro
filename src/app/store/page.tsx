@@ -355,6 +355,12 @@ function scopedStoreProjectKey(userId: string) {
   return `fastpage_store_project_id:${userId}`;
 }
 
+function sanitizeDemoValue(value: string | null) {
+  return String(value || "")
+    .trim()
+    .replace(/[^\w-]/g, "");
+}
+
 async function compressImage(file: File, maxSide = 1400, quality = 0.84) {
   const data = await new Promise<string>((resolve, reject) => {
     const r = new FileReader();
@@ -406,6 +412,7 @@ function StoreEditorPage() {
   const { user, loading: authLoading } = useAuth(true);
   const router = useRouter();
   const hydratedRef = useRef(false);
+  const demoThemeAppliedRef = useRef(false);
   const offerCarouselRef = useRef<HTMLDivElement | null>(null);
   const {
     state: editorState,
@@ -431,6 +438,7 @@ function StoreEditorPage() {
   const [savedToast, setSavedToast] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncWarning, setSyncWarning] = useState<string | null>(null);
+  const [demoThemeIntent, setDemoThemeIntent] = useState("");
 
   const liveConfig = editorState.previewData?.config || config;
   const liveProducts = editorState.previewData?.products || products;
@@ -496,6 +504,12 @@ function StoreEditorPage() {
     }
     setProjectId(null);
   }, [user?.uid]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setDemoThemeIntent(sanitizeDemoValue(params.get("demoTheme")));
+  }, []);
 
   useEffect(() => {
     setProjectMeta(projectId || "store-draft", "store");
@@ -594,6 +608,20 @@ function StoreEditorPage() {
         : prev.customRgb,
     }));
   };
+
+  useEffect(() => {
+    if (demoThemeAppliedRef.current) return;
+    if (projectId) {
+      demoThemeAppliedRef.current = true;
+      return;
+    }
+    const requestedDemoTheme = demoThemeIntent;
+    if (!requestedDemoTheme) return;
+    const isValidTheme = STORE_THEMES.some((theme) => theme.id === requestedDemoTheme);
+    demoThemeAppliedRef.current = true;
+    if (!isValidTheme) return;
+    applyThemePreset(requestedDemoTheme as StoreThemeId);
+  }, [demoThemeIntent, projectId]);
 
   useEffect(() => {
     if (!verticalThemeOptions.length) return;

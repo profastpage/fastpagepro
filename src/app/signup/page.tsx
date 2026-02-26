@@ -32,6 +32,8 @@ export default function SignupPage() {
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [selectedPlan, setSelectedPlan] = useState<LandingPlanIntent | null>(null);
   const [trialIntent, setTrialIntent] = useState("");
+  const [demoSlug, setDemoSlug] = useState("");
+  const [demoTheme, setDemoTheme] = useState("");
 
   useEffect(() => {
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
@@ -39,9 +41,17 @@ export default function SignupPage() {
     const resolved = normalizeVertical(params?.get("vertical"));
     const planIntent = params ? normalizePlanIntent(params.get("plan")) : null;
     const incomingTrial = String(params?.get("trial") || "").trim().toLowerCase();
+    const incomingDemoSlug = String(params?.get("demoSlug") || "")
+      .trim()
+      .replace(/[^\w-]/g, "");
+    const incomingDemoTheme = String(params?.get("demoTheme") || "")
+      .trim()
+      .replace(/[^\w-]/g, "");
     setVertical(resolved);
     setSelectedPlan(planIntent);
     setTrialIntent(planIntent === "BUSINESS" ? incomingTrial || "business14" : incomingTrial);
+    setDemoSlug(incomingDemoSlug);
+    setDemoTheme(incomingDemoTheme);
     persistVerticalChoice(resolved);
     void trackGrowthEvent("start_signup", {
       vertical: resolved,
@@ -57,22 +67,30 @@ export default function SignupPage() {
       router.replace(`/dashboard/billing?${params.toString()}`);
       return;
     }
-    router.replace(verticalToCreateHref(vertical));
-  }, [loading, router, selectedPlan, trialIntent, user, vertical]);
+    router.replace(verticalToCreateHref(vertical, { demoSlug, demoTheme }));
+  }, [demoSlug, demoTheme, loading, router, selectedPlan, trialIntent, user, vertical]);
 
   const copy = useMemo(() => getVerticalCopy(vertical), [vertical]);
   const registerHref = useMemo(() => {
     const params = new URLSearchParams({ tab: "register", vertical });
     if (selectedPlan) params.set("plan", selectedPlan);
     if (trialIntent) params.set("trial", trialIntent);
+    if (demoSlug) params.set("demoSlug", demoSlug);
+    if (demoTheme) params.set("demoTheme", demoTheme);
     return `/auth?${params.toString()}`;
-  }, [selectedPlan, trialIntent, vertical]);
+  }, [demoSlug, demoTheme, selectedPlan, trialIntent, vertical]);
   const loginHref = useMemo(() => {
     const params = new URLSearchParams({ tab: "login", vertical });
     if (selectedPlan) params.set("plan", selectedPlan);
     if (trialIntent) params.set("trial", trialIntent);
+    if (demoSlug) params.set("demoSlug", demoSlug);
+    if (demoTheme) params.set("demoTheme", demoTheme);
     return `/auth?${params.toString()}`;
-  }, [selectedPlan, trialIntent, vertical]);
+  }, [demoSlug, demoTheme, selectedPlan, trialIntent, vertical]);
+  const returnDemoHref = useMemo(() => {
+    if (demoSlug) return `/demo/${vertical}/${demoSlug}`;
+    return `/demo?vertical=${vertical}`;
+  }, [demoSlug, vertical]);
 
   if (loading) {
     return (
@@ -136,7 +154,7 @@ export default function SignupPage() {
             Ya tengo cuenta
           </Link>
           <Link
-            href={`/demo?vertical=${vertical}`}
+            href={returnDemoHref}
             className="rounded-xl border border-white/20 bg-transparent px-5 py-3 text-sm font-semibold text-zinc-300"
           >
             Ver demo otra vez

@@ -9,6 +9,7 @@ import { getVerticalCopy, verticalToCreateHref, verticalToSignupHref, type Busin
 type StickyCTAProps = {
   vertical: BusinessVertical;
   slug?: string;
+  demoTheme?: string;
   hideOnMobile?: boolean;
   mobileBottomClass?: string;
   compactMobileLeft?: boolean;
@@ -17,6 +18,7 @@ type StickyCTAProps = {
 export default function StickyCTA({
   vertical,
   slug,
+  demoTheme,
   hideOnMobile = false,
   mobileBottomClass = "bottom-3",
   compactMobileLeft = false,
@@ -25,10 +27,16 @@ export default function StickyCTA({
   const copy = getVerticalCopy(vertical);
 
   const targetPrimary = useMemo(
-    () => (user ? verticalToCreateHref(vertical) : verticalToSignupHref(vertical)),
-    [user, vertical],
+    () =>
+      user
+        ? verticalToCreateHref(vertical, { demoSlug: slug, demoTheme })
+        : verticalToSignupHref(vertical, { demoSlug: slug, demoTheme }),
+    [demoTheme, slug, user, vertical],
   );
-  const targetSecondary = useMemo(() => verticalToSignupHref(vertical), [vertical]);
+  const targetSecondary = useMemo(
+    () => verticalToSignupHref(vertical, { demoSlug: slug, demoTheme }),
+    [demoTheme, slug, vertical],
+  );
 
   return (
     <div
