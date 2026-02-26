@@ -1174,3 +1174,15 @@ o-scrollbar para evitar barra visible.
   - accion `Marcar leida` y cambios de plan desde admin sincronizan lectura/estado tanto en `users/{uid}` como en `subscription_notifications/{id}`.
 - Resultado:
   - la notificacion de Billing aparece en super admin en tiempo real con menor dependencia de campos derivados.
+## Firestore ownership compatibility hardening (2026-02-26)
+
+- Archivo ajustado: irestore.rules.
+- Problema resuelto:
+  - algunos documentos legacy en cloned_sites y projects no tenian userId, lo que provocaba permission-denied al guardar en Store/Builder/Editor para cuentas validas.
+- Cambio aplicado:
+  - reglas de update ahora permiten reclamo seguro de ownership solo cuando el documento legacy no tiene userId y el request establece userId == auth.uid.
+  - para documentos modernos, userId permanece inmutable y solo el owner/admin puede actualizar o borrar.
+- Impacto:
+  - se elimina falso error de permisos en autosave/publicacion para cuentas autenticadas.
+  - la compatibilidad se aplica transversalmente a Store, Builder y Editor al compartir colecciones cloned_sites/projects.
+

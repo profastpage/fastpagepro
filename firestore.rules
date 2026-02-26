@@ -46,34 +46,62 @@ service cloud.firestore {
           && resource.data.published == true;
       }
 
+      function existingOwner() {
+        return resource.data.userId is string ? resource.data.userId : "";
+      }
+
+      function incomingOwner() {
+        return request.resource.data.userId is string ? request.resource.data.userId : "";
+      }
+
       allow get, list: if isAdmin()
-        || (signedIn() && resource.data.userId == request.auth.uid)
+        || (signedIn() && existingOwner() == request.auth.uid)
         || isPublishedStorefront();
 
       allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid;
-
-      allow update: if (isAdmin() || (signedIn() && resource.data.userId == request.auth.uid))
-        && request.resource.data.userId == resource.data.userId;
-
-      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
-    }
-
-    match /projects/{projectId} {
-      allow get, list: if isAdmin()
-        || (signedIn() && resource.data.userId == request.auth.uid);
-
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid;
+        && incomingOwner() == request.auth.uid;
 
       allow update: if isAdmin()
         || (
           signedIn()
-          && resource.data.userId == request.auth.uid
-          && request.resource.data.userId == resource.data.userId
+          && (
+            // Normal owner update path (owner is immutable)
+            (existingOwner() == request.auth.uid && incomingOwner() == existingOwner())
+            // Legacy compatibility: old docs without userId can be claimed by current owner
+            || (!resource.data.keys().hasAny(["userId"]) && incomingOwner() == request.auth.uid)
+          )
         );
 
-      allow delete: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || (signedIn() && existingOwner() == request.auth.uid);
+    }
+
+    match /projects/{projectId} {
+      function existingOwner() {
+        return resource.data.userId is string ? resource.data.userId : "";
+      }
+
+      function incomingOwner() {
+        return request.resource.data.userId is string ? request.resource.data.userId : "";
+      }
+
+      allow get, list: if isAdmin()
+        || (signedIn() && existingOwner() == request.auth.uid);
+
+      allow create: if signedIn()
+        && incomingOwner() == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && (
+            // Normal owner update path (owner is immutable)
+            (existingOwner() == request.auth.uid && incomingOwner() == existingOwner())
+            // Legacy compatibility: old docs without userId can be claimed by current owner
+            || (!resource.data.keys().hasAny(["userId"]) && incomingOwner() == request.auth.uid)
+          )
+        );
+
+      allow delete: if isAdmin() || (signedIn() && existingOwner() == request.auth.uid);
     }
 
     match /analytics/{projectId} {
