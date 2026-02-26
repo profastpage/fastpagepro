@@ -13,6 +13,7 @@ import urbanWear from "../../data/demos/ecommerce/urban-wear.json";
 import agencyGrowth from "../../data/demos/services/agency-growth.json";
 import consultoriaPro from "../../data/demos/services/consultoria-pro.json";
 import legalStudio from "../../data/demos/services/legal-studio.json";
+import proMetrics from "../../data/demos/services/pro-metrics.json";
 
 export type {
   DemoData,
@@ -45,6 +46,7 @@ const MOCK_DEMOS: Record<DemoVertical, Record<string, DemoData>> = {
     "agency-growth": agencyGrowth as DemoData,
     "consultoria-pro": consultoriaPro as DemoData,
     "legal-studio": legalStudio as DemoData,
+    "pro-metrics": proMetrics as DemoData,
   },
 };
 

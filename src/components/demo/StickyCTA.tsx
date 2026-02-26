@@ -10,9 +10,15 @@ type StickyCTAProps = {
   vertical: BusinessVertical;
   slug?: string;
   hideOnMobile?: boolean;
+  mobileBottomClass?: string;
 };
 
-export default function StickyCTA({ vertical, slug, hideOnMobile = false }: StickyCTAProps) {
+export default function StickyCTA({
+  vertical,
+  slug,
+  hideOnMobile = false,
+  mobileBottomClass = "bottom-3",
+}: StickyCTAProps) {
   const { user } = useAuth();
   const copy = getVerticalCopy(vertical);
 
@@ -23,7 +29,7 @@ export default function StickyCTA({ vertical, slug, hideOnMobile = false }: Stic
   const targetSecondary = useMemo(() => verticalToSignupHref(vertical), [vertical]);
 
   return (
-    <div className={`fixed inset-x-0 bottom-3 z-40 px-3 md:bottom-5 ${hideOnMobile ? "hidden md:block" : ""}`}>
+    <div className={`fixed inset-x-0 z-40 px-3 md:bottom-5 ${mobileBottomClass} ${hideOnMobile ? "hidden md:block" : ""}`}>
       <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-amber-300/35 bg-black/90 p-3 backdrop-blur-md md:flex-row md:items-center md:justify-between">
         <p className="text-sm font-semibold text-zinc-200">
           Demo lista. {copy.signupCta}

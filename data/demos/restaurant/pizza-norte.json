@@ -5,6 +5,7 @@
   "subtitle": "Carta para pizzeria con pedidos rapidos",
   "description": "Pensada para familias: promos, mitades y delivery por WhatsApp.",
   "coverImage": "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1600&auto=format&fit=crop",
+  "profileImage": "https://images.unsplash.com/photo-1548365328-9f547fb0953b?q=80&w=600&auto=format&fit=crop",
   "themeId": "foodWarm",
   "promoStrip": "30% OFF en segunda pizza mediana",
   "openHours": "1:00 pm - 11:30 pm",

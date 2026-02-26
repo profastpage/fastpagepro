@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   BarChart3,
-  Bot,
   Copy,
   Globe2,
   MessageCircle,
@@ -40,7 +39,7 @@ import {
 } from "@/lib/vertical";
 
 type ModuleCard = {
-  id: "builder" | "templates" | "cloner" | "store" | "menu" | "metrics" | "ai";
+  id: "builder" | "templates" | "cloner" | "store" | "menu" | "metrics";
   title: string;
   line: string;
   href: string;
@@ -60,7 +59,7 @@ const MODULES: ModuleCard[] = [
     icon: Palette,
     title: "Templates",
     line: "Plantillas por nicho listas para lanzar en minutos.",
-    href: "/templates",
+    href: "/demo/services/consultoria-pro",
   },
   {
     id: "cloner",
@@ -74,28 +73,21 @@ const MODULES: ModuleCard[] = [
     icon: ShoppingCart,
     title: "Online Store",
     line: "Catalogo, carrito y checkout conectado a WhatsApp.",
-    href: "/store",
+    href: "/demo/ecommerce/urban-wear",
   },
   {
     id: "menu",
     icon: UtensilsCrossed,
     title: "Carta Digital",
     line: "Menu para restaurantes con pedido directo por WhatsApp.",
-    href: "/linkhub",
+    href: "/demo/restaurant/sushi-prime",
   },
   {
     id: "metrics",
     icon: BarChart3,
     title: "Pro Metrics",
     line: "Visitas, conversion, rendimiento tecnico e insights.",
-    href: "/metrics",
-  },
-  {
-    id: "ai",
-    icon: Bot,
-    title: "IA",
-    line: "Sugerencias de copy, estructura y optimizacion por plan.",
-    href: "/dashboard/billing",
+    href: "/demo/services/pro-metrics",
   },
 ];
 
@@ -428,7 +420,12 @@ export default function LandingHome() {
 
             <div className="flex flex-wrap gap-2">
               {["Sin codigo", "Listo en minutos", "Optimiza con metricas", "IA para copy"].map((item) => (
-                <span key={item} className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-zinc-200">
+                <span
+                  key={item}
+                  className={`rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-zinc-200 ${
+                    item === "IA para copy" ? "hidden sm:inline-flex" : "inline-flex"
+                  }`}
+                >
                   {item}
                 </span>
               ))}

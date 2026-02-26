@@ -966,3 +966,21 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - nuevo DemoImage con fallback SVG local cuando falla una URL remota.
   - aplicado en cards de demo y vistas demo para evitar bloques vacios.
 
+
+## Landing Modules Demo Redirect + Demo Back Controls (2026-02-26)
+
+- Landing / (seccion Todo en uno):
+  - Templates ahora abre demo de servicios (/demo/services/consultoria-pro).
+  - Online Store ahora abre demo ecommerce (/demo/ecommerce/urban-wear).
+  - Carta Digital ahora abre demo restaurante (/demo/restaurant/sushi-prime).
+  - Pro Metrics ahora abre demo de metricas (/demo/services/pro-metrics).
+  - se elimina el modulo IA de la grilla.
+  - chip IA para copy oculto en mobile (se mantiene en desktop).
+- Demos /demo/*:
+  - barra superior con Volver al inicio + Crear mi version gratis.
+  - CTA sticky visible tambien en restaurante mobile con offset para no tapar la navegacion inferior.
+- Carta Digital demo (restaurant):
+  - soporte de profileImage por demo para avatar circular estable sobre portada.
+  - chips del buscador con 
+o-scrollbar para eliminar barra horizontal gris.
+

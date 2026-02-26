@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import ThemePicker from "@/components/demo/ThemePicker";
 import StickyCTA from "@/components/demo/StickyCTA";
 import RestaurantDemo from "@/components/demo/RestaurantDemo";
@@ -8,10 +9,16 @@ import EcommerceDemo from "@/components/demo/EcommerceDemo";
 import ServicesDemo from "@/components/demo/ServicesDemo";
 import type { DemoData } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
-import { persistVerticalChoice } from "@/lib/vertical";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  persistVerticalChoice,
+  verticalToCreateHref,
+  verticalToSignupHref,
+} from "@/lib/vertical";
 import { resolveThemeById, themeToCssVars } from "@/lib/themes";
 
 export default function DemoExperience({ demo }: { demo: DemoData }) {
+  const { user } = useAuth();
   const [themeId, setThemeId] = useState(demo.themeId);
 
   useEffect(() => {
@@ -31,6 +38,9 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     () => resolveThemeById(demo.vertical, themeId),
     [demo.vertical, themeId],
   );
+  const createHref = user
+    ? verticalToCreateHref(demo.vertical)
+    : verticalToSignupHref(demo.vertical);
 
   if (demo.vertical === "restaurant") {
     return (
@@ -39,9 +49,27 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
         className="min-h-screen bg-[var(--fp-bg)] px-3 pb-28 pt-16 text-[var(--fp-text)] md:px-6 md:pt-20 lg:px-8"
       >
         <div className="mx-auto w-full max-w-7xl">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2 text-xs font-black uppercase tracking-[0.08em]"
+            >
+              ← Volver al inicio
+            </Link>
+            <Link
+              href={createHref}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-amber-100"
+            >
+              🚀 Crear mi versión gratis
+            </Link>
+          </div>
           <RestaurantDemo demo={demo} />
         </div>
-        <StickyCTA vertical={demo.vertical} slug={demo.slug} hideOnMobile />
+        <StickyCTA
+          vertical={demo.vertical}
+          slug={demo.slug}
+          mobileBottomClass="bottom-20"
+        />
       </main>
     );
   }
@@ -53,6 +81,20 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     >
       <div className="mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-xs font-black uppercase tracking-[0.08em]"
+            >
+              ← Volver al inicio
+            </Link>
+            <Link
+              href={createHref}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-amber-100"
+            >
+              🚀 Crear mi versión gratis
+            </Link>
+          </div>
           <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--fp-muted)]">
               Demo {demo.mode === "real" ? "real" : "preview"} / {demo.vertical}
