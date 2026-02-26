@@ -923,3 +923,18 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - layout responsive ajustado con espaciado seguro (`pt` superior por navbar global, `overflow-x-hidden`) y fallback visual de carga.
 - Sesión de suscripción:
   - orden de dominios base ajustado para priorizar `.fastpagepro.com` y compartir cookies entre `www` + apex.
+
+## Landing Conversion Optimization LATAM (2026-02-26)
+
+- Ruta afectada: `/` (home).
+- Se rehizo `src/components/landing/LandingHome.tsx` con foco de conversion para LATAM:
+  - Hero con headline principal orientado a WhatsApp conversion.
+  - CTA principal `Empezar gratis` + secundario `Ver como funciona`.
+  - Microcopy de confianza bajo CTA (`Sin tarjeta`, `Configuracion en minutos`, `Hecho para negocios de Latam`).
+  - Nuevo bloque `Sistema FastPage`: `Visitas -> Landing -> WhatsApp -> Metricas -> Escala`.
+  - Casos segmentados de alto impacto para Restaurantes, Tiendas Online y Servicios.
+  - Nueva seccion `Mira FastPage en accion` con mockup, preview de flujo WhatsApp y placeholder de demo corta.
+  - Pricing con psicologia de conversion (badge `Mas elegido por negocios`, refuerzo Business/Pro).
+  - Header sticky desktop de conversion + sticky CTA mobile.
+- SEO:
+  - `src/app/page.tsx` actualizado con metadata orientada a conversion LATAM (title, description, OG y Twitter).
