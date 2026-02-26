@@ -29,12 +29,14 @@ export default function StickyCTA({
   const targetSecondary = useMemo(() => verticalToSignupHref(vertical), [vertical]);
 
   return (
-    <div className={`fixed inset-x-0 z-40 px-3 md:bottom-5 ${mobileBottomClass} ${hideOnMobile ? "hidden md:block" : ""}`}>
-      <div className="mx-auto flex max-w-3xl flex-col gap-2 rounded-2xl border border-amber-300/35 bg-black/90 p-3 backdrop-blur-md md:flex-row md:items-center md:justify-between">
+    <div
+      className={`fixed inset-x-0 z-40 px-3 md:bottom-5 ${mobileBottomClass} ${hideOnMobile ? "hidden md:block" : ""}`}
+    >
+      <div className="mx-auto flex max-w-3xl flex-col gap-2 overflow-hidden rounded-2xl border border-amber-300/35 bg-black/90 p-3 backdrop-blur-md md:flex-row md:items-center md:justify-between">
         <p className="text-sm font-semibold text-zinc-200">
           Demo lista. {copy.signupCta}
         </p>
-        <div className="flex gap-2">
+        <div className="grid w-full grid-cols-1 gap-2 md:w-auto md:grid-cols-2">
           <Link
             href={targetPrimary}
             onClick={() =>
@@ -44,7 +46,7 @@ export default function StickyCTA({
                 location: "sticky_primary",
               })
             }
-            className="inline-flex items-center justify-center rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 px-4 py-2 text-center text-xs font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110"
           >
             Quiero esta version para mi negocio
           </Link>
@@ -57,7 +59,7 @@ export default function StickyCTA({
                 location: "sticky_secondary",
               })
             }
-            className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-white transition hover:border-amber-300/45 hover:bg-amber-300/10"
+            className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-center text-xs font-bold uppercase tracking-[0.12em] text-white transition hover:border-amber-300/45 hover:bg-amber-300/10"
           >
             Probar gratis
           </Link>

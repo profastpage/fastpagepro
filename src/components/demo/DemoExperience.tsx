@@ -77,20 +77,20 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
   return (
     <main
       style={themeToCssVars(activeTheme)}
-      className="min-h-screen bg-[var(--fp-bg)] px-4 pb-28 pt-24 text-[var(--fp-text)] md:px-6 md:pt-28 lg:px-8"
+      className="min-h-screen overflow-x-hidden bg-[var(--fp-bg)] px-3 pb-28 pt-20 text-[var(--fp-text)] md:px-6 md:pt-28 lg:px-8"
     >
       <div className="mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3">
+          <div className="grid gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3 sm:grid-cols-2">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-xs font-black uppercase tracking-[0.08em]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] sm:justify-start"
             >
               ← Volver al inicio
             </Link>
             <Link
               href={createHref}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-amber-100"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-amber-100 sm:justify-end"
             >
               🚀 Crear mi versión gratis
             </Link>
