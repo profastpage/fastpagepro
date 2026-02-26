@@ -158,6 +158,35 @@ function toWhatsappUrl(raw: string): string {
   return digits ? `https://wa.me/${digits}` : "";
 }
 
+function parseHexColor(value: string): [number, number, number] | null {
+  if (!value.startsWith("#")) return null;
+  const hex = value.slice(1);
+  if (hex.length === 3) {
+    const r = Number.parseInt(hex[0] + hex[0], 16);
+    const g = Number.parseInt(hex[1] + hex[1], 16);
+    const b = Number.parseInt(hex[2] + hex[2], 16);
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+    return [r, g, b];
+  }
+  if (hex.length === 6) {
+    const r = Number.parseInt(hex.slice(0, 2), 16);
+    const g = Number.parseInt(hex.slice(2, 4), 16);
+    const b = Number.parseInt(hex.slice(4, 6), 16);
+    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return null;
+    return [r, g, b];
+  }
+  return null;
+}
+
+function resolvePriceColor(accentColor: string, useWhiteBackground: boolean): string {
+  if (!useWhiteBackground) return accentColor;
+  const rgb = parseHexColor(accentColor);
+  if (!rgb) return "#0f172a";
+  const [r, g, b] = rgb;
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance > 0.62 ? "#0f172a" : accentColor;
+}
+
 function getButtonRadiusClass(shape: LinkHubProfile["buttonShape"]): string {
   if (shape === "pill") return "rounded-full";
   if (shape === "square") return "rounded-md";
@@ -429,6 +458,7 @@ export default function PublicBioPage() {
   const activeCartaTheme = getCartaTheme(cartaThemeId);
   const cartaBackgroundMode = getSafeLinkHubCartaBackgroundMode(profile.cartaBackgroundMode);
   const useWhiteCartaBackground = cartaBackgroundMode === "white";
+  const readablePriceColor = resolvePriceColor(activeCartaTheme.tokens.accent, useWhiteCartaBackground);
   const textTone = getSafeLinkHubTextTone(profile.textTone);
   const _legacyTextPalette = getTextTonePalette(textTone, colors.primary);
   const textPalette = {
@@ -770,6 +800,7 @@ export default function PublicBioPage() {
       : activeCartaTheme.tokens.badgeBg,
     "--carta-badge-text": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.badgeText,
     "--carta-accent": activeCartaTheme.tokens.accent,
+    "--carta-price-color": readablePriceColor,
     "--carta-primary": activeCartaTheme.tokens.primary,
     "--carta-primary-hover": activeCartaTheme.tokens.primaryHover,
     background: "var(--carta-bg)",
@@ -1111,11 +1142,11 @@ export default function PublicBioPage() {
                 Atiende clientes directo desde tu canal favorito.
               </p>
 
-              <div className="mt-4 grid grid-cols-1 gap-3 md:mt-5 md:grid-cols-2 md:gap-4">
+              <div className="mt-4 grid grid-cols-1 gap-3 md:mt-5 md:grid-cols-2 md:items-stretch md:gap-4">
                 {callHref && (
                   <a
                     href={callHref}
-                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[3.25rem] ${!whatsappHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
+                    className={`flex w-full min-h-12 items-center justify-center gap-2 border px-4 py-3 text-center font-bold transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[3.25rem] ${!whatsappHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
                     style={contactActionStyle}
                   >
                     <Phone className="h-4 w-4" />
@@ -1127,7 +1158,7 @@ export default function PublicBioPage() {
                     href={whatsappHref}
                     target="_blank"
                     rel="noreferrer"
-                    className={`inline-flex min-h-12 items-center justify-center gap-2 border px-4 py-3 font-bold transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[3.25rem] ${!callHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
+                    className={`flex w-full min-h-12 items-center justify-center gap-2 border px-4 py-3 text-center font-bold transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[3.25rem] ${!callHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
                     style={contactActionStyle}
                   >
                     <MessageCircleIcon className="h-4 w-4" />
@@ -1480,7 +1511,7 @@ export default function PublicBioPage() {
                                       <Plus className="h-3.5 w-3.5" />
                                     </button>
                                   </div>
-                                  <p className="text-xl font-black" style={{ color: "var(--carta-accent)" }}>
+                                  <p className="text-xl font-black" style={{ color: "var(--carta-price-color, var(--carta-accent))" }}>
                                     {formatSoles(itemSubtotal)}
                                   </p>
                                 </div>
