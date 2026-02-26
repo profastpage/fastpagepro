@@ -126,12 +126,12 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   }, [cartItems, demo.address, demo.title, demo.whatsappNumber, total]);
 
   const navButton =
-    "h-12 rounded-2xl border px-3 text-sm font-black uppercase tracking-[0.08em] transition";
+    "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition md:h-12 md:text-sm";
 
   return (
     <section className="space-y-4">
       <article className="mx-auto w-full max-w-md overflow-hidden rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl">
-        <div className="border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3">
+        <div className="sticky top-0 z-30 border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3 backdrop-blur-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)]">
@@ -147,6 +147,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               <Share2 className="h-4 w-4" />
             </button>
           </div>
+          <p className="mt-2 text-center text-lg font-black uppercase tracking-[0.18em] text-[var(--fp-primary)] md:text-xl">
+            {tab === "contact" ? "Contacto" : tab === "menu" ? "Carta" : "Ubicacion"}
+          </p>
         </div>
 
         <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-3 md:grid md:grid-cols-3">
@@ -224,7 +227,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
           {tab === "menu" ? (
             <section className="space-y-4">
-              <div className="rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3">
+              <div className="sticky top-[5.5rem] z-20 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 backdrop-blur-sm md:top-[6.4rem]">
                 <label className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3">
                   <Search className="h-4 w-4 text-[var(--fp-muted)]" />
                   <input
@@ -240,7 +243,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       key={itemCategory}
                       type="button"
                       onClick={() => setCategory(itemCategory)}
-                      className="shrink-0 rounded-xl border px-4 py-2 text-sm font-bold"
+                      className="shrink-0 rounded-xl border px-3 py-2 text-xs font-bold md:px-4 md:text-sm"
                       style={
                         category === itemCategory
                           ? { background: "var(--fp-primary)", borderColor: "var(--fp-primary)", color: "#fff" }
@@ -272,7 +275,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <h4 className="line-clamp-2 text-2xl font-black leading-tight md:text-3xl">{item.name}</h4>
+                              <h4 className="line-clamp-2 text-xl font-black leading-tight md:text-3xl">{item.name}</h4>
                               {item.badge ? (
                                 <span className="rounded-full bg-[var(--fp-primary)] px-2 py-1 text-[10px] font-black text-white">
                                   {normalizeBadge(item.badge)}
@@ -282,9 +285,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                             <p className="mt-1 line-clamp-2 text-sm text-[var(--fp-muted)] md:text-base">{item.description}</p>
                             <div className="mt-2 flex items-end gap-2">
                               {item.compareAtPrice ? (
-                                <p className="text-sm line-through text-[var(--fp-muted)]">{formatMoney(item.compareAtPrice)}</p>
+                                <p className="text-xs line-through text-[var(--fp-muted)] md:text-sm">{formatMoney(item.compareAtPrice)}</p>
                               ) : null}
-                              <p className="text-4xl font-black text-[var(--fp-primary)] md:text-5xl">{formatMoney(item.price)}</p>
+                              <p className="text-3xl font-black text-[var(--fp-primary)] md:text-5xl">{formatMoney(item.price)}</p>
                             </div>
                             <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-2 py-1">
                               <button
@@ -354,7 +357,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               location: "restaurant_floating",
             })
           }
-          className="fixed bottom-24 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-4 py-3 text-sm font-black text-white shadow-2xl"
+          className="fixed bottom-24 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-3 py-2 text-xs font-black text-white shadow-2xl md:bottom-8 md:px-4 md:py-3 md:text-sm"
         >
           💬 Mi pedido ({cartCount})
         </a>
@@ -366,7 +369,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             <button
               type="button"
               onClick={() => setTab("contact")}
-              className="h-14 rounded-xl text-[10px] font-black uppercase tracking-[0.08em]"
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
               style={tab === "contact" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
               <Phone className="mx-auto mb-1 h-4 w-4" />
@@ -375,7 +378,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             <button
               type="button"
               onClick={() => setTab("menu")}
-              className="h-14 rounded-xl text-[10px] font-black uppercase tracking-[0.08em]"
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
               style={tab === "menu" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
               <Menu className="mx-auto mb-1 h-4 w-4" />
@@ -384,7 +387,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             <button
               type="button"
               onClick={() => setTab("location")}
-              className="h-14 rounded-xl text-[10px] font-black uppercase tracking-[0.08em]"
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
               style={tab === "location" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
               <MapPin className="mx-auto mb-1 h-4 w-4" />

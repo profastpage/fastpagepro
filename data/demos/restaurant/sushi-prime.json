@@ -10,12 +10,17 @@
   "openHours": "11:30 am - 10:30 pm",
   "address": "Av. Larco 412, Miraflores",
   "whatsappNumber": "51984500111",
-  "categories": ["Entradas", "Makis", "Nigiri", "Bebidas"],
+  "categories": ["Entradas", "Makis", "Nigiri", "Combos", "Bebidas"],
   "items": [
-    {"id":"sp-1","category":"Entradas","name":"Ebi Tempura","description":"Langostinos crujientes con salsa tare.","image":"https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?q=80&w=1200&auto=format&fit=crop","price":32,"compareAtPrice":39,"badge":"🔥 Mas vendido","featured":true,"favoriteOfDay":true},
-    {"id":"sp-2","category":"Makis","name":"Maki Acevichado","description":"Relleno de salmon y topping acevichado.","image":"https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?q=80&w=1200&auto=format&fit=crop","price":28,"badge":"⭐ Favorito","featured":true},
-    {"id":"sp-3","category":"Makis","name":"Maki Furai","description":"Crocante por fuera, cremoso por dentro.","image":"https://images.unsplash.com/photo-1625938144755-652e08e359b7?q=80&w=1200&auto=format&fit=crop","price":30},
-    {"id":"sp-4","category":"Nigiri","name":"Nigiri de Atun","description":"Corte premium sobre arroz sazonado.","image":"https://images.unsplash.com/photo-1611143669185-af224c5e3252?q=80&w=1200&auto=format&fit=crop","price":24,"badge":"🥇 Top ventas"},
-    {"id":"sp-5","category":"Bebidas","name":"Limonada de jengibre","description":"Refrescante, sin azucar refinada.","image":"https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=1200&auto=format&fit=crop","price":12}
+    {"id":"sp-1","category":"Entradas","name":"Ebi Tempura","description":"Langostinos crocantes con salsa tare.","image":"https://images.unsplash.com/photo-1617196034796-73dfa7b1fd56?q=80&w=1200&auto=format&fit=crop","price":32,"compareAtPrice":39,"badge":"Mas pedido","featured":true,"favoriteOfDay":true},
+    {"id":"sp-2","category":"Entradas","name":"Gyozas de Cerdo","description":"Gyozas al vapor con salsa ponzu y cebollin.","image":"https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=1200&auto=format&fit=crop","price":24},
+    {"id":"sp-3","category":"Makis","name":"Maki Acevichado","description":"Relleno de salmon y topping acevichado.","image":"https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?q=80&w=1200&auto=format&fit=crop","price":28,"badge":"Favorito","featured":true},
+    {"id":"sp-4","category":"Makis","name":"Maki Furai","description":"Crocante por fuera, cremoso por dentro.","image":"https://images.unsplash.com/photo-1625938144755-652e08e359b7?q=80&w=1200&auto=format&fit=crop","price":30},
+    {"id":"sp-5","category":"Makis","name":"Maki Spicy Tuna","description":"Atun marinado, mayo spicy y furikake.","image":"https://images.unsplash.com/photo-1553621042-f6e147245754?q=80&w=1200&auto=format&fit=crop","price":31,"badge":"Top"},
+    {"id":"sp-6","category":"Nigiri","name":"Nigiri de Atun","description":"Corte premium sobre arroz sazonado.","image":"https://images.unsplash.com/photo-1611143669185-af224c5e3252?q=80&w=1200&auto=format&fit=crop","price":24},
+    {"id":"sp-7","category":"Nigiri","name":"Nigiri de Salmon","description":"Lamina de salmon fresco, soya ligera.","image":"https://images.unsplash.com/photo-1633478062482-790cad7b8f90?q=80&w=1200&auto=format&fit=crop","price":26},
+    {"id":"sp-8","category":"Combos","name":"Combo Omakase x2","description":"24 piezas + 2 bebidas para compartir.","image":"https://images.unsplash.com/photo-1574484284002-952d92456975?q=80&w=1200&auto=format&fit=crop","price":74,"compareAtPrice":88,"badge":"Top ventas"},
+    {"id":"sp-9","category":"Bebidas","name":"Limonada de Jengibre","description":"Refrescante, sin azucar refinada.","image":"https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=1200&auto=format&fit=crop","price":12},
+    {"id":"sp-10","category":"Bebidas","name":"Té Helado Yuzu","description":"Te verde frio con notas citricas.","image":"https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=1200&auto=format&fit=crop","price":11}
   ]
 }

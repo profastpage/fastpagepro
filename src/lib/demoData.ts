@@ -1,8 +1,10 @@
 import { normalizeVertical } from "@/lib/vertical";
 import type { DemoData, DemoMode, DemoVertical } from "@/lib/demoTypes";
 import burgerLab from "../../data/demos/restaurant/burger-lab.json";
+import brasaPower from "../../data/demos/restaurant/brasa-power.json";
 import cevicheHouse from "../../data/demos/restaurant/ceviche-house.json";
 import coffeeRoute from "../../data/demos/restaurant/coffee-route.json";
+import pizzaNorte from "../../data/demos/restaurant/pizza-norte.json";
 import sushiPrime from "../../data/demos/restaurant/sushi-prime.json";
 import couturePlus from "../../data/demos/ecommerce/couture-plus.json";
 import fitGear from "../../data/demos/ecommerce/fitgear.json";
@@ -26,9 +28,11 @@ export { DEMO_CATALOG, getDemoCatalog, type DemoCatalogItem } from "@/lib/demoCa
 
 const MOCK_DEMOS: Record<DemoVertical, Record<string, DemoData>> = {
   restaurant: {
+    "brasa-power": brasaPower as DemoData,
     "burger-lab": burgerLab as DemoData,
     "ceviche-house": cevicheHouse as DemoData,
     "coffee-route": coffeeRoute as DemoData,
+    "pizza-norte": pizzaNorte as DemoData,
     "sushi-prime": sushiPrime as DemoData,
   },
   ecommerce: {

@@ -2,19 +2,25 @@
   "vertical": "restaurant",
   "slug": "burger-lab",
   "title": "Burger Lab",
-  "subtitle": "Combos directos a WhatsApp",
-  "description": "Ideal para dark kitchens y restaurantes con alto volumen de pedidos.",
+  "subtitle": "Carta digital para delivery rapido",
+  "description": "Ideal para dark kitchens y restaurantes con alto volumen de pedidos diarios.",
   "coverImage": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1600&auto=format&fit=crop",
   "themeId": "foodWarm",
   "promoStrip": "2x1 en combos de lunes a jueves",
   "openHours": "12:00 pm - 11:00 pm",
   "address": "Jr. Bolognesi 220, Barranco",
   "whatsappNumber": "51981233001",
-  "categories": ["Combos", "Hamburguesas", "Acompanamientos", "Bebidas"],
+  "categories": ["Combos", "Hamburguesas", "Acompanamientos", "Bebidas", "Postres"],
   "items": [
-    {"id":"bl-1","category":"Combos","name":"Combo Doble Smash","description":"Hamburguesa doble + papas + bebida.","image":"https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1200&auto=format&fit=crop","price":35,"compareAtPrice":42,"badge":"🔥 Mas vendido","featured":true,"favoriteOfDay":true},
-    {"id":"bl-2","category":"Hamburguesas","name":"Cheese Bacon XL","description":"Pan brioche, tocino crocante y doble queso.","image":"https://images.unsplash.com/photo-1607013251379-e6eecfffe234?q=80&w=1200&auto=format&fit=crop","price":29,"badge":"⭐ Favorito","featured":true},
-    {"id":"bl-3","category":"Acompanamientos","name":"Papas Trufadas","description":"Con parmesano y mayo especial.","image":"https://images.unsplash.com/photo-1576107232684-1279f390859f?q=80&w=1200&auto=format&fit=crop","price":16},
-    {"id":"bl-4","category":"Bebidas","name":"Milkshake Oreo","description":"Batido cremoso de oreo y vainilla.","image":"https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=1200&auto=format&fit=crop","price":14,"badge":"🥇 Top ventas"}
+    {"id":"bl-1","category":"Combos","name":"Combo Doble Smash","description":"Hamburguesa doble, papas y bebida grande.","image":"https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1200&auto=format&fit=crop","price":35,"compareAtPrice":42,"badge":"Mas pedido","featured":true,"favoriteOfDay":true},
+    {"id":"bl-2","category":"Combos","name":"Combo Bacon XL","description":"Cheese bacon XL, papas crocantes y gaseosa.","image":"https://images.unsplash.com/photo-1607013251379-e6eecfffe234?q=80&w=1200&auto=format&fit=crop","price":38,"compareAtPrice":45,"badge":"Top ventas"},
+    {"id":"bl-3","category":"Hamburguesas","name":"Cheese Bacon XL","description":"Pan brioche, tocino crocante y doble queso cheddar.","image":"https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=1200&auto=format&fit=crop","price":29,"badge":"Favorito","featured":true},
+    {"id":"bl-4","category":"Hamburguesas","name":"Burger Clasica","description":"Carne artesanal, queso, cebolla y salsa especial.","image":"https://images.unsplash.com/photo-1551782450-a2132b4ba21d?q=80&w=1200&auto=format&fit=crop","price":24},
+    {"id":"bl-5","category":"Hamburguesas","name":"Triple Smash","description":"Triple carne, doble queso y pepinillos premium.","image":"https://images.unsplash.com/photo-1520072959219-c595dc870360?q=80&w=1200&auto=format&fit=crop","price":33,"badge":"Top"},
+    {"id":"bl-6","category":"Acompanamientos","name":"Papas Trufadas","description":"Con parmesano, perejil y mayo de la casa.","image":"https://images.unsplash.com/photo-1576107232684-1279f390859f?q=80&w=1200&auto=format&fit=crop","price":16},
+    {"id":"bl-7","category":"Acompanamientos","name":"Aros de Cebolla","description":"Porcion grande con dip ahumado.","image":"https://images.unsplash.com/photo-1639024471283-03518883512d?q=80&w=1200&auto=format&fit=crop","price":14},
+    {"id":"bl-8","category":"Bebidas","name":"Milkshake Oreo","description":"Batido cremoso de oreo y vainilla.","image":"https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=1200&auto=format&fit=crop","price":14,"badge":"Favorito"},
+    {"id":"bl-9","category":"Bebidas","name":"Limonada Frozen","description":"Limon natural con hierbabuena y hielo frappé.","image":"https://images.unsplash.com/photo-1523677011781-c91d1bbe2f9e?q=80&w=1200&auto=format&fit=crop","price":12},
+    {"id":"bl-10","category":"Postres","name":"Brownie Sundae","description":"Brownie tibio con helado de vainilla y fudge.","image":"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?q=80&w=1200&auto=format&fit=crop","price":18}
   ]
 }

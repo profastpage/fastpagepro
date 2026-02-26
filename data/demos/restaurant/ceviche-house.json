@@ -3,17 +3,24 @@
   "slug": "ceviche-house",
   "title": "Ceviche House",
   "subtitle": "Carta marina para pedidos delivery",
-  "description": "Especial para cevicherias con combos y recomendados del chef.",
+  "description": "Especial para cevicherias con combos familiares y recomendados del chef.",
   "coverImage": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1600&auto=format&fit=crop",
   "themeId": "darkKitchen",
   "promoStrip": "Combo familiar con 15% off hasta las 3pm",
   "openHours": "10:30 am - 6:00 pm",
   "address": "Mercado de Surquillo, Puesto 44",
   "whatsappNumber": "51991155667",
-  "categories": ["Ceviches", "Tiraditos", "Combos", "Bebidas"],
+  "categories": ["Ceviches", "Tiraditos", "Chicharrones", "Combos", "Bebidas"],
   "items": [
-    {"id":"ch-1","category":"Ceviches","name":"Ceviche Clasico","description":"Pesca del dia, limon y choclo.","image":"https://images.unsplash.com/photo-1600891964599-f61ba0e24092?q=80&w=1200&auto=format&fit=crop","price":32,"badge":"🔥 Mas vendido","favoriteOfDay":true},
-    {"id":"ch-2","category":"Tiraditos","name":"Tiradito Nikkei","description":"Salsa de aji amarillo y ponzu.","image":"https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1200&auto=format&fit=crop","price":35,"badge":"⭐ Favorito"},
-    {"id":"ch-3","category":"Combos","name":"Combo Marino x2","description":"2 ceviches + 2 bebidas.","image":"https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1200&auto=format&fit=crop","price":58,"compareAtPrice":68,"badge":"🥇 Top ventas"}
+    {"id":"ch-1","category":"Ceviches","name":"Ceviche Clasico","description":"Pesca del dia, limon, cebolla y choclo.","image":"https://images.unsplash.com/photo-1611599537845-1c7aca0091c0?q=80&w=1200&auto=format&fit=crop","price":32,"badge":"Mas pedido","favoriteOfDay":true},
+    {"id":"ch-2","category":"Ceviches","name":"Ceviche Mixto","description":"Pescado, calamar y mariscos en punto perfecto.","image":"https://images.unsplash.com/photo-1625944525533-473f1a3d54f7?q=80&w=1200&auto=format&fit=crop","price":38},
+    {"id":"ch-3","category":"Tiraditos","name":"Tiradito Nikkei","description":"Salsa de aji amarillo, ponzu y sesame.","image":"https://images.unsplash.com/photo-1467003909585-2f8a72700288?q=80&w=1200&auto=format&fit=crop","price":35,"badge":"Favorito"},
+    {"id":"ch-4","category":"Tiraditos","name":"Tiradito Rocoto","description":"Ají rocoto suave con crema de leche de tigre.","image":"https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=1200&auto=format&fit=crop","price":33},
+    {"id":"ch-5","category":"Chicharrones","name":"Chicharron de Pota","description":"Crocante con salsa tartara de la casa.","image":"https://images.unsplash.com/photo-1516684732162-798a0062be99?q=80&w=1200&auto=format&fit=crop","price":28},
+    {"id":"ch-6","category":"Chicharrones","name":"Jalea Mixta","description":"Mix marino crocante para compartir.","image":"https://images.unsplash.com/photo-1576402187878-974f70c890a5?q=80&w=1200&auto=format&fit=crop","price":44,"badge":"Top"},
+    {"id":"ch-7","category":"Combos","name":"Combo Marino x2","description":"2 ceviches + 2 bebidas.","image":"https://images.unsplash.com/photo-1559847844-5315695dadae?q=80&w=1200&auto=format&fit=crop","price":58,"compareAtPrice":68,"badge":"Top ventas"},
+    {"id":"ch-8","category":"Combos","name":"Combo Familiar x4","description":"4 platos marinos + 1 jarra de chicha.","image":"https://images.unsplash.com/photo-1553621042-f6e147245754?q=80&w=1200&auto=format&fit=crop","price":112,"compareAtPrice":128},
+    {"id":"ch-9","category":"Bebidas","name":"Chicha Morada","description":"Jarra artesanal fria.","image":"https://images.unsplash.com/photo-1622597467836-f3285f2131b9?q=80&w=1200&auto=format&fit=crop","price":14},
+    {"id":"ch-10","category":"Bebidas","name":"Maracuya Frozen","description":"Fruta fresca con hielo frappé.","image":"https://images.unsplash.com/photo-1577805947697-89e18249d767?q=80&w=1200&auto=format&fit=crop","price":16}
   ]
 }

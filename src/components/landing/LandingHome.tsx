@@ -607,7 +607,7 @@ export default function LandingHome() {
         <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-3xl font-black text-white md:text-4xl">Casos reales por rubro</h2>
-            <p className="mt-2 text-zinc-300">4 demos de Carta Digital, 4 de Online Store y 3 de Landing.</p>
+            <p className="mt-2 text-zinc-300">6 demos de Carta Digital, 4 de Online Store y 3 de Landing.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {(["restaurant", "ecommerce", "services"] as BusinessVertical[]).map((tab) => (

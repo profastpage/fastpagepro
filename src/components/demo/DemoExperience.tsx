@@ -41,7 +41,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
         <div className="mx-auto w-full max-w-7xl">
           <RestaurantDemo demo={demo} />
         </div>
-        <StickyCTA vertical={demo.vertical} slug={demo.slug} />
+        <StickyCTA vertical={demo.vertical} slug={demo.slug} hideOnMobile />
       </main>
     );
   }

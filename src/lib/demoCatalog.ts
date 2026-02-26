@@ -43,6 +43,22 @@ export const DEMO_CATALOG: DemoCatalogItem[] = [
       "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1400&auto=format&fit=crop",
   },
   {
+    vertical: "restaurant",
+    slug: "pizza-norte",
+    title: "Pizza Norte",
+    subtitle: "Pizzeria con promos y pedidos rapidos por WhatsApp",
+    coverImage:
+      "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1400&auto=format&fit=crop",
+  },
+  {
+    vertical: "restaurant",
+    slug: "brasa-power",
+    title: "Brasa Power",
+    subtitle: "Pollo a la brasa con combos y delivery por zonas",
+    coverImage:
+      "https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=1400&auto=format&fit=crop",
+  },
+  {
     vertical: "ecommerce",
     slug: "urban-wear",
     title: "Urban Wear",

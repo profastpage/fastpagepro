@@ -1,0 +1,26 @@
+{
+  "vertical": "restaurant",
+  "slug": "pizza-norte",
+  "title": "Pizza Norte",
+  "subtitle": "Carta para pizzeria con pedidos rapidos",
+  "description": "Pensada para familias: promos, mitades y delivery por WhatsApp.",
+  "coverImage": "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "foodWarm",
+  "promoStrip": "30% OFF en segunda pizza mediana",
+  "openHours": "1:00 pm - 11:30 pm",
+  "address": "Av. Canada 1540, La Victoria",
+  "whatsappNumber": "51972245080",
+  "categories": ["Pizzas Clasicas", "Pizzas Premium", "Entradas", "Bebidas", "Postres"],
+  "items": [
+    {"id":"pn-1","category":"Pizzas Clasicas","name":"Americana","description":"Pepperoni, queso mozzarella y salsa italiana.","image":"https://images.unsplash.com/photo-1548365328-9f547fb0953b?q=80&w=1200&auto=format&fit=crop","price":34,"compareAtPrice":42,"badge":"Mas pedido","favoriteOfDay":true},
+    {"id":"pn-2","category":"Pizzas Clasicas","name":"Hawaiana","description":"Jamón artesanal y piña dulce.","image":"https://images.unsplash.com/photo-1594007654729-407eedc4be65?q=80&w=1200&auto=format&fit=crop","price":36},
+    {"id":"pn-3","category":"Pizzas Premium","name":"Trufa y Prosciutto","description":"Crema trufada, prosciutto y queso parmesano.","image":"https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=1200&auto=format&fit=crop","price":49,"badge":"Top"},
+    {"id":"pn-4","category":"Pizzas Premium","name":"4 Quesos","description":"Mozzarella, azul, provolone y parmesano.","image":"https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?q=80&w=1200&auto=format&fit=crop","price":44},
+    {"id":"pn-5","category":"Entradas","name":"Pan al Ajo","description":"Bastones dorados con mantequilla de ajo.","image":"https://images.unsplash.com/photo-1573140401552-3fab0b24306f?q=80&w=1200&auto=format&fit=crop","price":13},
+    {"id":"pn-6","category":"Entradas","name":"Alitas BBQ","description":"8 piezas glaseadas en salsa BBQ ahumada.","image":"https://images.unsplash.com/photo-1608039755401-742074f0548d?q=80&w=1200&auto=format&fit=crop","price":26,"badge":"Favorito"},
+    {"id":"pn-7","category":"Bebidas","name":"Gaseosa 1.5L","description":"Coca Cola, Inka Kola o Sprite.","image":"https://images.unsplash.com/photo-1581636625402-29b2a704ef13?q=80&w=1200&auto=format&fit=crop","price":11},
+    {"id":"pn-8","category":"Bebidas","name":"Limonada de Hierbabuena","description":"Limon natural y menta fresca.","image":"https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?q=80&w=1200&auto=format&fit=crop","price":12},
+    {"id":"pn-9","category":"Postres","name":"Pizza Choco Fresa","description":"Mini pizza dulce con crema de cacao y fresa.","image":"https://images.unsplash.com/photo-1576458088443-04a19bb13da6?q=80&w=1200&auto=format&fit=crop","price":22},
+    {"id":"pn-10","category":"Postres","name":"Tiramisu","description":"Receta italiana con cafe y cacao premium.","image":"https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?q=80&w=1200&auto=format&fit=crop","price":18}
+  ]
+}

@@ -3,18 +3,25 @@
   "slug": "coffee-route",
   "title": "Coffee Route",
   "subtitle": "Carta para cafeterias con upsell",
-  "description": "Flujo optimizado para tickets rapidos y pedidos recurrentes.",
+  "description": "Flujo optimizado para tickets rapidos, combos y pedidos recurrentes.",
   "coverImage": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1600&auto=format&fit=crop",
   "themeId": "coffeeLight",
   "promoStrip": "Happy hour cafe + postre de 4pm a 6pm",
   "openHours": "8:00 am - 8:00 pm",
   "address": "Av. Primavera 1123, Surco",
   "whatsappNumber": "51986600444",
-  "categories": ["Cafe", "Frios", "Postres"],
+  "categories": ["Cafe", "Frios", "Panaderia", "Postres", "Brunch"],
   "items": [
-    {"id":"cr-1","category":"Cafe","name":"Latte Vainilla","description":"Cafe de especialidad con leche cremosa.","image":"https://images.unsplash.com/photo-1461023058943-07fcbe16d735?q=80&w=1200&auto=format&fit=crop","price":15,"badge":"⭐ Favorito","favoriteOfDay":true},
+    {"id":"cr-1","category":"Cafe","name":"Latte Vainilla","description":"Cafe de especialidad con leche cremosa.","image":"https://images.unsplash.com/photo-1461023058943-07fcbe16d735?q=80&w=1200&auto=format&fit=crop","price":15,"badge":"Favorito","favoriteOfDay":true},
     {"id":"cr-2","category":"Cafe","name":"Flat White","description":"Balance perfecto entre espresso y leche.","image":"https://images.unsplash.com/photo-1447933601403-0c6688de566e?q=80&w=1200&auto=format&fit=crop","price":14},
-    {"id":"cr-3","category":"Frios","name":"Cold Brew Citrus","description":"Macerado 12 horas, notas citricas.","image":"https://images.unsplash.com/photo-1461988091159-192b6df7054f?q=80&w=1200&auto=format&fit=crop","price":16,"badge":"🔥 Mas vendido"},
-    {"id":"cr-4","category":"Postres","name":"Cheesecake frutos rojos","description":"Porcion generosa para acompanar cafe.","image":"https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=1200&auto=format&fit=crop","price":18}
+    {"id":"cr-3","category":"Cafe","name":"Mocha Doble","description":"Chocolate oscuro, espresso y espuma ligera.","image":"https://images.unsplash.com/photo-1498804103079-a6351b050096?q=80&w=1200&auto=format&fit=crop","price":17},
+    {"id":"cr-4","category":"Frios","name":"Cold Brew Citrus","description":"Macerado 12 horas, notas citricas.","image":"https://images.unsplash.com/photo-1461988091159-192b6df7054f?q=80&w=1200&auto=format&fit=crop","price":16,"badge":"Mas pedido"},
+    {"id":"cr-5","category":"Frios","name":"Frappé Avellana","description":"Cafe frio con crema y avellana tostada.","image":"https://images.unsplash.com/photo-1464306076886-da185f6a9d05?q=80&w=1200&auto=format&fit=crop","price":18},
+    {"id":"cr-6","category":"Panaderia","name":"Croissant de Mantequilla","description":"Hojaldre dorado recien horneado.","image":"https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1200&auto=format&fit=crop","price":9},
+    {"id":"cr-7","category":"Panaderia","name":"Bagel de Salmon","description":"Queso crema, salmon y pepino encurtido.","image":"https://images.unsplash.com/photo-1562059390-a761a084768e?q=80&w=1200&auto=format&fit=crop","price":22},
+    {"id":"cr-8","category":"Postres","name":"Cheesecake frutos rojos","description":"Porcion generosa para acompanar cafe.","image":"https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=1200&auto=format&fit=crop","price":18},
+    {"id":"cr-9","category":"Postres","name":"Torta de Zanahoria","description":"Con crema de queso y nueces tostadas.","image":"https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1200&auto=format&fit=crop","price":16},
+    {"id":"cr-10","category":"Brunch","name":"Toast de Palta","description":"Pan de masa madre, palta y huevo poché.","image":"https://images.unsplash.com/photo-1525351326368-efbb5cb6814d?q=80&w=1200&auto=format&fit=crop","price":24,"badge":"Top"},
+    {"id":"cr-11","category":"Brunch","name":"Waffle Belga","description":"Con frutas de estacion y miel natural.","image":"https://images.unsplash.com/photo-1506084868230-bb9d95c24759?q=80&w=1200&auto=format&fit=crop","price":21}
   ]
 }
