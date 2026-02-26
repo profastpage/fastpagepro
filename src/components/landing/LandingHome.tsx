@@ -315,7 +315,7 @@ export default function LandingHome() {
   const router = useRouter();
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [demoTab, setDemoTab] = useState<BusinessVertical>("restaurant");
-  const [openFaq, setOpenFaq] = useState<string>(FAQS[0]?.q ?? "");
+  const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
   const testimonialsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -781,7 +781,7 @@ export default function LandingHome() {
         </div>
         <div className="space-y-3">
           {FAQS.map((item, index) => {
-            const isOpen = openFaq === item.q;
+            const isOpen = openFaqIndex === index;
             const panelId = `faq-panel-${index}`;
             return (
               <article
@@ -792,7 +792,9 @@ export default function LandingHome() {
                   type="button"
                   aria-expanded={isOpen}
                   aria-controls={panelId}
-                  onClick={() => setOpenFaq((current) => (current === item.q ? "" : item.q))}
+                  onClick={() =>
+                    setOpenFaqIndex((current) => (current === index ? -1 : index))
+                  }
                   className="flex w-full items-center justify-between gap-4 p-5 text-left"
                 >
                   <span className="text-sm font-bold text-white md:text-base">{item.q}</span>
@@ -809,7 +811,11 @@ export default function LandingHome() {
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <div className="border-t border-white/10 px-5 pb-5 pt-4 text-sm leading-relaxed text-zinc-300">
+                    <div
+                      className={`border-t border-white/10 px-5 pb-5 pt-4 text-sm leading-relaxed text-zinc-300 transition-all duration-300 ${
+                        isOpen ? "translate-y-0" : "-translate-y-1"
+                      }`}
+                    >
                       {item.a}
                     </div>
                   </div>

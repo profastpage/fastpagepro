@@ -403,20 +403,20 @@ function AuthContent() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden overflow-y-auto px-4 pb-10 pt-12 md:pb-12 md:pt-16">
+    <main className="relative min-h-[100dvh] overflow-x-hidden overflow-y-auto px-4 pb-10 pt-12 md:pb-12 md:pt-16">
       {/* Background Elements */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-yellow-600/10 rounded-full blur-[80px] pointer-events-none" />
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-col items-stretch">
         {/* Logo/Header */}
-        <div className="text-center mb-8">
+        <div className="mb-8 min-h-[116px] text-center">
           <Link href="/" className="inline-flex items-center gap-3 group">
             <Zap className="w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(255,215,0,0.6)] group-hover:scale-110 transition-transform duration-300" />
             <span className="text-3xl font-bold text-tornasolado tracking-tight transition-all">
               Fast Page
             </span>
           </Link>
-          <p className="text-zinc-400 dark:text-white mt-3">
+          <p className="mt-3 min-h-[24px] text-zinc-400 dark:text-white">
             {tab === "login" ? (
               <>
                 Bienvenido de nuevo,{" "}
@@ -435,7 +435,7 @@ function AuthContent() {
         </div>
 
         {/* Auth Card */}
-        <div className="glass min-h-[680px] overflow-hidden rounded-2xl border border-white/10 p-1 shadow-2xl">
+        <div className="glass min-h-[700px] overflow-hidden rounded-2xl border border-white/10 p-1 shadow-2xl">
           {/* Tabs */}
           <div className="grid grid-cols-2 p-1 bg-black/20 rounded-xl mb-6">
             <button
@@ -467,8 +467,16 @@ function AuthContent() {
           </div>
 
           <div className="min-h-[560px] px-6 pb-8">
-            {tab === "login" ? (
-              <form onSubmit={handleLogin} className="flex min-h-[360px] flex-col gap-5">
+            <div className="relative min-h-[360px]">
+              <form
+                onSubmit={handleLogin}
+                aria-hidden={tab !== "login"}
+                className={`absolute inset-0 flex min-h-[360px] flex-col gap-5 transition-opacity duration-200 ${
+                  tab === "login"
+                    ? "pointer-events-auto opacity-100"
+                    : "pointer-events-none opacity-0"
+                }`}
+              >
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
                     Email
@@ -551,8 +559,16 @@ function AuthContent() {
                   Entrar
                 </button>
               </form>
-            ) : (
-              <form onSubmit={handleRegister} className="flex min-h-[360px] flex-col gap-5">
+
+              <form
+                onSubmit={handleRegister}
+                aria-hidden={tab !== "register"}
+                className={`absolute inset-0 flex min-h-[360px] flex-col gap-5 transition-opacity duration-200 ${
+                  tab === "register"
+                    ? "pointer-events-auto opacity-100"
+                    : "pointer-events-none opacity-0"
+                }`}
+              >
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
                     Nombre
@@ -635,7 +651,7 @@ function AuthContent() {
                   Crear cuenta
                 </button>
               </form>
-            )}
+            </div>
 
             {/* Divider */}
             <div className="flex items-center gap-4 my-6">
@@ -680,16 +696,18 @@ function AuthContent() {
               </svg>
               Continuar con Google
             </button>
-            {tab === "login" && (
+            <div className="mt-4 min-h-[24px]">
+            {tab === "login" ? (
               <button
                 type="button"
                 onClick={handlePasswordRecovery}
                 disabled={isResettingPassword}
-                className="mt-4 w-full text-center text-sm text-slate-300 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full text-center text-sm text-slate-300 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Olvidaste tu contrasena? Recuperar
               </button>
-            )}
+            ) : null}
+            </div>
           </div>
         </div>
 
