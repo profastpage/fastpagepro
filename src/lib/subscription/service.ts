@@ -321,6 +321,7 @@ export async function countPublishedPagesByUser(userId: string): Promise<number>
 }
 
 export async function getLatestSubscription(userId: string): Promise<SubscriptionRecord | null> {
+  let prismaRecord: SubscriptionRecord | null = null;
   try {
     const rows = await prisma.subscription.findMany({
       where: { userId },
@@ -329,13 +330,28 @@ export async function getLatestSubscription(userId: string): Promise<Subscriptio
     });
     if (rows.length > 0) {
       const effective = rows.find((entry) => entry.status !== "PENDING") || rows[0];
-      return mapPrismaSubscription(effective);
+      prismaRecord = mapPrismaSubscription(effective);
     }
   } catch (error) {
     console.error("[Subscription] Prisma read fallback (single):", error);
   }
 
-  return readFirestoreSubscriptionRecord(userId);
+  const firestoreRecord = await readFirestoreSubscriptionRecord(userId);
+  if (firestoreRecord) {
+    if (!prismaRecord) return firestoreRecord;
+
+    const firestoreWinsByFreshness =
+      firestoreRecord.updatedAt.getTime() >= prismaRecord.updatedAt.getTime();
+    const firestoreWinsByPlan = prismaRecord.plan === "FREE" && firestoreRecord.plan !== "FREE";
+    const firestoreWinsByStatus =
+      prismaRecord.status !== "ACTIVE" && firestoreRecord.status === "ACTIVE";
+
+    if (firestoreWinsByFreshness || firestoreWinsByPlan || firestoreWinsByStatus) {
+      return firestoreRecord;
+    }
+  }
+
+  return prismaRecord;
 }
 
 export async function getLatestSubscriptionsByUsers(userIds: string[]): Promise<SubscriptionRecord[]> {
