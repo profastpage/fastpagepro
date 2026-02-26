@@ -44,6 +44,18 @@ const RECOMMENDED_FIREBASE_AUTH_DOMAINS = Array.from(
   new Set([CANONICAL_AUTH_HOST, ...AUTH_ALIAS_HOSTS].filter(Boolean)),
 );
 
+type LandingPlanIntent = "FREE" | "BUSINESS" | "PRO";
+
+function normalizePlanIntent(rawValue: string | null): LandingPlanIntent | null {
+  const normalized = String(rawValue || "")
+    .trim()
+    .toUpperCase();
+  if (normalized === "FREE" || normalized === "STARTER" || normalized === "29") return "FREE";
+  if (normalized === "BUSINESS" || normalized === "59") return "BUSINESS";
+  if (normalized === "PRO" || normalized === "99") return "PRO";
+  return null;
+}
+
 export default function AuthPage() {
   return (
     <Suspense
@@ -184,6 +196,7 @@ function AuthContent() {
   const [isGoogleError, setIsGoogleError] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
+  const planIntent = normalizePlanIntent(searchParams.get("plan"));
   const trialIntent = String(searchParams.get("trial") || "").trim().toLowerCase();
 
   const isCanonicalRedirectNeeded = () => {
@@ -244,7 +257,7 @@ function AuthContent() {
         },
       }).catch(() => undefined);
 
-      const shouldStartTrial = tab === "register" || trialIntent === "business14";
+      const shouldStartTrial = planIntent === "BUSINESS" || trialIntent === "business14";
       if (shouldStartTrial) {
         const formData = new FormData();
         formData.append("plan", "BUSINESS");
@@ -271,6 +284,13 @@ function AuthContent() {
 
   const resolvePostAuthTarget = (email?: string | null) => {
     if (email === "afiliadosprobusiness@gmail.com") return "/admin";
+    if (planIntent) {
+      const params = new URLSearchParams({ plan: planIntent });
+      if (trialIntent) {
+        params.set("trial", trialIntent);
+      }
+      return `/dashboard/billing?${params.toString()}`;
+    }
     const fromQuery = searchParams.get("vertical");
     const hasStoredVertical =
       typeof window !== "undefined" && Boolean(window.localStorage.getItem("fp_vertical"));
@@ -468,7 +488,7 @@ function AuthContent() {
     };
     checkRedirect();
     return () => unsubscribe();
-  }, [preferredVertical, router, tab]);
+  }, [planIntent, preferredVertical, router, tab, trialIntent]);
 
   const handleGoogleLogin = async () => {
     if (isCanonicalRedirectNeeded()) {

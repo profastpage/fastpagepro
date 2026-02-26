@@ -582,7 +582,7 @@ export default function LandingHome() {
             businessCta: "Probar 14 dias gratis",
             proSubtitle: "Pago directo mensual para escalar en serio (sin trial) 🚀",
             proCta: "Comprar ahora",
-            domainLine: "Conecta tu dominio desde Business y manten una marca profesional.",
+            domainLine: "Conecta tu dominio desde Plan Business y manten una marca profesional.",
             riskFree: "Sin comisiones por pedido. Cancela cuando quieras.",
             resultsTitle: "Resultados de negocios reales",
             testimonialsLeft: "Desplazar testimonios a la izquierda",
@@ -602,7 +602,22 @@ export default function LandingHome() {
   const faqs = isEnglish ? FAQS_EN : FAQS_ES;
   const verticalCopy = useMemo(() => getVerticalCopy(vertical, language), [language, vertical]);
   const heroDemoHref = useMemo(() => verticalToDemoHref(vertical), [vertical]);
-  const heroSignupHref = useMemo(() => `${verticalToSignupHref(vertical)}&trial=business14`, [vertical]);
+  const heroSignupHref = useMemo(
+    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS&trial=business14`,
+    [vertical],
+  );
+  const starterSignupHref = useMemo(
+    () => `${verticalToSignupHref(vertical)}&plan=FREE`,
+    [vertical],
+  );
+  const businessSignupHref = useMemo(
+    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS&trial=business14`,
+    [vertical],
+  );
+  const proSignupHref = useMemo(
+    () => `${verticalToSignupHref(vertical)}&plan=PRO`,
+    [vertical],
+  );
   const demoItems = useMemo(() => getDemoCatalog(demoTab), [demoTab]);
   const activeLiveActivity = LIVE_ACTIVITY_FEED[activityIndex];
   const activityTimeLabel = isEnglish
@@ -970,7 +985,7 @@ export default function LandingHome() {
               <li>❌ Sin soporte directo</li>
               <li>🔒 IA (Business o Pro)</li>
             </ul>
-            <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
+            <Link href={starterSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
               {copy.starterCta}
             </Link>
           </article>
@@ -991,7 +1006,7 @@ export default function LandingHome() {
               <li>Metricas basicas</li>
               <li>📧 Soporte por correo (max. 24h)</li>
             </ul>
-            <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
+            <Link href={businessSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
               {copy.businessCta}
             </Link>
           </article>
@@ -1008,7 +1023,7 @@ export default function LandingHome() {
               <li>💬 Soporte en vivo por WhatsApp</li>
               <li>Metricas PRO + insights</li>
             </ul>
-            <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
+            <Link href={proSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
               {copy.proCta}
             </Link>
           </article>

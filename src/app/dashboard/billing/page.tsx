@@ -57,6 +57,16 @@ const TARGET_TO_PLAN: Record<string, PlanType> = {
   agency: "PRO",
 };
 
+function normalizePlanIntent(rawValue: string | null): PlanType | null {
+  const normalized = String(rawValue || "")
+    .trim()
+    .toUpperCase();
+  if (normalized === "FREE" || normalized === "STARTER" || normalized === "29") return "FREE";
+  if (normalized === "BUSINESS" || normalized === "59") return "BUSINESS";
+  if (normalized === "PRO" || normalized === "99") return "PRO";
+  return null;
+}
+
 function PaymentBrandLogo({ brand }: { brand: "YAPE" | "BCP" }) {
   const styles: Record<typeof brand, string> = {
     YAPE: "from-violet-500 to-fuchsia-600 text-white",
@@ -93,6 +103,7 @@ export default function BillingPage() {
   const [copiedAccount, setCopiedAccount] = useState<CopiedAccountKey | null>(null);
   const pricingPlansRef = useRef<HTMLElement | null>(null);
   const paymentFormRef = useRef<HTMLFormElement | null>(null);
+  const hasAppliedQueryPlanRef = useRef(false);
   const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim() || DEFAULT_YAPE_QR_URL;
 
   const activePlan = summary?.plan || "FREE";
@@ -237,10 +248,16 @@ export default function BillingPage() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     setRequiredFeature(String(params.get("requiredFeature") || "").trim());
+    const querySelectedPlan = normalizePlanIntent(params.get("plan"));
+    if (querySelectedPlan && !hasAppliedQueryPlanRef.current) {
+      setSelectedPlan(querySelectedPlan);
+      hasAppliedQueryPlanRef.current = true;
+    }
   }, []);
 
   useEffect(() => {
     if (!summary) return;
+    if (hasAppliedQueryPlanRef.current) return;
     if (summary.plan === "PRO") {
       setSelectedPlan("PRO");
       return;
