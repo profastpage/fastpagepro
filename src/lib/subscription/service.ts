@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { canAccessFeature, getPlanLimits, SubscriptionFeature } from "@/lib/permissions";
 import { getPlanDefinition } from "@/lib/subscription/plans";
+import { isRootAdminEmail } from "@/lib/adminAccess";
 
 const FREE_PLAN_HORIZON_DAYS = 3650;
 const EXPIRY_WARNING_DAYS = 7;
@@ -50,6 +51,18 @@ export interface SubscriptionRecord {
   createdAt: Date;
   updatedAt: Date;
   source: SubscriptionRecordSource;
+}
+
+async function isRootAdminAccount(userId: string): Promise<boolean> {
+  if (!adminDb) return false;
+  try {
+    const snapshot = await adminDb.collection("users").doc(userId).get();
+    const payload = snapshot.data() as Record<string, unknown> | undefined;
+    return isRootAdminEmail(String(payload?.email || ""));
+  } catch (error) {
+    console.error("[Subscription] Root admin check warning:", error);
+    return false;
+  }
 }
 
 function getNow() {
@@ -605,8 +618,13 @@ export async function assignSubscriptionPlanByAdmin(input: {
 }
 
 export async function resolveUserSubscription(userId: string): Promise<SubscriptionRecord> {
+  const isRootAdmin = await isRootAdminAccount(userId);
   let current = await getLatestSubscription(userId);
   if (!current) {
+    if (isRootAdmin) {
+      current = await createDefaultFreeSubscription(userId);
+      return current;
+    }
     try {
       current = await startBusinessTrial(userId, { force: true });
       return current;
@@ -620,7 +638,7 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
     }
   }
 
-  if (current.plan === "FREE") {
+  if (!isRootAdmin && current.plan === "FREE") {
     try {
       const trial = await startBusinessTrial(userId, { force: true });
       return trial;

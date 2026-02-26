@@ -12,6 +12,7 @@ export interface SubscriptionClientSummary extends BaseSubscriptionClientSummary
 }
 
 interface CurrentSubscriptionResponse {
+  degraded?: boolean;
   summary: SubscriptionClientSummary;
   pendingRequests: Array<{
     id: string;
@@ -146,6 +147,7 @@ export function useSubscription(enabled = true) {
     let apiSummary: SubscriptionClientSummary | null = null;
     let apiPending: CurrentSubscriptionResponse["pendingRequests"] = [];
     let apiError: string | null = null;
+    let apiDegraded = false;
 
     try {
       const idToken = await currentUser.getIdToken();
@@ -162,6 +164,7 @@ export function useSubscription(enabled = true) {
       const data = (await response.json()) as CurrentSubscriptionResponse;
       apiSummary = data.summary;
       apiPending = data.pendingRequests || [];
+      apiDegraded = data.degraded === true;
     } catch (requestError: any) {
       apiError = requestError?.message || "No se pudo cargar suscripcion";
     }
@@ -171,8 +174,20 @@ export function useSubscription(enabled = true) {
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.data() as FirestorePlanPayload | undefined;
       const firestoreSummary = buildSummaryFromFirestore(currentUser.uid, userData || {}, apiSummary);
+      const shouldPreferFirestore =
+        Boolean(firestoreSummary) &&
+        (
+          apiDegraded ||
+          !apiSummary ||
+          (apiSummary.plan === "FREE" && firestoreSummary?.plan !== "FREE") ||
+          (apiSummary.status !== "ACTIVE" && firestoreSummary?.status === "ACTIVE")
+        );
 
-      if (apiSummary) {
+      if (shouldPreferFirestore && firestoreSummary) {
+        setSummary(firestoreSummary);
+        setPendingRequests(apiPending);
+        setError(apiError);
+      } else if (apiSummary) {
         setSummary(apiSummary);
         setPendingRequests(apiPending);
         setError(apiError);
