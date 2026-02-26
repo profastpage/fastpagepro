@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { type ComponentType, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -144,6 +145,169 @@ const FAQS = [
   {
     q: "Puedo cancelar cuando quiera?",
     a: "Si, puedes cancelar desde billing cuando lo necesites.",
+  },
+];
+
+const TESTIMONIALS = [
+  {
+    name: "Mariana Quispe",
+    city: "Lima, Peru",
+    segment: "Carta Digital",
+    quote: "Con la carta digital pasamos de pedidos sueltos a un flujo diario por WhatsApp.",
+    avatar:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Carlos Gutierrez",
+    city: "Arequipa, Peru",
+    segment: "Carta Digital",
+    quote: "El buscador y categorias hicieron que nuestros clientes pidan mas rapido.",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Javier Rojas",
+    city: "Trujillo, Peru",
+    segment: "Online Store",
+    quote: "Con FastPage nuestra tienda online cerró ventas desde el primer fin de semana.",
+    avatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Diana Salazar",
+    city: "Cusco, Peru",
+    segment: "Landing Servicios",
+    quote: "La landing para servicios nos trae leads listos para agendar por WhatsApp.",
+    avatar:
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Fernando Paredes",
+    city: "Chiclayo, Peru",
+    segment: "Online Store",
+    quote: "Mejoramos conversion en trafico frio y subimos el ticket promedio.",
+    avatar:
+      "https://images.unsplash.com/photo-1463453091185-61582044d556?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Sofia Herrera",
+    city: "Piura, Peru",
+    segment: "Carta Digital",
+    quote: "Los platos destacados elevaron nuestros pedidos en horas punta.",
+    avatar:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Miguel Campos",
+    city: "Bogota, Colombia",
+    segment: "Landing Servicios",
+    quote: "Pasamos de depender de referidos a captar clientes con anuncios y landing.",
+    avatar:
+      "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Valentina Castro",
+    city: "Medellin, Colombia",
+    segment: "Online Store",
+    quote: "La tienda quedó lista para campañas y ahora vendemos todos los dias.",
+    avatar:
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Luis Mendoza",
+    city: "Quito, Ecuador",
+    segment: "Carta Digital",
+    quote: "Reducimos llamadas y centralizamos pedidos desde un solo link.",
+    avatar:
+      "https://images.unsplash.com/photo-1542204625-de293a06df33?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Camila Navarro",
+    city: "Guayaquil, Ecuador",
+    segment: "Landing Servicios",
+    quote: "Con IA ajustamos el copy y aumentamos consultas calificadas.",
+    avatar:
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Andres Molina",
+    city: "Santiago, Chile",
+    segment: "Online Store",
+    quote: "La experiencia mobile nos ayudó a convertir mejor que nuestro sitio anterior.",
+    avatar:
+      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Paula Ibanez",
+    city: "Valparaiso, Chile",
+    segment: "Carta Digital",
+    quote: "Nuestros clientes ahora encuentran promociones en segundos.",
+    avatar:
+      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Daniela Ponce",
+    city: "CDMX, Mexico",
+    segment: "Online Store",
+    quote: "El checkout por WhatsApp nos simplificó ventas y seguimiento.",
+    avatar:
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Ricardo Leon",
+    city: "Monterrey, Mexico",
+    segment: "Landing Servicios",
+    quote: "FastPage nos dio una landing de alto impacto sin depender de programadores.",
+    avatar:
+      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Gabriela Flores",
+    city: "Puebla, Mexico",
+    segment: "Carta Digital",
+    quote: "La carta digital ordenó nuestra operación de delivery en un dia.",
+    avatar:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Jose Zamora",
+    city: "Santa Cruz, Bolivia",
+    segment: "Online Store",
+    quote: "Con temas y ofertas dinamicas aumentamos conversion desde Instagram Ads.",
+    avatar:
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Lucia Ortega",
+    city: "La Paz, Bolivia",
+    segment: "Landing Servicios",
+    quote: "Pasamos de pocos mensajes a una agenda estable de reuniones semanales.",
+    avatar:
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Diego Ferreyra",
+    city: "Buenos Aires, Argentina",
+    segment: "Online Store",
+    quote: "La estructura del catalogo nos permitió escalar campañas sin friccion.",
+    avatar:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Natalia Acosta",
+    city: "Cordoba, Argentina",
+    segment: "Carta Digital",
+    quote: "Con chips por categoria los clientes compran mas combinaciones.",
+    avatar:
+      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Hector Villanueva",
+    city: "Asuncion, Paraguay",
+    segment: "Landing Servicios",
+    quote: "FastPage nos ayudó a presentar mejor nuestra oferta y cerrar mas rapido.",
+    avatar:
+      "https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=320&auto=format&fit=crop",
   },
 ];
 
@@ -524,19 +688,33 @@ export default function LandingHome() {
         <div className="mb-7 text-center">
           <h2 className="text-3xl font-black text-white md:text-4xl">Prueba social</h2>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            { quote: "Duplicamos pedidos por WhatsApp en 30 dias.", author: "Restaurante Lima", role: "Carta Digital" },
-            { quote: "Subimos conversion de trafico frio en 42%.", author: "Ecommerce moda", role: "Online Store" },
-            { quote: "Generamos leads calificados sin depender de dev.", author: "Consultora B2B", role: "Landing servicios" },
-          ].map((item) => (
-            <article key={item.quote} className="rounded-2xl border border-white/10 bg-black/45 p-5">
-              <p className="text-sm leading-relaxed text-zinc-200">&quot;{item.quote}&quot;</p>
-              <p className="mt-4 text-sm font-black text-white">{item.author}</p>
-              <p className="text-xs uppercase tracking-[0.16em] text-amber-300">{item.role}</p>
+        <div className="no-scrollbar -mx-2 flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:[direction:ltr]">
+          {TESTIMONIALS.map((item) => (
+            <article
+              key={`${item.name}-${item.city}`}
+              className="snap-start [direction:ltr] aspect-square w-[82vw] max-w-[360px] shrink-0 rounded-2xl border border-white/10 bg-black/45 p-5 md:aspect-auto md:min-h-[250px] md:w-[360px]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-amber-300/30">
+                  <Image
+                    src={item.avatar}
+                    alt={item.name}
+                    fill
+                    unoptimized
+                    sizes="48px"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-white">{item.name}</p>
+                  <p className="truncate text-[11px] uppercase tracking-[0.14em] text-zinc-400">{item.city}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-200">&quot;{item.quote}&quot;</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.16em] text-amber-300">{item.segment}</p>
               <div className="mt-3 flex gap-1 text-amber-300">
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <Sparkles key={`${item.author}-${index}`} className="h-4 w-4" />
+                  <Sparkles key={`${item.name}-${index}`} className="h-4 w-4" />
                 ))}
               </div>
             </article>

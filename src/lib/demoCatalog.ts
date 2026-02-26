@@ -106,3 +106,8 @@ export function getDemoCatalog(vertical?: string): DemoCatalogItem[] {
   return DEMO_CATALOG.filter((item) => item.vertical === normalized);
 }
 
+export function getDemoBySlug(slug: string): DemoCatalogItem | null {
+  const normalized = String(slug || "").trim().toLowerCase();
+  if (!normalized) return null;
+  return DEMO_CATALOG.find((item) => item.slug === normalized) || null;
+}
