@@ -31,6 +31,8 @@ import InlineEditable from "@/components/editor/InlineEditable";
 import EditorSidebar from "@/components/editor/EditorSidebar";
 import {
   ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Loader2,
   Monitor,
@@ -372,6 +374,7 @@ function StoreEditorPage() {
   const { user, loading: authLoading } = useAuth(true);
   const router = useRouter();
   const hydratedRef = useRef(false);
+  const offerCarouselRef = useRef<HTMLDivElement | null>(null);
   const {
     state: editorState,
     setProjectMeta,
@@ -384,7 +387,7 @@ function StoreEditorPage() {
   const [config, setConfig] = useState<StoreConfig>(() => cloneDefaultConfig());
   const [products, setProducts] = useState<StoreProduct[]>(() => cloneDefaultProducts());
 
-  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("mobile");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
   const [sortBy, setSortBy] = useState<VisualSort>("featured");
@@ -426,6 +429,7 @@ function StoreEditorPage() {
   }, [liveProducts, category, search, sortBy]);
 
   const offerProducts = useMemo(() => liveProducts.filter((p) => p.active && isOfferProduct(p)), [liveProducts]);
+  const useOffersCarousel = viewMode === "mobile";
 
   const storefrontHtml = useMemo(() => {
     try {
@@ -596,6 +600,13 @@ function StoreEditorPage() {
     setCategory("Todos");
     setSortBy("featured");
     setError(null);
+  };
+
+  const scrollOffersCarousel = (direction: "left" | "right") => {
+    const node = offerCarouselRef.current;
+    if (!node) return;
+    const delta = Math.max(220, Math.round(node.clientWidth * 0.92));
+    node.scrollBy({ left: direction === "left" ? -delta : delta, behavior: "smooth" });
   };
 
   const saveProject = async (publishNow: boolean) => {
@@ -781,9 +792,36 @@ function StoreEditorPage() {
 
                   <div className="mt-8">
                     <input value={content.offerSectionTitle || ""} onChange={(e) => setContent({ offerSectionTitle: e.target.value })} placeholder="Edita aqui: titulo de ofertas" className="w-full bg-transparent text-4xl font-black outline-none" />
-                    <div className={viewMode === "mobile" ? "no-scrollbar mt-4 grid grid-flow-col auto-cols-[100%] gap-3 overflow-x-auto pb-2 snap-x snap-mandatory" : "mt-4 grid grid-cols-3 gap-4"}>
+                    {useOffersCarousel ? (
+                      <div className="mt-3 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => scrollOffersCarousel("left")}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border bg-white"
+                          style={{ borderColor: "var(--vs-border)" }}
+                          aria-label="Mover ofertas a la izquierda"
+                          title="Mover a la izquierda"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollOffersCarousel("right")}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border bg-white"
+                          style={{ borderColor: "var(--vs-border)" }}
+                          aria-label="Mover ofertas a la derecha"
+                          title="Mover a la derecha"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : null}
+                    <div
+                      ref={useOffersCarousel ? offerCarouselRef : null}
+                      className={useOffersCarousel ? "no-scrollbar mt-3 grid grid-flow-col auto-cols-[100%] gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth touch-pan-x" : "mt-4 grid grid-cols-3 gap-4"}
+                    >
                       {offerProducts.map((p) => (
-                        <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "w-full snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
+                        <article key={`offer-${p.id}`} className={`${useOffersCarousel ? "w-full snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
                           <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: "var(--vs-accent)" }}>{p.badge || "Oferta"}</span></div>
                           <div className="p-3"><p className="font-black">{p.name}</p><p className="mt-1 text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatMoney(p.priceCents, config.currency)}</p><button className="mt-2 h-10 w-full rounded-xl text-sm font-black text-white" style={{ background: "var(--vs-accent)" }}>{p.ctaLabel || "Ver oferta"}</button></div>
                         </article>

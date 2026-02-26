@@ -15,6 +15,37 @@
   body > * {
     max-width: 100%;
   }
+
+  main,
+  section,
+  article,
+  aside,
+  header,
+  footer {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  img,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  canvas {
+    height: auto;
+  }
+
+  /* Keep bottom overlays from clipping interactive content on mobile */
+  @media (max-width: 767px) {
+    main {
+      padding-bottom: max(5.5rem, env(safe-area-inset-bottom));
+    }
+  }
 }
 
 :root {

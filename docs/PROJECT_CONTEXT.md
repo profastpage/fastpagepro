@@ -1040,3 +1040,22 @@ o-scrollbar para evitar barra visible.
   - scroll horizontal con `snap` por card para ver las demas ofertas deslizando.
   - se mantiene desktop sin cambios (grilla de ofertas).
 - Objetivo: vista mobile-first mas ordenada y alineada, sin mostrar 5 ofertas comprimidas al mismo tiempo.
+
+## Store Offers Carousel Controls + Mobile Default (2026-02-26)
+
+- Ruta ajustada: `/store`.
+- Seccion `Ofertas especiales`:
+  - carrusel mobile mantiene 1 card por vista con swipe horizontal y snap.
+  - se agregan controles visibles `izquierda/derecha` para desplazar ofertas.
+- UX mobile-first:
+  - el editor inicia en `viewMode = mobile` por defecto para previsualizacion inmediata en formato telefono.
+
+## Global Mobile Overflow Guard + Overlay Safe Bottom (2026-02-26)
+
+- Archivo ajustado: `src/app/globals.css`.
+- Fix no destructivo global:
+  - se refuerza `overflow-x: hidden` en raiz y wrappers para evitar scroll horizontal accidental.
+  - `main/section/article/aside/header/footer` con `max-width: 100%` y `min-width: 0` para prevenir desbordes en grids/flex.
+  - `img/video/canvas/iframe` limitados a `max-width: 100%`; media visual mantiene `h-auto`.
+- Mobile overlays:
+  - se agrega `padding-bottom` de seguridad a `main` en mobile para que barras fijas inferiores no tapen contenido.
