@@ -53,52 +53,52 @@ const MODULES: ModuleCard[] = [
     id: "builder",
     icon: WandSparkles,
     title: "Builder",
-    line: "Editor visual no-code para paginas orientadas a conversion.",
+    line: "Crea paginas que convierten clics en mensajes listos para comprar.",
     href: "/builder",
   },
   {
     id: "templates",
     icon: Palette,
     title: "Templates",
-    line: "Plantillas por nicho listas para lanzar en minutos.",
+    line: "Lanza campanas en horas con copys que ya venden.",
     href: "/demo/services/consultoria-pro",
   },
   {
     id: "cloner",
     icon: Copy,
     title: "Cloner",
-    line: "Replica paginas ganadoras y adaptalas a tu marca.",
+    line: "Replica ofertas ganadoras y acelera tus ventas.",
     href: "/cloner/web",
   },
   {
     id: "store",
     icon: ShoppingCart,
     title: "Online Store",
-    line: "Catalogo, carrito y checkout conectado a WhatsApp.",
+    line: "Muestra productos y cierra pedidos por WhatsApp sin friccion.",
     href: "/demo/ecommerce/urban-wear",
   },
   {
     id: "menu",
     icon: UtensilsCrossed,
     title: "Carta Digital",
-    line: "Menu para restaurantes con pedido directo por WhatsApp.",
+    line: "Recibe mas pedidos en hora punta desde un solo link.",
     href: "/demo/restaurant/sushi-prime",
   },
   {
     id: "metrics",
     icon: BarChart3,
     title: "Pro Metrics",
-    line: "Visitas, conversion, rendimiento tecnico e insights.",
+    line: "Detecta que campana vende mas y escala con datos.",
     href: "/demo/services/pro-metrics",
   },
 ];
 
 const FLOW_STEPS = [
-  { title: "Visitas", icon: Globe2, description: "Atrae trafico desde anuncios, redes y contenido." },
-  { title: "Landing", icon: MonitorSmartphone, description: "Convierte interes en oportunidad comercial real." },
-  { title: "WhatsApp", icon: MessageCircle, description: "Cierra pedidos, reservas y leads sin friccion." },
-  { title: "Metricas", icon: BarChart3, description: "Mide conversion y toma decisiones por datos." },
-  { title: "Escala", icon: Rocket, description: "Optimiza y multiplica resultados con precision." },
+  { title: "Visitas", icon: Globe2, description: "Trae trafico desde anuncios, redes y recomendaciones." },
+  { title: "Landing", icon: MonitorSmartphone, description: "Convierte interes en pedidos, reservas o cotizaciones." },
+  { title: "WhatsApp", icon: MessageCircle, description: "Responde rapido y cierra ventas en la misma conversacion." },
+  { title: "Metricas", icon: BarChart3, description: "Mide que fuentes y productos generan mas ingresos." },
+  { title: "Escala", icon: Rocket, description: "Duplica lo que funciona sin perder tiempo ni presupuesto." },
 ];
 
 const DEMO_TAB_CONFIG: Record<BusinessVertical, string> = {
@@ -369,13 +369,13 @@ export default function LandingHome() {
         <div className="grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
           <div className="space-y-5">
             <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
-              Crea, clona y vende en Latam
+              Mas pedidos por WhatsApp
             </p>
             <h1 className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
-              Crea paginas que convierten visitas en clientes por WhatsApp
+              Convierte visitas en pedidos por WhatsApp, todos los dias
             </h1>
             <p className="max-w-2xl text-base text-zinc-300 md:text-lg">
-              FastPage no es solo un builder: es un sistema para crear, vender, medir y escalar.
+              FastPage te ayuda a vender mas con landing, tienda y carta digital en un solo sistema.
             </p>
             <p className="max-w-2xl text-sm text-zinc-400">{verticalCopy.subheadline}</p>
 
@@ -402,7 +402,7 @@ export default function LandingHome() {
                 }
                 className={`${DELUXE_BUTTON_BASE} rounded-full px-7 py-3 uppercase tracking-[0.12em]`}
               >
-                🚀 Probar gratis
+                Probar gratis
               </Link>
               <Link
                 href={heroDemoHref}
@@ -415,7 +415,7 @@ export default function LandingHome() {
                 }
                 className={`${SOFT_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
               >
-                <PlayCircle className="h-4 w-4" /> ✨ Ver demo</Link>
+                <PlayCircle className="h-4 w-4" /> Ver demo en vivo</Link>
               <a
                 href="#pricing"
                 onClick={() =>
@@ -427,12 +427,12 @@ export default function LandingHome() {
                 }
                 className="text-sm font-semibold text-amber-300 underline-offset-4 transition hover:text-amber-200 hover:underline"
               >
-                Ver precios
+                Ver planes
               </a>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {["Sin codigo", "Listo en minutos", "Optimiza con metricas", "IA para copy"].map((item) => (
+              {["Sin codigo", "Publica hoy", "Mas pedidos por WhatsApp", "IA para copy"].map((item) => (
                 <span
                   key={item}
                   className={`rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-zinc-200 ${
@@ -449,7 +449,7 @@ export default function LandingHome() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Sistema FastPage</p>
             <h2 className="mt-3 text-3xl font-black text-white">{verticalCopy.headline}</h2>
             <p className="mt-3 text-sm text-zinc-300">
-              Elige demo, personaliza tu version y registra solo cuando ya viste el valor.
+              Elige una demo, adapta tu negocio y empieza a vender hoy.
             </p>
             <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2">
               {FLOW_STEPS.map((step) => (
@@ -469,7 +469,7 @@ export default function LandingHome() {
               }
               className={`${DELUXE_BUTTON_BASE} mt-5 w-full rounded-xl px-4 py-2.5 text-base`}
             >
-              ✨ Abrir demo ahora
+              Abrir demo y vender
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -480,7 +480,7 @@ export default function LandingHome() {
         <div className="mb-7 text-center">
           <h2 className="text-3xl font-black text-white md:text-4xl">Sistema FastPage</h2>
           <p className="mx-auto mt-3 hidden max-w-3xl text-zinc-300 sm:block">
-            Visitas → Landing → WhatsApp → Metricas → Escala.
+            Atraes visitas, conviertes en WhatsApp y mides ventas para escalar.
           </p>
           <div className="mx-auto mt-3 grid max-w-sm grid-cols-5 gap-2 sm:hidden">
             {FLOW_STEPS.map((step, index) => {
@@ -526,7 +526,7 @@ export default function LandingHome() {
         <div className="mb-7 text-center">
           <h2 className="text-3xl font-black text-white md:text-4xl">Todo en uno</h2>
           <p className="mx-auto mt-3 max-w-3xl text-zinc-300">
-            Builder, templates, cloner, tienda, carta digital, IA y metricas en un solo sistema.
+            Todo lo que necesitas para atraer clientes, convertir pedidos y aumentar ventas.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -568,17 +568,17 @@ export default function LandingHome() {
             {
               vertical: "restaurant" as const,
               icon: UtensilsCrossed,
-              copy: "Cartas digitales y pedidos directos a WhatsApp sin comisiones.",
+              copy: "Mas pedidos directos por WhatsApp y menos tiempo al telefono.",
             },
             {
               vertical: "ecommerce" as const,
               icon: Store,
-              copy: "Landing y catalogo optimizado para convertir trafico en ventas.",
+              copy: "Convierte trafico en compras con catalogo y cierre en chat.",
             },
             {
               vertical: "services" as const,
               icon: MessageCircle,
-              copy: "Captura leads calificados y agenda clientes automaticamente.",
+              copy: "Capta clientes listos para agendar y cerrar por WhatsApp.",
             },
           ].map((item) => {
             const Icon = item.icon;
@@ -600,7 +600,7 @@ export default function LandingHome() {
                       })
                     }
                     className={`${SOFT_BUTTON_BASE} rounded-xl px-4 py-2`}
-                  >✨ Ver demo</Link>
+                  >Ver demo en vivo</Link>
                   <Link
                     href={`/signup?vertical=${item.vertical}`}
                     onClick={() =>
@@ -610,7 +610,7 @@ export default function LandingHome() {
                       })
                     }
                     className={`${DELUXE_BUTTON_BASE} rounded-xl px-4 py-2`}
-                  >🚀 Crear mi version</Link>
+                  >Crear mi version</Link>
                 </div>
               </article>
             );
@@ -621,8 +621,8 @@ export default function LandingHome() {
       <section id="demos" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-3xl font-black text-white md:text-4xl">Casos reales por rubro</h2>
-            <p className="mt-2 text-zinc-300">6 demos de Carta Digital, 4 de Online Store y 3 de Landing.</p>
+            <h2 className="text-3xl font-black text-white md:text-4xl">Demos que ya venden por rubro</h2>
+            <p className="mt-2 text-zinc-300">Explora casos listos para captar clientes y cerrar pedidos por WhatsApp.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {(["restaurant", "ecommerce", "services"] as BusinessVertical[]).map((tab) => (
@@ -660,7 +660,7 @@ export default function LandingHome() {
 
       <section id="pricing" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 text-center">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Planes para crecer</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">Planes para vender y escalar</h2>
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
           <article className="rounded-3xl border border-white/10 bg-black/45 p-6">
@@ -677,11 +677,11 @@ export default function LandingHome() {
 
           <article className="relative rounded-3xl border border-amber-300/45 bg-gradient-to-b from-amber-300/10 to-black/60 p-6">
             <span className="absolute -top-3 right-4 rounded-full border border-amber-300/45 bg-black px-3 py-1 text-xs font-bold text-amber-200">
-              ⭐ Mas elegido por negocios
+              Mas elegido para vender por WhatsApp
             </span>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">BUSINESS</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 59</p>
-            <p className="mt-2 text-sm font-semibold text-amber-100">🔥 Ideal para negocios que quieren vender todos los dias</p>
+            <p className="mt-2 text-sm font-semibold text-amber-100">Para negocios que ya venden y quieren crecer con control.</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 5 proyectos activos</li>
               <li><strong>50 productos</strong> por proyecto</li>
@@ -694,7 +694,7 @@ export default function LandingHome() {
           <article className="rounded-3xl border border-cyan-300/35 bg-gradient-to-b from-cyan-300/10 to-black/60 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">PRO</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 99</p>
-            <p className="mt-2 text-sm font-semibold text-cyan-100">🚀 Para negocios que quieren escalar en serio</p>
+            <p className="mt-2 text-sm font-semibold text-cyan-100">Para marcas que escalan campanas y operacion en serio.</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 20 proyectos activos</li>
               <li><strong>Productos ilimitados</strong></li>
@@ -705,13 +705,13 @@ export default function LandingHome() {
           </article>
         </div>
         <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
-          El dominio lo compra el cliente. Desde Business puedes conectarlo.
+          Conecta tu dominio desde Business y manten una marca profesional.
         </p>
       </section>
 
       <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 flex items-center justify-between gap-3">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Prueba social</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">Resultados de negocios reales</h2>
           <div className="hidden items-center gap-2 md:flex">
             <button
               type="button"
@@ -767,7 +767,7 @@ export default function LandingHome() {
           ))}
         </div>
         <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-300">
-          {["WhatsApp", "Yape", "Plin", "QR", "Checkout", "Metricas"].map((badge) => (
+          {["WhatsApp", "Pedidos", "Reservas", "Checkout", "Metricas", "Conversion"].map((badge) => (
             <span key={badge} className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1">
               {badge}
             </span>
@@ -828,9 +828,9 @@ export default function LandingHome() {
 
       <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-amber-300/35 bg-gradient-to-r from-amber-300/15 via-black/70 to-cyan-300/10 p-8 text-center">
-          <p className="text-3xl font-black text-white md:text-4xl">Empieza gratis en 60 segundos</p>
+          <p className="text-3xl font-black text-white md:text-4xl">Empieza hoy y recibe mas pedidos por WhatsApp</p>
           <p className="mx-auto mt-3 max-w-3xl text-zinc-200">
-            Mira una demo ahora y crea tu version cuando estes listo.
+            Activa tu demo, personaliza tu negocio y publica en minutos.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -842,7 +842,7 @@ export default function LandingHome() {
                 })
               }
               className={`${DELUXE_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
-            >🚀 Probar gratis</Link>
+            >Probar gratis ahora</Link>
             <Link
               href={heroDemoHref}
               onClick={() =>
@@ -852,7 +852,7 @@ export default function LandingHome() {
                 })
               }
               className={`${SOFT_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
-            >✨ Ver demo</Link>
+            >Ver demo en vivo</Link>
           </div>
         </div>
       </section>
@@ -869,7 +869,7 @@ export default function LandingHome() {
           className={`${DELUXE_BUTTON_BASE} w-full rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-md`}
         >
           <Rocket className="h-4 w-4" />
-          🚀 Crear mi version gratis
+          Crear mi version gratis
         </Link>
       </div>
 
