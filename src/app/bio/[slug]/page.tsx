@@ -458,13 +458,10 @@ export default function PublicBioPage() {
   const businessName = profile.displayName || "Negocio";
   const cartItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
-  const cartQtyById = useMemo(() => {
-    const lookup = new Map<string, number>();
-    for (const item of cartItems) {
-      lookup.set(item.id, item.quantity);
-    }
-    return lookup;
-  }, [cartItems]);
+  const cartQtyById = new Map<string, number>();
+  for (const item of cartItems) {
+    cartQtyById.set(item.id, item.quantity);
+  }
   const autoDiscount = cartSubtotal >= AUTO_DISCOUNT_THRESHOLD ? cartSubtotal * AUTO_DISCOUNT_RATE : 0;
   const couponDiscountRate = appliedCouponCode ? COUPON_DISCOUNTS[appliedCouponCode] || 0 : 0;
   const couponDiscount = cartSubtotal * couponDiscountRate;
