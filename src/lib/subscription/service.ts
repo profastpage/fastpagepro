@@ -416,6 +416,38 @@ export async function getLatestSubscriptionsByUsers(userIds: string[]): Promise<
   }
 }
 
+async function hasApprovedPaymentRequest(userId: string): Promise<boolean> {
+  try {
+    const approved = await prisma.subscriptionRequest.findFirst({
+      where: {
+        userId,
+        status: "APPROVED",
+      },
+      select: { id: true },
+    });
+    return Boolean(approved);
+  } catch (error) {
+    console.error("[Subscription] Approved request check warning:", error);
+    return false;
+  }
+}
+
+async function hasNonFreeSubscriptionHistory(userId: string): Promise<boolean> {
+  try {
+    const nonFree = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        plan: { in: ["BUSINESS", "PRO"] },
+      },
+      select: { id: true },
+    });
+    return Boolean(nonFree);
+  } catch (error) {
+    console.error("[Subscription] Non-free history check warning:", error);
+    return false;
+  }
+}
+
 export async function createDefaultFreeSubscription(userId: string): Promise<SubscriptionRecord> {
   const now = getNow();
   const fallback = buildSubscriptionRecord({
@@ -621,6 +653,16 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
   }
 
   if (current.plan === "FREE" && current.status === "ACTIVE") {
+    const [approvedPayment, nonFreeHistory] = await Promise.all([
+      hasApprovedPaymentRequest(userId),
+      hasNonFreeSubscriptionHistory(userId),
+    ]);
+
+    // Keep Starter as-is when there is a confirmed payment or previous premium history.
+    if (approvedPayment || nonFreeHistory) {
+      return current;
+    }
+
     try {
       const trial = await startBusinessTrial(userId, { force: true });
       return trial;
