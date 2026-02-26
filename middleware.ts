@@ -27,8 +27,53 @@ const GUARDS: Guard[] = [
 
 const EXCLUDED_PATHS = ["/dashboard/billing", "/api/subscription/"];
 
+const DEFAULT_CANONICAL_HOST = "www.fastpagepro.com";
+const DEFAULT_ALLOWED_PUBLIC_HOSTS = ["www.fastpagepro.com", "fastpagepro.com"];
+
+function resolveCurrentHost(request: NextRequest): string {
+  const hostHeader =
+    request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  return hostHeader.split(",")[0]?.trim().split(":")[0]?.toLowerCase() || "";
+}
+
+function resolveCanonicalHost(): string {
+  return (
+    String(process.env.NEXT_PUBLIC_AUTH_CANONICAL_HOST || DEFAULT_CANONICAL_HOST)
+      .trim()
+      .toLowerCase() || DEFAULT_CANONICAL_HOST
+  );
+}
+
+function resolveAllowedPublicHosts(): Set<string> {
+  const canonical = resolveCanonicalHost();
+  const aliases = String(process.env.NEXT_PUBLIC_AUTH_ALIAS_HOSTS || "")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+  return new Set([...DEFAULT_ALLOWED_PUBLIC_HOSTS, canonical, ...aliases]);
+}
+
+function isLocalHost(host: string): boolean {
+  return host === "localhost" || host === "127.0.0.1" || host.endsWith(".localhost");
+}
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  const host = resolveCurrentHost(request);
+
+  if (process.env.NODE_ENV === "production" && host && !isLocalHost(host)) {
+    const allowedHosts = resolveAllowedPublicHosts();
+    if (!allowedHosts.has(host)) {
+      if (path.startsWith("/api/")) {
+        return NextResponse.json({ error: "Host no permitido" }, { status: 403 });
+      }
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.host = resolveCanonicalHost();
+      redirectUrl.protocol = "https:";
+      return NextResponse.redirect(redirectUrl, 308);
+    }
+  }
+
   if (EXCLUDED_PATHS.some((entry) => path.startsWith(entry))) {
     return NextResponse.next();
   }

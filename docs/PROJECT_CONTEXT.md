@@ -938,3 +938,16 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
   - Header sticky desktop de conversion + sticky CTA mobile.
 - SEO:
   - `src/app/page.tsx` actualizado con metadata orientada a conversion LATAM (title, description, OG y Twitter).
+
+## Public Domain Lockdown (2026-02-26)
+
+- Dominio publico permitido unicamente:
+  - `www.fastpagepro.com` (canonico)
+  - `fastpagepro.com` (alias apex)
+- Se removieron defaults de hosts alternos/legacy en app:
+  - `src/app/auth/page.tsx` (`NEXT_PUBLIC_AUTH_ALIAS_HOSTS` default)
+  - `.env.example` (`NEXT_PUBLIC_AUTH_ALIAS_HOSTS`, `SUBSCRIPTION_COOKIE_BASE_DOMAINS`)
+  - `src/app/api/subscription/session/route.ts` (cookie base domains fallback)
+- Se agrego host-guard en `middleware.ts`:
+  - en produccion, cualquier host no permitido redirige 308 al canonico.
+  - para `/api/*` en host no permitido responde `403 Host no permitido`.

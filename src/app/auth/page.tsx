@@ -26,7 +26,7 @@ const CANONICAL_AUTH_HOST = (
   .trim()
   .toLowerCase();
 const DEFAULT_AUTH_ALIAS_HOSTS =
-  "fastpagepro.com,fastpagespro.com,www.fastpagespro.com,fastpage-eight.vercel.app,fastpage2-0.vercel.app";
+  "fastpagepro.com";
 const AUTH_ALIAS_HOSTS = (
   process.env.NEXT_PUBLIC_AUTH_ALIAS_HOSTS || DEFAULT_AUTH_ALIAS_HOSTS
 )
