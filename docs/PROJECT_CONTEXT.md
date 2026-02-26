@@ -1104,3 +1104,18 @@ o-scrollbar para evitar barra visible.
     3) Identity Toolkit (ultimo recurso)
 - Resultado:
   - mayor estabilidad al crear/activar trial Business desde Billing, incluso cuando Firebase Admin no esta disponible en runtime.
+
+## Subscription auth fallback hardening (2026-02-26)
+
+- Modulos ajustados:
+  - `src/lib/server/requireFirebaseUser.ts`
+  - `src/lib/firebaseAdmin.ts`
+  - `src/app/dashboard/billing/page.tsx`
+  - `src/app/api/subscription/request/route.ts`
+- Mejoras aplicadas:
+  - nuevo fallback de verificacion de ID token via `https://oauth2.googleapis.com/tokeninfo` (sin API key) antes de usar Identity Toolkit.
+  - inicializacion de Firebase Admin mas tolerante a variables con nombres alternos y `private_key` con comillas/escapes.
+  - envio de trial desde Billing ahora fuerza refresh de token (`getIdToken(true)`).
+  - respuesta de `/api/subscription/request` diferencia error de autenticacion vs almacenamiento de suscripcion.
+- Objetivo:
+  - eliminar el falso `Servicio de autenticacion no disponible` al activar los 14 dias gratis en entornos con restricciones de API key o configuracion parcial de Admin SDK.

@@ -104,6 +104,12 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (message.includes("subscription storage unavailable")) {
+      return NextResponse.json(
+        { error: "Servicio de suscripcion temporalmente no disponible. Intenta nuevamente en unos minutos." },
+        { status: 503 },
+      );
+    }
     if (message.startsWith("SERVICE_UNAVAILABLE")) {
       return NextResponse.json({ error: "Servicio de autenticacion no disponible" }, { status: 503 });
     }

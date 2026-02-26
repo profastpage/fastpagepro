@@ -16,6 +16,7 @@ type IdentityToolkitUser = {
 
 const SECURE_TOKEN_CERTS_URL =
   "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
+const GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
 let secureTokenCertCache: {
   expiresAtMs: number;
   certs: Record<string, string>;
@@ -243,6 +244,81 @@ async function verifyViaIdentityToolkit(token: string): Promise<DecodedIdToken> 
   }
 }
 
+async function verifyViaGoogleTokenInfo(token: string): Promise<DecodedIdToken> {
+  const endpoint = `${GOOGLE_TOKEN_INFO_URL}?id_token=${encodeURIComponent(token)}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12_000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "GET",
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!response.ok) {
+      const description = String(payload.error_description || payload.error || "").toLowerCase();
+      if (
+        description.includes("invalid") ||
+        description.includes("expired") ||
+        description.includes("malformed")
+      ) {
+        throw new Error("UNAUTHORIZED: invalid bearer token");
+      }
+      throw new Error("SERVICE_UNAVAILABLE: google tokeninfo verification failed");
+    }
+
+    const projectId = resolveFirebaseProjectId();
+    const nowSec = Math.floor(Date.now() / 1000);
+    const uid = String(payload.user_id || payload.sub || "").trim();
+    const sub = String(payload.sub || uid).trim();
+    const aud = String(payload.aud || "").trim();
+    const iss = String(payload.iss || "").trim();
+    const exp = Number(payload.exp || 0);
+    const iat = Number(payload.iat || nowSec);
+    const issAllowed = new Set([
+      `https://securetoken.google.com/${projectId}`,
+      "https://accounts.google.com",
+      "accounts.google.com",
+    ]);
+
+    if (!uid || !sub || !aud || !issAllowed.has(iss)) {
+      throw new Error("UNAUTHORIZED: invalid token claims");
+    }
+    if (aud !== projectId) {
+      throw new Error("UNAUTHORIZED: invalid token audience");
+    }
+    if (!Number.isFinite(exp) || exp <= nowSec) {
+      throw new Error("UNAUTHORIZED: invalid bearer token");
+    }
+
+    return {
+      ...(payload as unknown as DecodedIdToken),
+      uid,
+      sub,
+      user_id: uid,
+      iat: Number.isFinite(iat) ? iat : nowSec,
+      exp,
+      aud,
+      iss,
+      email: String(payload.email || "") || undefined,
+      email_verified: String(payload.email_verified || "").toLowerCase() === "true",
+    };
+  } catch (error: any) {
+    const message = String(error?.message || "");
+    if (message.startsWith("UNAUTHORIZED")) {
+      throw error;
+    }
+    if (message.startsWith("SERVICE_UNAVAILABLE")) {
+      throw error;
+    }
+    throw new Error("SERVICE_UNAVAILABLE: google tokeninfo lookup failed");
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function requireFirebaseUser(request: NextRequest): Promise<DecodedIdToken> {
   const token = getBearerToken(request);
   if (!token) {
@@ -265,6 +341,14 @@ export async function requireFirebaseUser(request: NextRequest): Promise<Decoded
           throw secureTokenError;
         }
       }
+      try {
+        return await verifyViaGoogleTokenInfo(token);
+      } catch (tokenInfoError: any) {
+        const message = String(tokenInfoError?.message || "");
+        if (message.startsWith("UNAUTHORIZED")) {
+          throw tokenInfoError;
+        }
+      }
       // Last fallback path: Identity Toolkit.
       return verifyViaIdentityToolkit(token);
     }
@@ -276,6 +360,15 @@ export async function requireFirebaseUser(request: NextRequest): Promise<Decoded
     const message = String(secureTokenError?.message || "");
     if (message.startsWith("UNAUTHORIZED")) {
       throw secureTokenError;
+    }
+  }
+
+  try {
+    return await verifyViaGoogleTokenInfo(token);
+  } catch (tokenInfoError: any) {
+    const message = String(tokenInfoError?.message || "");
+    if (message.startsWith("UNAUTHORIZED")) {
+      throw tokenInfoError;
     }
   }
 

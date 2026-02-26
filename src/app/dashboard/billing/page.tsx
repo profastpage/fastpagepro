@@ -319,7 +319,7 @@ export default function BillingPage() {
 
     setSubmitting(true);
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = await auth.currentUser?.getIdToken(true);
       if (!token) {
         throw new Error(
           isEnglish
