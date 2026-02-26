@@ -16,8 +16,12 @@ export default function Nav() {
   const [mobileLockedOpen, setMobileLockedOpen] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const permissions = usePlanPermissions(Boolean(session?.uid));
+
+  const toggleLanguage = () => {
+    setLanguage(language === "es" ? "en" : "es");
+  };
 
   // Close menu when route changes
   useEffect(() => {
@@ -135,7 +139,15 @@ export default function Nav() {
         </nav>
 
         {/* Auth - Top Right */}
-        <div className="fixed top-8 right-8 z-50 flex items-center gap-6">
+        <div className="fixed top-8 right-8 z-50 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            aria-label={t("floating.toggleLanguage")}
+            className="inline-flex h-9 min-w-[2.5rem] items-center justify-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-bold tracking-[0.08em] text-white transition hover:border-amber-300/45 hover:text-amber-200"
+          >
+            {language === "es" ? "EN" : "ES"}
+          </button>
           {!session ? (
             <>
               <Link
@@ -225,6 +237,14 @@ export default function Nav() {
               aria-label="Go forward"
             >
               <ChevronRight size={24} />
+            </button>
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="inline-flex h-8 min-w-[2.25rem] items-center justify-center rounded-full border border-white/20 bg-white/5 px-2 text-[10px] font-bold tracking-[0.08em] text-white transition hover:border-amber-300/45 hover:text-amber-200"
+              aria-label={t("floating.toggleLanguage")}
+            >
+              {language === "es" ? "EN" : "ES"}
             </button>
             <button
               className={`p-2 rounded-xl border transition-all duration-300 active:scale-95 ${
