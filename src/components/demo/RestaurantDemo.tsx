@@ -1,12 +1,22 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { Clock3, MapPin, Minus, Plus, Search } from "lucide-react";
+import {
+  Clock3,
+  MapPin,
+  Menu,
+  Minus,
+  Phone,
+  Plus,
+  Search,
+  Share2,
+} from "lucide-react";
 import type { RestaurantMenuData, RestaurantMenuItem } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
 
 type CartMap = Record<string, number>;
+type RestaurantTab = "contact" | "menu" | "location";
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("es-PE", {
@@ -21,38 +31,59 @@ function buildWhatsappMessage(lines: string[], phone: string) {
   return `https://wa.me/${normalized}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
 
-function highlight(text: string, term: string) {
-  if (!term.trim()) return text;
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return text.replace(new RegExp(escaped, "ig"), (match) => `**${match}**`);
+function normalizeBadge(value?: string) {
+  const badge = String(value || "").toLowerCase();
+  if (!badge) return "";
+  if (badge.includes("pedido") || badge.includes("mas vendido")) return "🔥 Más pedido";
+  if (badge.includes("favorito")) return "⭐ Favorito";
+  if (badge.includes("top")) return "🥇 Top";
+  return value || "";
 }
 
 export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
+  const [tab, setTab] = useState<RestaurantTab>("contact");
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [category, setCategory] = useState("Todos");
   const [cart, setCart] = useState<CartMap>({});
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setSearchDebounced(search), 260);
+    const timer = window.setTimeout(() => setSearchDebounced(search), 220);
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  const favorites = useMemo(
-    () => demo.items.filter((item) => item.favoriteOfDay || item.featured),
-    [demo.items],
-  );
+  const mainImage = demo.items.find((item) => item.favoriteOfDay || item.featured)?.image || demo.items[0]?.image || demo.coverImage;
+  const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(demo.address)}&output=embed`;
+  const mapsOpen = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`;
+  const callHref = `tel:${String(demo.whatsappNumber || "").replace(/\D/g, "")}`;
 
-  const filtered = useMemo(() => {
+  const categories = useMemo(() => ["Todos", ...demo.categories], [demo.categories]);
+
+  const filteredItems = useMemo(() => {
     const term = searchDebounced.trim().toLowerCase();
     return demo.items.filter((item) => {
       if (category !== "Todos" && item.category !== category) return false;
       if (!term) return true;
-      return `${item.name} ${item.description} ${item.category}`
-        .toLowerCase()
-        .includes(term);
+      return `${item.name} ${item.description} ${item.category}`.toLowerCase().includes(term);
     });
   }, [category, demo.items, searchDebounced]);
+
+  const groupedItems = useMemo(() => {
+    if (category !== "Todos") {
+      return [
+        {
+          name: category,
+          items: filteredItems,
+        },
+      ];
+    }
+    return demo.categories
+      .map((currentCategory) => ({
+        name: currentCategory,
+        items: filteredItems.filter((item) => item.category === currentCategory),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [category, demo.categories, filteredItems]);
 
   const cartItems = useMemo(
     () =>
@@ -63,8 +94,12 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   );
 
   const total = useMemo(
-    () =>
-      cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    () => cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [cartItems],
+  );
+
+  const cartCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
     [cartItems],
   );
 
@@ -81,124 +116,283 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
       "",
       ...cartItems.map(
         (item, index) =>
-          `${index + 1}. ${item.name} x${item.quantity} - ${formatMoney(
-            item.price * item.quantity,
-          )}`,
+          `${index + 1}. ${item.name} x${item.quantity} - ${formatMoney(item.price * item.quantity)}`,
       ),
       "",
       `Total: ${formatMoney(total)}`,
+      `Direccion referencial: ${demo.address}`,
     ];
     return buildWhatsappMessage(lines, demo.whatsappNumber);
-  }, [cartItems, demo.title, demo.whatsappNumber, total]);
+  }, [cartItems, demo.address, demo.title, demo.whatsappNumber, total]);
+
+  const navButton =
+    "h-12 rounded-2xl border px-3 text-sm font-black uppercase tracking-[0.08em] transition";
 
   return (
-    <section className="space-y-6">
-      <article className="overflow-hidden rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-surface)]">
-        <div className="relative h-48 md:h-72">
-          <Image src={demo.coverImage} alt={demo.title} fill unoptimized sizes="100vw" className="object-cover" />
-        </div>
-        <div className="space-y-4 p-4 md:p-8">
-          <div className="rounded-full bg-[var(--fp-card)] px-4 py-2 text-center text-sm font-bold">{demo.promoStrip}</div>
-          <h2 className="text-3xl font-black md:text-5xl">{demo.title}</h2>
-          <p className="text-[var(--fp-muted)]">{demo.description}</p>
-          <div className="flex flex-wrap gap-2 text-sm">
-            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fp-border)] px-3 py-1"><Clock3 className="h-4 w-4" />{demo.openHours}</span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-[var(--fp-border)] px-3 py-1"><MapPin className="h-4 w-4" />{demo.address}</span>
+    <section className="space-y-4">
+      <article className="mx-auto w-full max-w-md overflow-hidden rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl">
+        <div className="border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)]">
+                <Image src={mainImage} alt={demo.title} fill unoptimized sizes="40px" className="object-cover" />
+              </div>
+              <p className="truncate text-sm font-semibold">{demo.title}</p>
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--fp-border)]"
+              aria-label="Compartir demo"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
           </div>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() =>
-              void trackGrowthEvent("click_whatsapp", {
-                vertical: demo.vertical,
-                slug: demo.slug,
-                location: "restaurant_header",
-              })
-            }
-            className="inline-flex rounded-xl bg-[var(--fp-primary)] px-5 py-3 text-sm font-black text-white"
+        </div>
+
+        <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-3 md:grid md:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => setTab("contact")}
+            className={navButton}
+            style={tab === "contact" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
           >
-            💬 Pedir por WhatsApp
-          </a>
+            Contacto
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("menu")}
+            className={navButton}
+            style={tab === "menu" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
+          >
+            Carta
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("location")}
+            className={navButton}
+            style={tab === "location" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
+          >
+            Ubicacion
+          </button>
+        </div>
+
+        <div className="min-h-[62vh] px-4 pb-24 pt-4 md:px-8 md:pb-8 md:pt-6">
+          {tab === "contact" ? (
+            <section className="space-y-4">
+              <div className="relative h-44 overflow-hidden rounded-3xl border border-[var(--fp-border)] md:h-72">
+                <Image src={demo.coverImage} alt={demo.title} fill unoptimized sizes="100vw" className="object-cover" />
+                <div className="absolute inset-x-0 -bottom-10 flex justify-center">
+                  <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white/80 md:h-28 md:w-28">
+                    <Image src={mainImage} alt={demo.title} fill unoptimized sizes="112px" className="object-cover" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-10 text-center md:pt-12">
+                <h2 className="text-4xl font-black md:text-6xl">{demo.title}</h2>
+                <p className="mt-2 text-sm uppercase tracking-[0.2em] text-[var(--fp-primary)]">🍔 Carta Digital 🍔</p>
+                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-1.5 text-xs font-bold">
+                  <span>🟢 Abierto</span>
+                  <span>•</span>
+                  <span>⏱️ {demo.openHours}</span>
+                </div>
+                <p className="mx-auto mt-4 max-w-2xl text-sm text-[var(--fp-muted)] md:text-base">{demo.description}</p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <a href={callHref} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-4 text-sm font-black text-white">
+                  <Phone className="h-4 w-4" /> Llamar ahora
+                </a>
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    void trackGrowthEvent("click_whatsapp", {
+                      vertical: demo.vertical,
+                      slug: demo.slug,
+                      location: "restaurant_contact",
+                    })
+                  }
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-4 text-sm font-black text-white"
+                >
+                  💬 Escribir ahora
+                </a>
+              </div>
+            </section>
+          ) : null}
+
+          {tab === "menu" ? (
+            <section className="space-y-4">
+              <div className="rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3">
+                <label className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3">
+                  <Search className="h-4 w-4 text-[var(--fp-muted)]" />
+                  <input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Buscar en la carta..."
+                    className="w-full bg-transparent text-sm outline-none"
+                  />
+                </label>
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                  {categories.map((itemCategory) => (
+                    <button
+                      key={itemCategory}
+                      type="button"
+                      onClick={() => setCategory(itemCategory)}
+                      className="shrink-0 rounded-xl border px-4 py-2 text-sm font-bold"
+                      style={
+                        category === itemCategory
+                          ? { background: "var(--fp-primary)", borderColor: "var(--fp-primary)", color: "#fff" }
+                          : { borderColor: "var(--fp-border)" }
+                      }
+                    >
+                      {itemCategory}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {groupedItems.map((group) => (
+                  <div key={group.name} className="space-y-3">
+                    <h3 className="text-4xl font-black md:text-5xl" style={{ color: "var(--fp-primary)" }}>{group.name}</h3>
+                    {group.items.map((item) => (
+                      <article key={item.id} className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3">
+                        <div className="flex gap-3">
+                          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--fp-border)] md:h-28 md:w-28">
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              fill
+                              unoptimized
+                              sizes="120px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="line-clamp-2 text-2xl font-black leading-tight md:text-3xl">{item.name}</h4>
+                              {item.badge ? (
+                                <span className="rounded-full bg-[var(--fp-primary)] px-2 py-1 text-[10px] font-black text-white">
+                                  {normalizeBadge(item.badge)}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-1 line-clamp-2 text-sm text-[var(--fp-muted)] md:text-base">{item.description}</p>
+                            <div className="mt-2 flex items-end gap-2">
+                              {item.compareAtPrice ? (
+                                <p className="text-sm line-through text-[var(--fp-muted)]">{formatMoney(item.compareAtPrice)}</p>
+                              ) : null}
+                              <p className="text-4xl font-black text-[var(--fp-primary)] md:text-5xl">{formatMoney(item.price)}</p>
+                            </div>
+                            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-2 py-1">
+                              <button
+                                type="button"
+                                onClick={() => updateQty(item, -1)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </button>
+                              <span className="min-w-6 text-center text-xl font-black">{cart[item.id] || 0}</span>
+                              <button
+                                type="button"
+                                onClick={() => updateQty(item, 1)}
+                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {tab === "location" ? (
+            <section className="space-y-4 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 md:p-5">
+              <div className="overflow-hidden rounded-2xl border border-[var(--fp-border)]">
+                <iframe
+                  title={`Mapa de ${demo.title}`}
+                  src={mapsEmbed}
+                  className="h-64 w-full md:h-80"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <h3 className="text-4xl font-black md:text-5xl">{demo.address}</h3>
+              <div>
+                <p className="text-3xl font-black md:text-4xl" style={{ color: "var(--fp-primary)" }}>Horarios</p>
+                <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{demo.openHours}</p>
+              </div>
+              <a
+                href={mapsOpen}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-5 text-sm font-black text-white"
+              >
+                <MapPin className="h-4 w-4" /> Ir ahora
+              </a>
+            </section>
+          ) : null}
         </div>
       </article>
 
-      <section>
-        <h3 className="text-2xl font-black md:text-3xl">Favoritos del dia</h3>
-        <div className="mt-4 grid grid-flow-col auto-cols-[84%] gap-3 overflow-x-auto pb-2 snap-x snap-mandatory min-[430px]:auto-cols-[48%] md:grid-cols-3 md:auto-cols-auto">
-          {favorites.map((item) => (
-            <article key={item.id} className="snap-start overflow-hidden rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)]">
-              <div className="relative h-40">
-                <Image src={item.image} alt={item.name} fill unoptimized sizes="(max-width: 768px) 84vw, 33vw" className="object-cover" />
-              </div>
-              <div className="space-y-2 p-3">
-                <p className="font-black">{item.name}</p>
-                <p className="text-2xl font-black text-[var(--fp-primary)]">{formatMoney(item.price)}</p>
-                <button type="button" onClick={() => updateQty(item, 1)} className="h-10 w-full rounded-xl bg-[var(--fp-primary)] text-sm font-black text-white">Agregar</button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      {tab === "menu" ? (
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() =>
+            void trackGrowthEvent("click_whatsapp", {
+              vertical: demo.vertical,
+              slug: demo.slug,
+              location: "restaurant_floating",
+            })
+          }
+          className="fixed bottom-24 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-4 py-3 text-sm font-black text-white shadow-2xl"
+        >
+          💬 Mi pedido ({cartCount})
+        </a>
+      ) : null}
 
-      <section className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
-        <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--fp-border)] px-3">
-          <Search className="h-4 w-4 text-[var(--fp-muted)]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar en la carta..." className="w-full bg-transparent text-sm outline-none" />
-        </label>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {["Todos", ...demo.categories].map((itemCategory) => (
+      <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),0.6rem)] md:hidden">
+        <div className="mx-auto w-full max-w-md rounded-[1.35rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-1">
+          <div className="grid grid-cols-3 gap-1">
             <button
-              key={itemCategory}
               type="button"
-              onClick={() => setCategory(itemCategory)}
-              className="shrink-0 rounded-xl border border-[var(--fp-border)] px-4 py-2 text-sm font-bold"
-              style={category === itemCategory ? { background: "var(--fp-primary)", borderColor: "var(--fp-primary)", color: "#fff" } : undefined}
+              onClick={() => setTab("contact")}
+              className="h-14 rounded-xl text-[10px] font-black uppercase tracking-[0.08em]"
+              style={tab === "contact" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
-              {itemCategory}
+              <Phone className="mx-auto mb-1 h-4 w-4" />
+              Contacto
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setTab("menu")}
+              className="h-14 rounded-xl text-[10px] font-black uppercase tracking-[0.08em]"
+              style={tab === "menu" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
+            >
+              <Menu className="mx-auto mb-1 h-4 w-4" />
+              Carta
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("location")}
+              className="h-14 rounded-xl text-[10px] font-black uppercase tracking-[0.08em]"
+              style={tab === "location" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
+            >
+              <MapPin className="mx-auto mb-1 h-4 w-4" />
+              Ubicacion
+            </button>
+          </div>
         </div>
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((item) => (
-          <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)]">
-            <div className="relative h-40">
-              <Image src={item.image} alt={item.name} fill unoptimized sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
-            </div>
-            <div className="space-y-2 p-3">
-              <p className="text-lg font-black">{highlight(item.name, searchDebounced)}</p>
-              <p className="text-sm text-[var(--fp-muted)]">{highlight(item.description, searchDebounced)}</p>
-              <div className="flex items-end gap-2">
-                <p className="text-3xl font-black text-[var(--fp-primary)]">{formatMoney(item.price)}</p>
-                {item.compareAtPrice ? <p className="text-sm line-through text-[var(--fp-muted)]">{formatMoney(item.compareAtPrice)}</p> : null}
-              </div>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => updateQty(item, -1)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--fp-border)]"><Minus className="h-4 w-4" /></button>
-                <span className="w-8 text-center font-black">{cart[item.id] || 0}</span>
-                <button type="button" onClick={() => updateQty(item, 1)} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--fp-border)]"><Plus className="h-4 w-4" /></button>
-              </div>
-            </div>
-          </article>
-        ))}
-      </section>
-
-      <a
-        href={whatsappHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() =>
-          void trackGrowthEvent("click_whatsapp", {
-            vertical: demo.vertical,
-            slug: demo.slug,
-            location: "restaurant_floating",
-          })
-        }
-        className="fixed bottom-24 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-4 py-3 text-sm font-black text-white shadow-2xl"
-      >
-        💬 Pedir por WhatsApp
-      </a>
+      </div>
     </section>
   );
 }

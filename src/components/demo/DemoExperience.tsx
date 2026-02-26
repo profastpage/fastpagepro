@@ -32,6 +32,20 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     [demo.vertical, themeId],
   );
 
+  if (demo.vertical === "restaurant") {
+    return (
+      <main
+        style={themeToCssVars(activeTheme)}
+        className="min-h-screen bg-[var(--fp-bg)] px-3 pb-28 pt-16 text-[var(--fp-text)] md:px-6 md:pt-20 lg:px-8"
+      >
+        <div className="mx-auto w-full max-w-7xl">
+          <RestaurantDemo demo={demo} />
+        </div>
+        <StickyCTA vertical={demo.vertical} slug={demo.slug} />
+      </main>
+    );
+  }
+
   return (
     <main
       style={themeToCssVars(activeTheme)}
@@ -46,7 +60,6 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
             <h1 className="mt-2 text-2xl font-black md:text-4xl">{demo.title}</h1>
             <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{demo.subtitle}</p>
           </div>
-          {demo.vertical === "restaurant" ? <RestaurantDemo demo={demo} /> : null}
           {demo.vertical === "ecommerce" ? <EcommerceDemo demo={demo} /> : null}
           {demo.vertical === "services" ? <ServicesDemo demo={demo} /> : null}
         </section>
