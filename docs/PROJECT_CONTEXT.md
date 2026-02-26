@@ -1031,3 +1031,12 @@ o-scrollbar para evitar barra visible.
   - preview mobile del dashboard con `overflow-x-clip` y contenedor `min-w-0`.
   - grilla de productos mobile del dashboard ajustada a `sm:grid-cols-2` (evita forzar 2 columnas en anchos angostos).
   - carrusel de ofertas mobile con padding horizontal simetrico.
+
+## Store Builder Mobile Offers Single-Slide Carousel (2026-02-26)
+
+- Ruta ajustada: `/store` (constructor dashboard).
+- Seccion `Ofertas especiales` en modo preview mobile:
+  - se cambio a carrusel horizontal de 1 card por vista (`auto-cols-[100%]`).
+  - scroll horizontal con `snap` por card para ver las demas ofertas deslizando.
+  - se mantiene desktop sin cambios (grilla de ofertas).
+- Objetivo: vista mobile-first mas ordenada y alineada, sin mostrar 5 ofertas comprimidas al mismo tiempo.

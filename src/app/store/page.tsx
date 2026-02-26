@@ -781,9 +781,9 @@ function StoreEditorPage() {
 
                   <div className="mt-8">
                     <input value={content.offerSectionTitle || ""} onChange={(e) => setContent({ offerSectionTitle: e.target.value })} placeholder="Edita aqui: titulo de ofertas" className="w-full bg-transparent text-4xl font-black outline-none" />
-                    <div className={viewMode === "mobile" ? "mt-4 grid grid-flow-col auto-cols-[85%] min-[430px]:auto-cols-[48%] gap-3 overflow-x-auto px-1 pb-2 snap-x snap-mandatory" : "mt-4 grid grid-cols-3 gap-4"}>
+                    <div className={viewMode === "mobile" ? "no-scrollbar mt-4 grid grid-flow-col auto-cols-[100%] gap-3 overflow-x-auto pb-2 snap-x snap-mandatory" : "mt-4 grid grid-cols-3 gap-4"}>
                       {offerProducts.map((p) => (
-                        <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
+                        <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "w-full snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
                           <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: "var(--vs-accent)" }}>{p.badge || "Oferta"}</span></div>
                           <div className="p-3"><p className="font-black">{p.name}</p><p className="mt-1 text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatMoney(p.priceCents, config.currency)}</p><button className="mt-2 h-10 w-full rounded-xl text-sm font-black text-white" style={{ background: "var(--vs-accent)" }}>{p.ctaLabel || "Ver oferta"}</button></div>
                         </article>
