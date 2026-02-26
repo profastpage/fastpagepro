@@ -83,7 +83,7 @@ function buildSummaryFromFirestore(
   if (!rawPlan) return null;
 
   const plan = toPlanType(rawPlan);
-  const status = toSubscriptionStatus(payload.subscriptionStatus);
+  const rawStatus = toSubscriptionStatus(payload.subscriptionStatus);
   const now = new Date();
   const startDate = parseDateValue(payload.subscriptionStartAt, now);
   const endFallbackDays = plan === "FREE" ? 3650 : 30;
@@ -91,6 +91,9 @@ function buildSummaryFromFirestore(
     payload.subscriptionEndAt,
     new Date(now.getTime() + endFallbackDays * 24 * 60 * 60 * 1000),
   );
+  const expiredByDate = endDate.getTime() <= Date.now();
+  const status: "ACTIVE" | "EXPIRED" | "PENDING" =
+    expiredByDate && rawStatus === "ACTIVE" ? "EXPIRED" : rawStatus;
   const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
   const expiringSoon = daysRemaining > 0 && daysRemaining <= 7;
   const trialDaysTotal =

@@ -28,6 +28,19 @@ interface PricingTableProps {
   loadingPlan?: PlanType | null;
 }
 
+function isLockedBullet(item: string): boolean {
+  const text = item.toLowerCase();
+  return (
+    item.includes("🔒") ||
+    item.includes("❌") ||
+    text.includes("sin soporte") ||
+    text.includes("no support") ||
+    text.includes("business o pro") ||
+    text.includes("business/pro") ||
+    text.includes("solo business/pro")
+  );
+}
+
 function renderEmphasis(text: string) {
   const parts = text.split(EMPHASIS_REGEX);
   return parts.map((part, index) => {
@@ -250,7 +263,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
               <ul className="mt-4 space-y-2 text-sm text-zinc-200">
                 {localizedPlan.bulletPoints.map((item) => (
                   <li key={item} className="flex items-start gap-2">
-                    {item.includes("🔒") || item.includes("❌") ? (
+                    {isLockedBullet(item) ? (
                       <Lock className="mt-0.5 h-4 w-4 text-amber-300" />
                     ) : (
                       <Check className="mt-0.5 h-4 w-4 text-emerald-300" />

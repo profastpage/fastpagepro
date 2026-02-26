@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Sparkles, UploadCloud } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -56,6 +56,7 @@ export default function BillingPage() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const pricingPlansRef = useRef<HTMLElement | null>(null);
 
   const activePlan = summary?.plan || "FREE";
   const isBusinessTrial = selectedPlan === "BUSINESS";
@@ -69,7 +70,7 @@ export default function BillingPage() {
               "Starter S/29 without support, Business with 14-day free trial + email support, and Pro S/99 with live support.",
             activePlan: "Active plan:",
             trialExpired:
-              "Your 14-day trial ended. Activate Starter, Business, or Pro to reactivate features and pages.",
+              "Your 14-day trial ended (0 days left). Activate Starter, Business, or Pro to reactivate features and pages.",
             updateTitle: "Request plan upgrade",
             updateSubtitle:
               "Business activates 14-day trial. Starter and Pro are direct monthly payment.",
@@ -108,7 +109,7 @@ export default function BillingPage() {
               "Starter S/29 sin soporte, Business con 14 dias gratis + soporte por correo y Pro S/99 con soporte en vivo.",
             activePlan: "Plan activo:",
             trialExpired:
-              "Tu prueba de 14 dias finalizo. Activa Starter, Business o Pro para reactivar funciones y paginas.",
+              "Tu prueba de 14 dias finalizo (0 dias restantes). Activa Starter, Business o Pro para reactivar funciones y paginas.",
             updateTitle: "Solicitar actualizacion de plan",
             updateSubtitle:
               "Business activa prueba de 14 dias. Starter y Pro aplican pago directo mensual.",
@@ -216,6 +217,14 @@ export default function BillingPage() {
       },
     ];
   }, [i18n.ai, i18n.allowed, i18n.branding, i18n.customDomain, i18n.metrics, i18n.products, i18n.projects, i18n.unavailable, i18n.unlimited, permissions]);
+
+  const goToPlan = (plan: PlanType) => {
+    setSelectedPlan(plan);
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      pricingPlansRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -351,10 +360,10 @@ export default function BillingPage() {
                     <p className="mt-1 text-xs text-amber-100/90">{upsell.description}</p>
                     <button
                       type="button"
-                      onClick={() => setSelectedPlan(TARGET_TO_PLAN[upsell.targetPlan])}
+                      onClick={() => goToPlan(TARGET_TO_PLAN[upsell.targetPlan])}
                       className="mt-3 rounded-lg border border-amber-200/40 bg-amber-400/20 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-amber-100"
                     >
-                      {isEnglish ? "Go to" : "Ir a"} {TARGET_TO_PLAN[upsell.targetPlan]}
+                      {isEnglish ? "See" : "Ver"} {TARGET_TO_PLAN[upsell.targetPlan]}
                     </button>
                   </div>
                 </div>
@@ -363,7 +372,9 @@ export default function BillingPage() {
           </section>
         )}
 
-        <PricingTable activePlan={activePlan} onSelectPlan={setSelectedPlan} loadingPlan={null} />
+        <section id="billing-plans" ref={pricingPlansRef} className="scroll-mt-24">
+          <PricingTable activePlan={activePlan} onSelectPlan={setSelectedPlan} loadingPlan={null} />
+        </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_1fr]">
           <form

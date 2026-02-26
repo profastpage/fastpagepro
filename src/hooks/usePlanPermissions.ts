@@ -190,9 +190,9 @@ export function usePlanPermissions(enabled = true) {
         if (aiLevel !== "none") return null;
         return {
           reason,
-          title: "Activa IA para vender mas rapido",
+          title: "Business: IA + tienda completa",
           description:
-            "Tu plan actual no incluye IA. Actualiza a Business para descripciones y ayuda de textos.",
+            "Activa Business para usar IA basica, hasta 5 proyectos, hasta 50 productos por proyecto, dominio propio y soporte por correo.",
           targetPlan: "business",
         };
       }
@@ -201,9 +201,9 @@ export function usePlanPermissions(enabled = true) {
         if (canRemoveBranding) return null;
         return {
           reason,
-          title: "Quita el branding de Fast Page",
+          title: "PRO: publica sin branding",
           description:
-            "Branding removible solo en Pro y Agencia. Sube de plan para publicar sin marca.",
+            "Sube a PRO para quitar branding y desbloquear IA avanzada, metricas PRO con insights y soporte en vivo por WhatsApp.",
           targetPlan: "pro",
         };
       }
@@ -212,9 +212,9 @@ export function usePlanPermissions(enabled = true) {
         if (analyticsLevel === "pro") return null;
         return {
           reason,
-          title: "Desbloquea insights PRO",
+          title: "PRO: insights y rendimiento tecnico",
           description:
-            "Business incluye metricas basicas. Para insights automaticos y rendimiento tecnico, sube a Pro.",
+            "Business incluye metricas basicas. En PRO obtienes insights automaticos y analisis tecnico (LCP/SEO/Accesibilidad).",
           targetPlan: "pro",
         };
       }
@@ -223,9 +223,9 @@ export function usePlanPermissions(enabled = true) {
         if (canUseCloner) return null;
         return {
           reason,
-          title: "Clonador disponible en plan PRO",
+          title: "PRO: clona y escala mas rapido",
           description:
-            "El Clonador se habilita desde Pro. Actualiza para usar clonacion completa.",
+            "El Clonador y las exportaciones avanzadas estan habilitados en PRO para escalar con mas velocidad.",
           targetPlan: "pro",
         };
       }

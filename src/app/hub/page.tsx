@@ -45,6 +45,7 @@ export default function HubPage() {
             lockBusiness: "Available on Business or Pro.",
             planLabel: "Plan:",
             trialRemaining: (days: number) => `Business trial: ${days} days left.`,
+            trialZero: "Business trial: 0 days left.",
             trialExpired:
               "Trial ended: features and pages are locked until you renew in Billing.",
             adminPanel: "Administration Panel",
@@ -60,6 +61,7 @@ export default function HubPage() {
             lockBusiness: "Disponible en Business o Pro.",
             planLabel: "Plan:",
             trialRemaining: (days: number) => `Prueba Business: ${days} dias restantes.`,
+            trialZero: "Prueba Business: 0 dias restantes.",
             trialExpired:
               "Prueba finalizada: funciones y paginas bloqueadas hasta renovar en Billing.",
             adminPanel: "Panel de Administracion",
@@ -272,15 +274,17 @@ export default function HubPage() {
                 <span className="text-xs text-zinc-400">{hubCopy.planLabel}</span>
                 <PlanBadge plan={subscriptionSummary?.plan || "FREE"} />
               </div>
-              {subscriptionSummary?.isBusinessTrial && subscriptionSummary?.status === "ACTIVE" ? (
+              {subscriptionSummary?.isBusinessTrial ? (
                 <p
                   className={`mt-2 text-xs font-bold ${
-                    (subscriptionSummary?.trialDaysRemaining || 0) <= 3
+                    subscriptionSummary?.trialExpired || (subscriptionSummary?.trialDaysRemaining || 0) <= 3
                       ? "text-red-300"
                       : "text-amber-200"
                   }`}
                 >
-                  {hubCopy.trialRemaining(subscriptionSummary?.trialDaysRemaining || 0)}
+                  {subscriptionSummary?.trialExpired
+                    ? hubCopy.trialZero
+                    : hubCopy.trialRemaining(subscriptionSummary?.trialDaysRemaining || 0)}
                 </p>
               ) : null}
               {subscriptionSummary?.trialExpired ? (

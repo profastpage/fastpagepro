@@ -29,6 +29,9 @@ const EXCLUDED_PATHS = ["/dashboard/billing", "/api/subscription/"];
 const ACTIVE_ONLY_PATHS = [
   /^\/linkhub(?:\/|$)/,
   /^\/published(?:\/|$)/,
+  /^\/editor(?:\/|$)/,
+  /^\/preview(?:\/|$)/,
+  /^\/app\/new(?:\/|$)/,
 ];
 
 const DEFAULT_CANONICAL_HOST = "www.fastpagepro.com";
