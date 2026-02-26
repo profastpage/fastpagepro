@@ -52,6 +52,20 @@ type ModuleCard = {
 
 const MODULES: ModuleCard[] = [
   {
+    id: "menu",
+    icon: UtensilsCrossed,
+    title: "Carta Digital",
+    line: "Recibe mas pedidos en hora punta desde un solo link.",
+    href: "/demo/restaurant/sushi-prime",
+  },
+  {
+    id: "store",
+    icon: ShoppingCart,
+    title: "Online Store",
+    line: "Muestra productos y cierra pedidos por WhatsApp sin friccion.",
+    href: "/demo/ecommerce/urban-wear",
+  },
+  {
     id: "builder",
     icon: WandSparkles,
     title: "Builder",
@@ -71,20 +85,6 @@ const MODULES: ModuleCard[] = [
     title: "Cloner",
     line: "Replica ofertas ganadoras y acelera tus ventas.",
     href: "/cloner/web",
-  },
-  {
-    id: "store",
-    icon: ShoppingCart,
-    title: "Online Store",
-    line: "Muestra productos y cierra pedidos por WhatsApp sin friccion.",
-    href: "/demo/ecommerce/urban-wear",
-  },
-  {
-    id: "menu",
-    icon: UtensilsCrossed,
-    title: "Carta Digital",
-    line: "Recibe mas pedidos en hora punta desde un solo link.",
-    href: "/demo/restaurant/sushi-prime",
   },
   {
     id: "metrics",
@@ -581,6 +581,23 @@ export default function LandingHome() {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {MODULES.map((module) => {
             const Icon = module.icon;
+            const isClickableModule = module.id === "menu" || module.id === "store";
+
+            if (!isClickableModule) {
+              return (
+                <article
+                  key={module.id}
+                  className="flex aspect-square flex-col rounded-2xl border border-white/10 bg-black/40 p-3 md:p-4"
+                >
+                  <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-amber-300/35 bg-amber-300/10">
+                    <Icon className="h-4 w-4 text-amber-300" />
+                  </div>
+                  <p className="mt-3 text-base font-black text-white md:text-lg">{module.title}</p>
+                  <p className="mt-1 text-xs leading-snug text-zinc-300 md:text-sm">{module.line}</p>
+                </article>
+              );
+            }
+
             return (
               <Link
                 key={module.id}
