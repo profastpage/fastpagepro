@@ -890,7 +890,7 @@ export default function PublicBioPage() {
   return (
     <CartaThemeProvider
       themeId={cartaThemeId}
-      className="h-[100dvh] overflow-hidden px-2 py-3 md:px-6 md:py-8"
+      className="h-[100dvh] overflow-hidden px-2 pb-3 pt-4 md:px-6 md:pb-8 md:pt-10"
       style={pageStyle}
     >
       <div
@@ -901,8 +901,9 @@ export default function PublicBioPage() {
           className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"}`}
           style={headerBarStyle}
         >
-          <div className="relative flex items-center justify-between gap-3">
-            <div className="inline-flex min-w-0 items-center gap-2">
+          <div className={`relative ${activeTab !== "contact" ? "space-y-1.5 md:space-y-0" : ""}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="inline-flex min-w-0 items-center gap-2">
               {profile.avatarUrl ? (
                 <img
                   src={profile.avatarUrl}
@@ -921,24 +922,26 @@ export default function PublicBioPage() {
               <span className="truncate text-xs md:text-sm font-semibold" style={{ color: textPalette.muted }}>
                 {profile.displayName}
               </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
+                style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
+                aria-label="Compartir"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
             </div>
+
             {activeTab !== "contact" && (
               <p
-                className="pointer-events-none absolute left-1/2 top-1/2 w-[46%] -translate-x-1/2 -translate-y-1/2 truncate text-center text-sm font-black uppercase tracking-[0.12em] md:text-base"
+                className="pointer-events-none mx-auto max-w-[72%] truncate text-center text-xs font-black uppercase tracking-[0.12em] md:absolute md:left-1/2 md:top-1/2 md:w-[46%] md:-translate-x-1/2 md:-translate-y-1/2 md:text-base"
                 style={{ color: accentWordColor }}
               >
                 {activeTab === "catalog" ? catalogLabel : profile.sectionLabels.location}
               </p>
             )}
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
-              style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
-              aria-label="Compartir"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
           </div>
           {shareFeedback && (
             <p
@@ -1062,7 +1065,7 @@ export default function PublicBioPage() {
           </>
         ) : null}
 
-        <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6">
+        <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6 pt-1">
           <button
             type="button"
             onClick={() => setActiveTab("contact")}
@@ -1110,7 +1113,7 @@ export default function PublicBioPage() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-hidden px-4 pb-24 md:px-8 md:pb-6">
+        <div className="flex-1 overflow-hidden px-4 pb-24 pt-2 md:px-8 md:pb-6 md:pt-0">
           {activeTab === "contact" && (
             <section
               className={`flex h-full min-h-0 flex-col rounded-[1.9rem] border p-4 md:p-6 ${cardClass}`}

@@ -79,30 +79,33 @@ const ProductCard = memo(function ProductCard({
             </p>
           ) : null}
 
-          <div className="mt-2 flex items-end gap-2">
-            {oldPrice ? (
-              <span className="text-xs line-through" style={{ color: "var(--carta-placeholder)" }}>
-                S/{oldPrice}
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-2">
+            <div className="flex items-end gap-2">
+              {oldPrice ? (
+                <span className="text-xs line-through" style={{ color: "var(--carta-placeholder)" }}>
+                  S/{oldPrice}
+                </span>
+              ) : null}
+              <span className="text-2xl font-black leading-none" style={{ color: "var(--carta-accent)" }}>
+                S/{price}
               </span>
-            ) : null}
-            <span className="text-2xl font-black leading-none" style={{ color: "var(--carta-accent)" }}>
-              S/{price}
-            </span>
-          </div>
+            </div>
 
-          <button
-            type="button"
-            onClick={onAdd}
-            className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] transition active:scale-[0.97]"
-            style={{
-              borderColor: "var(--carta-chip-border)",
-              background: "var(--carta-nav-active-bg)",
-              color: "var(--carta-nav-active-text)",
-            }}
-          >
-            <ShoppingBag className="h-3.5 w-3.5" />
-            Agregar
-          </button>
+            <button
+              type="button"
+              onClick={onAdd}
+              className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] transition active:scale-[0.97] md:text-xs"
+              style={{
+                borderColor: "var(--carta-chip-border)",
+                background: "var(--carta-nav-active-bg)",
+                color: "var(--carta-nav-active-text)",
+                boxShadow: "0 10px 20px -18px rgba(15,23,42,0.6)",
+              }}
+            >
+              <ShoppingBag className="h-3.5 w-3.5" />
+              Agregar
+            </button>
+          </div>
         </div>
       </div>
     </article>
