@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   BarChart3,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   Globe2,
   MessageCircle,
@@ -313,6 +315,7 @@ export default function LandingHome() {
   const router = useRouter();
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [demoTab, setDemoTab] = useState<BusinessVertical>("restaurant");
+  const testimonialsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!loading && user) router.replace("/hub");
@@ -337,6 +340,15 @@ export default function LandingHome() {
   const heroDemoHref = useMemo(() => verticalToDemoHref(vertical), [vertical]);
   const heroSignupHref = useMemo(() => verticalToSignupHref(vertical), [vertical]);
   const demoItems = useMemo(() => getDemoCatalog(demoTab), [demoTab]);
+
+  const scrollTestimonials = (direction: "left" | "right") => {
+    const container = testimonialsRef.current;
+    if (!container) return;
+    const card = container.querySelector("article") as HTMLElement | null;
+    const step = card ? card.offsetWidth + 16 : 380;
+    const offset = direction === "left" ? -step : step;
+    container.scrollBy({ left: offset, behavior: "smooth" });
+  };
 
   if (loading) {
     return (
@@ -697,10 +709,31 @@ export default function LandingHome() {
       </section>
 
       <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
-        <div className="mb-7 text-center">
+        <div className="mb-7 flex items-center justify-between gap-3">
           <h2 className="text-3xl font-black text-white md:text-4xl">Prueba social</h2>
+          <div className="hidden items-center gap-2 md:flex">
+            <button
+              type="button"
+              aria-label="Desplazar testimonios a la izquierda"
+              onClick={() => scrollTestimonials("left")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white transition hover:border-amber-300/45 hover:text-amber-200"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Desplazar testimonios a la derecha"
+              onClick={() => scrollTestimonials("right")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white transition hover:border-amber-300/45 hover:text-amber-200"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
         </div>
-        <div className="no-scrollbar -mx-2 flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:[direction:ltr]">
+        <div
+          ref={testimonialsRef}
+          className="no-scrollbar -mx-2 flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:[direction:ltr]"
+        >
           {TESTIMONIALS.map((item) => (
             <article
               key={`${item.name}-${item.city}`}
