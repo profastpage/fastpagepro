@@ -501,7 +501,7 @@ export default function SettingsPage() {
                           {plan.desc}
                         </p>
                         <div className="flex items-baseline gap-1 mb-8">
-                          <span className="text-4xl font-black">${plan.price}</span>
+                          <span className="text-4xl font-black">S/{plan.price}</span>
                           <span className={`text-xs font-bold uppercase ${formData.plan === plan.id ? "text-black/60" : "text-zinc-500"}`}>/ mes</span>
                         </div>
                         <div className="space-y-3 mt-auto">
