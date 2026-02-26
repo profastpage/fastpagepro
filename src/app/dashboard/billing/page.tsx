@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Sparkles, UploadCloud } from "lucide-react";
+import { Check, Copy, Loader2, Sparkles, UploadCloud } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions, type PlanUpsellReason } from "@/hooks/usePlanPermissions";
@@ -13,6 +13,7 @@ import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpi
 import { PLAN_DEFINITIONS, type PlanType } from "@/lib/subscription/plans";
 
 type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA";
+type CopiedAccountKey = "bcp_soles" | "bcp_cci";
 
 const PAYMENT_INSTRUCTIONS_ES: Record<PaymentMethod, string> = {
   YAPE: "Yape al 906431630. En el motivo coloca tu correo de Fast Page.",
@@ -89,6 +90,7 @@ export default function BillingPage() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [copiedAccount, setCopiedAccount] = useState<CopiedAccountKey | null>(null);
   const pricingPlansRef = useRef<HTMLElement | null>(null);
   const paymentFormRef = useRef<HTMLFormElement | null>(null);
   const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim() || DEFAULT_YAPE_QR_URL;
@@ -132,6 +134,8 @@ export default function BillingPage() {
             bcpSolesAccount: "BCP soles account",
             interbankCci: "BCP interbank account (CCI)",
             openQr: "Open QR in full size",
+            copyNumber: "Copy number",
+            copied: "Copied",
             notes: "Notes",
             notesPlaceholder: "Add any extra details for the admin team.",
             submitBusiness: "Activate 14-day trial",
@@ -183,6 +187,8 @@ export default function BillingPage() {
             bcpSolesAccount: "Cuenta BCP soles",
             interbankCci: "Cuenta interbancaria BCP (CCI)",
             openQr: "Abrir QR en tamano completo",
+            copyNumber: "Copiar numero",
+            copied: "Copiado",
             notes: "Notas",
             notesPlaceholder: "Agrega detalles extra para el equipo admin.",
             submitBusiness: "Activar prueba de 14 dias",
@@ -306,6 +312,33 @@ export default function BillingPage() {
     requestAnimationFrame(() => {
       paymentFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+  };
+
+  const copyAccountNumber = async (value: string, key: CopiedAccountKey) => {
+    const normalized = String(value || "").replace(/\D/g, "");
+    if (!normalized) return;
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(normalized);
+      } else if (typeof document !== "undefined") {
+        const temp = document.createElement("textarea");
+        temp.value = normalized;
+        temp.setAttribute("readonly", "");
+        temp.style.position = "absolute";
+        temp.style.left = "-9999px";
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+      }
+      setCopiedAccount(key);
+      setTimeout(() => {
+        setCopiedAccount((current) => (current === key ? null : current));
+      }, 1600);
+    } catch (copyError) {
+      console.error("[Billing] Could not copy account number", copyError);
+    }
   };
 
   async function handleSubmit(event: FormEvent) {
@@ -561,11 +594,30 @@ export default function BillingPage() {
                           <span className="animate-pulse">
                             <PaymentBrandLogo brand="BCP" />
                           </span>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-white">BCP</p>
-                            <p className="break-all text-[11px] text-blue-100/90">
-                              {i18n.bcpSolesAccount}: {PAYMENT_BCP_SOLES_ACCOUNT}
-                            </p>
+                            <button
+                              type="button"
+                              onClick={() => copyAccountNumber(PAYMENT_BCP_SOLES_ACCOUNT, "bcp_soles")}
+                              className="mt-1 flex w-full items-center justify-between gap-2 rounded-md border border-blue-200/20 bg-blue-950/30 px-2 py-1 text-left text-[11px] text-blue-100/95 transition hover:border-blue-200/40"
+                            >
+                              <span className="break-all">
+                                {i18n.bcpSolesAccount}: {PAYMENT_BCP_SOLES_ACCOUNT}
+                              </span>
+                              <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold">
+                                {copiedAccount === "bcp_soles" ? (
+                                  <>
+                                    <Check className="h-3 w-3" />
+                                    {i18n.copied}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3 w-3" />
+                                    {i18n.copyNumber}
+                                  </>
+                                )}
+                              </span>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -574,20 +626,52 @@ export default function BillingPage() {
                           <span className="animate-pulse">
                             <PaymentBrandLogo brand="BCP" />
                           </span>
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <p className="text-xs font-semibold text-white">BCP</p>
-                            <p className="break-all text-[11px] text-blue-100/90">
-                              {i18n.interbankCci}: {PAYMENT_BCP_CCI}
-                            </p>
+                            <button
+                              type="button"
+                              onClick={() => copyAccountNumber(PAYMENT_BCP_CCI, "bcp_cci")}
+                              className="mt-1 flex w-full items-center justify-between gap-2 rounded-md border border-blue-200/20 bg-blue-950/30 px-2 py-1 text-left text-[11px] text-blue-100/95 transition hover:border-blue-200/40"
+                            >
+                              <span className="break-all">
+                                {i18n.interbankCci}: {PAYMENT_BCP_CCI}
+                              </span>
+                              <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-semibold">
+                                {copiedAccount === "bcp_cci" ? (
+                                  <>
+                                    <Check className="h-3 w-3" />
+                                    {i18n.copied}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3 w-3" />
+                                    {i18n.copyNumber}
+                                  </>
+                                )}
+                              </span>
+                            </button>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <ul className="space-y-1 text-[11px] text-cyan-100/90">
-                      {bankAccounts.map((account) => (
-                        <li key={account}>{account}</li>
-                      ))}
-                    </ul>
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => copyAccountNumber(PAYMENT_BCP_SOLES_ACCOUNT, "bcp_soles")}
+                        className="flex w-full items-center justify-between gap-2 rounded-md border border-transparent px-1 py-1 text-left text-[11px] text-cyan-100/90 transition hover:border-cyan-200/20"
+                      >
+                        <span className="break-all">{bankAccounts[0]}</span>
+                        <Copy className="h-3 w-3 shrink-0" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyAccountNumber(PAYMENT_BCP_CCI, "bcp_cci")}
+                        className="flex w-full items-center justify-between gap-2 rounded-md border border-transparent px-1 py-1 text-left text-[11px] text-cyan-100/90 transition hover:border-cyan-200/20"
+                      >
+                        <span className="break-all">{bankAccounts[1]}</span>
+                        <Copy className="h-3 w-3 shrink-0" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
