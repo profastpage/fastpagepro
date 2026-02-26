@@ -15,30 +15,34 @@ import { PLAN_DEFINITIONS, type PlanType } from "@/lib/subscription/plans";
 type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA";
 
 const PAYMENT_INSTRUCTIONS_ES: Record<PaymentMethod, string> = {
-  YAPE: "Yape al 999 999 999. En el motivo coloca tu correo de Fast Page.",
-  PLIN: "Plin al 999 999 998. En el detalle incluye el plan que deseas activar.",
-  TRANSFERENCIA:
-    "Transferencia a BCP Cuenta Corriente 191-1234567-0-98 (CCI: 00219100123456709811).",
+  YAPE: "Yape al 906431630. En el motivo coloca tu correo de Fast Page.",
+  PLIN: "Plin al 906431630. En el detalle incluye el plan que deseas activar.",
+  TRANSFERENCIA: "Transferencia a BCP en soles y adjunta comprobante para validacion.",
 };
 
 const PAYMENT_INSTRUCTIONS_EN: Record<PaymentMethod, string> = {
-  YAPE: "Yape to 999 999 999. Include your Fast Page email in the note.",
-  PLIN: "Plin to 999 999 998. Add the target plan in the detail.",
-  TRANSFERENCIA:
-    "Bank transfer to BCP Checking Account 191-1234567-0-98 (CCI: 00219100123456709811).",
+  YAPE: "Yape to 906431630. Include your Fast Page email in the note.",
+  PLIN: "Plin to 906431630. Add the target plan in the detail.",
+  TRANSFERENCIA: "Transfer in soles to BCP and attach payment proof for validation.",
 };
 
 const BANK_ACCOUNTS_ES = [
-  "BCP: Cta. Corriente 191-1234567-0-98 | CCI 00219100123456709811",
-  "Interbank: Cta. Ahorros 898-1234567890 | CCI 00389800123456789012",
-  "BBVA: Cta. Corriente 0011-0123-45-1234567890 | CCI 01112300012345678901",
+  "BCP Soles: 19103805375011",
+  "CCI / Interbancaria: 00219110380537501152",
 ];
 
 const BANK_ACCOUNTS_EN = [
-  "BCP: Checking 191-1234567-0-98 | CCI 00219100123456709811",
-  "Interbank: Savings 898-1234567890 | CCI 00389800123456789012",
-  "BBVA: Checking 0011-0123-45-1234567890 | CCI 01112300012345678901",
+  "BCP Soles: 19103805375011",
+  "Interbank transfer (CCI): 00219110380537501152",
 ];
+
+const PAYMENT_ACCOUNT_HOLDER = "Fabio Her*";
+const PAYMENT_YAPE_NUMBER = "906431630";
+const PAYMENT_BCP_SOLES_ACCOUNT = "19103805375011";
+const PAYMENT_INTERBANK_CCI = "00219110380537501152";
+const DEFAULT_YAPE_QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=1024x1024&ecc=H&margin=24&data=${encodeURIComponent(
+  `YAPE ${PAYMENT_YAPE_NUMBER} ${PAYMENT_ACCOUNT_HOLDER}`,
+)}`;
 
 const REASON_BY_FEATURE: Record<string, PlanUpsellReason> = {
   aiOptimization: "ai",
@@ -53,6 +57,27 @@ const TARGET_TO_PLAN: Record<string, PlanType> = {
   pro: "PRO",
   agency: "PRO",
 };
+
+function PaymentBrandLogo({ brand }: { brand: "YAPE" | "BCP" | "INTERBANK" }) {
+  const styles: Record<typeof brand, string> = {
+    YAPE: "from-violet-500 to-fuchsia-600 text-white",
+    BCP: "from-blue-700 to-blue-900 text-white",
+    INTERBANK: "from-emerald-500 to-lime-600 text-black",
+  };
+  const label: Record<typeof brand, string> = {
+    YAPE: "Yape",
+    BCP: "BCP",
+    INTERBANK: "IBK",
+  };
+
+  return (
+    <span
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-[11px] font-black uppercase tracking-[0.04em] shadow-[0_0_20px_rgba(0,0,0,0.35)] transition-transform duration-300 hover:scale-105 ${styles[brand]}`}
+    >
+      {label[brand]}
+    </span>
+  );
+}
 
 export default function BillingPage() {
   const { user, loading: authLoading } = useAuth(true);
@@ -70,7 +95,7 @@ export default function BillingPage() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const pricingPlansRef = useRef<HTMLElement | null>(null);
   const paymentFormRef = useRef<HTMLFormElement | null>(null);
-  const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim();
+  const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim() || DEFAULT_YAPE_QR_URL;
 
   const activePlan = summary?.plan || "FREE";
   const isBusinessTrial =
@@ -105,8 +130,12 @@ export default function BillingPage() {
             paymentDestinationsHint:
               "Send payment with your account email in the note. Then upload proof for manual approval by the super admin.",
             yapeQr: "Yape QR",
-            yapeQrMissing: "Yape QR will be provided by admin support.",
             bankAccounts: "Bank accounts",
+            accountHolder: "Account holder",
+            yapeNumber: "Yape number",
+            bcpSolesAccount: "BCP soles account",
+            interbankCci: "Interbank transfer (CCI)",
+            openQr: "Open QR in full size",
             notes: "Notes",
             notesPlaceholder: "Add any extra details for the admin team.",
             submitBusiness: "Activate 14-day trial",
@@ -152,8 +181,12 @@ export default function BillingPage() {
             paymentDestinationsHint:
               "Realiza el pago con tu correo de cuenta en el detalle. Luego adjunta el comprobante para aprobacion manual del super admin.",
             yapeQr: "QR de Yape",
-            yapeQrMissing: "El QR de Yape sera compartido por soporte admin.",
             bankAccounts: "Cuentas bancarias",
+            accountHolder: "Titular",
+            yapeNumber: "Numero Yape",
+            bcpSolesAccount: "Cuenta BCP soles",
+            interbankCci: "Cuenta interbancaria (CCI)",
+            openQr: "Abrir QR en tamano completo",
             notes: "Notas",
             notesPlaceholder: "Agrega detalles extra para el equipo admin.",
             submitBusiness: "Activar prueba de 14 dias",
@@ -494,29 +527,72 @@ export default function BillingPage() {
             ) : (
               <div className="space-y-3 rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
                 <p className="font-semibold">{paymentInstructions[paymentMethod]}</p>
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-cyan-100">{i18n.paymentDestinationsTitle}</p>
                 <p className="text-xs text-cyan-100/90">{i18n.paymentDestinationsHint}</p>
-                <div className="rounded-lg border border-cyan-200/20 bg-black/20 px-3 py-2">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em]">{i18n.yapeQr}</p>
-                  {yapeQrUrl ? (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1.1fr]">
+                  <div className="rounded-xl border border-cyan-200/25 bg-black/25 p-3">
+                    <div className="flex items-center gap-2">
+                      <PaymentBrandLogo brand="YAPE" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold uppercase tracking-[0.12em]">{i18n.yapeQr}</p>
+                        <p className="text-[11px] text-cyan-100/90">{i18n.accountHolder}: {PAYMENT_ACCOUNT_HOLDER}</p>
+                        <p className="text-[11px] text-cyan-100/90">{i18n.yapeNumber}: {PAYMENT_YAPE_NUMBER}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex w-full justify-center">
+                      <img
+                        src={yapeQrUrl}
+                        alt="QR Yape 906431630"
+                        className="h-56 w-56 max-w-full rounded-2xl border border-cyan-200/25 bg-white p-2 shadow-[0_0_30px_rgba(14,165,233,0.25)] md:h-64 md:w-64"
+                        style={{ imageRendering: "crisp-edges" }}
+                        loading="lazy"
+                      />
+                    </div>
                     <a
                       href={yapeQrUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-1 inline-flex text-xs font-semibold underline"
+                      className="mt-3 inline-flex rounded-lg border border-cyan-200/35 bg-cyan-400/10 px-3 py-1.5 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/20"
                     >
-                      {isEnglish ? "Open QR" : "Abrir QR"}
+                      {i18n.openQr}
                     </a>
-                  ) : (
-                    <p className="mt-1 text-xs">{i18n.yapeQrMissing}</p>
-                  )}
-                </div>
-                <div className="rounded-lg border border-cyan-200/20 bg-black/20 px-3 py-2">
-                  <p className="text-xs font-bold uppercase tracking-[0.12em]">{i18n.bankAccounts}</p>
-                  <ul className="mt-1 space-y-1 text-xs text-cyan-100/95">
-                    {bankAccounts.map((account) => (
-                      <li key={account}>{account}</li>
-                    ))}
-                  </ul>
+                  </div>
+                  <div className="space-y-3 rounded-xl border border-cyan-200/25 bg-black/25 p-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.12em]">{i18n.bankAccounts}</p>
+                    <div className="space-y-2">
+                      <div className="rounded-lg border border-blue-300/20 bg-blue-900/20 p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="animate-pulse">
+                            <PaymentBrandLogo brand="BCP" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-white">BCP</p>
+                            <p className="break-all text-[11px] text-blue-100/90">
+                              {i18n.bcpSolesAccount}: {PAYMENT_BCP_SOLES_ACCOUNT}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="rounded-lg border border-emerald-300/20 bg-emerald-900/20 p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="animate-pulse">
+                            <PaymentBrandLogo brand="INTERBANK" />
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-white">Interbank</p>
+                            <p className="break-all text-[11px] text-emerald-100/90">
+                              {i18n.interbankCci}: {PAYMENT_INTERBANK_CCI}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <ul className="space-y-1 text-[11px] text-cyan-100/90">
+                      {bankAccounts.map((account) => (
+                        <li key={account}>{account}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             )}
