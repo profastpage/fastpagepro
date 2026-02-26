@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { memo } from "react";
-import { ShoppingBag } from "lucide-react";
+import { Minus, Plus, ShoppingBag } from "lucide-react";
 
 export type ProductCardBadge = "🔥 Más pedido" | "⭐ Favorito" | "🕒 Se acaba";
 
@@ -16,6 +16,9 @@ type ProductCardProps = {
   priorityBadge?: ProductCardBadge | null;
   emojiFallback?: string;
   onAdd: () => void;
+  quantity?: number;
+  onIncrement?: () => void;
+  onDecrement?: () => void;
   className?: string;
 };
 
@@ -29,8 +32,13 @@ const ProductCard = memo(function ProductCard({
   priorityBadge,
   emojiFallback,
   onAdd,
+  quantity = 0,
+  onIncrement,
+  onDecrement,
   className,
 }: ProductCardProps) {
+  const useStepper = Boolean(onIncrement && onDecrement);
+
   return (
     <article
       className={`rounded-[1.2rem] border p-3 ${className || ""}`}
@@ -91,20 +99,61 @@ const ProductCard = memo(function ProductCard({
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={onAdd}
-              className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] transition active:scale-[0.97] md:text-xs"
-              style={{
-                borderColor: "var(--carta-chip-border)",
-                background: "var(--carta-nav-active-bg)",
-                color: "var(--carta-nav-active-text)",
-                boxShadow: "0 10px 20px -18px rgba(15,23,42,0.6)",
-              }}
-            >
-              <ShoppingBag className="h-3.5 w-3.5" />
-              Agregar
-            </button>
+            {useStepper ? (
+              <div
+                className="inline-flex items-center gap-2 rounded-full border px-2 py-1"
+                style={{
+                  borderColor: "var(--carta-chip-border)",
+                  background: "var(--carta-chip-bg)",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={onDecrement}
+                  disabled={quantity <= 0}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-[0.7rem] border transition active:scale-[0.95] disabled:opacity-50"
+                  style={{
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-chip-text)",
+                    background: "var(--carta-surface-2)",
+                  }}
+                  aria-label={`Quitar una unidad de ${title}`}
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="min-w-[1.5rem] text-center text-lg font-black" style={{ color: "var(--carta-text)" }}>
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={onIncrement}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-[0.7rem] border transition active:scale-[0.95]"
+                  style={{
+                    borderColor: "var(--carta-chip-border)",
+                    color: "var(--carta-chip-text)",
+                    background: "var(--carta-surface-2)",
+                  }}
+                  aria-label={`Agregar una unidad de ${title}`}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onAdd}
+                className="inline-flex min-h-[40px] shrink-0 items-center justify-center gap-1.5 rounded-full border px-4 py-2 text-[11px] font-black uppercase tracking-[0.08em] transition active:scale-[0.97] md:text-xs"
+                style={{
+                  borderColor: "var(--carta-chip-border)",
+                  background: "var(--carta-nav-active-bg)",
+                  color: "var(--carta-nav-active-text)",
+                  boxShadow: "0 10px 20px -18px rgba(15,23,42,0.6)",
+                }}
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+                Agregar
+              </button>
+            )}
           </div>
         </div>
       </div>

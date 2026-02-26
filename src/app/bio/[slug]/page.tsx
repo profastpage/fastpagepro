@@ -458,6 +458,13 @@ export default function PublicBioPage() {
   const businessName = profile.displayName || "Negocio";
   const cartItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
+  const cartQtyById = useMemo(() => {
+    const lookup = new Map<string, number>();
+    for (const item of cartItems) {
+      lookup.set(item.id, item.quantity);
+    }
+    return lookup;
+  }, [cartItems]);
   const autoDiscount = cartSubtotal >= AUTO_DISCOUNT_THRESHOLD ? cartSubtotal * AUTO_DISCOUNT_RATE : 0;
   const couponDiscountRate = appliedCouponCode ? COUPON_DISCOUNTS[appliedCouponCode] || 0 : 0;
   const couponDiscount = cartSubtotal * couponDiscountRate;
@@ -957,7 +964,7 @@ export default function PublicBioPage() {
           <>
             <div className="relative">
               {coverImages.length > 0 ? (
-                <div className="relative h-40 md:h-64 w-full overflow-hidden">
+                <div className="relative h-48 md:h-72 w-full overflow-hidden">
                   {coverImages.map((imageUrl, index) => (
                     <img
                       key={`${imageUrl}-${index}`}
@@ -996,12 +1003,12 @@ export default function PublicBioPage() {
                 />
               )}
 
-              <div className="absolute inset-x-0 -bottom-12 flex justify-center">
+              <div className="absolute inset-x-0 -bottom-14 flex justify-center">
                 {profile.avatarUrl ? (
                   <img
                     src={profile.avatarUrl}
                     alt={profile.displayName}
-                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 object-cover"
+                    className="h-28 w-28 md:h-36 md:w-36 rounded-full border-4 object-cover"
                     style={{
                       borderColor: "var(--carta-chip-border)",
                       background: avatarFallbackStyle.background,
@@ -1009,7 +1016,7 @@ export default function PublicBioPage() {
                   />
                 ) : (
                   <div
-                    className="h-24 w-24 md:h-32 md:w-32 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black"
+                    className="h-28 w-28 md:h-36 md:w-36 rounded-full border-4 flex items-center justify-center text-3xl md:text-4xl font-black"
                     style={{
                       borderColor: "var(--carta-chip-border)",
                       background: avatarFallbackStyle.background,
@@ -1021,7 +1028,7 @@ export default function PublicBioPage() {
               </div>
             </div>
 
-            <div className="px-5 md:px-8 pt-16 md:pt-20 pb-4 text-center">
+            <div className="px-5 md:px-8 pt-20 md:pt-24 pb-4 text-center">
               <h1 className="text-4xl md:text-6xl font-black tracking-tight" style={{ color: textPalette.heading }}>
                 {renderTitleWithAccent(profile.displayName, accentWordColor)}
               </h1>
@@ -1116,7 +1123,7 @@ export default function PublicBioPage() {
         <div className="flex-1 overflow-hidden px-4 pb-24 pt-2 md:px-8 md:pb-6 md:pt-0">
           {activeTab === "contact" && (
             <section
-              className={`flex h-full min-h-0 flex-col rounded-[1.9rem] border p-4 md:p-6 ${cardClass}`}
+              className={`flex h-full min-h-0 flex-col overflow-y-auto pr-1 no-scrollbar rounded-[1.9rem] border p-4 md:p-6 ${cardClass}`}
               style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}
             >
               <h2 className="text-2xl font-black" style={{ color: accentWordColor }}>
@@ -1246,12 +1253,22 @@ export default function PublicBioPage() {
                             title={item.title}
                             description={item.description}
                             imageUrl={item.imageUrl}
-                            oldPrice={item.compareAtPrice || undefined}
+                            oldPrice={
+                              item.compareAtPrice ||
+                              (() => {
+                                const numericPrice = parsePriceToNumber(item.price || "0");
+                                if (!numericPrice) return undefined;
+                                return (numericPrice * 1.2).toFixed(2);
+                              })()
+                            }
                             price={item.price || "0.00"}
                             badge={item.badge || undefined}
                             priorityBadge={resolvePriorityBadge(item.badge)}
                             emojiFallback={item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
                             onAdd={() => addItemToCart(item, section.name)}
+                            quantity={cartQtyById.get(item.id) || 0}
+                            onIncrement={() => addItemToCart(item, section.name)}
+                            onDecrement={() => patchCartItemQuantity(item.id, (cartQtyById.get(item.id) || 0) - 1)}
                           />
                         ))}
                       </div>
