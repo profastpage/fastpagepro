@@ -1059,3 +1059,16 @@ o-scrollbar para evitar barra visible.
   - `img/video/canvas/iframe` limitados a `max-width: 100%`; media visual mantiene `h-auto`.
 - Mobile overlays:
   - se agrega `padding-bottom` de seguridad a `main` en mobile para que barras fijas inferiores no tapen contenido.
+
+## Global No-Overlap / Vertical-Flow Guard (2026-02-26)
+
+- Ajuste no destructivo mobile-first para prevenir overflow horizontal y solapes por overlays.
+- Elemento puntual corregido por overflow potencial:
+  - `src/components/landing/LandingHome.tsx` (carrusel de testimonios) cambio de `-mx-2` a `w-full max-w-full` manteniendo diseño y scroll interno.
+- Guardas globales aplicadas en `src/app/globals.css`:
+  - wrappers base en flujo (`main/section/article/aside/header/footer`) con `w-full max-w-full min-w-0`.
+  - media (`img/video/canvas/iframe`) con `max-width: 100%` y `h-auto` para imagen/video/canvas.
+  - `html/body` con `overflow-x: hidden` reforzado.
+  - `padding-bottom` mobile de seguridad para evitar cobertura por CTAs/barras fijas.
+- Validacion runtime (Playwright + Chromium, localhost):
+  - viewport 375 y 1440 en `/`, `/demo/ecommerce/urban-wear`, `/store` => `scrollWidth == clientWidth` (sin x-scroll global).

@@ -733,7 +733,7 @@ export default function LandingHome() {
         </div>
         <div
           ref={testimonialsRef}
-          className="no-scrollbar -mx-2 flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:[direction:ltr]"
+          className="no-scrollbar w-full max-w-full flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:[direction:ltr]"
         >
           {TESTIMONIALS.map((item) => (
             <article
