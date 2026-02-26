@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import type { DemoCatalogItem } from "@/lib/demoCatalog";
+import { getDemoUrl, type DemoType } from "@/lib/demoRouting";
 
 type DemoCardProps = {
   item: DemoCatalogItem;
@@ -9,6 +10,10 @@ type DemoCardProps = {
 };
 
 export default function DemoCard({ item, onOpen }: DemoCardProps) {
+  const demoType: DemoType =
+    item.vertical === "ecommerce" ? "store" : item.vertical;
+  const demoUrl = getDemoUrl(demoType, item.slug);
+
   return (
     <article className="overflow-hidden rounded-2xl border border-white/10 bg-black/45 transition hover:-translate-y-1 hover:border-amber-300/45">
       <div className="relative h-44 w-full">
@@ -28,8 +33,17 @@ export default function DemoCard({ item, onOpen }: DemoCardProps) {
         <h3 className="text-xl font-black text-white">{item.title}</h3>
         <p className="text-sm text-zinc-300">{item.subtitle}</p>
         <Link
-          href={`/demo/${item.vertical}/${item.slug}`}
-          onClick={() => onOpen?.(item.vertical, item.slug)}
+          href={demoUrl}
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("demo_opened", {
+                  detail: { type: demoType, slug: item.slug },
+                }),
+              );
+            }
+            onOpen?.(item.vertical, item.slug);
+          }}
           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/15"
         >
           Abrir demo

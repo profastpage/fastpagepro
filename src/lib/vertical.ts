@@ -54,6 +54,7 @@ export function normalizeVertical(value: unknown): BusinessVertical {
   const input = String(value || "")
     .trim()
     .toLowerCase();
+  if (input === "store") return "ecommerce";
   if (BUSINESS_VERTICALS.includes(input as BusinessVertical)) {
     return input as BusinessVertical;
   }
