@@ -120,7 +120,7 @@ export default function HubPage() {
     {
       id: "billing",
       title: "Billing",
-      description: "Gestiona planes Starter, Business y Pro, pagos y renovaciones.",
+      description: "Gestiona Starter S/29, Business 14 días gratis y Pro S/99, pagos y renovaciones.",
       icon: <CreditCard className="w-8 h-8 text-emerald-300" />,
       action: "Abrir Facturación",
       href: "/dashboard/billing",

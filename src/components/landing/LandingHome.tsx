@@ -730,24 +730,31 @@ export default function LandingHome() {
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
           <article className="rounded-3xl border border-white/10 bg-black/45 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">FREE</p>
-            <p className="mt-2 text-4xl font-black text-white">S/ 0</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">STARTER</p>
+            <p className="mt-2 text-4xl font-black text-white">S/ 29</p>
+            <p className="mt-2 text-sm font-semibold text-zinc-200">Pago directo mensual (sin trial).</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-300">
               <li>1 proyecto activo</li>
               <li>10 productos por proyecto</li>
-              <li>Sin dominio propio</li>
+              <li>🔒 Dominio propio (Business o Pro)</li>
               <li>Branding visible</li>
-              <li>Sin IA</li>
+              <li>🔒 IA (Business o Pro)</li>
             </ul>
+            <Link href={heroSignupHref} className="mt-5 inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
+              Empezar ahora
+            </Link>
           </article>
 
           <article className="relative rounded-3xl border border-amber-300/45 bg-gradient-to-b from-amber-300/10 to-black/60 p-6">
             <span className="absolute -top-3 right-4 rounded-full border border-amber-300/45 bg-black px-3 py-1 text-xs font-bold text-amber-200">
-              ⭐ Mas elegido por negocios
+              Mas elegido
             </span>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">BUSINESS</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 59</p>
-            <p className="mt-2 text-sm font-semibold text-amber-100">🔥 Ideal para negocios que quieren vender todos los dias</p>
+            <p className="mt-2 text-sm font-semibold text-amber-100">
+              Prueba gratis por 14 días. Luego S/59/mes. Cancela cuando quieras.
+            </p>
+            <p className="mt-1 text-xs font-semibold text-amber-100/90">Sin compromiso.</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 5 proyectos activos</li>
               <li><strong>50 productos</strong> por proyecto</li>
@@ -755,12 +762,15 @@ export default function LandingHome() {
               <li>IA basica</li>
               <li>Metricas basicas</li>
             </ul>
+            <Link href={heroSignupHref} className="mt-5 inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
+              Probar 14 días gratis
+            </Link>
           </article>
 
           <article className="rounded-3xl border border-cyan-300/35 bg-gradient-to-b from-cyan-300/10 to-black/60 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">PRO</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 99</p>
-            <p className="mt-2 text-sm font-semibold text-cyan-100">🚀 Para negocios que quieren escalar en serio</p>
+            <p className="mt-2 text-sm font-semibold text-cyan-100">Pago directo mensual para escalar en serio (sin trial).</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 20 proyectos activos</li>
               <li><strong>Productos ilimitados</strong></li>
@@ -768,13 +778,16 @@ export default function LandingHome() {
               <li><strong>IA avanzada</strong></li>
               <li>Metricas PRO + insights</li>
             </ul>
+            <Link href={heroSignupHref} className="mt-5 inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
+              Comprar ahora
+            </Link>
           </article>
         </div>
         <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
           Conecta tu dominio desde Business y manten una marca profesional.
         </p>
         <p className="mt-2 text-center text-xs font-semibold text-zinc-300">
-          Empieza gratis. Sin compromisos.
+          Sin comisiones por pedido. Cancela cuando quieras.
         </p>
       </section>
 

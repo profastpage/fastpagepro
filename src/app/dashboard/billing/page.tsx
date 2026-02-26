@@ -48,11 +48,9 @@ export default function BillingPage() {
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const activePlan = summary?.plan || "FREE";
+  const isBusinessTrial = selectedPlan === "BUSINESS";
 
-  const requestedPlanOptions = useMemo(
-    () => PLAN_DEFINITIONS.filter((plan) => plan.id !== "FREE"),
-    [],
-  );
+  const requestedPlanOptions = useMemo(() => PLAN_DEFINITIONS, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -114,10 +112,6 @@ export default function BillingPage() {
     event.preventDefault();
     setFeedback(null);
     if (!user?.uid) return;
-    if (selectedPlan === "FREE") {
-      setFeedback({ type: "error", text: "Selecciona BUSINESS o PRO para generar la solicitud." });
-      return;
-    }
 
     setSubmitting(true);
     try {
@@ -129,8 +123,9 @@ export default function BillingPage() {
       const formData = new FormData();
       formData.append("plan", selectedPlan);
       formData.append("paymentMethod", paymentMethod);
+      formData.append("trial", isBusinessTrial ? "true" : "false");
       formData.append("notes", notes);
-      if (proofFile) {
+      if (proofFile && !isBusinessTrial) {
         formData.append("proof", proofFile);
       }
 
@@ -149,7 +144,9 @@ export default function BillingPage() {
 
       setFeedback({
         type: "success",
-        text: "Solicitud enviada. Quedo en estado pendiente hasta validacion admin.",
+        text: isBusinessTrial
+          ? "Business activo en prueba de 14 dias. Luego podras renovar mensual."
+          : "Solicitud enviada. Quedo en estado pendiente hasta validacion admin.",
       });
       setProofFile(null);
       setNotes("");
@@ -181,7 +178,7 @@ export default function BillingPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Facturacion SaaS</p>
               <h1 className="mt-2 text-3xl font-black">Planes oficiales Fast Page</h1>
               <p className="mt-2 text-zinc-300">
-                Starter para comenzar, Business para escalar y Pro como power plan.
+                Starter S/29 pago directo, Business con 14 días gratis y Pro S/99 pago directo.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
@@ -245,7 +242,7 @@ export default function BillingPage() {
             <div>
               <h2 className="text-xl font-bold">Solicitar actualizacion de plan</h2>
               <p className="mt-1 text-sm text-zinc-300">
-                Starter empuja a Business y Business empuja a Pro segun uso real y permisos.
+                Business activa prueba de 14 días. Starter y Pro aplican pago directo mensual.
               </p>
             </div>
 
@@ -266,49 +263,59 @@ export default function BillingPage() {
               </select>
             </label>
 
-            <label className="block space-y-2">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                Metodo de pago
-              </span>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {(["YAPE", "PLIN", "TRANSFERENCIA"] as PaymentMethod[]).map((method) => (
-                  <button
-                    key={method}
-                    type="button"
-                    onClick={() => setPaymentMethod(method)}
-                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
-                      paymentMethod === method
-                        ? "border-amber-300/45 bg-amber-400/12 text-amber-100"
-                        : "border-white/15 bg-white/5 text-zinc-200"
-                    }`}
-                  >
-                    {method}
-                  </button>
-                ))}
-              </div>
-            </label>
-
-            <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
-              {PAYMENT_INSTRUCTIONS[paymentMethod]}
-            </div>
-
-            <label className="block space-y-2">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                Subir comprobante
-              </span>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-3 py-3 text-sm">
-                <UploadCloud className="h-4 w-4 text-zinc-300" />
-                <span className="truncate text-zinc-200">
-                  {proofFile ? proofFile.name : "Adjuntar PNG, JPG, WEBP o PDF (opcional)"}
+            {!isBusinessTrial ? (
+              <label className="block space-y-2">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
+                  Metodo de pago
                 </span>
-                <input
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.webp,.pdf"
-                  className="hidden"
-                  onChange={(event) => setProofFile(event.target.files?.[0] || null)}
-                />
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {(["YAPE", "PLIN", "TRANSFERENCIA"] as PaymentMethod[]).map((method) => (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => setPaymentMethod(method)}
+                      className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                        paymentMethod === method
+                          ? "border-amber-300/45 bg-amber-400/12 text-amber-100"
+                          : "border-white/15 bg-white/5 text-zinc-200"
+                      }`}
+                    >
+                      {method}
+                    </button>
+                  ))}
+                </div>
               </label>
-            </label>
+            ) : null}
+
+            {isBusinessTrial ? (
+              <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100">
+                Prueba gratis por 14 días. Luego S/59/mes. Cancela cuando quieras. Sin compromiso.
+              </div>
+            ) : (
+              <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
+                {PAYMENT_INSTRUCTIONS[paymentMethod]}
+              </div>
+            )}
+
+            {!isBusinessTrial ? (
+              <label className="block space-y-2">
+                <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
+                  Subir comprobante
+                </span>
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-3 py-3 text-sm">
+                  <UploadCloud className="h-4 w-4 text-zinc-300" />
+                  <span className="truncate text-zinc-200">
+                    {proofFile ? proofFile.name : "Adjuntar PNG, JPG, WEBP o PDF (opcional)"}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.webp,.pdf"
+                    className="hidden"
+                    onChange={(event) => setProofFile(event.target.files?.[0] || null)}
+                  />
+                </label>
+              </label>
+            ) : null}
 
             <label className="block space-y-2">
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
@@ -341,7 +348,7 @@ export default function BillingPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-60"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              Enviar solicitud de pago
+              {isBusinessTrial ? "Probar 14 días gratis" : selectedPlan === "PRO" ? "Comprar ahora" : "Empezar ahora"}
             </button>
           </form>
 

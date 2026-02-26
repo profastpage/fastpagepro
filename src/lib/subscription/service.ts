@@ -390,6 +390,74 @@ function getPlanDurationDays(plan: PlanType, durationDays?: number): number {
   return PLAN_DEFAULT_DURATION_DAYS[plan];
 }
 
+export async function startBusinessTrial(userId: string): Promise<SubscriptionRecord> {
+  const safeUserId = String(userId || "").trim();
+  if (!safeUserId) {
+    throw new Error("USER_ID_REQUIRED");
+  }
+
+  let alreadyUsed = false;
+
+  try {
+    const previousPaidOrTrial = await prisma.subscription.findFirst({
+      where: {
+        userId: safeUserId,
+        plan: { in: ["BUSINESS", "PRO"] },
+        status: { in: ["ACTIVE", "EXPIRED"] },
+      },
+      select: { id: true },
+    });
+    alreadyUsed = Boolean(previousPaidOrTrial);
+  } catch (error) {
+    console.error("[Subscription Trial] Prisma read fallback:", error);
+  }
+
+  if (!alreadyUsed) {
+    const firestoreRecord = await readFirestoreSubscriptionRecord(safeUserId);
+    if (firestoreRecord && (firestoreRecord.plan === "BUSINESS" || firestoreRecord.plan === "PRO")) {
+      alreadyUsed = true;
+    }
+  }
+
+  if (!alreadyUsed && adminDb) {
+    try {
+      const userDoc = await adminDb.collection("users").doc(safeUserId).get();
+      alreadyUsed = userDoc.data()?.businessTrialUsed === true;
+    } catch (error) {
+      console.error("[Subscription Trial] Firestore flag read warning:", error);
+    }
+  }
+
+  if (alreadyUsed) {
+    throw new Error("BUSINESS_TRIAL_ALREADY_USED");
+  }
+
+  const assigned = await assignSubscriptionPlanByAdmin({
+    userId: safeUserId,
+    plan: "BUSINESS",
+    durationDays: 14,
+    paymentMethod: "TRANSFERENCIA",
+  });
+
+  if (adminDb) {
+    await adminDb
+      .collection("users")
+      .doc(safeUserId)
+      .set(
+        {
+          businessTrialUsed: true,
+          businessTrialUsedAt: Date.now(),
+        },
+        { merge: true },
+      )
+      .catch((error) => {
+        console.error("[Subscription Trial] Firestore flag write warning:", error);
+      });
+  }
+
+  return assigned;
+}
+
 export async function assignSubscriptionPlanByAdmin(input: {
   userId: string;
   plan: PlanType;

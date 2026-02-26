@@ -7,6 +7,11 @@ export interface PlanDefinition {
   name: string;
   monthlyPriceLabel: string;
   subtitle: string;
+  ctaLabel: string;
+  billingFlow: "direct" | "trial";
+  badgeLabel?: string;
+  note?: string;
+  trialDays?: number;
   features: SubscriptionFeature[];
   bulletPoints: string[];
   highlighted?: boolean;
@@ -16,22 +21,30 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
     id: "FREE",
     name: "STARTER",
-    monthlyPriceLabel: "S/ 0",
-    subtitle: "Ideal para empezar y validar tu idea",
+    monthlyPriceLabel: "S/ 29 / mes",
+    subtitle: "Pago directo mensual. Sin trial.",
+    ctaLabel: "Empezar ahora",
+    billingFlow: "direct",
     features: [],
     bulletPoints: [
       "1 proyecto activo publicado",
       "Hasta 10 productos por proyecto",
       "Branding visible obligatorio",
       "Subdominio fastpage.app",
-      "Sin IA",
+      "🔒 Dominio propio (Business o Pro)",
+      "🔒 IA (Business o Pro)",
     ],
   },
   {
     id: "BUSINESS",
     name: "BUSINESS",
     monthlyPriceLabel: "S/ 59 / mes",
-    subtitle: "Escala ventas con tienda completa y dominio propio",
+    subtitle: "Prueba gratis por 14 días. Luego S/59/mes. Cancela cuando quieras.",
+    ctaLabel: "Probar 14 días gratis",
+    billingFlow: "trial",
+    badgeLabel: "Mas elegido",
+    note: "Sin compromiso.",
+    trialDays: 14,
     features: [
       "premiumThemes",
       "categoryThemes",
@@ -56,7 +69,9 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     id: "PRO",
     name: "PRO",
     monthlyPriceLabel: "S/ 99 / mes",
-    subtitle: "Power plan con IA avanzada, cloner e insights",
+    subtitle: "Pago directo mensual para escalar en serio. Sin trial.",
+    ctaLabel: "Comprar ahora",
+    billingFlow: "direct",
     features: [
       "premiumThemes",
       "categoryThemes",

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import { Check } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 import { PLAN_DEFINITIONS, PlanType } from "@/lib/subscription/plans";
 
 type ComparisonRow = {
@@ -45,7 +45,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   {
     label: "Dominio propio",
     values: {
-      FREE: "No",
+      FREE: "🔒 Solo Business/Pro",
       BUSINESS: "Permitido (cliente compra dominio)",
       PRO: "Permitido",
     },
@@ -53,7 +53,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   {
     label: "IA",
     values: {
-      FREE: "Sin IA",
+      FREE: "🔒 Solo Business/Pro",
       BUSINESS: "IA basica",
       PRO: "IA avanzada",
     },
@@ -110,13 +110,23 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
                 plan.highlighted ? "border-amber-400/40 bg-amber-400/10" : "border-white/10 bg-black/25"
               }`}
             >
+              {plan.badgeLabel ? (
+                <div className="mb-2 inline-flex items-center rounded-full border border-amber-300/45 bg-black/70 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-200">
+                  {plan.badgeLabel}
+                </div>
+              ) : null}
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">{plan.name}</p>
               <h3 className="mt-2 text-3xl font-black text-white">{plan.monthlyPriceLabel}</h3>
               <p className="mt-1 text-sm text-zinc-300">{plan.subtitle}</p>
+              {plan.note ? <p className="mt-1 text-xs font-semibold text-amber-100">{plan.note}</p> : null}
               <ul className="mt-4 space-y-2 text-sm text-zinc-200">
                 {plan.bulletPoints.map((item) => (
                   <li key={item} className="flex items-start gap-2">
-                    <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
+                    {item.includes("🔒") ? (
+                      <Lock className="mt-0.5 h-4 w-4 text-amber-300" />
+                    ) : (
+                      <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
+                    )}
                     <span>{renderEmphasis(item)}</span>
                   </li>
                 ))}
@@ -131,7 +141,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
                     : "border-amber-300/40 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20"
                 } disabled:opacity-70`}
               >
-                {isActive ? "Plan Activo" : isLoading ? "Procesando..." : "Actualizar Plan"}
+                {isActive ? "Plan Activo" : isLoading ? "Procesando..." : plan.ctaLabel}
               </button>
             </article>
           );
@@ -166,6 +176,10 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
           </table>
         </div>
       </div>
+
+      <p className="border-t border-white/10 px-4 py-3 text-center text-xs font-semibold text-zinc-200 md:px-6">
+        Sin comisiones por pedido. Cancela cuando quieras.
+      </p>
     </div>
   );
 }
