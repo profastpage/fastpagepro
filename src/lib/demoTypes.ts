@@ -11,6 +11,7 @@ type DemoBase = {
   subtitle: string;
   description: string;
   coverImage: string;
+  profileImage?: string;
   whatsappNumber: string;
   recommendedBadges?: string[];
 };
@@ -75,4 +76,3 @@ export type LandingData = DemoBase & {
 };
 
 export type DemoData = RestaurantMenuData | EcommerceStoreData | LandingData;
-

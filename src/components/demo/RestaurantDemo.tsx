@@ -52,7 +52,11 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  const mainImage = demo.items.find((item) => item.favoriteOfDay || item.featured)?.image || demo.items[0]?.image || demo.coverImage;
+  const mainImage =
+    demo.items.find((item) => item.favoriteOfDay || item.featured)?.image ||
+    demo.items[0]?.image ||
+    demo.coverImage;
+  const profileImage = demo.profileImage || mainImage || demo.coverImage;
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(demo.address)}&output=embed`;
   const mapsOpen = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`;
   const callHref = `tel:${OFFICIAL_DEMO_WHATSAPP}`;
@@ -135,7 +139,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             <div className="flex min-w-0 items-center gap-2">
               <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)]">
                 <DemoImage
-                  src={mainImage}
+                  src={profileImage}
                   alt={demo.title}
                   fallbackLabel={demo.title}
                   fill
@@ -189,21 +193,23 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
         <div className="min-h-[62vh] px-4 pb-24 pt-4 md:px-8 md:pb-8 md:pt-6">
           {tab === "contact" ? (
             <section className="space-y-4">
-              <div className="relative h-44 overflow-hidden rounded-3xl border border-[var(--fp-border)] md:h-72">
-                <DemoImage
-                  src={demo.coverImage}
-                  alt={demo.title}
-                  fallbackLabel={demo.title}
-                  fill
-                  unoptimized
-                  sizes="100vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-x-0 -bottom-10 flex justify-center">
-                  <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white/80 md:h-28 md:w-28">
+              <div className="relative pb-10 md:pb-12">
+                <div className="relative h-44 overflow-hidden rounded-3xl border border-[var(--fp-border)] md:h-72">
+                  <DemoImage
+                    src={demo.coverImage}
+                    alt={demo.title}
+                    fallbackLabel={demo.title}
+                    fill
+                    unoptimized
+                    sizes="100vw"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="absolute inset-x-0 bottom-0 flex justify-center">
+                  <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white/90 shadow-lg md:h-28 md:w-28">
                     <DemoImage
-                      src={mainImage}
-                      alt={demo.title}
+                      src={profileImage}
+                      alt={`${demo.title} perfil`}
                       fallbackLabel={demo.title}
                       fill
                       unoptimized
@@ -260,7 +266,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                     className="w-full bg-transparent text-sm outline-none"
                   />
                 </label>
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
                   {categories.map((itemCategory) => (
                     <button
                       key={itemCategory}
