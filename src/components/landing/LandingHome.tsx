@@ -689,7 +689,7 @@ export default function LandingHome() {
                     location: "hero_primary",
                   })
                 }
-                className={`${DELUXE_BUTTON_BASE} rounded-full px-7 py-3 uppercase tracking-[0.12em]`}
+                className={`${DELUXE_BUTTON_BASE} hidden rounded-full px-7 py-3 uppercase tracking-[0.12em] md:inline-flex`}
               >
                 {copy.ctaPrimary}
               </Link>
