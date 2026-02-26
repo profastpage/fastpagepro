@@ -1163,3 +1163,14 @@ o-scrollbar para evitar barra visible.
   - reglas de `users` y `link_profiles` aceptan create/update owner con compatibilidad si faltan campos legacy (`uid` o `userId`).
 - Resultado:
   - solicitudes de trial/pago/free y activaciones de plan quedan operativas de forma consistente para cuentas nuevas y existentes.
+## Real-time admin notifications stream from subscription_notifications (2026-02-26)
+
+- Modulos ajustados:
+  - `src/app/admin/page.tsx`
+  - `src/app/api/subscription/request/route.ts`
+- Cambio:
+  - el panel super admin ahora escucha en tiempo real `subscription_notifications` (ademas de fallback en `users/{uid}`) para mostrar solicitudes al instante.
+  - se agrega enlace `latestSubscriptionNotificationId` en `users/{uid}` al crear solicitud para trazabilidad directa.
+  - accion `Marcar leida` y cambios de plan desde admin sincronizan lectura/estado tanto en `users/{uid}` como en `subscription_notifications/{id}`.
+- Resultado:
+  - la notificacion de Billing aparece en super admin en tiempo real con menor dependencia de campos derivados.

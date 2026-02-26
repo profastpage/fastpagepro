@@ -49,6 +49,7 @@ interface UserData {
   latestSubscriptionRequestPaymentMethod?: string;
   latestSubscriptionRequestNotes?: string;
   latestSubscriptionRequestSource?: string;
+  latestSubscriptionNotificationId?: string;
   latestSubscriptionRequestTrialDays?: number | string;
   latestSubscriptionRequestCreatedAt?: number | string;
   latestSubscriptionRequestUpdatedAt?: number | string;
@@ -69,6 +70,7 @@ interface PlanSummary {
 }
 
 interface AdminSubscriptionNotification {
+  notificationId: string;
   userId: string;
   userName: string;
   userEmail: string;
@@ -173,6 +175,7 @@ export default function AdminPanel() {
   const [planDraftByUserId, setPlanDraftByUserId] = useState<Record<string, PlanType>>({});
   const [planLoadingByUserId, setPlanLoadingByUserId] = useState<Record<string, boolean>>({});
   const [planMessageByUserId, setPlanMessageByUserId] = useState<Record<string, string>>({});
+  const [notificationDocs, setNotificationDocs] = useState<AdminSubscriptionNotification[]>([]);
   const [notificationLoadingByUserId, setNotificationLoadingByUserId] = useState<Record<string, boolean>>({});
   const router = useRouter();
   const fetchPlanSummaries = useCallback(async (userIds: string[]) => {
@@ -195,6 +198,8 @@ export default function AdminPanel() {
     setPlanMessageByUserId((previous) => ({ ...previous, [userId]: "" }));
 
     try {
+      const targetUser = users.find((entry) => entry.uid === userId);
+      const latestNotificationId = String(targetUser?.latestSubscriptionNotificationId || "").trim();
       const targetPlan: PlanType = mode === "DEACTIVATE" ? "FREE" : requestedPlan;
       const durationDays = targetPlan === "FREE" ? 3650 : 30;
       const startAtMs = Date.now();
@@ -222,6 +227,17 @@ export default function AdminPanel() {
         },
         { merge: true },
       );
+
+      if (latestNotificationId) {
+        await updateDoc(doc(db, "subscription_notifications", latestNotificationId), {
+          requestStatus: mode === "DEACTIVATE" ? "REJECTED" : "APPROVED",
+          unreadForAdmin: false,
+          updatedAt: Date.now(),
+          reviewedBy: ROOT_ADMIN_EMAIL,
+        }).catch((syncError) => {
+          console.error("Error syncing notification status:", syncError);
+        });
+      }
 
       const localSummary: PlanSummary = {
         userId,
@@ -251,7 +267,7 @@ export default function AdminPanel() {
     } finally {
       setPlanLoadingByUserId((previous) => ({ ...previous, [userId]: false }));
     }
-  }, [fetchPlanSummaries]);
+  }, [fetchPlanSummaries, users]);
 
   useEffect(() => {
     // Verificación de sesión local primero
@@ -271,6 +287,7 @@ export default function AdminPanel() {
     }
 
     let unsubscribeSnapshot: (() => void) | null = null;
+    let unsubscribeNotifications: (() => void) | null = null;
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.replace("/auth");
@@ -355,12 +372,57 @@ export default function AdminPanel() {
         setLoading(false);
       });
 
+      const notificationsRef = collection(db, "subscription_notifications");
+      if (unsubscribeNotifications) {
+        unsubscribeNotifications();
+      }
+      unsubscribeNotifications = onSnapshot(
+        notificationsRef,
+        (querySnapshot) => {
+          const incoming: AdminSubscriptionNotification[] = [];
+          querySnapshot.forEach((notificationDoc) => {
+            const payload = notificationDoc.data() as Record<string, unknown>;
+            const userId = String(payload.userId || "").trim();
+            if (!userId) return;
+
+            const requestedPlan = parsePlanType(payload.requestedPlan) || "FREE";
+            const createdAtMs = parseDateMsValue(payload.createdAt);
+            const updatedAtMs = parseDateMsValue(payload.updatedAt) || createdAtMs;
+
+            incoming.push({
+              notificationId: notificationDoc.id,
+              userId,
+              userName: "Cliente",
+              userEmail: String(payload.email || ""),
+              requestId: String(payload.requestId || notificationDoc.id),
+              requestedPlan,
+              requestType: String(payload.requestType || "PAYMENT"),
+              requestStatus: String(payload.requestStatus || "PENDING"),
+              paymentMethod: String(payload.paymentMethod || "TRANSFERENCIA"),
+              notes: String(payload.notes || ""),
+              unread: parseBooleanValue(payload.unreadForAdmin),
+              createdAtMs,
+              updatedAtMs,
+            });
+          });
+
+          incoming.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+          setNotificationDocs(incoming);
+        },
+        (notificationsError) => {
+          console.error("Admin: Error en subscription_notifications:", notificationsError);
+        },
+      );
+
     });
 
     return () => {
       unsubscribeAuth();
       if (unsubscribeSnapshot) {
         unsubscribeSnapshot();
+      }
+      if (unsubscribeNotifications) {
+        unsubscribeNotifications();
       }
     };
   }, [router]);
@@ -408,7 +470,7 @@ export default function AdminPanel() {
   );
 
   const adminNotifications = useMemo<AdminSubscriptionNotification[]>(() => {
-    return users
+    const fallbackFromUsers = users
       .map((user) => {
         const requestId = String(user.latestSubscriptionRequestId || "").trim();
         if (!requestId) return null;
@@ -421,6 +483,7 @@ export default function AdminPanel() {
           parseDateMsValue(user.latestSubscriptionRequestUpdatedAt) || createdAtMs;
 
         return {
+          notificationId: String(user.latestSubscriptionNotificationId || ""),
           userId: user.uid,
           userName: user.name || "Sin nombre",
           userEmail: String(user.latestSubscriptionRequestEmail || user.email || ""),
@@ -437,17 +500,47 @@ export default function AdminPanel() {
       })
       .filter((entry): entry is AdminSubscriptionNotification => Boolean(entry))
       .sort((a, b) => b.updatedAtMs - a.updatedAtMs);
-  }, [users]);
+
+    const userById = new Map(users.map((user) => [user.uid, user]));
+    const fromCollection = notificationDocs.map((notification) => {
+      const linkedUser = userById.get(notification.userId);
+      return {
+        ...notification,
+        userName: linkedUser?.name || notification.userName || "Sin nombre",
+        userEmail: linkedUser?.email || notification.userEmail,
+      };
+    });
+
+    const merged = [...fromCollection];
+    const seen = new Set(
+      fromCollection.map((entry) => `${entry.notificationId || ""}:${entry.requestId || ""}`),
+    );
+    for (const fallback of fallbackFromUsers) {
+      const key = `${fallback.notificationId || ""}:${fallback.requestId || ""}`;
+      if (seen.has(key)) continue;
+      merged.push(fallback);
+    }
+
+    merged.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+    return merged;
+  }, [users, notificationDocs]);
 
   const unreadNotificationsCount = adminNotifications.filter((entry) => entry.unread).length;
 
-  const markNotificationAsRead = async (userId: string) => {
+  const markNotificationAsRead = async (notification: AdminSubscriptionNotification) => {
+    const userId = notification.userId;
     setNotificationLoadingByUserId((previous) => ({ ...previous, [userId]: true }));
     try {
       await updateDoc(doc(db, "users", userId), {
         latestSubscriptionRequestUnreadForAdmin: false,
         latestSubscriptionRequestUpdatedAt: Date.now(),
       });
+      if (notification.notificationId) {
+        await updateDoc(doc(db, "subscription_notifications", notification.notificationId), {
+          unreadForAdmin: false,
+          updatedAt: Date.now(),
+        });
+      }
     } catch (markError) {
       console.error("Error marking notification as read:", markError);
     } finally {
@@ -612,7 +705,7 @@ export default function AdminPanel() {
                     {notification.unread ? (
                       <button
                         type="button"
-                        onClick={() => markNotificationAsRead(notification.userId)}
+                        onClick={() => markNotificationAsRead(notification)}
                         disabled={Boolean(notificationLoadingByUserId[notification.userId])}
                         className="rounded-lg border border-amber-300/35 bg-amber-500/15 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-100 disabled:opacity-60"
                       >

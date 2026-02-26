@@ -158,6 +158,7 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
     fields: {
       ...buildUserIdentityFields(input.userId, email),
       latestSubscriptionRequestId: firestoreString(requestId),
+      latestSubscriptionNotificationId: firestoreString(notificationId),
       latestSubscriptionRequestEmail: firestoreString(email),
       latestSubscriptionRequestPlan: firestoreString(input.requestedPlan),
       latestSubscriptionRequestType: firestoreString(input.requestType),
@@ -179,6 +180,7 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
     documentId: notificationId,
     idToken: input.idToken,
     fields: {
+      notificationId: firestoreString(notificationId),
       requestId: firestoreString(requestId),
       userId: firestoreString(input.userId),
       email: firestoreString(email),
