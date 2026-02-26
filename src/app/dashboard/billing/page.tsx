@@ -40,9 +40,7 @@ const PAYMENT_ACCOUNT_HOLDER = "Fabio Her*";
 const PAYMENT_YAPE_NUMBER = "906431630";
 const PAYMENT_BCP_SOLES_ACCOUNT = "19103805375011";
 const PAYMENT_BCP_CCI = "00219110380537501152";
-const DEFAULT_YAPE_QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=1024x1024&ecc=H&margin=24&data=${encodeURIComponent(
-  `YAPE ${PAYMENT_YAPE_NUMBER} ${PAYMENT_ACCOUNT_HOLDER}`,
-)}`;
+const DEFAULT_YAPE_QR_URL = "/payments/yape-qr-oficial.png";
 
 const REASON_BY_FEATURE: Record<string, PlanUpsellReason> = {
   aiOptimization: "ai",
@@ -540,7 +538,7 @@ export default function BillingPage() {
                     <div className="mt-3 flex w-full justify-center">
                       <img
                         src={yapeQrUrl}
-                        alt="QR Yape 906431630"
+                        alt="QR oficial Yape 906431630"
                         className="h-56 w-56 max-w-full rounded-2xl border border-cyan-200/25 bg-white p-2 shadow-[0_0_30px_rgba(14,165,233,0.25)] md:h-64 md:w-64"
                         style={{ imageRendering: "crisp-edges" }}
                         loading="lazy"
