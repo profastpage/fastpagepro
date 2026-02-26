@@ -72,6 +72,11 @@ export default function HubPage() {
   const isStarterPlan = planPermissions.canonicalPlan === "starter";
   const isBusinessPlan = planPermissions.canonicalPlan === "business";
   const isSubscriptionExpired = subscriptionSummary?.status === "EXPIRED";
+  const projectsUsageLabel =
+    planPermissions.maxProjects == null
+      ? `${planPermissions.usage.publishedProjects}`
+      : `${planPermissions.usage.publishedProjects}/${planPermissions.maxProjects}`;
+  const planDaysRemaining = Math.max(0, Number(subscriptionSummary?.daysRemaining || 0));
 
   const handleLogout = async () => {
     await logout();
@@ -273,6 +278,14 @@ export default function HubPage() {
               <div className="mt-3 inline-flex items-center gap-2">
                 <span className="text-xs text-zinc-400">{hubCopy.planLabel}</span>
                 <PlanBadge plan={subscriptionSummary?.plan || "FREE"} />
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold text-zinc-200">
+                  Proyectos: {projectsUsageLabel}
+                </span>
+                <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold text-amber-100">
+                  Dias restantes: {planDaysRemaining}
+                </span>
               </div>
               {subscriptionSummary?.isBusinessTrial ? (
                 <p

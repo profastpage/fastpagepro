@@ -12,7 +12,7 @@ import { getPlanDefinition } from "@/lib/subscription/plans";
 import { isRootAdminEmail } from "@/lib/adminAccess";
 
 const FREE_PLAN_HORIZON_DAYS = 3650;
-const EXPIRY_WARNING_DAYS = 7;
+const EXPIRY_WARNING_DAYS = 5;
 const PLAN_DEFAULT_DURATION_DAYS: Record<PlanType, number> = {
   FREE: FREE_PLAN_HORIZON_DAYS,
   BUSINESS: 30,
@@ -752,7 +752,16 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
     }
   }
 
-  if (current.status === "ACTIVE" && current.endDate.getTime() < Date.now()) {
+  if (!isRootAdmin && current.status === "EXPIRED" && current.plan !== "FREE") {
+    current = await moveTrialExpiredUserToFreeBlocked(userId);
+    return current;
+  }
+
+  if (current.status === "ACTIVE" && current.endDate.getTime() <= Date.now()) {
+    if (!isRootAdmin && current.plan !== "FREE") {
+      current = await moveTrialExpiredUserToFreeBlocked(userId);
+      return current;
+    }
     if (current.source === "prisma") {
       try {
         const updated = await prisma.subscription.update({

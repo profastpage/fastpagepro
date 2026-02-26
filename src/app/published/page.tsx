@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { db } from "@/lib/firebase";
 import { collection, doc as firestoreDoc, getDoc, getDocs, query, where } from "firebase/firestore";
 import {
@@ -44,6 +46,8 @@ function normalizeSourceLabel(source?: string) {
 
 function PublishedProjectsContent() {
   const { user, loading } = useAuth(true);
+  const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
+  const permissions = usePlanPermissions(Boolean(user?.uid));
   const router = useRouter();
   const searchParams = useSearchParams();
   const highlight = searchParams.get("highlight") || "";
@@ -174,6 +178,11 @@ function PublishedProjectsContent() {
       site,
     };
   }, [items]);
+  const publishedLimitLabel =
+    permissions.maxProjects == null
+      ? `${permissions.usage.publishedProjects}`
+      : `${permissions.usage.publishedProjects}/${permissions.maxProjects}`;
+  const daysRemaining = Math.max(0, Number(subscriptionSummary?.daysRemaining || 0));
 
   async function copyUrl(url: string, id: string) {
     const absolute = /^https?:\/\//.test(url) ? url : `${window.location.origin}${url}`;
@@ -223,6 +232,14 @@ function PublishedProjectsContent() {
               <p className="mt-3 text-zinc-300 max-w-3xl">
                 Centro unificado para todas tus publicaciones: Carta Digital, landings y tiendas.
               </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
+                  Proyectos en plan: {publishedLimitLabel}
+                </span>
+                <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
+                  Dias restantes: {daysRemaining}
+                </span>
+              </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-center">

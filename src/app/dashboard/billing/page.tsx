@@ -10,10 +10,15 @@ import { useLanguage } from "@/context/LanguageContext";
 import PricingTable from "@/components/subscription/PricingTable";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
-import { PLAN_DEFINITIONS, type PlanType } from "@/lib/subscription/plans";
+import {
+  PLAN_DEFINITIONS,
+  calculateSubscriptionAmountSoles,
+  type PlanType,
+} from "@/lib/subscription/plans";
 
 type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA";
 type CopiedAccountKey = "bcp_soles" | "bcp_cci";
+type BillingCycle = "MONTHLY" | "ANNUAL";
 
 const PAYMENT_INSTRUCTIONS_ES: Record<PaymentMethod, string> = {
   YAPE: "Yape al 906431630. En el motivo coloca tu correo de Fast Page.",
@@ -95,6 +100,8 @@ export default function BillingPage() {
   const [requiredFeature, setRequiredFeature] = useState("");
 
   const [selectedPlan, setSelectedPlan] = useState<PlanType>("BUSINESS");
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("MONTHLY");
+  const [durationMonths, setDurationMonths] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("YAPE");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [notes, setNotes] = useState("");
@@ -168,6 +175,18 @@ export default function BillingPage() {
             pendingMethod: "Method",
             pendingCreated: "Created",
             processing: "Processing...",
+            planDaysLeft: "Plan days left",
+            trialDaysLeft: "Trial days left",
+            renewalAlert: "5-day renewal alert active. Renew now to avoid lock.",
+            billingCycle: "Billing cycle",
+            cycleMonthly: "Monthly",
+            cycleAnnual: "Annual (12 months)",
+            monthsLabel: "Months",
+            annualDiscount: "Annual discount",
+            paymentSummary: "Payment summary",
+            subtotal: "Subtotal",
+            discount: "Discount",
+            total: "Total",
           }
         : {
             saasBilling: "Facturacion SaaS",
@@ -221,6 +240,18 @@ export default function BillingPage() {
             pendingMethod: "Metodo",
             pendingCreated: "Creado",
             processing: "Procesando...",
+            planDaysLeft: "Dias restantes del plan",
+            trialDaysLeft: "Dias restantes de prueba",
+            renewalAlert: "Alerta de renovacion en 5 dias. Renueva ahora para evitar bloqueo.",
+            billingCycle: "Ciclo de cobro",
+            cycleMonthly: "Mensual",
+            cycleAnnual: "Anual (12 meses)",
+            monthsLabel: "Meses",
+            annualDiscount: "Descuento anual",
+            paymentSummary: "Resumen de pago",
+            subtotal: "Subtotal",
+            discount: "Descuento",
+            total: "Total",
           },
     [isEnglish],
   );
@@ -243,6 +274,19 @@ export default function BillingPage() {
   );
 
   const requestedPlanOptions = useMemo(() => PLAN_DEFINITIONS, []);
+  const effectiveDurationMonths = billingCycle === "ANNUAL" ? 12 : durationMonths;
+  const pricingPreview = useMemo(
+    () =>
+      calculateSubscriptionAmountSoles({
+        plan: selectedPlan,
+        months: effectiveDurationMonths,
+        annualBilling: billingCycle === "ANNUAL",
+      }),
+    [billingCycle, effectiveDurationMonths, selectedPlan],
+  );
+  const daysRemaining = Math.max(0, Number(summary?.daysRemaining || 0));
+  const showRenewalAlert =
+    summary?.status === "ACTIVE" && !summary?.isBusinessTrial && daysRemaining > 0 && daysRemaining <= 5;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -264,6 +308,12 @@ export default function BillingPage() {
     }
     setSelectedPlan("BUSINESS");
   }, [summary?.plan]);
+
+  useEffect(() => {
+    if (billingCycle === "ANNUAL" && durationMonths !== 12) {
+      setDurationMonths(12);
+    }
+  }, [billingCycle, durationMonths]);
 
   const upsells = useMemo(() => {
     const reasons = new Set<PlanUpsellReason>(["ai", "branding", "insights", "cloner", "limit"]);
@@ -379,6 +429,10 @@ export default function BillingPage() {
       formData.append("paymentMethod", paymentMethod);
       formData.append("trial", isBusinessTrial ? "true" : "false");
       formData.append("notes", notes);
+      formData.append("billingCycle", billingCycle);
+      formData.append("durationMonths", String(effectiveDurationMonths));
+      formData.append("discountPercent", String(pricingPreview.discountPercent));
+      formData.append("amountSoles", String(pricingPreview.total));
       if (proofFile && showPaymentFlow) {
         formData.append("proof", proofFile);
       }
@@ -459,6 +513,16 @@ export default function BillingPage() {
               isBusinessTrial={Boolean(summary?.isBusinessTrial)}
             />
           </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
+              {summary?.isBusinessTrial ? i18n.trialDaysLeft : i18n.planDaysLeft}: {daysRemaining}
+            </span>
+            {showRenewalAlert ? (
+              <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
+                {i18n.renewalAlert}
+              </span>
+            ) : null}
+          </div>
 
           {summary?.trialExpired ? (
             <p className="mt-3 rounded-xl border border-red-400/35 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100">
@@ -535,6 +599,64 @@ export default function BillingPage() {
                 ))}
               </select>
             </label>
+
+            {showPaymentFlow ? (
+              <div className="space-y-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">{i18n.billingCycle}</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("MONTHLY")}
+                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                      billingCycle === "MONTHLY"
+                        ? "border-amber-300/45 bg-amber-400/12 text-amber-100"
+                        : "border-white/15 bg-white/5 text-zinc-200"
+                    }`}
+                  >
+                    {i18n.cycleMonthly}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("ANNUAL")}
+                    className={`rounded-xl border px-3 py-2 text-sm font-bold transition ${
+                      billingCycle === "ANNUAL"
+                        ? "border-emerald-300/45 bg-emerald-400/12 text-emerald-100"
+                        : "border-white/15 bg-white/5 text-zinc-200"
+                    }`}
+                  >
+                    {i18n.cycleAnnual}
+                  </button>
+                </div>
+                {billingCycle === "MONTHLY" ? (
+                  <label className="block space-y-2">
+                    <span className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-400">{i18n.monthsLabel}</span>
+                    <select
+                      className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm"
+                      value={durationMonths}
+                      onChange={(event) => setDurationMonths(Math.max(1, Math.min(12, Number(event.target.value) || 1)))}
+                    >
+                      {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                        <option key={month} value={month}>
+                          {month}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <p className="text-xs font-semibold text-emerald-100/95">
+                    {i18n.annualDiscount}: {pricingPreview.discountPercent}%
+                  </p>
+                )}
+                <div className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-xs text-zinc-200">
+                  <p className="font-bold uppercase tracking-[0.12em] text-zinc-300">{i18n.paymentSummary}</p>
+                  <p className="mt-1">{i18n.subtotal}: S/ {pricingPreview.subtotal.toFixed(2)}</p>
+                  <p>
+                    {i18n.discount}: {pricingPreview.discountPercent}% (S/ {pricingPreview.discountAmount.toFixed(2)})
+                  </p>
+                  <p className="mt-1 font-black text-amber-100">{i18n.total}: S/ {pricingPreview.total.toFixed(2)}</p>
+                </div>
+              </div>
+            ) : null}
 
             {showPaymentFlow ? (
               <label className="block space-y-2">

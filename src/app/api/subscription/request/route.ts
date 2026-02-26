@@ -11,6 +11,7 @@ const SUPPORTED_MIME_TYPES = new Set([
 ]);
 const MAX_PROOF_BYTES = 2 * 1024 * 1024;
 const DEFAULT_FIREBASE_PROJECT_ID = "fastpage-7ceb3";
+type BillingCycle = "MONTHLY" | "ANNUAL";
 
 function getBearerToken(request: NextRequest): string {
   const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
@@ -140,6 +141,11 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
   notes: string;
   requestId?: string;
   trialDays?: number;
+  billingCycle?: BillingCycle;
+  durationMonths?: number;
+  durationDays?: number;
+  discountPercent?: number;
+  amountSoles?: number;
   createdAtMs?: number;
 }) {
   const createdAtMs =
@@ -169,6 +175,19 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
       latestSubscriptionRequestTrialDays: firestoreInt(
         Number.isFinite(Number(input.trialDays)) ? Number(input.trialDays) : 0,
       ),
+      latestSubscriptionRequestBillingCycle: firestoreString(input.billingCycle || "MONTHLY"),
+      latestSubscriptionRequestDurationMonths: firestoreInt(
+        Number.isFinite(Number(input.durationMonths)) ? Number(input.durationMonths) : 1,
+      ),
+      latestSubscriptionRequestDurationDays: firestoreInt(
+        Number.isFinite(Number(input.durationDays)) ? Number(input.durationDays) : 30,
+      ),
+      latestSubscriptionRequestDiscountPercent: firestoreInt(
+        Number.isFinite(Number(input.discountPercent)) ? Number(input.discountPercent) : 0,
+      ),
+      latestSubscriptionRequestAmountSoles: firestoreString(
+        Number.isFinite(Number(input.amountSoles)) ? Number(input.amountSoles).toFixed(2) : "0.00",
+      ),
       latestSubscriptionRequestCreatedAt: firestoreInt(createdAtMs),
       latestSubscriptionRequestUpdatedAt: firestoreInt(Date.now()),
       latestSubscriptionRequestUnreadForAdmin: firestoreBool(true),
@@ -191,6 +210,19 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
       notes: firestoreString(notes),
       source: firestoreString("billing"),
       trialDays: firestoreInt(Number.isFinite(Number(input.trialDays)) ? Number(input.trialDays) : 0),
+      billingCycle: firestoreString(input.billingCycle || "MONTHLY"),
+      durationMonths: firestoreInt(
+        Number.isFinite(Number(input.durationMonths)) ? Number(input.durationMonths) : 1,
+      ),
+      durationDays: firestoreInt(
+        Number.isFinite(Number(input.durationDays)) ? Number(input.durationDays) : 30,
+      ),
+      discountPercent: firestoreInt(
+        Number.isFinite(Number(input.discountPercent)) ? Number(input.discountPercent) : 0,
+      ),
+      amountSoles: firestoreString(
+        Number.isFinite(Number(input.amountSoles)) ? Number(input.amountSoles).toFixed(2) : "0.00",
+      ),
       unreadForAdmin: firestoreBool(true),
       createdAt: firestoreInt(createdAtMs),
       updatedAt: firestoreInt(Date.now()),
@@ -271,6 +303,18 @@ function toPaymentMethod(value: string): PaymentMethod | null {
   return null;
 }
 
+function toBillingCycle(value: string): BillingCycle {
+  const normalized = String(value || "").trim().toUpperCase();
+  return normalized === "ANNUAL" ? "ANNUAL" : "MONTHLY";
+}
+
+function toDurationMonths(value: string, billingCycle: BillingCycle): number {
+  if (billingCycle === "ANNUAL") return 12;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.max(1, Math.min(12, Math.floor(parsed)));
+}
+
 export async function POST(request: NextRequest) {
   try {
     const authUser = await requireFirebaseUser(request);
@@ -286,7 +330,18 @@ export async function POST(request: NextRequest) {
     const trialRaw = String(formData.get("trial") || "").trim().toLowerCase();
     const isBusinessTrial = plan === "BUSINESS" && (trialRaw === "true" || trialRaw === "1" || trialRaw === "yes");
     const notes = String(formData.get("notes") || "");
+    const billingCycle = toBillingCycle(String(formData.get("billingCycle") || ""));
+    const durationMonths = toDurationMonths(String(formData.get("durationMonths") || ""), billingCycle);
+    const durationDays = durationMonths * 30;
+    const discountPercent = Math.max(0, Math.min(100, Number(formData.get("discountPercent") || 0) || 0));
+    const amountSoles = Math.max(0, Number(formData.get("amountSoles") || 0) || 0);
     const proof = formData.get("proof");
+    const notesWithDuration = sanitizeText(
+      [notes, `ciclo=${billingCycle}`, `meses=${durationMonths}`, `dias=${durationDays}`, `descuento=${discountPercent}%`, `monto=S/${amountSoles.toFixed(2)}`]
+        .filter(Boolean)
+        .join(" | "),
+      900,
+    );
 
     if (!plan) {
       return NextResponse.json({ error: "Debes seleccionar un plan valido." }, { status: 400 });
@@ -319,9 +374,14 @@ export async function POST(request: NextRequest) {
           requestType: "TRIAL",
           requestStatus: "TRIAL_ACTIVE",
           paymentMethod: "TRANSFERENCIA",
-          notes,
+          notes: notesWithDuration,
           requestId: trialSubscription.id,
           trialDays: 14,
+          billingCycle: "MONTHLY",
+          durationMonths: 0,
+          durationDays: 14,
+          discountPercent: 0,
+          amountSoles: 0,
           createdAtMs: Date.now(),
         }).catch((notificationError) => {
           console.error("[Subscription Request] trial notification warning:", notificationError);
@@ -379,8 +439,13 @@ export async function POST(request: NextRequest) {
         requestType: "FREE",
         requestStatus: "RECEIVED",
         paymentMethod: "",
-        notes,
+        notes: notesWithDuration,
         requestId: `free-${userId}-${Date.now()}`,
+        billingCycle,
+        durationMonths,
+        durationDays,
+        discountPercent,
+        amountSoles,
       });
 
       return NextResponse.json({
@@ -396,7 +461,7 @@ export async function POST(request: NextRequest) {
         userId,
         requestedPlan: plan,
         paymentMethod: paymentMethod || "TRANSFERENCIA",
-        notes,
+        notes: notesWithDuration,
         proofBase64: proofBase64 || undefined,
         proofFileName: proofFileName || undefined,
         proofMimeType: proofMimeType || undefined,
@@ -415,8 +480,13 @@ export async function POST(request: NextRequest) {
         requestType: "PAYMENT",
         requestStatus: "PENDING",
         paymentMethod: paymentMethod || "TRANSFERENCIA",
-        notes,
+        notes: notesWithDuration,
         requestId: `fallback-${userId}-${Date.now()}`,
+        billingCycle,
+        durationMonths,
+        durationDays,
+        discountPercent,
+        amountSoles,
       });
 
       return NextResponse.json({
@@ -435,8 +505,13 @@ export async function POST(request: NextRequest) {
         requestType: "PAYMENT",
         requestStatus: "PENDING",
         paymentMethod: paymentMethod || "TRANSFERENCIA",
-        notes,
+        notes: notesWithDuration,
         requestId: createdRequestId,
+        billingCycle,
+        durationMonths,
+        durationDays,
+        discountPercent,
+        amountSoles,
       }).catch((notificationError) => {
         console.error("[Subscription Request] payment notification warning:", notificationError);
       });

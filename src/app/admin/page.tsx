@@ -51,6 +51,11 @@ interface UserData {
   latestSubscriptionRequestSource?: string;
   latestSubscriptionNotificationId?: string;
   latestSubscriptionRequestTrialDays?: number | string;
+  latestSubscriptionRequestBillingCycle?: string;
+  latestSubscriptionRequestDurationMonths?: number | string;
+  latestSubscriptionRequestDurationDays?: number | string;
+  latestSubscriptionRequestDiscountPercent?: number | string;
+  latestSubscriptionRequestAmountSoles?: number | string;
   latestSubscriptionRequestCreatedAt?: number | string;
   latestSubscriptionRequestUpdatedAt?: number | string;
   latestSubscriptionRequestUnreadForAdmin?: boolean;
@@ -81,6 +86,11 @@ interface AdminSubscriptionNotification {
   paymentMethod: string;
   notes: string;
   unread: boolean;
+  billingCycle: string;
+  durationMonths: number;
+  durationDays: number;
+  discountPercent: number;
+  amountSoles: string;
   createdAtMs: number;
   updatedAtMs: number;
 }
@@ -201,9 +211,28 @@ export default function AdminPanel() {
       const targetUser = users.find((entry) => entry.uid === userId);
       const latestNotificationId = String(targetUser?.latestSubscriptionNotificationId || "").trim();
       const targetPlan: PlanType = mode === "DEACTIVATE" ? "FREE" : requestedPlan;
-      const durationDays = targetPlan === "FREE" ? 3650 : 30;
+      const requestedDurationDays = Math.floor(
+        Number(targetUser?.latestSubscriptionRequestDurationDays || 30) || 30,
+      );
+      const durationDays =
+        targetPlan === "FREE" ? 3650 : Math.max(30, requestedDurationDays);
       const startAtMs = Date.now();
       const endAtMs = startAtMs + durationDays * 24 * 60 * 60 * 1000;
+      const requestedBillingCycle =
+        String(targetUser?.latestSubscriptionRequestBillingCycle || "MONTHLY").toUpperCase() === "ANNUAL"
+          ? "ANNUAL"
+          : "MONTHLY";
+      const requestedMonths =
+        requestedBillingCycle === "ANNUAL"
+          ? 12
+          : Math.max(1, Math.floor(Number(targetUser?.latestSubscriptionRequestDurationMonths || 1) || 1));
+      const requestedDiscountPercent = Math.max(
+        0,
+        Math.floor(Number(targetUser?.latestSubscriptionRequestDiscountPercent || 0) || 0),
+      );
+      const requestedAmount = String(
+        targetUser?.latestSubscriptionRequestAmountSoles || "",
+      ).trim();
 
       // Source of truth for /admin table is Firestore users collection.
       await setDoc(
@@ -220,6 +249,11 @@ export default function AdminPanel() {
           subscriptionStartAt: startAtMs,
           subscriptionEndAt: endAtMs,
           subscriptionUpdatedAt: Date.now(),
+          subscriptionBillingCycle: requestedBillingCycle,
+          subscriptionDurationDays: durationDays,
+          subscriptionDurationMonths: requestedMonths,
+          subscriptionDiscountPercent: requestedDiscountPercent,
+          subscriptionAmountSoles: requestedAmount || null,
           latestSubscriptionRequestStatus: mode === "DEACTIVATE" ? "REJECTED" : "APPROVED",
           latestSubscriptionRequestUpdatedAt: Date.now(),
           latestSubscriptionRequestUnreadForAdmin: false,
@@ -401,6 +435,11 @@ export default function AdminPanel() {
               paymentMethod: String(payload.paymentMethod || "TRANSFERENCIA"),
               notes: String(payload.notes || ""),
               unread: parseBooleanValue(payload.unreadForAdmin),
+              billingCycle: String(payload.billingCycle || "MONTHLY"),
+              durationMonths: Math.max(1, Math.floor(Number(payload.durationMonths || 1) || 1)),
+              durationDays: Math.max(1, Math.floor(Number(payload.durationDays || 30) || 30)),
+              discountPercent: Math.max(0, Math.floor(Number(payload.discountPercent || 0) || 0)),
+              amountSoles: String(payload.amountSoles || ""),
               createdAtMs,
               updatedAtMs,
             });
@@ -494,6 +533,20 @@ export default function AdminPanel() {
           paymentMethod: String(user.latestSubscriptionRequestPaymentMethod || "TRANSFERENCIA"),
           notes: String(user.latestSubscriptionRequestNotes || "").trim(),
           unread: parseBooleanValue(user.latestSubscriptionRequestUnreadForAdmin),
+          billingCycle: String(user.latestSubscriptionRequestBillingCycle || "MONTHLY"),
+          durationMonths: Math.max(
+            1,
+            Math.floor(Number(user.latestSubscriptionRequestDurationMonths || 1) || 1),
+          ),
+          durationDays: Math.max(
+            1,
+            Math.floor(Number(user.latestSubscriptionRequestDurationDays || 30) || 30),
+          ),
+          discountPercent: Math.max(
+            0,
+            Math.floor(Number(user.latestSubscriptionRequestDiscountPercent || 0) || 0),
+          ),
+          amountSoles: String(user.latestSubscriptionRequestAmountSoles || ""),
           createdAtMs,
           updatedAtMs,
         };
@@ -682,6 +735,25 @@ export default function AdminPanel() {
                     <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
                       pago: {notification.paymentMethod}
                     </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                      ciclo: {notification.billingCycle || "MONTHLY"}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                      meses: {notification.durationMonths || 1}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                      dias: {notification.durationDays || 30}
+                    </span>
+                    {(notification.discountPercent || 0) > 0 ? (
+                      <span className="rounded-full border border-emerald-300/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-100">
+                        desc: {notification.discountPercent}%
+                      </span>
+                    ) : null}
+                    {notification.amountSoles ? (
+                      <span className="rounded-full border border-amber-300/30 bg-amber-500/10 px-2 py-0.5 text-amber-100">
+                        total: S/{notification.amountSoles}
+                      </span>
+                    ) : null}
                     <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
                       {new Date(notification.createdAtMs || notification.updatedAtMs).toLocaleString()}
                     </span>

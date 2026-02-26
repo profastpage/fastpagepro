@@ -4,6 +4,7 @@ import { ChangeEvent, ComponentType, useEffect, useMemo, useRef, useState } from
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import {
   buildDefaultLinkHubProfile,
   createLinkHubCatalogCategory,
@@ -438,6 +439,13 @@ export default function LinkHubPage() {
   const activePlan = subscriptionSummary?.plan || "FREE";
   const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
   const canCustomizeColors = Boolean(subscriptionSummary?.features?.advancedColorCustomization);
+  const publishedProjectsUsed = Number(subscriptionSummary?.usage?.publishedPages || 0);
+  const publishedProjectsLimit =
+    subscriptionSummary?.limits?.maxProjects ?? subscriptionSummary?.limits?.maxPublishedPages ?? null;
+  const publishedProjectsLabel =
+    publishedProjectsLimit == null
+      ? `${publishedProjectsUsed}`
+      : `${Math.min(publishedProjectsUsed, publishedProjectsLimit)}/${publishedProjectsLimit}`;
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -1502,6 +1510,48 @@ export default function LinkHubPage() {
       return;
     }
 
+    if (mode === "publish") {
+      let latestSummary = subscriptionSummary;
+      try {
+        latestSummary = await fetchCurrentSubscriptionSummary();
+      } catch {
+        // fallback to current hook snapshot when API is temporarily unavailable
+      }
+
+      const planStatus = String(latestSummary?.status || "").toUpperCase();
+      const maxProjects = latestSummary?.limits?.maxProjects ?? latestSummary?.limits?.maxPublishedPages ?? null;
+      const usedProjects = Number(latestSummary?.usage?.publishedPages || 0);
+      const alreadyPublished = Boolean(profile.published);
+      const nextProjects = alreadyPublished ? usedProjects : usedProjects + 1;
+
+      if (planStatus !== "ACTIVE") {
+        setMessage({
+          type: "error",
+          text: "Tu periodo activo termino. Renueva en Billing para reactivar y publicar proyectos.",
+        });
+        router.push("/dashboard/billing");
+        return;
+      }
+
+      if (maxProjects != null && nextProjects > maxProjects) {
+        setMessage({
+          type: "error",
+          text: `Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Renueva o sube de plan en Billing.`,
+        });
+        router.push("/dashboard/billing?requiredFeature=limit");
+        return;
+      }
+
+      if (!alreadyPublished && maxProjects != null && nextProjects >= 2) {
+        const confirmed = window.confirm(
+          `Se publicara como proyecto ${nextProjects}/${maxProjects}. Deseas continuar?`,
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+    }
+
     setIsSaving(true);
     setMessage(null);
 
@@ -1674,6 +1724,15 @@ export default function LinkHubPage() {
               visible={Boolean(subscriptionSummary?.expiringSoon)}
               daysRemaining={subscriptionSummary?.daysRemaining || 0}
             />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
+              Proyectos publicados: {publishedProjectsLabel}
+            </span>
+            <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
+              {subscriptionSummary?.isBusinessTrial ? "Dias de prueba" : "Dias de plan"}:{" "}
+              {Math.max(0, Number(subscriptionSummary?.daysRemaining || 0))}
+            </span>
           </div>
         </div>
 

@@ -96,7 +96,7 @@ function buildSummaryFromFirestore(
   const status: "ACTIVE" | "EXPIRED" | "PENDING" =
     expiredByDate && rawStatus === "ACTIVE" ? "EXPIRED" : rawStatus;
   const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
-  const expiringSoon = daysRemaining > 0 && daysRemaining <= 7;
+  const expiringSoon = daysRemaining > 0 && daysRemaining <= 5;
   const trialDaysTotal =
     plan === "BUSINESS"
       ? Math.max(0, Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)))
