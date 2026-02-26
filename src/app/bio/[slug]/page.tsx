@@ -602,19 +602,19 @@ export default function PublicBioPage() {
     const deliveryLabel =
       deliveryMethod && deliveryLabelMap[deliveryMethod]
         ? deliveryLabelMap[deliveryMethod]
-        : "No especificado";
+        : "Por confirmar";
     const paymentLabel =
       paymentMethod && paymentLabelMap[paymentMethod]
         ? paymentLabelMap[paymentMethod]
-        : "No especificado";
+        : "Por confirmar";
     const itemLines = cartItems
       .map((item, index) => {
         const itemSubtotal = item.unitPrice * item.quantity;
         return [
-          `${index + 1}. ${item.title} ${item.categoryName ? `(${item.categoryName})` : ""}`,
+          `${index + 1}. \u{1F37D}\u{FE0F} ${item.title} ${item.categoryName ? `(${item.categoryName})` : ""}`,
           `   Cantidad: ${item.quantity}`,
-          `   Precio base: ${formatSoles(item.unitPrice)}`,
-          `   Subtotal item: ${formatSoles(itemSubtotal)}`,
+          `   Precio unitario: ${formatSoles(item.unitPrice)}`,
+          `   Subtotal: ${formatSoles(itemSubtotal)}`,
         ].join("\n");
       })
       .join("\n\n");
@@ -626,31 +626,33 @@ export default function PublicBioPage() {
       .filter(Boolean)
       .join("\n");
 
-    const noteLine = note.trim() ? `\nNota adicional: ${note.trim()}` : "";
+    const noteLine = note.trim() ? `- Nota adicional: ${note.trim()}` : "";
+    const customerLine = customerName.trim() ? `- Nombre de referencia: ${customerName.trim()}` : "";
+    const customerPhoneLine = customerPhone.trim() ? `- Celular de referencia: ${customerPhone.trim()}` : "";
 
     return [
-      `Hola ${businessName}! 👋`,
+      `\u{1F44B} *Hola equipo ${businessName}!*`,
       "",
-      "Quiero realizar el siguiente pedido por favor 🙌",
+      "\u{1F4F2} Quiero realizar un pedido desde su Carta Digital.",
       "",
-      "🛒 *Detalle del pedido*",
+      "\u{1F9FE} *Detalle del pedido*",
       itemLines,
       "",
-      "📌 *Datos del cliente*",
-      `- Nombre: ${customerName.trim()}`,
-      `- Telefono: ${customerPhone.trim()}`,
+      "\u{1F4CC} *Datos para coordinar*",
+      customerLine,
+      customerPhoneLine,
       `- Entrega: ${deliveryLabel}`,
       `- Pago: ${paymentLabel}`,
-      noteLine ? noteLine : "",
+      noteLine,
       "",
-      "💰 *Resumen*",
+      "\u{1F4B0} *Resumen*",
       `- Subtotal: ${formatSoles(cartSubtotal)}`,
       discountLines || "- Descuentos: S/0.00 SOLES",
       `- Total: ${formatSoles(cartTotal)}`,
       "",
-      `🕒 Pedido generado: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+      `\u{1F552} Pedido generado: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
-      "Muchas gracias! 😊",
+      "\u{1F64F} Muchas gracias. Quedo atento(a) a su confirmacion. \u{2728}",
     ]
       .filter(Boolean)
       .join("\n");
@@ -659,26 +661,6 @@ export default function PublicBioPage() {
   function submitOrderWhatsapp() {
     if (cartItems.length === 0) {
       setCartError("Tu carrito esta vacio. Agrega productos para continuar.");
-      return;
-    }
-    if (!customerName.trim()) {
-      setCartError("Ingresa tu nombre para continuar.");
-      return;
-    }
-    if (!customerPhone.trim()) {
-      setCartError("Ingresa tu telefono para continuar.");
-      return;
-    }
-    if (!deliveryMethod) {
-      setCartError("Selecciona una opcion de entrega.");
-      return;
-    }
-    if (!paymentMethod) {
-      setCartError("Selecciona una forma de pago.");
-      return;
-    }
-    if (!acceptedTerms) {
-      setCartError("Debes aceptar los terminos y condiciones para enviar el pedido.");
       return;
     }
     if (!whatsappTargetDigits) {
@@ -692,7 +674,6 @@ export default function PublicBioPage() {
     setCartError("");
     setCartFeedback("Pedido listo. Te estamos redirigiendo a WhatsApp.");
   }
-
   async function handleShare() {
     if (!profile) return;
     const url = window.location.href;
@@ -1170,10 +1151,7 @@ export default function PublicBioPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      setIsCartOpen(true);
-                      setCheckoutStep("cart");
-                    }}
+                    onClick={submitOrderWhatsapp}
                     className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] ${buttonRadiusClass}`}
                     style={interactiveStyle}
                   >
@@ -1340,10 +1318,7 @@ export default function PublicBioPage() {
           cartCount={cartItemsCount}
           buttonShapeClass={`${buttonRadiusClass} md:hidden`}
           visible={activeTab === "catalog"}
-          onOpen={() => {
-            setIsCartOpen(true);
-            setCheckoutStep("cart");
-          }}
+          onOpen={submitOrderWhatsapp}
         />
       )}
 
