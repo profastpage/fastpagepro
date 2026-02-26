@@ -281,7 +281,7 @@ export default function Nav() {
                 aria-label="Cerrar menu"
               />
 
-              <aside className="absolute left-0 top-0 h-full w-[86%] max-w-sm border-r border-amber-400/25 bg-[linear-gradient(180deg,rgba(14,14,16,0.98),rgba(10,10,12,0.96))] px-6 pb-8 pt-24 shadow-[0_0_35px_rgba(251,191,36,0.2)] animate-in slide-in-from-left duration-300 overflow-y-auto">
+              <aside className="absolute left-0 top-0 h-full w-[82vw] max-w-[250px] border-r border-amber-400/25 bg-[linear-gradient(180deg,rgba(14,14,16,0.98),rgba(10,10,12,0.96))] px-5 pb-8 pt-24 shadow-[0_0_35px_rgba(251,191,36,0.2)] animate-in slide-in-from-left duration-300 overflow-y-auto">
                 <button
                   className="absolute top-4 right-4 rounded-lg border border-amber-400/30 bg-amber-400/10 p-2 text-amber-200 transition-colors hover:bg-amber-400/20"
                   onClick={() => setIsOpen(false)}
@@ -303,7 +303,7 @@ export default function Nav() {
                   </svg>
                 </button>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                   {navLinks.map((link) => (
                     <div key={link.href} className="space-y-2">
                       {link.locked ? (
@@ -313,7 +313,7 @@ export default function Nav() {
                             onClick={() =>
                               setMobileLockedOpen((current) => (current === link.href ? null : link.href))
                             }
-                            className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
+                            className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold leading-tight text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
                           >
                             <span>{link.name}</span>
                             <Lock className="h-4 w-4 text-amber-300" />
@@ -327,7 +327,7 @@ export default function Nav() {
                       ) : (
                         <Link
                           href={link.href}
-                          className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
+                          className="flex w-full items-center rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold leading-tight text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
                         >
                           {link.name}
                         </Link>

@@ -94,8 +94,8 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
   }, [cartProducts, deliveryMode, demo.title, total]);
 
   return (
-    <section className="space-y-6">
-      <article className="overflow-hidden rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-surface)]">
+    <section className="min-w-0 w-full space-y-6">
+      <article className="w-full overflow-hidden rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-surface)]">
         <div className="relative h-56 md:h-72">
           <DemoImage
             src={demo.coverImage}
@@ -126,7 +126,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
         </div>
       </article>
 
-      <section className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
+      <section className="w-full rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
           <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--fp-border)] px-3">
             <Search className="h-4 w-4 text-[var(--fp-muted)]" />
@@ -180,7 +180,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <section className="w-full min-w-0 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredProducts.map((product) => (
           <article
             key={product.id}
@@ -240,7 +240,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
         ))}
       </section>
 
-      <section className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
+      <section className="w-full rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
         <h3 className="text-xl font-black">Confianza</h3>
         <div className="mt-3 grid gap-2 md:grid-cols-4">
           <p className="rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-sm font-semibold">

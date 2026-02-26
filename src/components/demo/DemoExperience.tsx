@@ -81,7 +81,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
       className="min-h-screen overflow-x-hidden bg-[var(--fp-bg)] px-3 pb-28 pt-20 text-[var(--fp-text)] md:px-6 md:pt-28 lg:px-8"
     >
       <div className="mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="space-y-4">
+        <section className="min-w-0 space-y-4">
           <div className="grid gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3 sm:grid-cols-2">
             <Link
               href="/"
@@ -107,7 +107,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
           {demo.vertical === "services" ? <ServicesDemo demo={demo} /> : null}
         </section>
 
-        <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+        <aside className="min-w-0 space-y-4 xl:sticky xl:top-24 xl:self-start">
           <ThemePicker vertical={demo.vertical} value={themeId} onChange={setThemeId} />
           <section className="rounded-2xl border border-white/10 bg-black/40 p-4">
             <p className="text-sm font-bold text-white">Modo de demo</p>

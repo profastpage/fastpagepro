@@ -35,7 +35,7 @@ export default function StickyCTA({
       className={`fixed z-40 md:bottom-5 ${
         compactMobileLeft
           ? "left-3 right-[5.1rem] md:inset-x-0 md:px-3"
-          : "inset-x-0 px-3"
+          : "left-3 right-3 md:inset-x-0 md:px-3"
       } ${mobileBottomClass} ${hideOnMobile ? "hidden md:block" : ""}`}
     >
       <div

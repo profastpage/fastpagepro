@@ -994,3 +994,40 @@ o-scrollbar para eliminar barra horizontal gris.
 o-scrollbar para evitar barra visible.
   - boton flotante de carrito oculto en mobile para evitar superposicion; se mantiene en desktop.
 
+
+## Dashboard Mobile Nav Spacing + Width Fit (2026-02-26)
+
+- Componente ajustado: `src/components/Nav.tsx`.
+- Mejoras UX mobile:
+  - los items del menu lateral ahora renderizan a ancho completo (`w-full`) para evitar superposicion visual de tarjetas.
+  - se normalizo `leading` y separacion vertical entre filas para mantener lectura clara en listas largas.
+  - el panel lateral mobile se limito a un ancho maximo de `250px` para mantener el despliegue compacto y consistente.
+- Plan locks:
+  - se mantiene sin cambios la logica de candados para funciones restringidas por plan.
+
+## Link Hub Theme Suggestion + White Background Preview Sync (2026-02-26)
+
+- Ruta privada ajustada: `/linkhub`.
+- Seccion `Temas oficiales · Carta Digital`:
+  - accion `Sugerir por rubro` ahora aplica el tema sugerido y deja `Fondo blanco` activo por defecto.
+- Preview mobile del editor:
+  - cuando `Fondo blanco` esta activo, textos principales e inactivos pasan a paleta oscura legible.
+  - se mantienen acentos del tema seleccionado (primary/accent/chips activos) para conservar identidad visual.
+- Persistencia:
+  - `cartaBackgroundMode` y `cartaThemeId` quedan listos para guardado/publicacion sin cambios breaking.
+
+## Ecommerce Demo + Store Dashboard Frame Alignment (2026-02-26)
+
+- Rutas/Componentes ajustados:
+  - `src/components/demo/DemoExperience.tsx`
+  - `src/components/demo/EcommerceDemo.tsx`
+  - `src/components/demo/StickyCTA.tsx`
+  - `src/app/store/page.tsx`
+- Objetivo UX:
+  - mantener encuadre horizontal simetrico en mobile (borde derecho alineado al izquierdo) en demos `Online Store` y en dashboard `Tienda Online`.
+- Cambios aplicados:
+  - `min-w-0` y `w-full` en contenedores clave para prevenir desbordes laterales en grillas/cards.
+  - CTA sticky mobile normalizado a `left/right` simetricos para evitar desfase lateral.
+  - preview mobile del dashboard con `overflow-x-clip` y contenedor `min-w-0`.
+  - grilla de productos mobile del dashboard ajustada a `sm:grid-cols-2` (evita forzar 2 columnas en anchos angostos).
+  - carrusel de ofertas mobile con padding horizontal simetrico.

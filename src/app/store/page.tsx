@@ -753,7 +753,7 @@ function StoreEditorPage() {
             <div className="mb-4 rounded-2xl border bg-white px-4 py-3 text-xs font-semibold" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>
               Haz clic en cualquier campo para editar. Encontraras texto base de marketing listo para personalizar y fotos demo para reemplazar.
             </div>
-            <div className={viewMode === "mobile" ? "mx-auto w-full max-w-[430px] overflow-x-hidden" : "w-full"}>
+            <div className={viewMode === "mobile" ? "mx-auto w-full min-w-0 max-w-[430px] overflow-x-clip" : "w-full min-w-0"}>
               <div className="overflow-hidden rounded-[30px] border bg-[var(--vs-surface)]" style={{ borderColor: "var(--vs-border-strong)" }}>
                 <div className="px-4 py-2 text-center text-sm font-bold text-white" style={{ background: "var(--vs-dark)" }}>
                   <input value={content.topStripText || ""} onChange={(e) => setContent({ topStripText: e.target.value })} placeholder="Edita aqui: promo principal" className="w-full bg-transparent text-center outline-none" />
@@ -781,7 +781,7 @@ function StoreEditorPage() {
 
                   <div className="mt-8">
                     <input value={content.offerSectionTitle || ""} onChange={(e) => setContent({ offerSectionTitle: e.target.value })} placeholder="Edita aqui: titulo de ofertas" className="w-full bg-transparent text-4xl font-black outline-none" />
-                    <div className={viewMode === "mobile" ? "mt-4 grid grid-flow-col auto-cols-[85%] min-[430px]:auto-cols-[48%] gap-3 overflow-x-auto pb-2 pr-1 snap-x snap-mandatory" : "mt-4 grid grid-cols-3 gap-4"}>
+                    <div className={viewMode === "mobile" ? "mt-4 grid grid-flow-col auto-cols-[85%] min-[430px]:auto-cols-[48%] gap-3 overflow-x-auto px-1 pb-2 snap-x snap-mandatory" : "mt-4 grid grid-cols-3 gap-4"}>
                       {offerProducts.map((p) => (
                         <article key={`offer-${p.id}`} className={`${viewMode === "mobile" ? "snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
                           <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: "var(--vs-accent)" }}>{p.badge || "Oferta"}</span></div>
@@ -797,7 +797,7 @@ function StoreEditorPage() {
                     <div className="mt-3 flex items-center justify-between"><p className="text-sm font-semibold" style={{ color: "var(--vs-muted)" }}>Total: {filteredProducts.length} productos</p><select value={sortBy} onChange={(e) => setSortBy(e.target.value as VisualSort)} className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none" style={{ borderColor: "var(--vs-border)" }}><option value="featured">Ordenar por</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option><option value="nameAsc">Nombre A-Z</option></select></div>
                   </div>
 
-                  <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-1 min-[390px]:grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
+                  <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
                     {filteredProducts.map((p) => (
                       <article key={p.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "#edf2f7" }}>
                         <div className="relative h-36 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">Sube foto</div>}<label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img })); e.target.value = ""; }} /></label></div>
@@ -823,7 +823,7 @@ function StoreEditorPage() {
             </div>
           </section>
 
-          <aside className="order-2 space-y-4 self-start xl:order-1 xl:sticky xl:top-[150px]">
+          <aside className="order-2 min-w-0 space-y-4 self-start xl:order-1 xl:sticky xl:top-[150px]">
             <EditorSidebar
               contentTab={<p className="text-xs text-zinc-600">Contenido editable rapido + panel avanzado sincronizados.</p>}
               designTab={<p className="text-xs text-zinc-600">Tema, colores y layout desktop/mobile.</p>}

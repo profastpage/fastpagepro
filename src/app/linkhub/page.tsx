@@ -677,13 +677,33 @@ export default function LinkHubPage() {
       activeCartaTheme.tokens.shadow,
     ],
   );
+  const previewTextBase = useMemo(
+    () => (useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.text),
+    [activeCartaTheme.tokens.text, useWhiteCartaBackground],
+  );
+  const previewTextMuted = useMemo(
+    () => (useWhiteCartaBackground ? "#64748b" : activeCartaTheme.tokens.mutedText),
+    [activeCartaTheme.tokens.mutedText, useWhiteCartaBackground],
+  );
+  const previewNavText = useMemo(
+    () => (useWhiteCartaBackground ? "#64748b" : activeCartaTheme.tokens.navText),
+    [activeCartaTheme.tokens.navText, useWhiteCartaBackground],
+  );
+  const previewPlaceholderText = useMemo(
+    () => (useWhiteCartaBackground ? "#94a3b8" : activeCartaTheme.tokens.placeholder),
+    [activeCartaTheme.tokens.placeholder, useWhiteCartaBackground],
+  );
+  const previewInputText = useMemo(
+    () => (useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.inputText),
+    [activeCartaTheme.tokens.inputText, useWhiteCartaBackground],
+  );
   const previewSearchStyle = useMemo(
     () => ({
       borderColor: activeCartaTheme.tokens.inputBorder,
       background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.inputBg,
-      color: useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.inputText,
+      color: previewInputText,
     }),
-    [activeCartaTheme.tokens.inputBg, activeCartaTheme.tokens.inputBorder, activeCartaTheme.tokens.inputText, useWhiteCartaBackground],
+    [activeCartaTheme.tokens.inputBg, activeCartaTheme.tokens.inputBorder, previewInputText, useWhiteCartaBackground],
   );
   const previewBottomNavStyle = useMemo(
     () => ({
@@ -2254,17 +2274,22 @@ export default function LinkHubPage() {
                     <button
                       type="button"
                       className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-100 hover:border-amber-300/40 hover:text-amber-100"
-                      onClick={() =>
-                        patchProfile(
-                          "cartaThemeId",
-                          recommendCartaThemeIdByRubro(
-                            profile.categoryLabel ||
-                              (profile.businessType === "restaurant"
-                                ? "Restaurante / Cafeteria"
-                                : "Tienda / General"),
-                          ),
-                        )
-                      }
+                      onClick={() => {
+                        const suggestedThemeId = recommendCartaThemeIdByRubro(
+                          profile.categoryLabel ||
+                            (profile.businessType === "restaurant"
+                              ? "Restaurante / Cafeteria"
+                              : "Tienda / General"),
+                        );
+                        setProfile((prev) => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            cartaThemeId: suggestedThemeId,
+                            cartaBackgroundMode: "white",
+                          };
+                        });
+                      }}
                     >
                       Sugerir por rubro
                     </button>
@@ -2578,7 +2603,7 @@ export default function LinkHubPage() {
           <aside className="min-w-0 h-fit xl:sticky xl:top-28 xl:w-[420px] xl:justify-self-end">
             <div className="rounded-[2rem] border p-3.5 xl:p-3" style={previewShellStyle}>
               <div className="overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
-                <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: activeCartaTheme.tokens.mutedText }}>
+                <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: previewTextMuted }}>
                   Preview Mobile
                 </p>
 
@@ -2595,12 +2620,12 @@ export default function LinkHubPage() {
                       ) : (
                         <div
                           className="h-8 w-8 rounded-full border flex items-center justify-center text-[11px] font-black"
-                          style={{ borderColor: previewMenuBorder, background: previewMenuGradientSoft, color: activeCartaTheme.tokens.text }}
+                          style={{ borderColor: previewMenuBorder, background: previewMenuGradientSoft, color: previewTextBase }}
                         >
                           {(profile.displayName || "N").slice(0, 1).toUpperCase()}
                         </div>
                       )}
-                      <p className="truncate text-xs font-semibold" style={{ color: activeCartaTheme.tokens.text }}>
+                      <p className="truncate text-xs font-semibold" style={{ color: previewTextBase }}>
                         {profile.displayName || "Nombre del negocio"}
                       </p>
                     </div>
@@ -2609,8 +2634,10 @@ export default function LinkHubPage() {
                       className="inline-flex h-8 w-8 items-center justify-center rounded-lg border"
                       style={{
                         borderColor: previewMenuBorder,
-                        background: activeCartaTheme.tokens.buttonSecondaryBg,
-                        color: activeCartaTheme.tokens.text,
+                        background: useWhiteCartaBackground
+                          ? previewMenuGradientSoft
+                          : activeCartaTheme.tokens.buttonSecondaryBg,
+                        color: previewTextBase,
                       }}
                       aria-label="Compartir"
                     >
@@ -2645,7 +2672,7 @@ export default function LinkHubPage() {
                 </div>
 
                 <div className="px-4 pt-10 pb-2 text-center">
-                  <h3 className="text-[1.55rem] font-black leading-tight" style={{ color: activeCartaTheme.tokens.text }}>
+                  <h3 className="text-[1.55rem] font-black leading-tight" style={{ color: previewTextBase }}>
                     {highlightLastWord(profile.displayName || "Tu negocio", activeCartaTheme.tokens.primary)}
                   </h3>
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: activeCartaTheme.tokens.accent }}>
@@ -2658,13 +2685,13 @@ export default function LinkHubPage() {
                     {catalogLabel || "Carta"}
                   </p>
                   <label className="mt-2 flex items-center gap-2 rounded-[0.95rem] border px-3 py-2" style={previewSearchStyle}>
-                    <Search className="h-3.5 w-3.5" style={{ color: activeCartaTheme.tokens.placeholder }} />
+                    <Search className="h-3.5 w-3.5" style={{ color: previewPlaceholderText }} />
                     <input
                       value={previewSearch}
                       onChange={(event) => setPreviewSearch(event.target.value)}
                       placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
                       className="w-full bg-transparent text-xs focus:outline-none"
-                      style={{ color: activeCartaTheme.tokens.inputText }}
+                      style={{ color: previewInputText }}
                     />
                   </label>
                   <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
@@ -2692,16 +2719,16 @@ export default function LinkHubPage() {
                           ) : (
                             <div
                               className="h-14 w-14 rounded-[0.75rem] border flex items-center justify-center text-[9px] font-black"
-                              style={{ borderColor: previewMenuBorder, color: activeCartaTheme.tokens.mutedText }}
+                              style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
                             >
                               ITEM
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13px] font-extrabold" style={{ color: activeCartaTheme.tokens.text }}>
+                            <p className="truncate text-[13px] font-extrabold" style={{ color: previewTextBase }}>
                               {item.title || "Producto"}
                             </p>
-                            <p className="line-clamp-1 text-[11px]" style={{ color: activeCartaTheme.tokens.mutedText }}>
+                            <p className="line-clamp-1 text-[11px]" style={{ color: previewTextMuted }}>
                               {item.description || "Descripcion comercial"}
                             </p>
                             <p className="mt-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
@@ -2714,7 +2741,10 @@ export default function LinkHubPage() {
                   ) : (
                     <div
                       className="rounded-[0.95rem] border border-dashed px-3 py-4 text-center text-[11px]"
-                      style={{ borderColor: activeCartaTheme.tokens.border, color: activeCartaTheme.tokens.mutedText }}
+                      style={{
+                        borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.border,
+                        color: previewTextMuted,
+                      }}
                     >
                       No hay items para el filtro actual.
                     </div>
@@ -2726,7 +2756,7 @@ export default function LinkHubPage() {
                     <button
                       type="button"
                       className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
-                      style={{ color: activeCartaTheme.tokens.navText }}
+                      style={{ color: previewNavText }}
                     >
                       {profile.sectionLabels.contact}
                     </button>
@@ -2736,7 +2766,7 @@ export default function LinkHubPage() {
                     <button
                       type="button"
                       className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
-                      style={{ color: activeCartaTheme.tokens.navText }}
+                      style={{ color: previewNavText }}
                     >
                       {profile.sectionLabels.location}
                     </button>
