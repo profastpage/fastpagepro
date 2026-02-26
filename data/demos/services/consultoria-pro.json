@@ -1,0 +1,17 @@
+﻿{
+  "vertical": "services",
+  "slug": "consultoria-pro",
+  "title": "Consultoria Pro",
+  "subtitle": "Landing para generar reuniones calificadas",
+  "description": "Flujo para captar leads y cerrar diagnosticos por WhatsApp.",
+  "coverImage": "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "corporateLight",
+  "heroKicker": "Escala tu negocio",
+  "whatsappNumber": "51994450011",
+  "bullets": ["Diagnostico en 20 minutos", "Estrategia orientada a ROI", "Implementacion con roadmap"],
+  "cards": [
+    {"id":"sv-1","title":"Auditoria de conversion","summary":"Detecta cuellos de botella y mejora tus CTA.","cta":"Solicitar auditoria"},
+    {"id":"sv-2","title":"Plan comercial 90 dias","summary":"Define prioridades de crecimiento y ejecucion.","cta":"Ver plan"},
+    {"id":"sv-3","title":"Acompañamiento semanal","summary":"Seguimiento y optimizacion continua.","cta":"Agendar llamada"}
+  ]
+}

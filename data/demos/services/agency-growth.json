@@ -1,0 +1,17 @@
+﻿{
+  "vertical": "services",
+  "slug": "agency-growth",
+  "title": "Agency Growth",
+  "subtitle": "Landing de alto impacto para agencias",
+  "description": "Muestra casos, propuesta y CTA directo para cerrar clientes.",
+  "coverImage": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "agencyBold",
+  "heroKicker": "Marketing performance",
+  "whatsappNumber": "51995522880",
+  "bullets": ["Estrategia full funnel", "Creativos orientados a conversion", "Reportes semanales claros"],
+  "cards": [
+    {"id":"ag-1","title":"Ads + landing + CRM","summary":"Embudo completo para generar ventas.","cta":"Ver metodologia"},
+    {"id":"ag-2","title":"Escalado de ecommerce","summary":"Crecimiento rentable con data real.","cta":"Solicitar demo"},
+    {"id":"ag-3","title":"Outsourcing de growth","summary":"Equipo senior sin contratar interno.","cta":"Hablar con ventas"}
+  ]
+}

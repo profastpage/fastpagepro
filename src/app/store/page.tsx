@@ -9,6 +9,8 @@ import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import { resolveStoreSlug, sanitizeStoreSlug } from "@/lib/publicStorefront";
 import { getVisualStoreTheme, getVisualStoreVars } from "@/lib/storeVisualTheme";
+import { getThemesByVertical } from "@/lib/themes";
+import { normalizeVertical, type BusinessVertical } from "@/lib/vertical";
 import {
   generateStorefrontHtml,
   STORE_THEMES,
@@ -64,10 +66,11 @@ type VisualContent = NonNullable<StoreConfig["content"]>;
 type StoreEditorSnapshot = { config: StoreConfig; products: StoreProduct[] };
 
 const DEFAULT_CONFIG: StoreConfig = {
+  vertical: "ecommerce",
   storeName: "Edita aqui: Nombre de tu tienda",
   tagline: "Escribe aqui una propuesta de valor breve para vender mas.",
   currency: "PEN",
-  themeId: "ruby",
+  themeId: "cleanStore",
   primaryCta: "Comprar ahora",
   supportWhatsapp: "51999999999",
   customRgb: {
@@ -236,6 +239,7 @@ function mergeConfigWithDefaults(input?: StoreConfig, slug?: string): StoreConfi
     },
   };
   if (slug) merged.storeSlug = slug;
+  merged.vertical = normalizeVertical(merged.vertical || "ecommerce");
   return merged;
 }
 
@@ -391,12 +395,18 @@ function StoreEditorPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncWarning, setSyncWarning] = useState<string | null>(null);
 
   const liveConfig = editorState.previewData?.config || config;
   const liveProducts = editorState.previewData?.products || products;
   const content = (liveConfig.content || {}) as VisualContent;
   const themeVars = getVisualStoreVars(liveConfig);
   const visualTheme = getVisualStoreTheme(liveConfig);
+  const currentVertical = normalizeVertical(liveConfig.vertical || "ecommerce");
+  const verticalThemeOptions = useMemo(
+    () => getThemesByVertical(currentVertical),
+    [currentVertical],
+  );
   const publicStoreSlug = useMemo(() => resolveStoreSlug(liveConfig, projectId || "draft"), [liveConfig, projectId]);
 
   const categories = useMemo(() => {
@@ -535,6 +545,12 @@ function StoreEditorPage() {
     }));
   };
 
+  useEffect(() => {
+    if (!verticalThemeOptions.length) return;
+    if (verticalThemeOptions.some((theme) => theme.id === liveConfig.themeId)) return;
+    applyThemePreset(verticalThemeOptions[0].id as StoreThemeId);
+  }, [liveConfig.themeId, verticalThemeOptions]);
+
   const updateProduct = (id: string, patch: Partial<StoreProduct>) => {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   };
@@ -560,7 +576,7 @@ function StoreEditorPage() {
   };
 
   const removeProduct = (id: string) => {
-    if (!confirm("¿Eliminar producto?")) return;
+    if (!confirm("Eliminar producto?")) return;
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
@@ -586,6 +602,7 @@ function StoreEditorPage() {
     if (saving || publishing) return;
     publishNow ? setPublishing(true) : setSaving(true);
     setError(null);
+    if (publishNow) setSyncWarning(null);
     try {
       if (authLoading) throw new Error("Validando sesión...");
       if (!user?.uid) throw new Error("Debes iniciar sesión.");
@@ -669,6 +686,14 @@ function StoreEditorPage() {
         setTimeout(() => setSavedToast(false), 1300);
       }
     } catch (e: any) {
+      if (!publishNow && isPermissionDeniedError(e)) {
+        setSyncWarning(
+          "Sin permisos de escritura en Firestore. Los cambios se mantienen localmente hasta iniciar sesion con una cuenta autorizada.",
+        );
+        setError(null);
+        setEditorError(null);
+        return;
+      }
       setError(e?.message || "No se pudo guardar.");
       setEditorError(e?.message || "No se pudo guardar.");
     } finally {
@@ -678,7 +703,7 @@ function StoreEditorPage() {
   };
 
   useAutosave<StoreEditorSnapshot>({
-    enabled: Boolean(user?.uid) && !loadingProject,
+    enabled: Boolean(user?.uid) && !loadingProject && !syncWarning,
     onSave: async () => {
       await saveProject(false);
     },
@@ -713,7 +738,7 @@ function StoreEditorPage() {
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-xl border bg-white p-1" style={{ borderColor: "var(--vs-border)" }}>
                 <button onClick={() => setViewMode("desktop")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "desktop" ? "text-white" : "text-slate-700"}`} style={viewMode === "desktop" ? { background: "var(--vs-dark)" } : undefined}><Monitor className="h-4 w-4" />PC</button>
-                <button onClick={() => setViewMode("mobile")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "mobile" ? "text-white" : "text-slate-700"}`} style={viewMode === "mobile" ? { background: "var(--vs-dark)" } : undefined}><Smartphone className="h-4 w-4" />Móvil</button>
+                <button onClick={() => setViewMode("mobile")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "mobile" ? "text-white" : "text-slate-700"}`} style={viewMode === "mobile" ? { background: "var(--vs-dark)" } : undefined}><Smartphone className="h-4 w-4" />Movil</button>
               </div>
               <button onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><ExternalLink className="h-4 w-4" />Ver tienda</button>
               <button onClick={applyMarketingTemplate} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><Wand2 className="h-4 w-4" />Plantilla marketing</button>
@@ -807,22 +832,67 @@ function StoreEditorPage() {
               settingsTab={<p className="text-xs text-zinc-600">Autosave inteligente activo.</p>}
             />
             <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
-              <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinámico</h3>
-              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Blanco + acentos personalizables.</p>
-              <div className="mt-3 grid grid-cols-2 gap-2">{STORE_THEMES.map((t) => <button key={t.id} onClick={() => applyThemePreset(t.id as StoreThemeId)} className="rounded-xl border px-3 py-2 text-left text-xs font-bold" style={config.themeId === t.id ? { borderColor: "var(--vs-accent)", background: "color-mix(in srgb,var(--vs-accent) 12%,white)" } : { borderColor: "var(--vs-border)" }}>{t.name}</button>)}</div>
+              <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinamico</h3>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Selecciona rubro y aplica temas relacionados.</p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {(["restaurant", "ecommerce", "services"] as BusinessVertical[]).map((vertical) => (
+                  <button
+                    key={vertical}
+                    onClick={() =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        vertical,
+                      }))
+                    }
+                    className="rounded-xl border px-2 py-2 text-xs font-bold capitalize"
+                    style={
+                      currentVertical === vertical
+                        ? {
+                            borderColor: "var(--vs-accent)",
+                            background: "color-mix(in srgb,var(--vs-accent) 12%,white)",
+                          }
+                        : { borderColor: "var(--vs-border)" }
+                    }
+                  >
+                    {vertical}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {verticalThemeOptions.map((themeOption) => (
+                  <button
+                    key={themeOption.id}
+                    onClick={() => applyThemePreset(themeOption.id as StoreThemeId)}
+                    className="rounded-xl border px-3 py-2 text-left text-xs font-bold"
+                    style={
+                      config.themeId === themeOption.id
+                        ? {
+                            borderColor: "var(--vs-accent)",
+                            background: "color-mix(in srgb,var(--vs-accent) 12%,white)",
+                          }
+                        : { borderColor: "var(--vs-border)" }
+                    }
+                  >
+                    {themeOption.name}
+                  </button>
+                ))}
+              </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <label className="text-xs font-semibold">Primario<input type="color" value={rgbToHex(config.customRgb?.accent)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
                 <label className="text-xs font-semibold">Secundario<input type="color" value={rgbToHex(config.customRgb?.accent2)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent2: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
               </div>
-              <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Tema activo: <b>{visualTheme.label}</b><br />URL pública: <b>/t/{publicStoreSlug}</b></div>
+              <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>/t/{publicStoreSlug}</b></div>
             </section>
           </aside>
         </div>
       </div>
 
       {error && <div className="fixed bottom-20 left-1/2 z-50 w-[min(92vw,460px)] -translate-x-1/2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 shadow-xl md:bottom-6 md:left-auto md:right-24 md:w-auto md:translate-x-0">{error}</div>}
+      {syncWarning && <div className="fixed bottom-20 left-1/2 z-50 w-[min(92vw,520px)] -translate-x-1/2 rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm font-semibold text-amber-700 shadow-xl md:bottom-6 md:left-auto md:right-24 md:w-auto md:translate-x-0">{syncWarning}</div>}
       {savedToast && <div className="fixed bottom-5 left-5 z-50 rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-black text-emerald-700 shadow-xl">Cambios guardados</div>}
       {loadingProject && <div className="fixed inset-0 z-50 grid place-items-center bg-black/30"><div className="rounded-2xl bg-white p-6 shadow-2xl"><Loader2 className="h-7 w-7 animate-spin" /></div></div>}
     </div>
   );
 }
+
+

@@ -18,6 +18,12 @@ import {
   fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import {
+  normalizeVertical,
+  persistVerticalChoice,
+  readVerticalFromClient,
+} from "@/lib/vertical";
+import { persistUtmFromUrl, trackGrowthEvent } from "@/lib/analytics";
 
 const DEFAULT_AUTH_CANONICAL_HOST = "www.fastpagepro.com";
 const CANONICAL_AUTH_HOST = (
@@ -69,6 +75,7 @@ function AuthContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleError, setIsGoogleError] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const preferredVertical = normalizeVertical(searchParams.get("vertical"));
 
   const isCanonicalRedirectNeeded = () => {
     if (typeof window === "undefined") return false;
@@ -88,10 +95,16 @@ function AuthContent() {
   };
 
   useEffect(() => {
+    persistUtmFromUrl(searchParams);
+    persistVerticalChoice(preferredVertical);
     if (searchParams.get("tab") === "register") {
       setTab("register");
+      void trackGrowthEvent("start_signup", {
+        vertical: preferredVertical,
+        location: "auth_register_tab",
+      });
     }
-  }, [searchParams]);
+  }, [preferredVertical, searchParams]);
 
   useEffect(() => {
     if (!isCanonicalRedirectNeeded()) return;
@@ -104,15 +117,27 @@ function AuthContent() {
     setTimeout(() => setToast(""), 3000);
   };
 
-  // Función centralizada para sincronizar usuario con Firestore
-  const syncUserToFirestore = async (user: any) => {
+  const resolvePostAuthTarget = (email?: string | null) => {
+    if (email === "afiliadosprobusiness@gmail.com") return "/admin";
+    const fromQuery = searchParams.get("vertical");
+    const hasStoredVertical =
+      typeof window !== "undefined" && Boolean(window.localStorage.getItem("fp_vertical"));
+    if (!fromQuery && !hasStoredVertical) return "/hub";
+    const resolvedVertical = normalizeVertical(fromQuery || readVerticalFromClient());
+    return `/app/new?vertical=${resolvedVertical}`;
+  };
+
+  // Funcion centralizada para sincronizar usuario con Firestore
+  const syncUserToFirestore = async (user: any, verticalHint?: string) => {
     if (!user || !user.uid) return;
     
     try {
       console.log("Intentando sincronizar en Firestore:", user.email);
       const userRef = doc(db, "users", user.uid);
       const is_admin = user.email === "afiliadosprobusiness@gmail.com";
-      
+      const resolvedVertical = normalizeVertical(
+        verticalHint || searchParams.get("vertical") || readVerticalFromClient(),
+      );
       const userData = {
         uid: user.uid,
         email: user.email,
@@ -122,6 +147,8 @@ function AuthContent() {
         createdAt: user.metadata?.createdAt ? parseInt(user.metadata.createdAt) : Date.now(),
         status: "active",
         role: is_admin ? "admin" : "user",
+        vertical: resolvedVertical,
+        businessType: resolvedVertical,
       };
 
       // Aumentamos el timeout a 10 segundos
@@ -131,13 +158,13 @@ function AuthContent() {
       );
 
       await Promise.race([savePromise, timeoutPromise]);
-      console.log("Sincronización exitosa para:", user.email);
+      console.log("Sincronizacion exitosa para:", user.email);
       
-      // Actualizar sesión local
+      // Actualizar sesion local
       localStorage.setItem("fp_session", JSON.stringify(userData));
       return true;
     } catch (error: any) {
-      console.error("Error detallado de sincronización:", error);
+      console.error("Error detallado de sincronizacion:", error);
       // Fallback local
       localStorage.setItem("fp_session", JSON.stringify({
         uid: user.uid,
@@ -175,21 +202,25 @@ function AuthContent() {
       await updateProfile(user, { displayName: name });
 
       // 3. Sincronizar con Firestore - Esperar a que se complete para asegurar que el Admin lo vea
-      await syncUserToFirestore(user);
+      await syncUserToFirestore(user, preferredVertical);
 
-      showToast("¡Cuenta creada exitosamente!");
+      showToast("Cuenta creada exitosamente!");
       
-      // Redirección basada en el rol
-      const target = email === "afiliadosprobusiness@gmail.com" ? "/admin" : "/hub";
+      // Redireccion basada en el rol
+      const target = resolvePostAuthTarget(email);
+      void trackGrowthEvent("signup_complete", {
+        vertical: preferredVertical,
+        location: "auth_email_register",
+      });
       setTimeout(() => router.push(target), 1000);
     } catch (error: any) {
       console.error(error);
       if (error.code === "auth/email-already-in-use") {
-        showToast("El email ya está registrado");
+        showToast("El email ya esta registrado");
       } else if (error.code === "auth/weak-password") {
-        showToast("La contraseña es muy débil (mínimo 6 caracteres)");
+        showToast("La contrasena es muy debil (minimo 6 caracteres)");
       } else if (error.code === "auth/configuration-not-found") {
-        showToast("Error de configuración: Habilita Authentication en Firebase Console");
+        showToast("Error de configuracion: Habilita Authentication en Firebase Console");
       } else {
         showToast("Error: " + error.message);
       }
@@ -205,7 +236,7 @@ function AuthContent() {
     const password = String(form.get("password") || "");
 
     if (!email || !password) {
-      showToast("Ingresa email y contraseña");
+      showToast("Ingresa email y contrasena");
       return;
     }
 
@@ -217,14 +248,10 @@ function AuthContent() {
       );
       const user = userCredential.user;
 
-      // Sincronización prioritaria antes de redireccionar
-      await syncUserToFirestore(user);
+      // Sincronizacion prioritaria antes de redireccionar
+      await syncUserToFirestore(user, preferredVertical);
 
-      if (user.email === "afiliadosprobusiness@gmail.com") {
-        router.push("/admin");
-      } else {
-        router.push("/hub");
-      }
+      router.push(resolvePostAuthTarget(user.email));
     } catch (error: any) {
       console.error(error);
 
@@ -233,12 +260,12 @@ function AuthContent() {
         const methods = await fetchSignInMethodsForEmail(auth, email);
         if (methods.includes("google.com") && !methods.includes("password")) {
           setIsGoogleError(true);
-          showToast("¡Usa Google! Tu cuenta está vinculada a Google 👆 🚫");
+          showToast("Usa Google. Tu cuenta esta vinculada a Google.");
           setTimeout(() => setIsGoogleError(false), 3000);
           return;
         }
       } catch (e) {
-        // Ignorar error de fetchSignInMethods (puede fallar por políticas de privacidad)
+        // Ignorar error de fetchSignInMethods (puede fallar por politicas de privacidad)
       }
 
       if (
@@ -246,9 +273,9 @@ function AuthContent() {
         error.code === "auth/wrong-password" ||
         error.code === "auth/invalid-credential"
       ) {
-        showToast("Credenciales inválidas. Si usaste Google, usa el botón de abajo. ❌");
+        showToast("Credenciales invalidas. Si usaste Google, usa el boton de abajo.");
       } else {
-        showToast("Error al iniciar sesión: " + error.message + " ⚠️");
+        showToast("Error al iniciar sesion: " + error.message);
       }
     }
   };
@@ -257,15 +284,11 @@ function AuthContent() {
     // Check if user is already logged in
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Sincronización prioritaria
-        await syncUserToFirestore(user);
+        // Sincronizacion prioritaria
+        await syncUserToFirestore(user, preferredVertical);
 
-        // Redirección inmediata después de asegurar datos
-        if (user.email === "afiliadosprobusiness@gmail.com") {
-          router.push("/admin");
-        } else {
-          router.push("/hub");
-        }
+        // Redireccion inmediata despues de asegurar datos
+        router.push(resolvePostAuthTarget(user.email));
       }
     });
 
@@ -273,14 +296,15 @@ function AuthContent() {
       try {
         const result = await getRedirectResult(auth);
         if (result?.user) {
-          // Sincronización prioritaria
-          await syncUserToFirestore(result.user);
-          
-          if (result.user.email === "afiliadosprobusiness@gmail.com") {
-            router.push("/admin");
-          } else {
-            router.push("/hub");
+          // Sincronizacion prioritaria
+          await syncUserToFirestore(result.user, preferredVertical);
+          if (tab === "register") {
+            void trackGrowthEvent("signup_complete", {
+              vertical: preferredVertical,
+              location: "auth_google_redirect",
+            });
           }
+          router.push(resolvePostAuthTarget(result.user.email));
         }
       } catch (error: any) {
         console.error("Redirect Error:", error);
@@ -288,11 +312,11 @@ function AuthContent() {
     };
     checkRedirect();
     return () => unsubscribe();
-  }, [router]);
+  }, [preferredVertical, router, tab]);
 
   const handleGoogleLogin = async () => {
     if (isCanonicalRedirectNeeded()) {
-      showToast("Redirigiendo para iniciar sesión con Google...");
+      showToast("Redirigiendo para iniciar sesion con Google...");
       setTimeout(() => redirectToCanonicalAuthHost(), 500);
       return;
     }
@@ -304,11 +328,17 @@ function AuthContent() {
       // Intentamos con Popup primero
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
-        // Sincronización prioritaria (esperamos a que se guarde en Firestore)
-        await syncUserToFirestore(result.user);
+        // Sincronizacion prioritaria (esperamos a que se guarde en Firestore)
+        await syncUserToFirestore(result.user, preferredVertical);
+        if (tab === "register") {
+          void trackGrowthEvent("signup_complete", {
+            vertical: preferredVertical,
+            location: "auth_google_popup",
+          });
+        }
 
-        // Forzar redirección inmediata
-        const target = result.user.email === "afiliadosprobusiness@gmail.com" ? "/admin" : "/hub";
+        // Forzar redireccion inmediata
+        const target = resolvePostAuthTarget(result.user.email);
         window.location.href = target;
       }
     } catch (error: any) {
@@ -322,13 +352,13 @@ function AuthContent() {
           showToast(`Dominio no autorizado en Firebase. Agrega en Authorized domains: ${RECOMMENDED_FIREBASE_AUTH_DOMAINS.join(", ")}`);
         }
       } else if (error.code === 'auth/popup-blocked') {
-        showToast("El navegador bloqueó la ventana emergente. Por favor, habilítala.");
+        showToast("El navegador bloqueo la ventana emergente. Por favor, habilitala.");
       } else if (error.code === 'auth/cancelled-popup-request') {
         // Ignorar
       } else if (error.code === 'auth/popup-closed-by-user') {
-        showToast("Inicio de sesión cancelado.");
+        showToast("Inicio de sesion cancelado.");
       } else if (error.message?.includes('Cross-Origin-Opener-Policy')) {
-        console.log("Detectado error COOP, intentando redirección...");
+        console.log("Detectado error COOP, intentando redireccion...");
         try {
           const provider = new GoogleAuthProvider();
           await signInWithRedirect(auth, provider);
@@ -341,7 +371,7 @@ function AuthContent() {
           const provider = new GoogleAuthProvider();
           await signInWithRedirect(auth, provider);
         } catch (redirectError: any) {
-          showToast("Error al iniciar sesión: " + (error.message || "Error desconocido"));
+          showToast("Error al iniciar sesion: " + (error.message || "Error desconocido"));
         }
       }
     }
@@ -399,6 +429,9 @@ function AuthContent() {
               </>
             )}
           </p>
+          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">
+            Rubro seleccionado: {preferredVertical}
+          </p>
         </div>
 
         {/* Auth Card */}
@@ -413,10 +446,16 @@ function AuthContent() {
                   : "text-muted hover:text-white hover:bg-white/5"
               }`}
             >
-              Iniciar Sesión
+              Iniciar Sesion
             </button>
             <button
-              onClick={() => setTab("register")}
+              onClick={() => {
+                setTab("register");
+                void trackGrowthEvent("start_signup", {
+                  vertical: preferredVertical,
+                  location: "auth_tab_click",
+                });
+              }}
               className={`py-3 text-sm font-medium rounded-full transition-all duration-300 ${
                 tab === "register"
                   ? "bg-white/10 text-white shadow-lg border border-white/5"
@@ -447,7 +486,7 @@ function AuthContent() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center ml-1">
                     <label className="text-sm font-medium text-gray-300">
-                      Contraseña
+                      Contrasena
                     </label>
                     <button
                       type="button"
@@ -455,14 +494,14 @@ function AuthContent() {
                       disabled={isResettingPassword}
                       className="text-xs text-yellow-500/80 hover:text-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      ¿Olvidaste tu contraseña?
+                      Olvidaste tu contrasena?
                     </button>
                   </div>
                   <div className="relative">
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder="********"
                       required
                       className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none pr-12"
                     />
@@ -540,13 +579,13 @@ function AuthContent() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
-                    Contraseña
+                    Contrasena
                   </label>
                   <div className="relative">
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder="********"
                       required
                       className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none pr-12"
                     />
@@ -602,7 +641,7 @@ function AuthContent() {
             <div className="flex items-center gap-4 my-6">
               <div className="h-[1px] bg-white/10 flex-1" />
               <span className="text-xs text-muted uppercase tracking-widest">
-                O continúa con
+                O continua con
               </span>
               <div className="h-[1px] bg-white/10 flex-1" />
             </div>
@@ -663,10 +702,13 @@ function AuthContent() {
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white shadow-xl animate-fade-in z-50 flex items-center gap-2">
-          <span className="text-yellow-400">⚠️</span>
+          <span className="text-yellow-400">!</span>
           {toast}
         </div>
       )}
     </main>
   );
 }
+
+
+

@@ -1,0 +1,20 @@
+﻿{
+  "vertical": "restaurant",
+  "slug": "burger-lab",
+  "title": "Burger Lab",
+  "subtitle": "Combos directos a WhatsApp",
+  "description": "Ideal para dark kitchens y restaurantes con alto volumen de pedidos.",
+  "coverImage": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "foodWarm",
+  "promoStrip": "2x1 en combos de lunes a jueves",
+  "openHours": "12:00 pm - 11:00 pm",
+  "address": "Jr. Bolognesi 220, Barranco",
+  "whatsappNumber": "51981233001",
+  "categories": ["Combos", "Hamburguesas", "Acompanamientos", "Bebidas"],
+  "items": [
+    {"id":"bl-1","category":"Combos","name":"Combo Doble Smash","description":"Hamburguesa doble + papas + bebida.","image":"https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1200&auto=format&fit=crop","price":35,"compareAtPrice":42,"badge":"🔥 Mas vendido","featured":true,"favoriteOfDay":true},
+    {"id":"bl-2","category":"Hamburguesas","name":"Cheese Bacon XL","description":"Pan brioche, tocino crocante y doble queso.","image":"https://images.unsplash.com/photo-1607013251379-e6eecfffe234?q=80&w=1200&auto=format&fit=crop","price":29,"badge":"⭐ Favorito","featured":true},
+    {"id":"bl-3","category":"Acompanamientos","name":"Papas Trufadas","description":"Con parmesano y mayo especial.","image":"https://images.unsplash.com/photo-1576107232684-1279f390859f?q=80&w=1200&auto=format&fit=crop","price":16},
+    {"id":"bl-4","category":"Bebidas","name":"Milkshake Oreo","description":"Batido cremoso de oreo y vainilla.","image":"https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=1200&auto=format&fit=crop","price":14,"badge":"🥇 Top ventas"}
+  ]
+}

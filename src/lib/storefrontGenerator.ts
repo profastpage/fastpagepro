@@ -1,4 +1,20 @@
-export type StoreThemeId = "aurora" | "onyx" | "ruby" | "mint" | "mono";
+export type StoreThemeId =
+  | "aurora"
+  | "onyx"
+  | "ruby"
+  | "mint"
+  | "mono"
+  | "foodWarm"
+  | "darkKitchen"
+  | "coffeeLight"
+  | "sushiPremium"
+  | "cleanStore"
+  | "premiumShop"
+  | "flashSale"
+  | "minimalCommerce"
+  | "leadDark"
+  | "corporateLight"
+  | "agencyBold";
 
 export type StoreTheme = {
   id: StoreThemeId;
@@ -42,6 +58,7 @@ export type StoreRgb = {
 export type StoreConfig = {
   storeName: string;
   storeSlug?: string;
+  vertical?: "restaurant" | "ecommerce" | "services";
   tagline: string;
   currency: "PEN" | "USD" | "EUR";
   themeId: StoreThemeId;
@@ -152,6 +169,138 @@ export const STORE_THEMES: StoreTheme[] = [
     text: "#e5e7eb",
     muted: "#9ca3af",
     radius: 16,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "foodWarm",
+    name: "Food Warm",
+    accent: "#d9480f",
+    accent2: "#f59f00",
+    surface: "#1f120b",
+    surface2: "#2b180f",
+    text: "#fff7ed",
+    muted: "#fed7aa",
+    radius: 20,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "darkKitchen",
+    name: "Dark Kitchen",
+    accent: "#f97316",
+    accent2: "#facc15",
+    surface: "#0d0d0d",
+    surface2: "#171717",
+    text: "#fafaf9",
+    muted: "#d6d3d1",
+    radius: 20,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "coffeeLight",
+    name: "Coffee Light",
+    accent: "#92400e",
+    accent2: "#d6a85a",
+    surface: "#2b2118",
+    surface2: "#3a2c20",
+    text: "#fff7ed",
+    muted: "#e7d2bd",
+    radius: 20,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "sushiPremium",
+    name: "Sushi Premium",
+    accent: "#b91c1c",
+    accent2: "#f59e0b",
+    surface: "#09090b",
+    surface2: "#111827",
+    text: "#f4f4f5",
+    muted: "#d4d4d8",
+    radius: 20,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "cleanStore",
+    name: "Clean Store",
+    accent: "#2563eb",
+    accent2: "#38bdf8",
+    surface: "#0b1220",
+    surface2: "#111827",
+    text: "#f8fafc",
+    muted: "#cbd5e1",
+    radius: 18,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "premiumShop",
+    name: "Premium Shop",
+    accent: "#111827",
+    accent2: "#f59e0b",
+    surface: "#111827",
+    surface2: "#1f2937",
+    text: "#f8fafc",
+    muted: "#e5e7eb",
+    radius: 18,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "flashSale",
+    name: "Flash Sale",
+    accent: "#ef4444",
+    accent2: "#fb7185",
+    surface: "#0f172a",
+    surface2: "#1e293b",
+    text: "#f8fafc",
+    muted: "#cbd5e1",
+    radius: 18,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "minimalCommerce",
+    name: "Minimal Commerce",
+    accent: "#334155",
+    accent2: "#94a3b8",
+    surface: "#0f172a",
+    surface2: "#1e293b",
+    text: "#f8fafc",
+    muted: "#cbd5e1",
+    radius: 16,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "leadDark",
+    name: "Lead Dark",
+    accent: "#22c55e",
+    accent2: "#06b6d4",
+    surface: "#020617",
+    surface2: "#0f172a",
+    text: "#f8fafc",
+    muted: "#cbd5e1",
+    radius: 18,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "corporateLight",
+    name: "Corporate Light",
+    accent: "#1d4ed8",
+    accent2: "#0ea5e9",
+    surface: "#0b1220",
+    surface2: "#111827",
+    text: "#f8fafc",
+    muted: "#cbd5e1",
+    radius: 18,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "agencyBold",
+    name: "Agency Bold",
+    accent: "#7c3aed",
+    accent2: "#ec4899",
+    surface: "#0b1020",
+    surface2: "#111827",
+    text: "#f8fafc",
+    muted: "#ddd6fe",
+    radius: 18,
     font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
   },
 ];

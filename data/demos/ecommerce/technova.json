@@ -1,0 +1,19 @@
+﻿{
+  "vertical": "ecommerce",
+  "slug": "technova",
+  "title": "Technova",
+  "subtitle": "Tienda tech con carrito y checkout WhatsApp",
+  "description": "Ecommerce para gadgets con promos y pagos rapidos.",
+  "coverImage": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "premiumShop",
+  "heroKicker": "Tech deals",
+  "whatsappNumber": "51999910234",
+  "trustBullets": ["Garantia oficial", "Despacho nacional", "Pago contraentrega", "Atencion 7 dias"],
+  "categories": ["Audio", "Smartwatch", "Gaming", "Hogar"],
+  "products": [
+    {"id":"tn-1","category":"Audio","name":"Air Beat Pro","description":"Cancelacion de ruido activa.","image":"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop","price":189,"compareAtPrice":239,"badge":"Oferta","bestSeller":true},
+    {"id":"tn-2","category":"Smartwatch","name":"Pulse X2","description":"Monitoreo completo 24/7.","image":"https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop","price":249,"badge":"Top"},
+    {"id":"tn-3","category":"Gaming","name":"Mouse Storm","description":"Sensor preciso para esports.","image":"https://images.unsplash.com/photo-1527814050087-3793815479db?q=80&w=1200&auto=format&fit=crop","price":129,"badge":"Nuevo"},
+    {"id":"tn-4","category":"Hogar","name":"Camara Smart Home","description":"Vision nocturna y app movil.","image":"https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop","price":299}
+  ]
+}

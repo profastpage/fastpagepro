@@ -1,0 +1,19 @@
+﻿{
+  "vertical": "ecommerce",
+  "slug": "urban-wear",
+  "title": "Urban Wear",
+  "subtitle": "Catalogo streetwear para conversion diaria",
+  "description": "Tienda online lista para anuncios y cierre por WhatsApp.",
+  "coverImage": "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "cleanStore",
+  "heroKicker": "Nueva coleccion",
+  "whatsappNumber": "51994599123",
+  "trustBullets": ["Envios 24h Lima", "Pagos seguros", "Cambios en 7 dias", "Soporte por WhatsApp"],
+  "categories": ["Polos", "Hoodies", "Sneakers", "Accesorios"],
+  "products": [
+    {"id":"uw-1","category":"Sneakers","name":"Sneaker Volt","description":"Suela ligera y diseño urbano.","image":"https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop","price":219,"compareAtPrice":279,"badge":"Oferta","bestSeller":true},
+    {"id":"uw-2","category":"Hoodies","name":"Hoodie Shadow","description":"Algodon premium unisex.","image":"https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?q=80&w=1200&auto=format&fit=crop","price":139,"badge":"Top"},
+    {"id":"uw-3","category":"Polos","name":"Oversize City","description":"Fit amplio y tela suave.","image":"https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200&auto=format&fit=crop","price":89,"badge":"Nuevo"},
+    {"id":"uw-4","category":"Accesorios","name":"Gorra Track","description":"Visera curva y ajuste rapido.","image":"https://images.unsplash.com/photo-1588850561407-ed78c282e89b?q=80&w=1200&auto=format&fit=crop","price":59}
+  ]
+}

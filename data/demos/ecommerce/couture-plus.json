@@ -1,0 +1,19 @@
+﻿{
+  "vertical": "ecommerce",
+  "slug": "couture-plus",
+  "title": "Couture Plus",
+  "subtitle": "Accesorios premium con ofertas visibles",
+  "description": "Tienda de bolsos y accesorios con estructura de conversion.",
+  "coverImage": "https://images.unsplash.com/photo-1543076447-215ad9ba6923?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "flashSale",
+  "heroKicker": "Coleccion destacada",
+  "whatsappNumber": "51995177345",
+  "trustBullets": ["Envoltorio premium", "Pago por Yape", "Despacho 24-48h", "Soporte dedicado"],
+  "categories": ["Carteras", "Mochilas", "Accesorios"],
+  "products": [
+    {"id":"cp-1","category":"Carteras","name":"Cartera Velours","description":"Diseño elegante para uso diario.","image":"https://images.unsplash.com/photo-1591561954557-26941169b49e?q=80&w=1200&auto=format&fit=crop","price":169,"compareAtPrice":219,"badge":"Oferta","bestSeller":true},
+    {"id":"cp-2","category":"Carteras","name":"Bijou Mini","description":"Compacta y funcional.","image":"https://images.unsplash.com/photo-1594223274512-ad4803739b7c?q=80&w=1200&auto=format&fit=crop","price":149,"badge":"Top"},
+    {"id":"cp-3","category":"Mochilas","name":"Urban Tote","description":"Mochila ligera para ciudad.","image":"https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop","price":199,"badge":"Nuevo"},
+    {"id":"cp-4","category":"Accesorios","name":"Pack Charm","description":"Set de charms premium.","image":"https://images.unsplash.com/photo-1617038220319-276d3cfab638?q=80&w=1200&auto=format&fit=crop","price":79}
+  ]
+}
