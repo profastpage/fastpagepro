@@ -25,7 +25,7 @@ export function useAuth(requireAuth = false) {
         const parsed = JSON.parse(localSession);
         setUser(parsed);
       } catch (e) {
-        console.error("Error parsing local session", e);
+        console.error('Error parsing local session', e);
       }
     }
 
@@ -33,20 +33,19 @@ export function useAuth(requireAuth = false) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         let userDataFromDb = null;
-        
+
         try {
-          // Aumentamos el timeout a 10 segundos para conexiones lentas
-          const fetchDoc = getDoc(doc(db, "users", firebaseUser.uid));
-          const timeout = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Timeout Firestore")), 10000)
+          // Timeout for slow connections.
+          const fetchDoc = getDoc(doc(db, 'users', firebaseUser.uid));
+          const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout Firestore')), 10000),
           );
 
-          const userDoc = await Promise.race([fetchDoc, timeout]) as any;
+          const userDoc = (await Promise.race([fetchDoc, timeout])) as any;
           userDataFromDb = userDoc.data();
         } catch (err) {
-          console.warn("Firestore inaccesible o timeout. Usando datos básicos de Auth.", err);
-          // Si falla (por bloqueo de cliente o timeout), permitimos continuar 
-          // con los datos básicos de Auth para no bloquear al usuario.
+          console.warn('Firestore inaccessible or timeout. Using Auth basic data.', err);
+          // If it fails, continue with Auth data to avoid blocking the user.
         }
 
         if (userDataFromDb?.status === 'suspended' || userDataFromDb?.status === 'disabled') {
@@ -63,7 +62,7 @@ export function useAuth(requireAuth = false) {
           name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Usuario',
           uid: firebaseUser.uid,
           photoURL: firebaseUser.photoURL || undefined,
-          status: userDataFromDb?.status || 'active'
+          status: userDataFromDb?.status || 'active',
         };
         setUser(userData);
         // Update localStorage to keep it in sync
@@ -72,14 +71,20 @@ export function useAuth(requireAuth = false) {
         // Sync subscription session cookie for middleware feature gating.
         try {
           const idToken = await firebaseUser.getIdToken();
-          await fetch("/api/subscription/session", {
-            method: "POST",
+          await fetch('/api/subscription/session', {
+            method: 'POST',
             headers: {
               Authorization: `Bearer ${idToken}`,
             },
           });
+          await fetch('/api/subscription/current', {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          }).catch(() => undefined);
         } catch (syncError) {
-          console.warn("[useAuth] No se pudo sincronizar la sesión de suscripción.", syncError);
+          console.warn('[useAuth] Could not sync subscription session.', syncError);
         }
       } else {
         if (!localStorage.getItem('fp_session')) {
@@ -102,7 +107,7 @@ export function useAuth(requireAuth = false) {
       setUser(null);
       router.push('/auth');
     } catch (error) {
-      console.error("Error logging out", error);
+      console.error('Error logging out', error);
     }
   };
 

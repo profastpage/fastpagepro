@@ -228,28 +228,42 @@ function AuthContent() {
 
   const activateBusinessTrial = async (firebaseUser: any) => {
     if (!firebaseUser?.uid) return;
-    const shouldStartTrial = tab === "register" || trialIntent === "business14";
-    if (!shouldStartTrial) return;
 
     try {
       const token = await firebaseUser.getIdToken();
-      const formData = new FormData();
-      formData.append("plan", "BUSINESS");
-      formData.append("trial", "true");
-      formData.append("paymentMethod", "TRANSFERENCIA");
-      await fetch("/api/subscription/request", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
       await fetch("/api/subscription/session", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+      await fetch("/api/subscription/current", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }).catch(() => undefined);
+
+      const shouldStartTrial = tab === "register" || trialIntent === "business14";
+      if (shouldStartTrial) {
+        const formData = new FormData();
+        formData.append("plan", "BUSINESS");
+        formData.append("trial", "true");
+        formData.append("paymentMethod", "TRANSFERENCIA");
+        await fetch("/api/subscription/request", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }).catch(() => undefined);
+        await fetch("/api/subscription/session", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).catch(() => undefined);
+      }
     } catch (error) {
       console.warn("[Auth] No se pudo activar trial Business automaticamente.", error);
     }
@@ -389,6 +403,7 @@ function AuthContent() {
 
       // Sincronizacion prioritaria antes de redireccionar
       await syncUserToFirestore(user, preferredVertical);
+      await activateBusinessTrial(user);
 
       router.push(resolvePostAuthTarget(user.email));
     } catch (error: any) {
@@ -425,6 +440,7 @@ function AuthContent() {
       if (user) {
         // Sincronizacion prioritaria
         await syncUserToFirestore(user, preferredVertical);
+        await activateBusinessTrial(user);
 
         // Redireccion inmediata despues de asegurar datos
         router.push(resolvePostAuthTarget(user.email));

@@ -53,6 +53,12 @@ export interface SubscriptionRecord {
   source: SubscriptionRecordSource;
 }
 
+function isBusinessTrialRecord(record: SubscriptionRecord): boolean {
+  if (record.plan !== "BUSINESS") return false;
+  const durationDays = getDurationDays(record.startDate, record.endDate);
+  return durationDays > 0 && durationDays <= 14;
+}
+
 async function isRootAdminAccount(userId: string): Promise<boolean> {
   if (!adminDb) return false;
   try {
@@ -63,6 +69,82 @@ async function isRootAdminAccount(userId: string): Promise<boolean> {
     console.error("[Subscription] Root admin check warning:", error);
     return false;
   }
+}
+
+async function hasUsedBusinessTrial(userId: string): Promise<boolean> {
+  try {
+    const businessOrPro = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        plan: { in: ["BUSINESS", "PRO"] },
+      },
+      select: { id: true },
+    });
+    if (businessOrPro) return true;
+  } catch (error) {
+    console.error("[Subscription Trial] Prisma usage check warning:", error);
+  }
+
+  if (!adminDb) return false;
+
+  try {
+    const snapshot = await adminDb.collection("users").doc(userId).get();
+    const payload = snapshot.data() as Record<string, unknown> | undefined;
+    return payload?.businessTrialUsed === true;
+  } catch (error) {
+    console.error("[Subscription Trial] Firestore usage check warning:", error);
+    return false;
+  }
+}
+
+async function moveTrialExpiredUserToFreeBlocked(userId: string): Promise<SubscriptionRecord> {
+  const now = getNow();
+  let next: SubscriptionRecord | null = null;
+
+  try {
+    const created = await prisma.$transaction(async (tx) => {
+      await tx.subscription.updateMany({
+        where: {
+          userId,
+          status: {
+            in: ["ACTIVE", "PENDING"],
+          },
+        },
+        data: {
+          status: "EXPIRED",
+        },
+      });
+
+      return tx.subscription.create({
+        data: {
+          userId,
+          plan: "FREE",
+          status: "EXPIRED",
+          paymentMethod: "TRANSFERENCIA",
+          startDate: now,
+          endDate: now,
+        },
+      });
+    });
+    next = mapPrismaSubscription(created);
+  } catch (error) {
+    console.error("[Subscription Trial] Prisma free-blocked fallback:", error);
+    next = buildSubscriptionRecord({
+      userId,
+      plan: "FREE",
+      status: "EXPIRED",
+      paymentMethod: "TRANSFERENCIA",
+      startDate: now,
+      endDate: now,
+      source: adminDb ? "firestore" : "memory",
+    });
+  }
+
+  await saveSubscriptionRecordToFirestore(next).catch((error) => {
+    console.error("[Subscription Trial] Firestore free-blocked sync warning:", error);
+  });
+
+  return next;
 }
 
 function getNow() {
@@ -639,6 +721,10 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
   }
 
   if (!isRootAdmin && current.plan === "FREE") {
+    const trialAlreadyUsed = await hasUsedBusinessTrial(userId);
+    if (trialAlreadyUsed) {
+      return current;
+    }
     try {
       const trial = await startBusinessTrial(userId, { force: true });
       return trial;
@@ -647,6 +733,16 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
       if (!message.startsWith("BUSINESS_TRIAL_ALREADY_USED")) {
         console.error("[Subscription Auto Trial] Could not activate trial for existing account:", error);
       }
+    }
+  }
+
+  if (!isRootAdmin && isBusinessTrialRecord(current)) {
+    const trialExpiredByStatus = current.status === "EXPIRED";
+    const trialExpiredByDate = current.endDate.getTime() <= Date.now();
+
+    if (trialExpiredByStatus || trialExpiredByDate) {
+      current = await moveTrialExpiredUserToFreeBlocked(userId);
+      return current;
     }
   }
 
