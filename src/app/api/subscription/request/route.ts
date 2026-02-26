@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentMethod, PlanType } from "@prisma/client";
 import { createSubscriptionRequest, startBusinessTrial } from "@/lib/subscription/service";
-import { requireFirebaseUserId } from "@/lib/server/requireFirebaseUser";
+import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 
 const SUPPORTED_MIME_TYPES = new Set([
   "image/png",
@@ -40,6 +40,15 @@ function firestoreInt(value: number) {
   return { integerValue: String(safe) };
 }
 
+function sanitizeText(value: unknown, maxLen = 500): string {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLen);
+}
+
+function buildNotificationDocumentId(userId: string, requestType: string, createdAtMs: number): string {
+  const randomPart = Math.random().toString(36).slice(2, 8);
+  return `${sanitizeText(userId, 120)}-${sanitizeText(requestType, 24).toLowerCase()}-${createdAtMs}-${randomPart}`;
+}
+
 function parseFirestoreBool(input: any): boolean {
   if (!input || typeof input !== "object") return false;
   if (typeof input.booleanValue === "boolean") return input.booleanValue;
@@ -69,7 +78,7 @@ async function readFirestoreUserDocWithToken(userId: string, idToken: string) {
 }
 
 async function patchFirestoreDocWithToken(input: {
-  collection: "users" | "link_profiles";
+  collection: "users" | "link_profiles" | "subscription_notifications";
   documentId: string;
   idToken: string;
   fields: Record<string, any>;
@@ -95,6 +104,79 @@ async function patchFirestoreDocWithToken(input: {
   if (!response.ok) {
     throw new Error(`SERVICE_UNAVAILABLE: firestore patch failed (${input.collection})`);
   }
+}
+
+async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
+  idToken: string;
+  userId: string;
+  email: string;
+  requestedPlan: PlanType;
+  requestType: "TRIAL" | "PAYMENT" | "FREE";
+  requestStatus: "PENDING" | "TRIAL_ACTIVE" | "RECEIVED";
+  paymentMethod: PaymentMethod | "";
+  notes: string;
+  requestId?: string;
+  trialDays?: number;
+  createdAtMs?: number;
+}) {
+  const createdAtMs =
+    Number.isFinite(Number(input.createdAtMs)) && Number(input.createdAtMs) > 0
+      ? Math.floor(Number(input.createdAtMs))
+      : Date.now();
+  const requestId = sanitizeText(input.requestId, 140) || `req-${input.userId}-${createdAtMs}`;
+  const notificationId = buildNotificationDocumentId(input.userId, input.requestType, createdAtMs);
+  const email = sanitizeText(input.email, 160);
+  const notes = sanitizeText(input.notes, 900);
+
+  await patchFirestoreDocWithToken({
+    collection: "users",
+    documentId: input.userId,
+    idToken: input.idToken,
+    fields: {
+      latestSubscriptionRequestId: firestoreString(requestId),
+      latestSubscriptionRequestEmail: firestoreString(email),
+      latestSubscriptionRequestPlan: firestoreString(input.requestedPlan),
+      latestSubscriptionRequestType: firestoreString(input.requestType),
+      latestSubscriptionRequestStatus: firestoreString(input.requestStatus),
+      latestSubscriptionRequestPaymentMethod: firestoreString(input.paymentMethod || "TRANSFERENCIA"),
+      latestSubscriptionRequestNotes: firestoreString(notes),
+      latestSubscriptionRequestSource: firestoreString("billing"),
+      latestSubscriptionRequestTrialDays: firestoreInt(
+        Number.isFinite(Number(input.trialDays)) ? Number(input.trialDays) : 0,
+      ),
+      latestSubscriptionRequestCreatedAt: firestoreInt(createdAtMs),
+      latestSubscriptionRequestUpdatedAt: firestoreInt(Date.now()),
+      latestSubscriptionRequestUnreadForAdmin: firestoreBool(true),
+    },
+  });
+
+  await patchFirestoreDocWithToken({
+    collection: "subscription_notifications",
+    documentId: notificationId,
+    idToken: input.idToken,
+    fields: {
+      requestId: firestoreString(requestId),
+      userId: firestoreString(input.userId),
+      email: firestoreString(email),
+      requestedPlan: firestoreString(input.requestedPlan),
+      requestType: firestoreString(input.requestType),
+      requestStatus: firestoreString(input.requestStatus),
+      paymentMethod: firestoreString(input.paymentMethod || "TRANSFERENCIA"),
+      notes: firestoreString(notes),
+      source: firestoreString("billing"),
+      trialDays: firestoreInt(Number.isFinite(Number(input.trialDays)) ? Number(input.trialDays) : 0),
+      unreadForAdmin: firestoreBool(true),
+      createdAt: firestoreInt(createdAtMs),
+      updatedAt: firestoreInt(Date.now()),
+    },
+  }).catch((error) => {
+    console.error("[Subscription Request] notification event sync warning:", error);
+  });
+
+  return {
+    requestId,
+    notificationId,
+  };
 }
 
 async function startBusinessTrialViaFirestoreToken(userId: string, idToken: string) {
@@ -163,7 +245,13 @@ function toPaymentMethod(value: string): PaymentMethod | null {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireFirebaseUserId(request);
+    const authUser = await requireFirebaseUser(request);
+    const userId = String(authUser?.uid || "").trim();
+    if (!userId) {
+      throw new Error("UNAUTHORIZED: invalid token payload");
+    }
+    const userEmail = sanitizeText(authUser?.email, 160);
+    const idToken = getBearerToken(request);
     const formData = await request.formData();
     const plan = toPlanType(String(formData.get("plan") || ""));
     const paymentMethod = toPaymentMethod(String(formData.get("paymentMethod") || ""));
@@ -186,13 +274,32 @@ export async function POST(request: NextRequest) {
           throw trialError;
         }
 
-        const idToken = getBearerToken(request);
-        if (!idToken) {
+        const fallbackIdToken = getBearerToken(request);
+        if (!fallbackIdToken) {
           throw trialError;
         }
 
-        trialSubscription = await startBusinessTrialViaFirestoreToken(userId, idToken);
+        trialSubscription = await startBusinessTrialViaFirestoreToken(userId, fallbackIdToken);
       }
+
+      if (idToken) {
+        await writeSubscriptionAdminNotificationViaFirestoreToken({
+          idToken,
+          userId,
+          email: userEmail,
+          requestedPlan: "BUSINESS",
+          requestType: "TRIAL",
+          requestStatus: "TRIAL_ACTIVE",
+          paymentMethod: "TRANSFERENCIA",
+          notes,
+          requestId: trialSubscription.id,
+          trialDays: 14,
+          createdAtMs: Date.now(),
+        }).catch((notificationError) => {
+          console.error("[Subscription Request] trial notification warning:", notificationError);
+        });
+      }
+
       return NextResponse.json({
         success: true,
         message: "Prueba Business activada por 14 dias.",
@@ -206,7 +313,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (!paymentMethod) {
+    if (!paymentMethod && plan !== "FREE") {
       return NextResponse.json({ error: "Metodo de pago invalido." }, { status: 400 });
     }
 
@@ -231,19 +338,85 @@ export async function POST(request: NextRequest) {
       proofMimeType = proof.type;
     }
 
-    const created = await createSubscriptionRequest({
-      userId,
-      requestedPlan: plan,
-      paymentMethod,
-      notes,
-      proofBase64: proofBase64 || undefined,
-      proofFileName: proofFileName || undefined,
-      proofMimeType: proofMimeType || undefined,
-    });
+    if (plan === "FREE") {
+      if (!idToken) {
+        throw new Error("UNAUTHORIZED: missing bearer token");
+      }
+
+      const freeNotification = await writeSubscriptionAdminNotificationViaFirestoreToken({
+        idToken,
+        userId,
+        email: userEmail,
+        requestedPlan: "FREE",
+        requestType: "FREE",
+        requestStatus: "RECEIVED",
+        paymentMethod: "",
+        notes,
+        requestId: `free-${userId}-${Date.now()}`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        requestId: freeNotification.requestId,
+        message: "Solicitud FREE registrada y enviada al panel admin.",
+      });
+    }
+
+    let createdRequestId = "";
+    try {
+      const created = await createSubscriptionRequest({
+        userId,
+        requestedPlan: plan,
+        paymentMethod: paymentMethod || "TRANSFERENCIA",
+        notes,
+        proofBase64: proofBase64 || undefined,
+        proofFileName: proofFileName || undefined,
+        proofMimeType: proofMimeType || undefined,
+      });
+      createdRequestId = created.request.id;
+    } catch (storageError) {
+      if (!idToken) {
+        throw storageError;
+      }
+
+      const fallbackNotification = await writeSubscriptionAdminNotificationViaFirestoreToken({
+        idToken,
+        userId,
+        email: userEmail,
+        requestedPlan: plan,
+        requestType: "PAYMENT",
+        requestStatus: "PENDING",
+        paymentMethod: paymentMethod || "TRANSFERENCIA",
+        notes,
+        requestId: `fallback-${userId}-${Date.now()}`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        requestId: fallbackNotification.requestId,
+        message: "Solicitud registrada en modo respaldo y enviada al panel admin.",
+      });
+    }
+
+    if (idToken) {
+      await writeSubscriptionAdminNotificationViaFirestoreToken({
+        idToken,
+        userId,
+        email: userEmail,
+        requestedPlan: plan,
+        requestType: "PAYMENT",
+        requestStatus: "PENDING",
+        paymentMethod: paymentMethod || "TRANSFERENCIA",
+        notes,
+        requestId: createdRequestId,
+      }).catch((notificationError) => {
+        console.error("[Subscription Request] payment notification warning:", notificationError);
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      requestId: created.request.id,
+      requestId: createdRequestId,
       message: "Solicitud registrada. Estado pendiente hasta validacion admin.",
     });
   } catch (error: any) {

@@ -1131,3 +1131,20 @@ o-scrollbar para evitar barra visible.
   - se sincroniza `link_profiles/{uid}` para desbloqueo de acceso activo cuando corresponde.
 - Resultado:
   - los clientes guardados en Firebase pueden activar trial aunque el storage SQL/Admin SDK falle temporalmente.
+
+## Subscription request notifications linked to Super Admin (2026-02-26)
+
+- Modulos ajustados:
+  - `src/app/api/subscription/request/route.ts`
+  - `src/app/admin/page.tsx`
+- Cambios aplicados:
+  - cada solicitud enviada desde Billing (trial, pago o free) ahora escribe metadatos vinculados en `users/{uid}`:
+    - `latestSubscriptionRequest*` (plan, tipo, estado, notas, fechas, unread).
+  - se agrega escritura best-effort de evento en `subscription_notifications/*` (sin bloquear el flujo del cliente si falla).
+  - si Prisma falla al crear una solicitud de pago, el endpoint usa fallback Firestore y responde exito para que la solicitud igual llegue al panel admin.
+  - el panel `/admin` muestra bandeja de notificaciones en tiempo real con:
+    - cliente, correo, plan solicitado, tipo, estado, metodo, fecha y notas.
+    - contador de pendientes y accion `Marcar leida`.
+  - al activar/desactivar plan desde super admin, la solicitud asociada queda marcada como revisada/leida.
+- Objetivo:
+  - control operativo centralizado del ciclo solicitud -> revision admin -> activacion/desactivacion, enlazado al dashboard de cada cliente.

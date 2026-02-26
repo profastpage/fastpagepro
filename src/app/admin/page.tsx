@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -21,7 +21,9 @@ import {
   Search,
   LogOut,
   RefreshCw,
-  Trash2
+  Trash2,
+  BellRing,
+  Eye
 } from "lucide-react";
 
 interface UserData {
@@ -39,6 +41,18 @@ interface UserData {
   subscriptionStartAt?: number | string;
   subscriptionEndAt?: number | string;
   subscriptionUpdatedAt?: number | string;
+  latestSubscriptionRequestId?: string;
+  latestSubscriptionRequestEmail?: string;
+  latestSubscriptionRequestPlan?: string;
+  latestSubscriptionRequestType?: string;
+  latestSubscriptionRequestStatus?: string;
+  latestSubscriptionRequestPaymentMethod?: string;
+  latestSubscriptionRequestNotes?: string;
+  latestSubscriptionRequestSource?: string;
+  latestSubscriptionRequestTrialDays?: number | string;
+  latestSubscriptionRequestCreatedAt?: number | string;
+  latestSubscriptionRequestUpdatedAt?: number | string;
+  latestSubscriptionRequestUnreadForAdmin?: boolean;
 }
 
 type PlanType = "FREE" | "BUSINESS" | "PRO";
@@ -52,6 +66,21 @@ interface PlanSummary {
   startDate: string | null;
   endDate: string | null;
   isActive: boolean;
+}
+
+interface AdminSubscriptionNotification {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  requestId: string;
+  requestedPlan: PlanType;
+  requestType: string;
+  requestStatus: string;
+  paymentMethod: string;
+  notes: string;
+  unread: boolean;
+  createdAtMs: number;
+  updatedAtMs: number;
 }
 
 const PLAN_BADGE_STYLES: Record<PlanType, string> = {
@@ -116,6 +145,21 @@ function buildPlanSummaryFromUser(user: UserData): PlanSummary | null {
   };
 }
 
+function parseDateMsValue(value: unknown): number {
+  const parsed = parseDateValue(value);
+  return parsed ? parsed.getTime() : 0;
+}
+
+function parseBooleanValue(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "1" || normalized === "yes";
+  }
+  if (typeof value === "number") return value > 0;
+  return false;
+}
+
 export default function AdminPanel() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +173,7 @@ export default function AdminPanel() {
   const [planDraftByUserId, setPlanDraftByUserId] = useState<Record<string, PlanType>>({});
   const [planLoadingByUserId, setPlanLoadingByUserId] = useState<Record<string, boolean>>({});
   const [planMessageByUserId, setPlanMessageByUserId] = useState<Record<string, string>>({});
+  const [notificationLoadingByUserId, setNotificationLoadingByUserId] = useState<Record<string, boolean>>({});
   const router = useRouter();
   const fetchPlanSummaries = useCallback(async (userIds: string[]) => {
     if (userIds.length === 0) {
@@ -170,6 +215,10 @@ export default function AdminPanel() {
           subscriptionStartAt: startAtMs,
           subscriptionEndAt: endAtMs,
           subscriptionUpdatedAt: Date.now(),
+          latestSubscriptionRequestStatus: mode === "DEACTIVATE" ? "REJECTED" : "APPROVED",
+          latestSubscriptionRequestUpdatedAt: Date.now(),
+          latestSubscriptionRequestUnreadForAdmin: false,
+          latestSubscriptionRequestReviewedBy: ROOT_ADMIN_EMAIL,
         },
         { merge: true },
       );
@@ -358,6 +407,54 @@ export default function AdminPanel() {
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const adminNotifications = useMemo<AdminSubscriptionNotification[]>(() => {
+    return users
+      .map((user) => {
+        const requestId = String(user.latestSubscriptionRequestId || "").trim();
+        if (!requestId) return null;
+
+        const requestedPlan = parsePlanType(user.latestSubscriptionRequestPlan) || "FREE";
+        const createdAtMs =
+          parseDateMsValue(user.latestSubscriptionRequestCreatedAt) ||
+          parseDateMsValue(user.subscriptionUpdatedAt);
+        const updatedAtMs =
+          parseDateMsValue(user.latestSubscriptionRequestUpdatedAt) || createdAtMs;
+
+        return {
+          userId: user.uid,
+          userName: user.name || "Sin nombre",
+          userEmail: String(user.latestSubscriptionRequestEmail || user.email || ""),
+          requestId,
+          requestedPlan,
+          requestType: String(user.latestSubscriptionRequestType || "PAYMENT"),
+          requestStatus: String(user.latestSubscriptionRequestStatus || "PENDING"),
+          paymentMethod: String(user.latestSubscriptionRequestPaymentMethod || "TRANSFERENCIA"),
+          notes: String(user.latestSubscriptionRequestNotes || "").trim(),
+          unread: parseBooleanValue(user.latestSubscriptionRequestUnreadForAdmin),
+          createdAtMs,
+          updatedAtMs,
+        };
+      })
+      .filter((entry): entry is AdminSubscriptionNotification => Boolean(entry))
+      .sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+  }, [users]);
+
+  const unreadNotificationsCount = adminNotifications.filter((entry) => entry.unread).length;
+
+  const markNotificationAsRead = async (userId: string) => {
+    setNotificationLoadingByUserId((previous) => ({ ...previous, [userId]: true }));
+    try {
+      await updateDoc(doc(db, "users", userId), {
+        latestSubscriptionRequestUnreadForAdmin: false,
+        latestSubscriptionRequestUpdatedAt: Date.now(),
+      });
+    } catch (markError) {
+      console.error("Error marking notification as read:", markError);
+    } finally {
+      setNotificationLoadingByUserId((previous) => ({ ...previous, [userId]: false }));
+    }
+  };
+
   if (!authorized) return null;
 
   return (
@@ -392,7 +489,7 @@ export default function AdminPanel() {
       <main className="flex-grow p-8 max-w-7xl mx-auto w-full">
         {/* Stats & Search */}
         <div className="flex flex-col md:flex-row gap-6 mb-8 items-end justify-between">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 w-full md:w-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full md:w-auto">
             <div className="bg-zinc-900/50 border border-white/5 p-4 rounded-2xl">
               <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Total Usuarios</p>
               <p className="text-2xl font-bold">{users.length}</p>
@@ -416,9 +513,14 @@ export default function AdminPanel() {
               className="mt-2 text-[10px] text-zinc-400 hover:text-white flex items-center gap-1 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} />
-              Forzar Actualización
+              Forzar Actualizacion
             </button>
           </div>
+            <div className="bg-zinc-900/50 border border-white/5 p-4 rounded-2xl">
+              <p className="text-zinc-500 text-xs font-bold uppercase mb-1">Solicitudes pendientes</p>
+              <p className="text-2xl font-bold text-amber-300">{unreadNotificationsCount}</p>
+              <p className="text-[10px] text-zinc-500 mt-1">Notificaciones de billing/demo en tiempo real</p>
+            </div>
           </div>
 
           <div className="relative w-full md:w-96">
@@ -432,6 +534,101 @@ export default function AdminPanel() {
             />
           </div>
         </div>
+
+        <section className="mb-8 w-full max-w-full rounded-3xl border border-white/5 bg-zinc-900/50 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-500">Control de solicitudes</p>
+              <h2 className="mt-1 flex items-center gap-2 text-lg font-bold text-white">
+                <BellRing className="h-4 w-4 text-amber-300" />
+                Notificaciones de clientes
+              </h2>
+              <p className="mt-1 text-xs text-zinc-400">
+                Cada solicitud enviada desde billing queda enlazada al dashboard del cliente.
+              </p>
+            </div>
+            <span className="inline-flex items-center rounded-full border border-amber-300/40 bg-amber-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-amber-100">
+              Pendientes: {unreadNotificationsCount}
+            </span>
+          </div>
+
+          {adminNotifications.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-4 text-sm text-zinc-400">
+              No hay solicitudes registradas aun.
+            </div>
+          ) : (
+            <div className="mt-4 grid w-full max-w-full grid-cols-1 gap-3 xl:grid-cols-2">
+              {adminNotifications.slice(0, 12).map((notification) => (
+                <article
+                  key={`${notification.userId}-${notification.requestId}`}
+                  className={`rounded-2xl border p-4 ${
+                    notification.unread
+                      ? "border-amber-300/45 bg-amber-500/10"
+                      : "border-white/10 bg-black/20"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-white">{notification.userName}</p>
+                      <p className="break-all text-xs text-zinc-400">{notification.userEmail}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-200">
+                        {notification.requestType}
+                      </span>
+                      <span className="rounded-full border border-emerald-300/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-100">
+                        {notification.requestStatus}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-zinc-300">
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                      plan: {notification.requestedPlan}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                      pago: {notification.paymentMethod}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
+                      {new Date(notification.createdAtMs || notification.updatedAtMs).toLocaleString()}
+                    </span>
+                  </div>
+
+                  {notification.notes ? (
+                    <p className="mt-3 break-words rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-zinc-300">
+                      {notification.notes}
+                    </p>
+                  ) : null}
+
+                  <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm(notification.userEmail)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-200"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Ver usuario
+                    </button>
+                    {notification.unread ? (
+                      <button
+                        type="button"
+                        onClick={() => markNotificationAsRead(notification.userId)}
+                        disabled={Boolean(notificationLoadingByUserId[notification.userId])}
+                        className="rounded-lg border border-amber-300/35 bg-amber-500/15 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-amber-100 disabled:opacity-60"
+                      >
+                        {notificationLoadingByUserId[notification.userId] ? "Guardando..." : "Marcar leida"}
+                      </button>
+                    ) : (
+                      <span className="rounded-lg border border-emerald-300/35 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-100">
+                        Leida
+                      </span>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Users Table */}
         {planSyncError && (
@@ -522,6 +719,18 @@ export default function AdminPanel() {
                                 {summary?.endDate && (
                                   <span className="text-[10px] text-zinc-500">
                                     vence: {new Date(summary.endDate).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {user.latestSubscriptionRequestId && (
+                                  <span
+                                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                      parseBooleanValue(user.latestSubscriptionRequestUnreadForAdmin)
+                                        ? "border-amber-300/45 bg-amber-500/15 text-amber-100"
+                                        : "border-white/10 bg-black/20 text-zinc-300"
+                                    }`}
+                                  >
+                                    req: {String(user.latestSubscriptionRequestStatus || "PENDING")} -{" "}
+                                    {String(user.latestSubscriptionRequestPlan || "FREE")}
                                   </span>
                                 )}
                               </div>
@@ -629,6 +838,3 @@ export default function AdminPanel() {
     </div>
   );
 }
-
-
-
