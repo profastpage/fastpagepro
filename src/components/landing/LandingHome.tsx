@@ -680,7 +680,7 @@ export default function LandingHome() {
               }}
             />
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href={heroSignupHref}
                 onClick={() =>
@@ -689,7 +689,7 @@ export default function LandingHome() {
                     location: "hero_primary",
                   })
                 }
-                className={`${DELUXE_BUTTON_BASE} hidden rounded-full px-7 py-3 uppercase tracking-[0.12em] md:inline-flex`}
+                className={`${DELUXE_BUTTON_BASE} inline-flex w-full justify-center rounded-full px-7 py-3 uppercase tracking-[0.12em] sm:w-auto`}
               >
                 {copy.ctaPrimary}
               </Link>
@@ -702,7 +702,7 @@ export default function LandingHome() {
                     location: "hero_secondary",
                   })
                 }
-                className={`${SOFT_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
+                className={`${SOFT_BUTTON_BASE} inline-flex w-full justify-center rounded-full px-6 py-3 uppercase tracking-[0.12em] sm:w-auto`}
               >
                 <PlayCircle className="h-4 w-4" /> {copy.ctaDemo}</Link>
               <a
