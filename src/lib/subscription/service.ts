@@ -442,41 +442,49 @@ function getPlanDurationDays(plan: PlanType, durationDays?: number): number {
   return PLAN_DEFAULT_DURATION_DAYS[plan];
 }
 
-export async function startBusinessTrial(userId: string): Promise<SubscriptionRecord> {
+export async function startBusinessTrial(
+  userId: string,
+  options?: {
+    force?: boolean;
+  },
+): Promise<SubscriptionRecord> {
   const safeUserId = String(userId || "").trim();
   if (!safeUserId) {
     throw new Error("USER_ID_REQUIRED");
   }
 
+  const force = options?.force === true;
   let alreadyUsed = false;
 
-  try {
-    const previousPaidOrTrial = await prisma.subscription.findFirst({
-      where: {
-        userId: safeUserId,
-        plan: { in: ["BUSINESS", "PRO"] },
-        status: { in: ["ACTIVE", "EXPIRED"] },
-      },
-      select: { id: true },
-    });
-    alreadyUsed = Boolean(previousPaidOrTrial);
-  } catch (error) {
-    console.error("[Subscription Trial] Prisma read fallback:", error);
-  }
-
-  if (!alreadyUsed) {
-    const firestoreRecord = await readFirestoreSubscriptionRecord(safeUserId);
-    if (firestoreRecord && (firestoreRecord.plan === "BUSINESS" || firestoreRecord.plan === "PRO")) {
-      alreadyUsed = true;
-    }
-  }
-
-  if (!alreadyUsed && adminDb) {
+  if (!force) {
     try {
-      const userDoc = await adminDb.collection("users").doc(safeUserId).get();
-      alreadyUsed = userDoc.data()?.businessTrialUsed === true;
+      const previousPaidOrTrial = await prisma.subscription.findFirst({
+        where: {
+          userId: safeUserId,
+          plan: { in: ["BUSINESS", "PRO"] },
+          status: { in: ["ACTIVE", "EXPIRED"] },
+        },
+        select: { id: true },
+      });
+      alreadyUsed = Boolean(previousPaidOrTrial);
     } catch (error) {
-      console.error("[Subscription Trial] Firestore flag read warning:", error);
+      console.error("[Subscription Trial] Prisma read fallback:", error);
+    }
+
+    if (!alreadyUsed) {
+      const firestoreRecord = await readFirestoreSubscriptionRecord(safeUserId);
+      if (firestoreRecord && (firestoreRecord.plan === "BUSINESS" || firestoreRecord.plan === "PRO")) {
+        alreadyUsed = true;
+      }
+    }
+
+    if (!alreadyUsed && adminDb) {
+      try {
+        const userDoc = await adminDb.collection("users").doc(safeUserId).get();
+        alreadyUsed = userDoc.data()?.businessTrialUsed === true;
+      } catch (error) {
+        console.error("[Subscription Trial] Firestore flag read warning:", error);
+      }
     }
   }
 
@@ -584,7 +592,7 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
   let current = await getLatestSubscription(userId);
   if (!current) {
     try {
-      current = await startBusinessTrial(userId);
+      current = await startBusinessTrial(userId, { force: true });
       return current;
     } catch (error: any) {
       const message = String(error?.message || "");
@@ -598,7 +606,7 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
 
   if (current.plan === "FREE" && current.status === "ACTIVE") {
     try {
-      const trial = await startBusinessTrial(userId);
+      const trial = await startBusinessTrial(userId, { force: true });
       return trial;
     } catch (error: any) {
       const message = String(error?.message || "");
