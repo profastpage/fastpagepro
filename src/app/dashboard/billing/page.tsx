@@ -28,18 +28,18 @@ const PAYMENT_INSTRUCTIONS_EN: Record<PaymentMethod, string> = {
 
 const BANK_ACCOUNTS_ES = [
   "BCP Soles: 19103805375011",
-  "CCI / Interbancaria: 00219110380537501152",
+  "BCP CCI / Interbancaria: 00219110380537501152",
 ];
 
 const BANK_ACCOUNTS_EN = [
   "BCP Soles: 19103805375011",
-  "Interbank transfer (CCI): 00219110380537501152",
+  "BCP interbank account (CCI): 00219110380537501152",
 ];
 
 const PAYMENT_ACCOUNT_HOLDER = "Fabio Her*";
 const PAYMENT_YAPE_NUMBER = "906431630";
 const PAYMENT_BCP_SOLES_ACCOUNT = "19103805375011";
-const PAYMENT_INTERBANK_CCI = "00219110380537501152";
+const PAYMENT_BCP_CCI = "00219110380537501152";
 const DEFAULT_YAPE_QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=1024x1024&ecc=H&margin=24&data=${encodeURIComponent(
   `YAPE ${PAYMENT_YAPE_NUMBER} ${PAYMENT_ACCOUNT_HOLDER}`,
 )}`;
@@ -58,16 +58,14 @@ const TARGET_TO_PLAN: Record<string, PlanType> = {
   agency: "PRO",
 };
 
-function PaymentBrandLogo({ brand }: { brand: "YAPE" | "BCP" | "INTERBANK" }) {
+function PaymentBrandLogo({ brand }: { brand: "YAPE" | "BCP" }) {
   const styles: Record<typeof brand, string> = {
     YAPE: "from-violet-500 to-fuchsia-600 text-white",
     BCP: "from-blue-700 to-blue-900 text-white",
-    INTERBANK: "from-emerald-500 to-lime-600 text-black",
   };
   const label: Record<typeof brand, string> = {
     YAPE: "Yape",
     BCP: "BCP",
-    INTERBANK: "IBK",
   };
 
   return (
@@ -134,7 +132,7 @@ export default function BillingPage() {
             accountHolder: "Account holder",
             yapeNumber: "Yape number",
             bcpSolesAccount: "BCP soles account",
-            interbankCci: "Interbank transfer (CCI)",
+            interbankCci: "BCP interbank account (CCI)",
             openQr: "Open QR in full size",
             notes: "Notes",
             notesPlaceholder: "Add any extra details for the admin team.",
@@ -185,7 +183,7 @@ export default function BillingPage() {
             accountHolder: "Titular",
             yapeNumber: "Numero Yape",
             bcpSolesAccount: "Cuenta BCP soles",
-            interbankCci: "Cuenta interbancaria (CCI)",
+            interbankCci: "Cuenta interbancaria BCP (CCI)",
             openQr: "Abrir QR en tamano completo",
             notes: "Notas",
             notesPlaceholder: "Agrega detalles extra para el equipo admin.",
@@ -573,15 +571,15 @@ export default function BillingPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="rounded-lg border border-emerald-300/20 bg-emerald-900/20 p-3">
+                      <div className="rounded-lg border border-blue-300/20 bg-blue-900/20 p-3">
                         <div className="flex items-center gap-2">
                           <span className="animate-pulse">
-                            <PaymentBrandLogo brand="INTERBANK" />
+                            <PaymentBrandLogo brand="BCP" />
                           </span>
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold text-white">Interbank</p>
-                            <p className="break-all text-[11px] text-emerald-100/90">
-                              {i18n.interbankCci}: {PAYMENT_INTERBANK_CCI}
+                            <p className="text-xs font-semibold text-white">BCP</p>
+                            <p className="break-all text-[11px] text-blue-100/90">
+                              {i18n.interbankCci}: {PAYMENT_BCP_CCI}
                             </p>
                           </div>
                         </div>
