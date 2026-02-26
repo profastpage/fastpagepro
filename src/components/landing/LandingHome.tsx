@@ -315,6 +315,7 @@ export default function LandingHome() {
   const router = useRouter();
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [demoTab, setDemoTab] = useState<BusinessVertical>("restaurant");
+  const [openFaq, setOpenFaq] = useState<string>(FAQS[0]?.q ?? "");
   const testimonialsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -779,17 +780,43 @@ export default function LandingHome() {
           <h2 className="text-3xl font-black text-white md:text-4xl">Preguntas frecuentes</h2>
         </div>
         <div className="space-y-3">
-          {FAQS.map((item) => (
-            <details key={item.q} className="group overflow-hidden rounded-2xl border border-white/10 bg-black/45">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-left">
-                <span className="text-sm font-bold text-white md:text-base">{item.q}</span>
-                <ArrowRight className="h-5 w-5 shrink-0 text-zinc-400 transition group-open:rotate-90" />
-              </summary>
-              <div className="border-t border-white/10 px-5 pb-5 pt-4 text-sm leading-relaxed text-zinc-300">
-                {item.a}
-              </div>
-            </details>
-          ))}
+          {FAQS.map((item, index) => {
+            const isOpen = openFaq === item.q;
+            const panelId = `faq-panel-${index}`;
+            return (
+              <article
+                key={item.q}
+                className="overflow-hidden rounded-2xl border border-white/10 bg-black/45 transition-all duration-300"
+              >
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  onClick={() => setOpenFaq((current) => (current === item.q ? "" : item.q))}
+                  className="flex w-full items-center justify-between gap-4 p-5 text-left"
+                >
+                  <span className="text-sm font-bold text-white md:text-base">{item.q}</span>
+                  <ArrowRight
+                    className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform duration-300 ${
+                      isOpen ? "rotate-90 text-amber-300" : ""
+                    }`}
+                  />
+                </button>
+                <div
+                  id={panelId}
+                  className={`grid transition-all duration-300 ease-out ${
+                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="border-t border-white/10 px-5 pb-5 pt-4 text-sm leading-relaxed text-zinc-300">
+                      {item.a}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 

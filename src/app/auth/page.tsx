@@ -403,11 +403,11 @@ function AuthContent() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden px-4 pb-10 pt-24 md:pb-12 md:pt-28">
+    <main className="relative min-h-screen overflow-x-hidden overflow-y-auto px-4 pb-10 pt-12 md:pb-12 md:pt-16">
       {/* Background Elements */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-yellow-600/10 rounded-full blur-[80px] pointer-events-none" />
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-col items-stretch">
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-3 group">
@@ -435,7 +435,7 @@ function AuthContent() {
         </div>
 
         {/* Auth Card */}
-        <div className="glass overflow-hidden rounded-2xl border border-white/10 p-1 shadow-2xl">
+        <div className="glass min-h-[680px] overflow-hidden rounded-2xl border border-white/10 p-1 shadow-2xl">
           {/* Tabs */}
           <div className="grid grid-cols-2 p-1 bg-black/20 rounded-xl mb-6">
             <button
@@ -466,9 +466,9 @@ function AuthContent() {
             </button>
           </div>
 
-          <div className="px-6 pb-8">
+          <div className="min-h-[560px] px-6 pb-8">
             {tab === "login" ? (
-              <form onSubmit={handleLogin} className="flex flex-col gap-5">
+              <form onSubmit={handleLogin} className="flex min-h-[360px] flex-col gap-5">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
                     Email
@@ -552,7 +552,7 @@ function AuthContent() {
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleRegister} className="flex flex-col gap-5">
+              <form onSubmit={handleRegister} className="flex min-h-[360px] flex-col gap-5">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
                     Nombre
@@ -701,7 +701,7 @@ function AuthContent() {
 
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white shadow-xl animate-fade-in z-50 flex items-center gap-2">
+        <div className="fixed bottom-8 left-1/2 z-50 flex w-max max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-3 text-sm text-white shadow-xl backdrop-blur-md animate-fade-in">
           <span className="text-yellow-400">!</span>
           {toast}
         </div>
