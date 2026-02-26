@@ -169,7 +169,7 @@ const TESTIMONIALS = [
     name: "Javier Rojas",
     city: "Trujillo, Peru",
     segment: "Online Store",
-    quote: "Con FastPage nuestra tienda online cerró ventas desde el primer fin de semana.",
+    quote: "Con FastPage nuestra tienda online cerro ventas desde el primer fin de semana.",
     avatar:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=320&auto=format&fit=crop",
   },
@@ -209,7 +209,7 @@ const TESTIMONIALS = [
     name: "Valentina Castro",
     city: "Medellin, Colombia",
     segment: "Online Store",
-    quote: "La tienda quedó lista para campañas y ahora vendemos todos los dias.",
+    quote: "La tienda quedo lista para campanas y ahora vendemos todos los dias.",
     avatar:
       "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=320&auto=format&fit=crop",
   },
@@ -233,7 +233,7 @@ const TESTIMONIALS = [
     name: "Andres Molina",
     city: "Santiago, Chile",
     segment: "Online Store",
-    quote: "La experiencia mobile nos ayudó a convertir mejor que nuestro sitio anterior.",
+    quote: "La experiencia mobile nos ayudo a convertir mejor que nuestro sitio anterior.",
     avatar:
       "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=320&auto=format&fit=crop",
   },
@@ -249,7 +249,7 @@ const TESTIMONIALS = [
     name: "Daniela Ponce",
     city: "CDMX, Mexico",
     segment: "Online Store",
-    quote: "El checkout por WhatsApp nos simplificó ventas y seguimiento.",
+    quote: "El checkout por WhatsApp nos simplifico ventas y seguimiento.",
     avatar:
       "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=320&auto=format&fit=crop",
   },
@@ -265,7 +265,7 @@ const TESTIMONIALS = [
     name: "Gabriela Flores",
     city: "Puebla, Mexico",
     segment: "Carta Digital",
-    quote: "La carta digital ordenó nuestra operación de delivery en un dia.",
+    quote: "La carta digital ordeno nuestra operacion de delivery en un dia.",
     avatar:
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=320&auto=format&fit=crop",
   },
@@ -289,7 +289,7 @@ const TESTIMONIALS = [
     name: "Diego Ferreyra",
     city: "Buenos Aires, Argentina",
     segment: "Online Store",
-    quote: "La estructura del catalogo nos permitió escalar campañas sin friccion.",
+    quote: "La estructura del catalogo nos permitio escalar campanas sin friccion.",
     avatar:
       "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=320&auto=format&fit=crop",
   },
@@ -305,11 +305,14 @@ const TESTIMONIALS = [
     name: "Hector Villanueva",
     city: "Asuncion, Paraguay",
     segment: "Landing Servicios",
-    quote: "FastPage nos ayudó a presentar mejor nuestra oferta y cerrar mas rapido.",
+    quote: "FastPage nos ayudo a presentar mejor nuestra oferta y cerrar mas rapido.",
     avatar:
       "https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=320&auto=format&fit=crop",
   },
 ];
+
+const DELUXE_BUTTON_BASE =
+  "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-5 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
 
 export default function LandingHome() {
   const { user, loading } = useAuth();
@@ -390,7 +393,7 @@ export default function LandingHome() {
                     location: "hero_primary",
                   })
                 }
-                className="inline-flex items-center justify-center rounded-full border border-amber-200/70 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 px-7 py-3 text-sm font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110"
+                className={`${DELUXE_BUTTON_BASE} rounded-full px-7 py-3 uppercase tracking-[0.12em]`}
               >
                 🚀 Probar gratis
               </Link>
@@ -403,11 +406,9 @@ export default function LandingHome() {
                     location: "hero_secondary",
                   })
                 }
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:border-amber-300/45 hover:bg-amber-300/10"
+                className={`${DELUXE_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
               >
-                <PlayCircle className="h-4 w-4" />
-                Ver demo
-              </Link>
+                <PlayCircle className="h-4 w-4" />✨ Ver demo</Link>
               <a
                 href="#pricing"
                 onClick={() =>
@@ -439,7 +440,7 @@ export default function LandingHome() {
               Elige demo, personaliza tu version y registra solo cuando ya viste el valor.
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {FLOW_STEPS.slice(0, 4).map((step) => (
+              {FLOW_STEPS.map((step) => (
                 <div key={step.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">{step.title}</p>
                   <p className="mt-1 text-sm font-semibold text-white">{step.description}</p>
@@ -454,9 +455,9 @@ export default function LandingHome() {
                   slug: "hero_panel",
                 })
               }
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10"
+              className={`${DELUXE_BUTTON_BASE} mt-5 w-full rounded-xl px-4 py-2.5 text-base`}
             >
-              Abrir demo ahora
+              ✨ Abrir demo ahora
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -466,9 +467,22 @@ export default function LandingHome() {
       <section id="sistema-fastpage" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 text-center">
           <h2 className="text-3xl font-black text-white md:text-4xl">Sistema FastPage</h2>
-          <p className="mx-auto mt-3 max-w-3xl text-zinc-300">
+          <p className="mx-auto mt-3 hidden max-w-3xl text-zinc-300 sm:block">
             Visitas → Landing → WhatsApp → Metricas → Escala.
           </p>
+          <div className="mx-auto mt-3 grid max-w-sm grid-cols-5 gap-2 sm:hidden">
+            {FLOW_STEPS.map((step) => {
+              const Icon = step.icon;
+              return (
+                <div key={`mobile-step-${step.title}`} className="flex flex-col items-center gap-2">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-zinc-300">{step.title}</p>
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-amber-300/40 bg-zinc-950 shadow-[inset_0_1px_0_rgba(251,191,36,0.25),0_8px_18px_-14px_rgba(251,191,36,0.55)]">
+                    <Icon className="h-5 w-5 text-amber-300" />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
         <div className="grid gap-3 md:grid-cols-[repeat(9,minmax(0,1fr))] md:items-center">
           {FLOW_STEPS.map((step, index) => {
@@ -570,10 +584,8 @@ export default function LandingHome() {
                         slug: "rubro_card",
                       })
                     }
-                    className="rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white"
-                  >
-                    Ver demo
-                  </Link>
+                    className={`${DELUXE_BUTTON_BASE} rounded-xl px-4 py-2`}
+                  >✨ Ver demo</Link>
                   <Link
                     href={`/signup?vertical=${item.vertical}`}
                     onClick={() =>
@@ -582,10 +594,8 @@ export default function LandingHome() {
                         location: "rubro_card",
                       })
                     }
-                    className="rounded-xl border border-amber-300/35 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-200"
-                  >
-                    Crear mi version
-                  </Link>
+                    className={`${DELUXE_BUTTON_BASE} rounded-xl px-4 py-2`}
+                  >🚀 Crear mi version</Link>
                 </div>
               </article>
             );
@@ -763,10 +773,8 @@ export default function LandingHome() {
                   location: "final_cta",
                 })
               }
-              className="rounded-full border border-amber-200/70 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 px-6 py-3 text-sm font-black uppercase tracking-[0.12em] text-black transition hover:brightness-110"
-            >
-              Probar gratis
-            </Link>
+              className={`${DELUXE_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
+            >🚀 Probar gratis</Link>
             <Link
               href={heroDemoHref}
               onClick={() =>
@@ -775,10 +783,8 @@ export default function LandingHome() {
                   slug: "final",
                 })
               }
-              className="rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white transition hover:border-amber-300/45 hover:bg-amber-300/10"
-            >
-              Ver demo
-            </Link>
+              className={`${DELUXE_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
+            >✨ Ver demo</Link>
           </div>
         </div>
       </section>
@@ -792,10 +798,10 @@ export default function LandingHome() {
               location: "mobile_sticky",
             })
           }
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/55 bg-gradient-to-r from-black via-black/95 to-zinc-900 px-4 py-3 text-sm font-black text-amber-200 shadow-2xl backdrop-blur-md"
+          className={`${DELUXE_BUTTON_BASE} w-full rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-md`}
         >
           <Rocket className="h-4 w-4" />
-          Crear mi version gratis
+          🚀 Crear mi version gratis
         </Link>
       </div>
 
@@ -803,3 +809,4 @@ export default function LandingHome() {
     </main>
   );
 }
+
