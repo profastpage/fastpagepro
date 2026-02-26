@@ -1148,3 +1148,18 @@ o-scrollbar para evitar barra visible.
   - al activar/desactivar plan desde super admin, la solicitud asociada queda marcada como revisada/leida.
 - Objetivo:
   - control operativo centralizado del ciclo solicitud -> revision admin -> activacion/desactivacion, enlazado al dashboard de cada cliente.
+## Firestore rules hardening for plan activation and billing requests (2026-02-26)
+
+- Modulos ajustados:
+  - `firestore.rules`
+  - `src/app/api/subscription/request/route.ts`
+- Problema corregido:
+  - activaciones/suscripciones podian fallar cuando el documento `users/{uid}` aun no existia o cuando faltaban permisos explicitos para notificaciones de solicitud.
+- Correccion aplicada:
+  - el endpoint de solicitud ahora incluye campos base de identidad (`uid`, email cuando existe, timestamps) al sincronizar `users/{uid}`.
+  - sincronizacion de trial tambien asegura `userId` al escribir `link_profiles/{uid}` para compatibilidad con reglas de ownership.
+  - errores de reglas Firestore ahora responden `403` con mensaje claro de permisos insuficientes (en lugar de confundirlo con error de autenticacion).
+  - reglas Firestore agregan coleccion `subscription_notifications` (create owner/admin, lectura admin y owner, update/delete admin).
+  - reglas de `users` y `link_profiles` aceptan create/update owner con compatibilidad si faltan campos legacy (`uid` o `userId`).
+- Resultado:
+  - solicitudes de trial/pago/free y activaciones de plan quedan operativas de forma consistente para cuentas nuevas y existentes.

@@ -30,7 +30,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if (isOwner(userId) && request.resource.data.uid == userId)
+      allow create: if (isOwner(userId)
+        && (
+          !request.resource.data.keys().hasAny(["uid"])
+          || request.resource.data.uid == userId
+        ))
         || isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
@@ -130,15 +134,41 @@ service cloud.firestore {
 
       allow create: if signedIn()
         && profileId == request.auth.uid
-        && request.resource.data.userId == request.auth.uid;
+        && (
+          !request.resource.data.keys().hasAny(["userId"])
+          || request.resource.data.userId == request.auth.uid
+        );
 
       allow update: if isAdmin()
         || (
           isLinkProfileOwner()
-          && request.resource.data.userId == request.auth.uid
+          && (
+            !request.resource.data.keys().hasAny(["userId"])
+            || request.resource.data.userId == request.auth.uid
+          )
         );
 
       allow delete: if isAdmin() || isLinkProfileOwner();
+    }
+
+    match /subscription_notifications/{notificationId} {
+      function notificationOwner() {
+        return signedIn()
+          && resource.data.userId is string
+          && resource.data.userId == request.auth.uid;
+      }
+
+      function notificationOwnerCreate() {
+        return signedIn()
+          && request.resource.data.userId is string
+          && request.resource.data.userId == request.auth.uid;
+      }
+
+      allow get: if isAdmin() || notificationOwner();
+      allow list: if isAdmin();
+      allow create: if isAdmin() || notificationOwnerCreate();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /{document=**} {

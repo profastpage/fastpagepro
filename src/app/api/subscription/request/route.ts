@@ -40,6 +40,17 @@ function firestoreInt(value: number) {
   return { integerValue: String(safe) };
 }
 
+function buildUserIdentityFields(userId: string, email: string) {
+  const now = Date.now();
+  const safeEmail = sanitizeText(email, 160);
+  return {
+    uid: firestoreString(userId),
+    lastLogin: firestoreInt(now),
+    subscriptionUpdatedAt: firestoreInt(now),
+    ...(safeEmail ? { email: firestoreString(safeEmail) } : {}),
+  };
+}
+
 function sanitizeText(value: unknown, maxLen = 500): string {
   return String(value || "").replace(/\s+/g, " ").trim().slice(0, maxLen);
 }
@@ -70,6 +81,12 @@ async function readFirestoreUserDocWithToken(userId: string, idToken: string) {
   });
 
   if (response.status === 404) return null;
+  if (response.status === 401) {
+    throw new Error("UNAUTHORIZED: invalid bearer token");
+  }
+  if (response.status === 403) {
+    throw new Error("FORBIDDEN: firestore rules denied read access (users)");
+  }
   if (!response.ok) {
     throw new Error("SERVICE_UNAVAILABLE: firestore user read failed");
   }
@@ -102,6 +119,12 @@ async function patchFirestoreDocWithToken(input: {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("UNAUTHORIZED: invalid bearer token");
+    }
+    if (response.status === 403) {
+      throw new Error(`FORBIDDEN: firestore rules denied write access (${input.collection})`);
+    }
     throw new Error(`SERVICE_UNAVAILABLE: firestore patch failed (${input.collection})`);
   }
 }
@@ -133,6 +156,7 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
     documentId: input.userId,
     idToken: input.idToken,
     fields: {
+      ...buildUserIdentityFields(input.userId, email),
       latestSubscriptionRequestId: firestoreString(requestId),
       latestSubscriptionRequestEmail: firestoreString(email),
       latestSubscriptionRequestPlan: firestoreString(input.requestedPlan),
@@ -179,7 +203,7 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
   };
 }
 
-async function startBusinessTrialViaFirestoreToken(userId: string, idToken: string) {
+async function startBusinessTrialViaFirestoreToken(userId: string, idToken: string, userEmail: string) {
   const existing = await readFirestoreUserDocWithToken(userId, idToken);
   const existingFields = (existing as any)?.fields || {};
   const trialUsed = parseFirestoreBool(existingFields.businessTrialUsed);
@@ -190,6 +214,7 @@ async function startBusinessTrialViaFirestoreToken(userId: string, idToken: stri
   const now = Date.now();
   const endDate = now + 14 * 24 * 60 * 60 * 1000;
   const userFields = {
+    ...buildUserIdentityFields(userId, userEmail),
     plan: firestoreString("business"),
     subscriptionPlan: firestoreString("BUSINESS"),
     subscriptionStatus: firestoreString("ACTIVE"),
@@ -214,6 +239,7 @@ async function startBusinessTrialViaFirestoreToken(userId: string, idToken: stri
     documentId: userId,
     idToken,
     fields: {
+      userId: firestoreString(userId),
       subscriptionBlocked: firestoreBool(false),
       subscriptionPlan: firestoreString("BUSINESS"),
       subscriptionStatus: firestoreString("ACTIVE"),
@@ -279,7 +305,7 @@ export async function POST(request: NextRequest) {
           throw trialError;
         }
 
-        trialSubscription = await startBusinessTrialViaFirestoreToken(userId, fallbackIdToken);
+        trialSubscription = await startBusinessTrialViaFirestoreToken(userId, fallbackIdToken, userEmail);
       }
 
       if (idToken) {
@@ -423,6 +449,12 @@ export async function POST(request: NextRequest) {
     const message = String(error?.message || "");
     if (message.startsWith("UNAUTHORIZED")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+    if (message.startsWith("FORBIDDEN")) {
+      return NextResponse.json(
+        { error: "Permisos de Firestore insuficientes para registrar la solicitud." },
+        { status: 403 },
+      );
     }
     if (message.startsWith("BUSINESS_TRIAL_ALREADY_USED")) {
       return NextResponse.json(
