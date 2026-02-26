@@ -80,7 +80,7 @@ function buildSummaryFromFirestore(
   payload: FirestorePlanPayload,
   baseSummary?: SubscriptionClientSummary | null,
 ): SubscriptionClientSummary | null {
-  const rawPlan = String(payload.plan || payload.subscriptionPlan || "").trim();
+  const rawPlan = String(payload.subscriptionPlan || payload.plan || "").trim();
   if (!rawPlan) return null;
 
   const plan = toPlanType(rawPlan);

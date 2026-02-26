@@ -140,7 +140,7 @@ export function usePlanPermissions(enabled = true) {
         if (cancelled) return;
 
         const userData = userSnapshot.data() as Record<string, unknown> | undefined;
-        const rawPlan = String(userData?.plan || userData?.subscriptionPlan || "").trim();
+        const rawPlan = String(userData?.subscriptionPlan || userData?.plan || "").trim();
 
         setFirestorePlan(rawPlan || null);
         setUsage(usageSnapshot);
@@ -160,7 +160,7 @@ export function usePlanPermissions(enabled = true) {
   }, [enabled, subscriptionLoading, summary?.userId, summary?.usage?.publishedPages]);
 
   return useMemo(() => {
-    const resolvedRawPlan = firestorePlan || summary?.plan || "FREE";
+    const resolvedRawPlan = summary?.plan || firestorePlan || "FREE";
     const canonicalPlan = toCanonicalPlanType(resolvedRawPlan);
     const legacyPlan = toPlanType(canonicalPlan);
     const limits = getPlanLimits(canonicalPlan);

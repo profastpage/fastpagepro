@@ -77,6 +77,7 @@ async function hasUsedBusinessTrial(userId: string): Promise<boolean> {
       where: {
         userId,
         plan: { in: ["BUSINESS", "PRO"] },
+        status: { in: ["ACTIVE", "EXPIRED"] },
       },
       select: { id: true },
     });
@@ -296,7 +297,7 @@ async function readFirestoreSubscriptionRecord(userId: string): Promise<Subscrip
     if (!data) return null;
 
     const plan = toPlanType(
-      (data as Record<string, unknown>).plan || (data as Record<string, unknown>).subscriptionPlan,
+      (data as Record<string, unknown>).subscriptionPlan || (data as Record<string, unknown>).plan,
     );
     if (!plan) return null;
 
@@ -306,8 +307,11 @@ async function readFirestoreSubscriptionRecord(userId: string): Promise<Subscrip
     const paymentMethod = toPaymentMethod((data as Record<string, unknown>).subscriptionPaymentMethod) || "TRANSFERENCIA";
     const startDate = toDateOrFallback((data as Record<string, unknown>).subscriptionStartAt, now);
     const endDate = toDateOrFallback((data as Record<string, unknown>).subscriptionEndAt, fallbackEnd);
-    const updatedAt = toDateOrFallback((data as Record<string, unknown>).subscriptionUpdatedAt, now);
-    const createdAt = toDateOrFallback((data as Record<string, unknown>).subscriptionCreatedAt, updatedAt);
+    const updatedAt = toDateOrFallback((data as Record<string, unknown>).subscriptionUpdatedAt, new Date(0));
+    const createdAt = toDateOrFallback(
+      (data as Record<string, unknown>).subscriptionCreatedAt,
+      updatedAt.getTime() > 0 ? updatedAt : startDate,
+    );
 
     return buildSubscriptionRecord({
       id: String((data as Record<string, unknown>).subscriptionId || `firestore-${userId}`).trim(),
@@ -435,7 +439,9 @@ export async function getLatestSubscription(userId: string): Promise<Subscriptio
   if (firestoreRecord) {
     if (!prismaRecord) return firestoreRecord;
 
+    const firestoreHasReliableTimestamp = firestoreRecord.updatedAt.getTime() > 0;
     const firestoreWinsByFreshness =
+      firestoreHasReliableTimestamp &&
       firestoreRecord.updatedAt.getTime() >= prismaRecord.updatedAt.getTime();
     const firestoreWinsByPlan = prismaRecord.plan === "FREE" && firestoreRecord.plan !== "FREE";
     const firestoreWinsByStatus =

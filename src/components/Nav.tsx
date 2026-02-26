@@ -55,7 +55,7 @@ export default function Nav() {
     const isExpired = summary?.status === "EXPIRED";
     const starterLockedRoutes = new Set(["/builder", "/templates", "/cloner/web", "/store", "/metrics"]);
     const businessLockedRoutes = new Set(["/builder", "/templates", "/cloner/web"]);
-    const expiredUnlockedRoutes = new Set(["/dashboard/billing", "/settings", "/hub"]);
+    const expiredUnlockedRoutes = new Set(["/dashboard/billing", "/settings"]);
 
     const resolveLockHint = (href: string) => {
       if (isExpired && !expiredUnlockedRoutes.has(href)) {
