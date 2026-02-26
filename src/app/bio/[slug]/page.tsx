@@ -19,12 +19,22 @@ import {
 } from "@/lib/linkHubProfile";
 import CartaThemeProvider from "@/theme/CartaThemeProvider";
 import { getCartaTheme, getSafeCartaThemeId, recommendCartaThemeIdByRubro } from "@/theme/cartaThemes";
+import ProductCard, { type ProductCardBadge } from "@/components/carta/ProductCard";
+import StickyCategoryBar from "@/components/carta/StickyCategoryBar";
+import FloatingCartButton from "@/components/carta/FloatingCartButton";
+import RestaurantStatusChip from "@/components/carta/RestaurantStatusChip";
+import CartaMenuSkeleton from "@/components/carta/CartaMenuSkeleton";
+import {
+  addItemToCartStore,
+  patchCartItemQuantityStore,
+  removeItemFromCartStore,
+  type CartaCartItem,
+} from "@/lib/cartaCartStore";
 import {
   AtSign,
   Facebook,
   Fish,
   Globe,
-  Loader2,
   MapPin,
   Minus,
   Menu,
@@ -49,15 +59,7 @@ type DeliveryMethod = "delivery" | "pickup" | "dinein";
 type PaymentMethod = "cash" | "transfer" | "yape" | "plin";
 type GoldKeywordAction = "contact" | "catalog" | "location" | "call" | "whatsapp";
 
-type CartItem = {
-  id: string;
-  title: string;
-  imageUrl: string;
-  categoryName: string;
-  priceLabel: string;
-  unitPrice: number;
-  quantity: number;
-};
+type CartItem = CartaCartItem;
 
 const ORDER_DELIVERY_OPTIONS: Array<{ value: DeliveryMethod; label: string }> = [
   { value: "delivery", label: "Envio a domicilio" },
@@ -235,6 +237,28 @@ function formatSoles(value: number): string {
   return `S/${value.toFixed(2)} SOLES`;
 }
 
+function resolvePriorityBadge(badge?: string): ProductCardBadge | null {
+  const value = String(badge || "").toLowerCase();
+  if (!value) return null;
+  if (value.includes("pedido") || value.includes("top")) return "🔥 Más pedido";
+  if (value.includes("favorito")) return "⭐ Favorito";
+  if (value.includes("acaba") || value.includes("ultima")) return "🕒 Se acaba";
+  return null;
+}
+
+function resolveRestaurantOpen(scheduleLines: string[]): boolean {
+  if (!scheduleLines.length) return false;
+  const normalized = scheduleLines.join(" ").toLowerCase();
+  return !normalized.includes("cerrado");
+}
+
+function resolveEtaMinutes(scheduleLines: string[]): number {
+  const match = scheduleLines.join(" ").match(/(\d{2})\s*min/i);
+  if (!match) return 25;
+  const value = Number.parseInt(match[1], 10);
+  return Number.isFinite(value) ? value : 25;
+}
+
 export default function PublicBioPage() {
   const params = useParams<{ slug: string }>();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
@@ -380,11 +404,7 @@ export default function PublicBioPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-slate-700" />
-      </div>
-    );
+    return <CartaMenuSkeleton />;
   }
 
   if (notFound || !profile) {
@@ -444,6 +464,8 @@ export default function PublicBioPage() {
   const cartTotal = Math.max(0, cartSubtotal - autoDiscount - couponDiscount);
   const amountToAutoDiscount = Math.max(0, AUTO_DISCOUNT_THRESHOLD - cartSubtotal);
   const whatsappTargetDigits = (profile.whatsappNumber || profile.phoneNumber).replace(/\D/g, "");
+  const isRestaurantOpen = resolveRestaurantOpen(profile.location.scheduleLines);
+  const etaMinutes = resolveEtaMinutes(profile.location.scheduleLines);
 
   const deliveryLabelMap: Record<DeliveryMethod, string> = {
     delivery: "Envio a domicilio",
@@ -522,43 +544,27 @@ export default function PublicBioPage() {
     categoryName: string,
   ) {
     const unitPrice = parsePriceToNumber(item.price || "0");
-    setCartItems((prev) => {
-      const existing = prev.find((entry) => entry.id === item.id);
-      if (existing) {
-        return prev.map((entry) =>
-          entry.id === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry,
-        );
-      }
-      return [
-        ...prev,
-        {
-          id: item.id,
-          title: item.title || "Producto",
-          imageUrl: item.imageUrl || "",
-          categoryName,
-          priceLabel: item.price || "0.00",
-          unitPrice,
-          quantity: 1,
-        },
-      ];
-    });
+    setCartItems((prev) =>
+      addItemToCartStore(prev, {
+        id: item.id,
+        title: item.title || "Producto",
+        imageUrl: item.imageUrl || "",
+        categoryName,
+        priceLabel: item.price || "0.00",
+        unitPrice,
+      }),
+    );
     setCartFeedback(`"${item.title || "Producto"}" agregado al pedido.`);
     setCartError("");
     window.setTimeout(() => setCartFeedback(""), 1400);
   }
 
   function removeCartItem(itemId: string) {
-    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
+    setCartItems((prev) => removeItemFromCartStore(prev, itemId));
   }
 
   function patchCartItemQuantity(itemId: string, nextQty: number) {
-    if (nextQty <= 0) {
-      removeCartItem(itemId);
-      return;
-    }
-    setCartItems((prev) =>
-      prev.map((item) => (item.id === itemId ? { ...item, quantity: nextQty } : item)),
-    );
+    setCartItems((prev) => patchCartItemQuantityStore(prev, itemId, nextQty));
   }
 
   function clearCart() {
@@ -1019,6 +1025,9 @@ export default function PublicBioPage() {
               <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: "var(--carta-accent)" }}>
                 {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
               </p>
+              {profile.businessType === "restaurant" ? (
+                <RestaurantStatusChip isOpen={isRestaurantOpen} etaMinutes={etaMinutes} className="mt-3" />
+              ) : null}
               {profile.bio && (
                 <p className="mt-3 text-sm md:text-base" style={{ color: textPalette.muted }}>
                   {renderBioWithGoldKeywords(profile.bio)}
@@ -1193,27 +1202,19 @@ export default function PublicBioPage() {
                     />
                   </label>
 
-                  <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
-                    {categorySections.map((category) => (
-                      <button
-                        key={category.id}
-                        type="button"
-                        ref={(node) => {
-                          categoryChipRefs.current[category.id] = node;
-                        }}
-                        onClick={() => scrollToCategory(category.id)}
-                        className={`shrink-0 border px-3 py-2 text-xs font-bold transition hover:-translate-y-0.5 active:scale-[0.98] ${buttonRadiusClass}`}
-                        style={
-                          selectedCategoryId === category.id
-                            ? chipActiveStyle
-                            : { borderColor: "var(--carta-chip-border)", background: "var(--carta-chip-bg)", color: "var(--carta-chip-text)" }
-                        }
-                      >
-                        <span className="mr-1">{category.emoji || category.name.slice(0, 1).toUpperCase()}</span>
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
+                  <StickyCategoryBar
+                    categories={categorySections.map((category) => ({
+                      id: category.id,
+                      name: category.name,
+                      emoji: category.emoji,
+                    }))}
+                    activeId={selectedCategoryId}
+                    onSelect={scrollToCategory}
+                    buttonShapeClass={buttonRadiusClass}
+                    getButtonRef={(categoryId, node) => {
+                      categoryChipRefs.current[categoryId] = node;
+                    }}
+                  />
                 </div>
 
                 {categorySections.length === 0 && (
@@ -1236,63 +1237,19 @@ export default function PublicBioPage() {
                       </h3>
                       <div className="mt-3 space-y-3">
                         {section.items.map((item) => (
-                          <article
+                          <ProductCard
                             key={item.id}
-                            className={`rounded-[1.2rem] border p-3 ${cardClass}`}
-                            style={{ borderColor: "var(--carta-border)", ...itemSurfaceStyle }}
-                          >
-                            <div className="flex gap-3">
-                              {item.imageUrl ? (
-                                <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-xl object-cover" />
-                              ) : (
-                                <div
-                                  className="h-20 w-20 rounded-xl flex items-center justify-center text-2xl"
-                                  style={interactiveStyle}
-                                >
-                                  <span className="text-[10px] font-black uppercase tracking-[0.08em]">
-                                    {item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
-                                  </span>
-                                </div>
-                              )}
-
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <h4 className="text-xl font-extrabold leading-tight" style={{ color: textPalette.heading }}>
-                                    {item.title}
-                                  </h4>
-                                  {item.badge && (
-                                    <span className="rounded-full border px-2 py-1 text-[10px] font-black uppercase" style={badgeStyle}>
-                                      {item.badge}
-                                    </span>
-                                  )}
-                                </div>
-                                {item.description && (
-                                  <p className="mt-1 text-sm" style={{ color: textPalette.muted }}>
-                                    {item.description}
-                                  </p>
-                                )}
-                                <div className="mt-2 flex items-center gap-2 text-sm font-bold">
-                                  {item.compareAtPrice && (
-                                    <span className="line-through" style={{ color: textPalette.soft }}>
-                                      S/{item.compareAtPrice}
-                                    </span>
-                                  )}
-                                  <span className="text-lg" style={{ color: "var(--carta-accent)" }}>
-                                    S/{item.price}
-                                  </span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => addItemToCart(item, section.name)}
-                                  className={`mt-3 inline-flex items-center justify-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] transition hover:-translate-y-0.5 active:scale-[0.98] ${buttonRadiusClass}`}
-                                  style={interactiveStyle}
-                                >
-                                  <ShoppingBag className="h-3.5 w-3.5" />
-                                  Agregar
-                                </button>
-                              </div>
-                            </div>
-                          </article>
+                            className={cardClass}
+                            title={item.title}
+                            description={item.description}
+                            imageUrl={item.imageUrl}
+                            oldPrice={item.compareAtPrice || undefined}
+                            price={item.price || "0.00"}
+                            badge={item.badge || undefined}
+                            priorityBadge={resolvePriorityBadge(item.badge)}
+                            emojiFallback={item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
+                            onAdd={() => addItemToCart(item, section.name)}
+                          />
                         ))}
                       </div>
                     </div>
@@ -1362,25 +1319,15 @@ export default function PublicBioPage() {
       </div>
 
       {activeTab === "catalog" && (
-        <div className="md:hidden fixed right-4 bottom-24 z-40">
-          <button
-            type="button"
-            onClick={() => {
-              setIsCartOpen(true);
-              setCheckoutStep("cart");
-            }}
-            className={`inline-flex items-center gap-2 border px-4 py-3 text-xs font-black uppercase tracking-[0.08em] shadow-xl ${buttonRadiusClass}`}
-            style={interactiveStyle}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            Pedido
-            {cartItemsCount > 0 && (
-              <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: "var(--carta-chip-active-bg)", color: "var(--carta-chip-active-text)" }}>
-                {cartItemsCount}
-              </span>
-            )}
-          </button>
-        </div>
+        <FloatingCartButton
+          cartCount={cartItemsCount}
+          buttonShapeClass={`${buttonRadiusClass} md:hidden`}
+          visible={activeTab === "catalog"}
+          onOpen={() => {
+            setIsCartOpen(true);
+            setCheckoutStep("cart");
+          }}
+        />
       )}
 
       <div className="md:hidden fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
