@@ -588,6 +588,7 @@ export default function LinkHubPage() {
   }, [profile?.businessType, profile?.cartaThemeId, profile?.categoryLabel]);
 
   const activeCartaTheme = useMemo(() => getCartaTheme(resolvedCartaThemeId), [resolvedCartaThemeId]);
+  const isRestaurantProfile = profile?.businessType === "restaurant";
   const resolvedCartaBackgroundMode = useMemo(
     () => getSafeLinkHubCartaBackgroundMode(profile?.cartaBackgroundMode),
     [profile?.cartaBackgroundMode],
@@ -2225,99 +2226,31 @@ export default function LinkHubPage() {
 
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-bold text-white">Tema visual deluxe</h2>
+                <h2 className="text-xl font-bold text-white">
+                  {isRestaurantProfile ? "Temas oficiales · Carta Digital" : "Tema visual deluxe"}
+                </h2>
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-200">
                   <Sparkles className="h-3.5 w-3.5" />
-                  {Object.keys(LINK_HUB_THEME_STYLES).length} temas totales
+                  {isRestaurantProfile ? `${CARTA_THEME_OPTIONS.length} temas gastronómicos` : `${Object.keys(LINK_HUB_THEME_STYLES).length} temas totales`}
                 </div>
               </div>
-              <p className="mb-4 text-xs text-zinc-300">
-                Categoria activa:{" "}
-                <span className="font-bold uppercase tracking-[0.08em] text-amber-200">
-                  {LINK_HUB_THEME_CATEGORY_LABELS[activeThemeCategory]}
-                </span>{" "}
-                ({availableThemeKeys.length} temas exclusivos)
-              </p>
+              {isRestaurantProfile ? (
+                <p className="mb-4 text-xs text-zinc-300">
+                  Diseños visuales inspirados en las demos de la landing: portada, perfil, botones, chips y tipografía con estilo premium.
+                </p>
+              ) : (
+                <p className="mb-4 text-xs text-zinc-300">
+                  Categoria activa:{" "}
+                  <span className="font-bold uppercase tracking-[0.08em] text-amber-200">
+                    {LINK_HUB_THEME_CATEGORY_LABELS[activeThemeCategory]}
+                  </span>{" "}
+                  ({availableThemeKeys.length} temas exclusivos)
+                </p>
+              )}
 
               <div className="mb-5 rounded-2xl border border-white/10 bg-black/30 p-4">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-                  <label className="space-y-2">
-                    <span className="text-xs uppercase tracking-[0.15em] text-zinc-400 font-bold">
-                      Tema premium de carta (menu)
-                    </span>
-                    <select
-                      className="w-full rounded-xl border border-white/15 bg-zinc-900/85 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-300/40"
-                      value={resolvedCartaThemeId}
-                      onChange={(event) => patchProfile("cartaThemeId", event.target.value as CartaThemeId)}
-                    >
-                      {CARTA_THEME_OPTIONS.map((themeOption) => (
-                        <option key={themeOption.id} value={themeOption.id}>
-                          {themeOption.name} - {themeOption.rubro}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-zinc-400">
-                      Se aplica en la pagina publicada: header, chips, tarjetas, botones y barra inferior.
-                    </p>
-                    <div className="space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-400">
-                        Fondo de carta
-                      </span>
-                      <div className="inline-flex w-full rounded-xl border border-white/10 bg-black/25 p-1">
-                        <button
-                          type="button"
-                          onClick={() => patchProfile("cartaBackgroundMode", "white")}
-                          className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
-                            resolvedCartaBackgroundMode === "white"
-                              ? "bg-white text-zinc-900 shadow-[0_8px_18px_-14px_rgba(255,255,255,0.8)]"
-                              : "text-zinc-300 hover:text-white"
-                          }`}
-                        >
-                          Fondo blanco
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => patchProfile("cartaBackgroundMode", "theme")}
-                          className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
-                            resolvedCartaBackgroundMode === "theme"
-                              ? "bg-amber-400/15 text-amber-100 shadow-[0_8px_18px_-14px_rgba(250,204,21,0.7)]"
-                              : "text-zinc-300 hover:text-white"
-                          }`}
-                        >
-                          Fondo del tema
-                        </button>
-                      </div>
-                    </div>
-                    <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-                      {CARTA_THEME_OPTIONS.map((themeOption) => {
-                        const isActive = resolvedCartaThemeId === themeOption.id;
-                        return (
-                          <button
-                            key={themeOption.id}
-                            type="button"
-                            onClick={() => patchProfile("cartaThemeId", themeOption.id)}
-                            className={`min-w-[145px] rounded-xl border px-2 py-2 text-left transition ${
-                              isActive
-                                ? "border-amber-300/70 bg-amber-400/10"
-                                : "border-white/10 bg-white/[0.03] hover:border-white/20"
-                            }`}
-                            title={`${themeOption.name} (${themeOption.rubro})`}
-                          >
-                            <div className="mb-2 flex items-center gap-1.5">
-                              {themeOption.preview.map((swatch) => (
-                                <span
-                                  key={`${themeOption.id}-${swatch}`}
-                                  className="h-3.5 w-3.5 rounded-full border border-white/20"
-                                  style={{ background: swatch }}
-                                />
-                              ))}
-                            </div>
-                            <p className="truncate text-[11px] font-bold text-white">{themeOption.name}</p>
-                            <p className="truncate text-[10px] text-zinc-400">{themeOption.rubro}</p>
-                          </button>
-                        );
-                      })}
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
                       className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-100 hover:border-amber-300/40 hover:text-amber-100"
@@ -2335,7 +2268,74 @@ export default function LinkHubPage() {
                     >
                       Sugerir por rubro
                     </button>
-                  </label>
+                    <div className="inline-flex rounded-xl border border-white/10 bg-black/25 p-1">
+                      <button
+                        type="button"
+                        onClick={() => patchProfile("cartaBackgroundMode", "white")}
+                        className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${
+                          resolvedCartaBackgroundMode === "white"
+                            ? "bg-white text-zinc-900 shadow-[0_8px_18px_-14px_rgba(255,255,255,0.8)]"
+                            : "text-zinc-300 hover:text-white"
+                        }`}
+                      >
+                        Fondo blanco
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => patchProfile("cartaBackgroundMode", "theme")}
+                        className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${
+                          resolvedCartaBackgroundMode === "theme"
+                            ? "bg-amber-400/15 text-amber-100 shadow-[0_8px_18px_-14px_rgba(250,204,21,0.7)]"
+                            : "text-zinc-300 hover:text-white"
+                        }`}
+                      >
+                        Fondo del tema
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {CARTA_THEME_OPTIONS.map((themeOption) => {
+                      const isActive = resolvedCartaThemeId === themeOption.id;
+                      return (
+                        <button
+                          key={themeOption.id}
+                          type="button"
+                          onClick={() => patchProfile("cartaThemeId", themeOption.id)}
+                          className={`overflow-hidden rounded-2xl border text-left transition-all ${
+                            isActive
+                              ? "border-amber-300/80 bg-amber-400/10 shadow-[0_14px_36px_-22px_rgba(250,204,21,0.6)]"
+                              : "border-white/10 bg-black/40 hover:-translate-y-0.5 hover:border-white/25"
+                          }`}
+                          title={`${themeOption.name} (${themeOption.rubro})`}
+                        >
+                          <div className="h-28 w-full overflow-hidden border-b border-white/10">
+                            <img
+                              src={themeOption.previewImage}
+                              alt={themeOption.name}
+                              className="h-full w-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                          <div className="space-y-2 p-3">
+                            <div className="inline-flex items-center gap-2">
+                              <span className="rounded-full border border-amber-300/35 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-200">
+                                {themeOption.official ? "Oficial" : "Extra"}
+                              </span>
+                              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
+                                {themeOption.rubro}
+                              </span>
+                            </div>
+                            <p className="text-lg font-black text-white">{themeOption.name}</p>
+                            <p className="line-clamp-2 text-xs text-zinc-300">{themeOption.previewDescription}</p>
+                            <div className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-bold text-zinc-100">
+                              ✨ Aplicar tema
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
                   <div className="rounded-2xl border p-3" style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.surface }}>
                     <p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: activeCartaTheme.tokens.mutedText }}>
@@ -2370,6 +2370,8 @@ export default function LinkHubPage() {
                 </div>
               </div>
 
+              {!isRestaurantProfile && (
+                <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {availableThemeKeys.map((themeKey, index) => {
                   const theme = LINK_HUB_THEME_STYLES[themeKey];
@@ -2567,6 +2569,8 @@ export default function LinkHubPage() {
                   </button>
                 </div>
               </div>
+                </>
+              )}
             </div>
 
           </section>

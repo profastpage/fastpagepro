@@ -37,14 +37,22 @@ export type CartaThemePreset = {
   id: string;
   name: string;
   rubro: string;
+  previewImage: string;
+  previewDescription: string;
+  official: boolean;
+  sortOrder: number;
   tokens: CartaThemeTokens;
 };
 
 export const CARTA_THEMES = {
   gourmet: {
     id: "gourmet",
-    name: "Gourmet Noir",
-    rubro: "Gourmet / Fine Dining",
+    name: "Ceviche House",
+    rubro: "Tema oficial · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Carta marina enfocada en pedidos por WhatsApp.",
+    official: true,
+    sortOrder: 4,
     tokens: {
       background: "#05070d",
       surface: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(250,204,21,0.08) 34%, rgba(3,7,18,0.92) 100%)",
@@ -82,8 +90,12 @@ export const CARTA_THEMES = {
   },
   cafe: {
     id: "cafe",
-    name: "Cafe Crema",
-    rubro: "Cafe / Bakery",
+    name: "Coffee Route",
+    rubro: "Tema oficial · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Menu cafeteria con upsell y recomendados.",
+    official: true,
+    sortOrder: 3,
     tokens: {
       background: "#f5ede2",
       surface: "linear-gradient(150deg, rgba(255,255,255,0.88) 0%, rgba(210,180,140,0.2) 100%)",
@@ -121,8 +133,12 @@ export const CARTA_THEMES = {
   },
   sushi: {
     id: "sushi",
-    name: "Sushi Noir",
-    rubro: "Sushi / Asian",
+    name: "Sushi Prime",
+    rubro: "Tema oficial · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Carta premium con favoritos del dia y pedidos por WhatsApp.",
+    official: true,
+    sortOrder: 1,
     tokens: {
       background: "#08090c",
       surface: "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(185,28,28,0.16) 42%, rgba(10,10,10,0.92) 100%)",
@@ -160,8 +176,12 @@ export const CARTA_THEMES = {
   },
   fastfood: {
     id: "fastfood",
-    name: "Fast Food Prime",
-    rubro: "Fast Food / Burger",
+    name: "Burger Lab",
+    rubro: "Tema oficial · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Combos rapidos y categorias para delivery.",
+    official: true,
+    sortOrder: 2,
     tokens: {
       background: "#11151b",
       surface: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(251,146,60,0.18) 44%, rgba(15,23,42,0.92) 100%)",
@@ -199,8 +219,12 @@ export const CARTA_THEMES = {
   },
   polleria_parrilla: {
     id: "polleria_parrilla",
-    name: "Parrilla Carbon",
-    rubro: "Polleria / Parrilla",
+    name: "Brasa Power",
+    rubro: "Tema oficial · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Pollo a la brasa con combos y delivery por zonas.",
+    official: true,
+    sortOrder: 6,
     tokens: {
       background: "#080a0d",
       surface: "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(245,158,11,0.16) 40%, rgba(10,10,10,0.95) 100%)",
@@ -238,8 +262,12 @@ export const CARTA_THEMES = {
   },
   healthy: {
     id: "healthy",
-    name: "Healthy Forest",
-    rubro: "Healthy / Vegano",
+    name: "Tacos Street",
+    rubro: "Tema extra · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1613514785940-daed07799d9b?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Street food vibrante con acentos verdes y fondo claro.",
+    official: false,
+    sortOrder: 7,
     tokens: {
       background: "#f7faf8",
       surface: "linear-gradient(155deg, rgba(255,255,255,0.95) 0%, rgba(22,163,74,0.08) 100%)",
@@ -277,8 +305,12 @@ export const CARTA_THEMES = {
   },
   desserts: {
     id: "desserts",
-    name: "Desserts Velvet",
-    rubro: "Postres / Heladeria",
+    name: "Pizza Norte",
+    rubro: "Tema oficial · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Pizzeria con promos y pedidos rapidos por WhatsApp.",
+    official: true,
+    sortOrder: 5,
     tokens: {
       background: "#fff5f7",
       surface: "linear-gradient(155deg, rgba(255,255,255,0.96) 0%, rgba(244,114,182,0.12) 100%)",
@@ -316,8 +348,12 @@ export const CARTA_THEMES = {
   },
   bar_drinks: {
     id: "bar_drinks",
-    name: "Bar Midnight",
-    rubro: "Bar / Drinks",
+    name: "Fuego Criollo",
+    rubro: "Tema extra · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Parrilla urbana premium con look nocturno.",
+    official: false,
+    sortOrder: 8,
     tokens: {
       background: "#050711",
       surface: "linear-gradient(160deg, rgba(255,255,255,0.04) 0%, rgba(124,58,237,0.18) 44%, rgba(4,10,24,0.94) 100%)",
@@ -353,6 +389,92 @@ export const CARTA_THEMES = {
       gradientHero: "linear-gradient(120deg, rgba(2,6,23,0.96) 0%, rgba(124,58,237,0.22) 42%, rgba(8,145,178,0.18) 100%)",
     },
   },
+  marina_fresh: {
+    id: "marina_fresh",
+    name: "Marina Fresh",
+    rubro: "Tema extra · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1559847844-5315695dadae?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Estilo marino claro para cevicherias y pescados.",
+    official: false,
+    sortOrder: 9,
+    tokens: {
+      background: "#f2f9fb",
+      surface: "linear-gradient(155deg, rgba(255,255,255,0.96) 0%, rgba(14,116,144,0.12) 100%)",
+      surface2: "linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(56,189,248,0.1) 100%)",
+      text: "#0f172a",
+      mutedText: "#334155",
+      primary: "#0e7490",
+      primaryHover: "#155e75",
+      primaryText: "#ecfeff",
+      accent: "#0284c7",
+      accentHover: "#0369a1",
+      border: "rgba(14,116,144,0.24)",
+      ring: "rgba(14,116,144,0.35)",
+      shadow: "0 16px 30px -24px rgba(14,116,144,0.38)",
+      chipBg: "rgba(255,255,255,0.96)",
+      chipText: "#0f172a",
+      chipActiveBg: "linear-gradient(130deg, rgba(14,116,144,0.92) 0%, rgba(2,132,199,0.86) 100%)",
+      chipActiveText: "#ecfeff",
+      chipBorder: "rgba(14,116,144,0.24)",
+      navBg: "linear-gradient(120deg, rgba(255,255,255,0.95) 0%, rgba(240,249,255,0.94) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(14,116,144,0.92) 0%, rgba(2,132,199,0.86) 100%)",
+      navActiveText: "#ecfeff",
+      navText: "#334155",
+      badgeBg: "linear-gradient(120deg, rgba(2,132,199,0.9) 0%, rgba(14,116,144,0.84) 100%)",
+      badgeText: "#ecfeff",
+      buttonBg: "linear-gradient(130deg, rgba(14,116,144,0.92) 0%, rgba(2,132,199,0.86) 100%)",
+      buttonText: "#ecfeff",
+      buttonSecondaryBg: "rgba(14,116,144,0.1)",
+      inputBg: "rgba(255,255,255,0.96)",
+      inputText: "#0f172a",
+      placeholder: "#64748b",
+      inputBorder: "rgba(14,116,144,0.2)",
+      gradientHero: "linear-gradient(120deg, rgba(255,255,255,0.98) 0%, rgba(14,116,144,0.12) 48%, rgba(2,132,199,0.14) 100%)",
+    },
+  },
+  criollo_lima: {
+    id: "criollo_lima",
+    name: "Criollo Lima",
+    rubro: "Tema extra · Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Carta tradicional con acentos dorados y gran contraste.",
+    official: false,
+    sortOrder: 10,
+    tokens: {
+      background: "#101214",
+      surface: "linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(202,138,4,0.16) 44%, rgba(9,9,11,0.94) 100%)",
+      surface2: "linear-gradient(145deg, rgba(24,24,27,0.95) 0%, rgba(161,98,7,0.2) 100%)",
+      text: "#fefce8",
+      mutedText: "#fde68a",
+      primary: "#ca8a04",
+      primaryHover: "#a16207",
+      primaryText: "#fff7ed",
+      accent: "#f97316",
+      accentHover: "#ea580c",
+      border: "rgba(202,138,4,0.34)",
+      ring: "rgba(202,138,4,0.45)",
+      shadow: "0 18px 36px -24px rgba(202,138,4,0.5)",
+      chipBg: "rgba(24,24,27,0.9)",
+      chipText: "#fde68a",
+      chipActiveBg: "linear-gradient(130deg, rgba(202,138,4,0.92) 0%, rgba(249,115,22,0.84) 100%)",
+      chipActiveText: "#fff7ed",
+      chipBorder: "rgba(202,138,4,0.34)",
+      navBg: "linear-gradient(120deg, rgba(9,9,11,0.96) 0%, rgba(24,24,27,0.95) 100%)",
+      navActiveBg: "linear-gradient(130deg, rgba(202,138,4,0.92) 0%, rgba(249,115,22,0.84) 100%)",
+      navActiveText: "#fff7ed",
+      navText: "#fde68a",
+      badgeBg: "linear-gradient(120deg, rgba(249,115,22,0.9) 0%, rgba(202,138,4,0.84) 100%)",
+      badgeText: "#fff7ed",
+      buttonBg: "linear-gradient(130deg, rgba(202,138,4,0.92) 0%, rgba(249,115,22,0.84) 100%)",
+      buttonText: "#fff7ed",
+      buttonSecondaryBg: "rgba(24,24,27,0.9)",
+      inputBg: "rgba(24,24,27,0.9)",
+      inputText: "#fefce8",
+      placeholder: "#fcd34d",
+      inputBorder: "rgba(202,138,4,0.28)",
+      gradientHero: "linear-gradient(120deg, rgba(9,9,11,0.96) 0%, rgba(202,138,4,0.26) 44%, rgba(249,115,22,0.2) 100%)",
+    },
+  },
 } as const satisfies Record<string, CartaThemePreset>;
 
 export type CartaThemeId = keyof typeof CARTA_THEMES;
@@ -366,21 +488,40 @@ export const DEFAULT_THEME_BY_RUBRO: Record<string, CartaThemeId> = {
   "Healthy / Vegano": "healthy",
   "Postres / Heladeria": "desserts",
   "Bar / Drinks": "bar_drinks",
-  "Restaurante / Cafeteria": "cafe",
-  "Tienda / General": "gourmet",
+  "Restaurante / Cafeteria": "sushi",
+  "Tienda / General": "fastfood",
 };
 
-export const CARTA_THEME_OPTIONS = Object.values(CARTA_THEMES).map((theme) => ({
-  id: theme.id as CartaThemeId,
-  name: theme.name,
-  rubro: theme.rubro,
-  preview: [theme.tokens.primary, theme.tokens.accent, theme.tokens.background],
-}));
+const LEGACY_THEME_ALIASES: Record<string, CartaThemeId> = {
+  gourmet: "gourmet",
+  cafe: "cafe",
+  sushi: "sushi",
+  fastfood: "fastfood",
+  polleria_parrilla: "polleria_parrilla",
+  healthy: "healthy",
+  desserts: "desserts",
+  bar_drinks: "bar_drinks",
+};
+
+export const CARTA_THEME_OPTIONS = Object.values(CARTA_THEMES)
+  .map((theme) => ({
+    id: theme.id as CartaThemeId,
+    name: theme.name,
+    rubro: theme.rubro,
+    preview: [theme.tokens.primary, theme.tokens.accent, theme.tokens.background],
+    previewImage: theme.previewImage,
+    previewDescription: theme.previewDescription,
+    official: theme.official,
+    sortOrder: theme.sortOrder,
+  }))
+  .sort((a, b) => a.sortOrder - b.sortOrder);
 
 export function getSafeCartaThemeId(value?: string | null): CartaThemeId {
-  if (!value) return "gourmet";
+  if (!value) return "sushi";
   if (value in CARTA_THEMES) return value as CartaThemeId;
-  return "gourmet";
+  const alias = LEGACY_THEME_ALIASES[value];
+  if (alias && alias in CARTA_THEMES) return alias;
+  return "sushi";
 }
 
 export function getCartaTheme(themeId?: string | null): CartaThemePreset {
@@ -389,7 +530,7 @@ export function getCartaTheme(themeId?: string | null): CartaThemePreset {
 
 export function recommendCartaThemeIdByRubro(rubro?: string | null): CartaThemeId {
   const source = String(rubro || "").toLowerCase().trim();
-  if (!source) return "gourmet";
+  if (!source) return "sushi";
 
   const direct = DEFAULT_THEME_BY_RUBRO[rubro || ""];
   if (direct) return direct;
@@ -403,22 +544,37 @@ export function recommendCartaThemeIdByRubro(rubro?: string | null): CartaThemeI
   if (source.includes("burger") || source.includes("fast") || source.includes("hamburg")) {
     return "fastfood";
   }
-  if (source.includes("polleria") || source.includes("parrilla") || source.includes("brasa") || source.includes("grill")) {
+  if (source.includes("polleria") || source.includes("parrilla") || source.includes("brasa") || source.includes("grill") || source.includes("pollo")) {
     return "polleria_parrilla";
+  }
+  if (source.includes("ceviche") || source.includes("marino") || source.includes("pescado") || source.includes("marisc")) {
+    return "gourmet";
+  }
+  if (source.includes("pizza") || source.includes("pizzeria")) {
+    return "desserts";
   }
   if (source.includes("vegan") || source.includes("vegano") || source.includes("healthy") || source.includes("salud")) {
     return "healthy";
   }
-  if (source.includes("postre") || source.includes("helad") || source.includes("dessert") || source.includes("pasteler")) {
-    return "desserts";
+  if (source.includes("postre") || source.includes("helad") || source.includes("dessert") || source.includes("pasteler") || source.includes("dulce")) {
+    return "criollo_lima";
   }
   if (source.includes("bar") || source.includes("drink") || source.includes("cocktail") || source.includes("coctel")) {
     return "bar_drinks";
   }
+  if (source.includes("taco") || source.includes("mex")) {
+    return "healthy";
+  }
+  if (source.includes("criollo") || source.includes("peruan")) {
+    return "criollo_lima";
+  }
+  if (source.includes("fusion") || source.includes("marina")) {
+    return "marina_fresh";
+  }
   if (source.includes("gourmet") || source.includes("fine")) {
     return "gourmet";
   }
-  return "gourmet";
+  return "sushi";
 }
 
 export function buildCartaThemeCssVars(themeId?: string | null): Record<string, string> {
