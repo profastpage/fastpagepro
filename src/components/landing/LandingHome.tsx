@@ -487,7 +487,13 @@ export default function LandingHome() {
             heroDesc:
               "FastPage helps you sell more with landing, store, and digital menu in one system.",
             heroProof: "+120 businesses already activated their orders and sales flow in FastPage.",
+            heroChecklist: [
+              "Live in minutes",
+              "No commissions per sale",
+              "14-day free trial",
+            ],
             ctaPrimary: "Start 14-day free trial",
+            ctaPrimaryHelper: "Then from 59 soles/month • No commissions",
             ctaDemo: "Watch live demo",
             ctaPlans: "View plans",
             urgency: "This week is key to sell more: activate your version today.",
@@ -531,15 +537,21 @@ export default function LandingHome() {
             from: "from",
           }
         : {
-            heroTag: "Mas pedidos por WhatsApp",
-            heroTitle: "Convierte visitas en pedidos por WhatsApp, todos los dias",
+            heroTag: "MAS PEDIDOS POR WHATSAPP",
+            heroTitle: "Convierte visitas en pedidos por WhatsApp en minutos",
             heroDesc:
-              "FastPage te ayuda a vender mas con landing, tienda y carta digital en un solo sistema.",
-            heroProof: "+120 negocios ya activaron su flujo de pedidos y ventas en FastPage.",
-            ctaPrimary: "Probar 14 dias gratis",
+              "Landing, tienda y carta digital conectadas a WhatsApp en un solo sistema.",
+            heroProof: "Más de 120 negocios ya venden por WhatsApp con FastPage.",
+            heroChecklist: [
+              "Activo en minutos",
+              "Sin comisiones por venta",
+              "Prueba gratis por 14 días",
+            ],
+            ctaPrimary: "Probar 14 días gratis",
+            ctaPrimaryHelper: "Luego desde 59 soles/mes • Sin comisiones",
             ctaDemo: "Ver demo en vivo",
             ctaPlans: "Ver planes",
-            urgency: "Esta semana es clave para vender mas: activa tu version hoy.",
+            urgency: "Activa hoy tu sistema y empieza a recibir pedidos.",
             chips: ["Listo en minutos", "Pedidos por WhatsApp", "Sin comisiones"],
             panelTag: "Sistema FastPage",
             panelDesc: "Elige una demo, adapta tu negocio y empieza a vender hoy.",
@@ -630,6 +642,11 @@ export default function LandingHome() {
               {copy.heroDesc}
             </p>
             <p className="max-w-2xl text-sm text-zinc-400">{verticalCopy.subheadline}</p>
+            <div className="max-w-2xl space-y-1 text-left text-xs font-medium text-zinc-200 sm:text-sm">
+              {copy.heroChecklist.map((item) => (
+                <p key={item}>✅ {item}</p>
+              ))}
+            </div>
             <p className="max-w-2xl text-xs font-semibold text-amber-200/90">
               {copy.heroProof}
             </p>
@@ -685,6 +702,9 @@ export default function LandingHome() {
                 {copy.ctaPlans}
               </a>
             </div>
+            <p className="max-w-2xl text-center text-[11px] text-zinc-400/80 sm:text-xs">
+              {copy.ctaPrimaryHelper}
+            </p>
             <p className="text-xs font-semibold text-amber-200/85">
               {copy.urgency}
             </p>
