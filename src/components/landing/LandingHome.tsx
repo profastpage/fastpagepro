@@ -62,35 +62,35 @@ const MODULES_ES: ModuleCard[] = [
   {
     id: "store",
     icon: ShoppingCart,
-    title: "Online Store",
+    title: "Tienda Online",
     line: "Muestra productos y cierra pedidos por WhatsApp sin friccion.",
     href: "/demo/ecommerce/urban-wear",
   },
   {
     id: "builder",
     icon: WandSparkles,
-    title: "Builder",
+    title: "Constructor",
     line: "Crea paginas que convierten clics en mensajes listos para comprar.",
     href: "/builder",
   },
   {
     id: "templates",
     icon: Palette,
-    title: "Templates",
+    title: "Plantillas",
     line: "Lanza campanas en horas con copys que ya venden.",
     href: "/demo/services/consultoria-pro",
   },
   {
     id: "cloner",
     icon: Copy,
-    title: "Cloner",
+    title: "Clonador",
     line: "Replica ofertas ganadoras y acelera tus ventas.",
     href: "/cloner/web",
   },
   {
     id: "metrics",
     icon: BarChart3,
-    title: "Pro Metrics",
+    title: "Metricas PRO",
     line: "Detecta que campana vende mas y escala con datos.",
     href: "/demo/services/pro-metrics",
   },
@@ -159,7 +159,7 @@ const FLOW_STEPS_EN = [
 
 const DEMO_TAB_CONFIG_ES: Record<BusinessVertical, string> = {
   restaurant: "Carta Digital",
-  ecommerce: "Online Store",
+  ecommerce: "Tienda Online",
   services: "Landing",
 };
 
@@ -184,14 +184,14 @@ const FAQS_ES = [
   },
   {
     q: "Que es un proyecto activo?",
-    a: "Todo proyecto publicado desde Builder, Templates, Cloner, Carta Digital u Online Store.",
+    a: "Todo proyecto publicado desde Constructor, Plantillas, Clonador, Carta Digital o Tienda Online.",
   },
   {
     q: "Carta Digital vs Tienda Online?",
-    a: "Carta Digital es para restaurantes. Online Store es ecommerce multirubro.",
+    a: "Carta Digital es para restaurantes. Tienda Online es ecommerce multirubro.",
   },
   {
-    q: "Que mide Pro Metrics?",
+    q: "Que mide Metricas PRO?",
     a: "Visitas, conversion, tiempo en pagina, clics, trafico semanal y rendimiento tecnico.",
   },
   {
