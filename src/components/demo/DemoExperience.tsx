@@ -69,6 +69,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
           vertical={demo.vertical}
           slug={demo.slug}
           mobileBottomClass="bottom-20"
+          compactMobileLeft
         />
       </main>
     );
