@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -33,6 +33,8 @@ export default function HubPage() {
   const userName = user?.name || "Creador";
   const isAdmin = user?.email === "afiliadosprobusiness@gmail.com";
   const isStarterPlan = planPermissions.canonicalPlan === "starter";
+  const isBusinessPlan = planPermissions.canonicalPlan === "business";
+  const isSubscriptionExpired = subscriptionSummary?.status === "EXPIRED";
 
   const handleLogout = async () => {
     await logout();
@@ -120,9 +122,9 @@ export default function HubPage() {
     {
       id: "billing",
       title: "Billing",
-      description: "Gestiona Starter S/29, Business 14 días gratis y Pro S/99, pagos y renovaciones.",
+      description: "Gestiona Starter S/29, Business 14 dias gratis, Pro S/99 y soporte por plan.",
       icon: <CreditCard className="w-8 h-8 text-emerald-300" />,
-      action: "Abrir Facturación",
+      action: "Abrir Facturacion",
       href: "/dashboard/billing",
       gradient: "from-zinc-900 to-zinc-900",
       border: "hover:border-emerald-400/50",
@@ -140,6 +142,9 @@ export default function HubPage() {
   ];
 
   const starterUnlocked = new Set(["linkhub", "published", "billing", "settings"]);
+  const businessUnlocked = new Set(["linkhub", "store", "metrics", "published", "billing", "settings"]);
+  const expiredUnlocked = new Set(["billing", "settings"]);
+
   const starterPriority: Record<string, number> = {
     linkhub: 1,
     published: 2,
@@ -151,15 +156,53 @@ export default function HubPage() {
     store: 13,
     metrics: 14,
   };
+  const businessPriority: Record<string, number> = {
+    linkhub: 1,
+    store: 2,
+    metrics: 3,
+    published: 4,
+    billing: 5,
+    settings: 6,
+    builder: 10,
+    templates: 11,
+    cloner: 12,
+  };
+  const expiredPriority: Record<string, number> = {
+    billing: 1,
+    settings: 2,
+    linkhub: 10,
+    published: 11,
+    store: 12,
+    metrics: 13,
+    builder: 14,
+    templates: 15,
+    cloner: 16,
+  };
 
   const panels = [...basePanels]
     .map((panel) => ({
       ...panel,
-      locked: isStarterPlan && !starterUnlocked.has(panel.id),
+      locked:
+        (isSubscriptionExpired && !expiredUnlocked.has(panel.id)) ||
+        (isStarterPlan && !starterUnlocked.has(panel.id)) ||
+        (isBusinessPlan && ["builder", "templates", "cloner"].includes(panel.id)),
+      lockHint: isSubscriptionExpired
+        ? "Tu periodo activo termino. Renueva para reactivar funciones y paginas."
+        : ["builder", "templates", "cloner"].includes(panel.id)
+          ? "Disponible solo en plan PRO."
+          : "Disponible en Business o Pro.",
     }))
     .sort((a, b) => {
-      if (!isStarterPlan) return 0;
-      return (starterPriority[a.id] || 99) - (starterPriority[b.id] || 99);
+      if (isSubscriptionExpired) {
+        return (expiredPriority[a.id] || 99) - (expiredPriority[b.id] || 99);
+      }
+      if (isBusinessPlan) {
+        return (businessPriority[a.id] || 99) - (businessPriority[b.id] || 99);
+      }
+      if (isStarterPlan) {
+        return (starterPriority[a.id] || 99) - (starterPriority[b.id] || 99);
+      }
+      return 0;
     });
 
   return (
@@ -194,6 +237,22 @@ export default function HubPage() {
                 <span className="text-xs text-zinc-400">Plan:</span>
                 <PlanBadge plan={subscriptionSummary?.plan || "FREE"} />
               </div>
+              {subscriptionSummary?.isBusinessTrial && subscriptionSummary?.status === "ACTIVE" ? (
+                <p
+                  className={`mt-2 text-xs font-bold ${
+                    (subscriptionSummary?.trialDaysRemaining || 0) <= 3
+                      ? "text-red-300"
+                      : "text-amber-200"
+                  }`}
+                >
+                  Prueba Business: {subscriptionSummary?.trialDaysRemaining || 0} dias restantes.
+                </p>
+              ) : null}
+              {subscriptionSummary?.trialExpired ? (
+                <p className="mt-2 text-xs font-bold text-red-300">
+                  Prueba finalizada: funciones y paginas bloqueadas hasta renovar en Billing.
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -201,6 +260,7 @@ export default function HubPage() {
             <SubscriptionExpiryBanner
               visible={Boolean(subscriptionSummary?.expiringSoon)}
               daysRemaining={subscriptionSummary?.daysRemaining || 0}
+              isBusinessTrial={Boolean(subscriptionSummary?.isBusinessTrial)}
             />
           </div>
 
@@ -212,10 +272,12 @@ export default function HubPage() {
                 onClick={() => {
                   if (panel.locked) {
                     const requiredFeature =
-                      panel.id === "cloner"
+                      panel.id === "builder" || panel.id === "templates" || panel.id === "cloner"
                         ? "clonerAccess"
                         : panel.id === "metrics"
-                          ? "insightsAutomation"
+                          ? "basicMetrics"
+                          : panel.id === "store"
+                            ? "fullStore"
                           : "";
                     router.push(
                       requiredFeature
@@ -260,12 +322,12 @@ export default function HubPage() {
                   </div>
 
                   <div className="flex items-center text-sm font-semibold tracking-wide uppercase text-zinc-500 group-hover:text-white transition-colors gap-2">
-                    {panel.locked ? "Disponible en Business o Pro" : panel.action}
+                    {panel.locked ? panel.lockHint : panel.action}
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
                   {panel.locked ? (
                     <div className="mt-3 rounded-xl border border-amber-300/35 bg-black/70 px-3 py-2 text-xs font-semibold text-amber-100">
-                      Actualiza a plan Business o Pro para desbloquear esta funcion.
+                      {panel.lockHint}
                     </div>
                   ) : null}
                 </div>
@@ -289,7 +351,7 @@ export default function HubPage() {
                 className="flex items-center gap-2 px-6 py-3 rounded-full text-amber-500 hover:text-white hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20"
               >
                 <ShieldAlert className="w-5 h-5" />
-                <span>Panel de Administración</span>
+                <span>Panel de AdministraciÃ³n</span>
               </button>
             )}
           </div>
@@ -298,3 +360,4 @@ export default function HubPage() {
     </div>
   );
 }
+

@@ -59,6 +59,14 @@ const COMPARISON_ROWS: ComparisonRow[] = [
     },
   },
   {
+    label: "Soporte",
+    values: {
+      FREE: "❌ Sin soporte",
+      BUSINESS: "📧 Correo (max. 24h)",
+      PRO: "💬 En vivo por WhatsApp",
+    },
+  },
+  {
     label: "Metricas",
     values: {
       FREE: "Sin metricas avanzadas",
@@ -122,7 +130,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
               <ul className="mt-4 space-y-2 text-sm text-zinc-200">
                 {plan.bulletPoints.map((item) => (
                   <li key={item} className="flex items-start gap-2">
-                    {item.includes("🔒") ? (
+                    {item.includes("🔒") || item.includes("❌") ? (
                       <Lock className="mt-0.5 h-4 w-4 text-amber-300" />
                     ) : (
                       <Check className="mt-0.5 h-4 w-4 text-emerald-300" />
@@ -183,4 +191,3 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
     </div>
   );
 }
-

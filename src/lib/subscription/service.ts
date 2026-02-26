@@ -26,6 +26,10 @@ export interface SubscriptionSummary {
   endDate: string;
   expiringSoon: boolean;
   daysRemaining: number;
+  isBusinessTrial: boolean;
+  trialDaysRemaining: number;
+  trialDaysTotal: number;
+  trialExpired: boolean;
   limits: ReturnType<typeof getPlanLimits>;
   usage: {
     publishedPages: number;
@@ -58,6 +62,12 @@ function toIso(value: Date) {
 
 function addDays(from: Date, days: number): Date {
   return new Date(from.getTime() + days * 24 * 60 * 60 * 1000);
+}
+
+function getDurationDays(startDate: Date, endDate: Date): number {
+  const diff = endDate.getTime() - startDate.getTime();
+  if (diff <= 0) return 0;
+  return Math.ceil(diff / (24 * 60 * 60 * 1000));
 }
 
 function getDaysRemaining(endDate: Date): number {
@@ -225,6 +235,15 @@ async function readFirestoreSubscriptionRecord(userId: string): Promise<Subscrip
 async function saveSubscriptionRecordToFirestore(record: SubscriptionRecord): Promise<void> {
   if (!adminDb) return;
 
+  const isActive = record.status === "ACTIVE" && record.endDate.getTime() > Date.now();
+  const publicAccessPayload = {
+    subscriptionBlocked: !isActive,
+    subscriptionPlan: record.plan,
+    subscriptionStatus: record.status,
+    subscriptionEndAt: record.endDate.getTime(),
+    subscriptionUpdatedAt: Date.now(),
+  };
+
   await adminDb.collection("users").doc(record.userId).set(
     {
       plan: toCanonicalPlanLabel(record.plan),
@@ -239,6 +258,32 @@ async function saveSubscriptionRecordToFirestore(record: SubscriptionRecord): Pr
     },
     { merge: true },
   );
+
+  await adminDb
+    .collection("link_profiles")
+    .doc(record.userId)
+    .set(publicAccessPayload, { merge: true })
+    .catch((error) => {
+      console.error("[Subscription Sync] Link profile access sync warning:", error);
+    });
+
+  try {
+    const storeSnapshots = await adminDb
+      .collection("cloned_sites")
+      .where("userId", "==", record.userId)
+      .where("source", "==", "store-builder")
+      .get();
+
+    if (!storeSnapshots.empty) {
+      const batch = adminDb.batch();
+      storeSnapshots.docs.forEach((storeDoc) => {
+        batch.set(storeDoc.ref, publicAccessPayload, { merge: true });
+      });
+      await batch.commit();
+    }
+  } catch (error) {
+    console.error("[Subscription Sync] Store access sync warning:", error);
+  }
 }
 
 export async function countPublishedPagesByUser(userId: string): Promise<number> {
@@ -547,16 +592,11 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
         console.error("[Subscription] Prisma status update fallback:", error);
         current = { ...current, status: "EXPIRED", updatedAt: getNow() };
       }
+      await saveSubscriptionRecordToFirestore(current).catch(() => undefined);
     } else {
       current = { ...current, status: "EXPIRED", updatedAt: getNow() };
       await saveSubscriptionRecordToFirestore(current).catch(() => undefined);
     }
-  }
-
-  if (current.status === "EXPIRED") {
-    // Keep experience alive with fallback free plan.
-    const freePlan = await createDefaultFreeSubscription(userId);
-    return freePlan;
   }
 
   return current;
@@ -568,6 +608,10 @@ export async function buildSubscriptionSummary(userId: string): Promise<Subscrip
   const limits = getPlanLimits(subscription.plan);
   const daysRemaining = getDaysRemaining(subscription.endDate);
   const expiringSoon = daysRemaining > 0 && daysRemaining <= EXPIRY_WARNING_DAYS;
+  const durationDays = getDurationDays(subscription.startDate, subscription.endDate);
+  const isBusinessTrial = subscription.plan === "BUSINESS" && durationDays > 0 && durationDays <= 14;
+  const trialDaysRemaining = isBusinessTrial && subscription.status === "ACTIVE" ? daysRemaining : 0;
+  const trialExpired = isBusinessTrial && subscription.status === "EXPIRED";
   const allFeatures: SubscriptionFeature[] = [
     "premiumThemes",
     "categoryThemes",
@@ -600,6 +644,10 @@ export async function buildSubscriptionSummary(userId: string): Promise<Subscrip
     endDate: toIso(subscription.endDate),
     expiringSoon,
     daysRemaining,
+    isBusinessTrial,
+    trialDaysRemaining,
+    trialDaysTotal: isBusinessTrial ? durationDays : 0,
+    trialExpired,
     limits,
     usage: {
       publishedPages,

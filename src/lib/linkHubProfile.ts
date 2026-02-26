@@ -1200,5 +1200,37 @@ export async function getPublishedLinkHubProfileBySlug(
     return null;
   }
 
-  return normalizeLinkHubProfile(snapshot.docs[0].data() as Partial<LinkHubProfile>);
+  const payload = snapshot.docs[0].data() as Partial<LinkHubProfile> & Record<string, unknown>;
+  const blocked = Boolean(payload.subscriptionBlocked);
+  const status = safeText(payload.subscriptionStatus).toUpperCase();
+  const endAtRaw = Number(payload.subscriptionEndAt || 0);
+  const endAt = Number.isFinite(endAtRaw) ? endAtRaw : 0;
+  const expiredByDate = endAt > 0 && endAt <= Date.now();
+  const blockedByStatus = status.length > 0 && status !== "ACTIVE";
+
+  if (blocked || blockedByStatus || expiredByDate) {
+    return null;
+  }
+
+  const ownerId = safeText(payload.userId);
+  if (ownerId) {
+    try {
+      const ownerSnapshot = await getDoc(doc(db, "users", ownerId));
+      if (ownerSnapshot.exists()) {
+        const ownerData = ownerSnapshot.data() as Record<string, unknown>;
+        const ownerStatus = safeText(ownerData.subscriptionStatus).toUpperCase();
+        const ownerEndAtRaw = Number(ownerData.subscriptionEndAt || 0);
+        const ownerEndAt = Number.isFinite(ownerEndAtRaw) ? ownerEndAtRaw : 0;
+        const ownerExpiredByDate = ownerEndAt > 0 && ownerEndAt <= Date.now();
+        const ownerBlockedByStatus = ownerStatus.length > 0 && ownerStatus !== "ACTIVE";
+        if (ownerBlockedByStatus || ownerExpiredByDate) {
+          return null;
+        }
+      }
+    } catch {
+      // Keep published profile visible if owner subscription cannot be read from client rules.
+    }
+  }
+
+  return normalizeLinkHubProfile(payload);
 }

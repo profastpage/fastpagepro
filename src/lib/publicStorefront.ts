@@ -1,6 +1,8 @@
 import { db } from "@/lib/firebase";
 import {
   collection,
+  doc,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -118,6 +120,36 @@ function normalizeStoreProduct(raw: DocumentData, index: number): PublicStorePro
   };
 }
 
+function isStoreAccessBlocked(raw: DocumentData): boolean {
+  if (raw.subscriptionBlocked === true) return true;
+  const status = safeText(raw.subscriptionStatus).toUpperCase();
+  const endAtRaw = Number(raw.subscriptionEndAt || 0);
+  const endAt = Number.isFinite(endAtRaw) ? endAtRaw : 0;
+  if (status && status !== "ACTIVE") return true;
+  if (endAt > 0 && endAt <= Date.now()) return true;
+  return false;
+}
+
+async function ownerSubscriptionBlocked(userId: string): Promise<boolean> {
+  const safeUserId = safeText(userId);
+  if (!safeUserId) return false;
+
+  try {
+    const ownerSnapshot = await getDoc(doc(db, "users", safeUserId));
+    if (!ownerSnapshot.exists()) return false;
+    const payload = ownerSnapshot.data() as DocumentData;
+    const status = safeText(payload.subscriptionStatus).toUpperCase();
+    const endAtRaw = Number(payload.subscriptionEndAt || 0);
+    const endAt = Number.isFinite(endAtRaw) ? endAtRaw : 0;
+    const blockedByStatus = status.length > 0 && status !== "ACTIVE";
+    const blockedByDate = endAt > 0 && endAt <= Date.now();
+    return blockedByStatus || blockedByDate;
+  } catch {
+    // Keep storefront visible if owner subscription cannot be read from client rules.
+    return false;
+  }
+}
+
 export function resolveStoreTheme(config: StoreConfig) {
   return (
     STORE_THEMES.find((theme) => theme.id === config.themeId) || STORE_THEMES[0]
@@ -207,8 +239,11 @@ async function queryPublishedStoreBySlug(slug: string) {
   );
   const snapshot = await getDocs(storeQuery);
   if (!snapshot.empty) {
+    const payload = snapshot.docs[0].data() as DocumentData;
+    if (isStoreAccessBlocked(payload)) return null;
+    if (await ownerSubscriptionBlocked(safeText(payload.userId))) return null;
     return normalizePublishedStore(
-      snapshot.docs[0].data() as DocumentData,
+      payload,
       snapshot.docs[0].id,
     );
   }
@@ -225,8 +260,11 @@ async function queryPublishedStoreById(id: string) {
   );
   const fallbackSnapshot = await getDocs(fallbackQuery);
   if (!fallbackSnapshot.empty) {
+    const payload = fallbackSnapshot.docs[0].data() as DocumentData;
+    if (isStoreAccessBlocked(payload)) return null;
+    if (await ownerSubscriptionBlocked(safeText(payload.userId))) return null;
     return normalizePublishedStore(
-      fallbackSnapshot.docs[0].data() as DocumentData,
+      payload,
       fallbackSnapshot.docs[0].id,
     );
   }

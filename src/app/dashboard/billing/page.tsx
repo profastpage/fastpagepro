@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Loader2, Sparkles, UploadCloud } from "lucide-react";
@@ -178,7 +178,7 @@ export default function BillingPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Facturacion SaaS</p>
               <h1 className="mt-2 text-3xl font-black">Planes oficiales Fast Page</h1>
               <p className="mt-2 text-zinc-300">
-                Starter S/29 pago directo, Business con 14 días gratis y Pro S/99 pago directo.
+                Starter S/29 sin soporte, Business con 14 dias gratis + soporte por correo y Pro S/99 con soporte en vivo.
               </p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
@@ -191,8 +191,15 @@ export default function BillingPage() {
             <SubscriptionExpiryBanner
               visible={Boolean(summary?.expiringSoon)}
               daysRemaining={summary?.daysRemaining || 0}
+              isBusinessTrial={Boolean(summary?.isBusinessTrial)}
             />
           </div>
+
+          {summary?.trialExpired ? (
+            <p className="mt-3 rounded-xl border border-red-400/35 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100">
+              Tu prueba de 14 dias finalizo. Activa Starter, Business o Pro para reactivar funciones y paginas.
+            </p>
+          ) : null}
 
           {error && (
             <p className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
@@ -242,7 +249,7 @@ export default function BillingPage() {
             <div>
               <h2 className="text-xl font-bold">Solicitar actualizacion de plan</h2>
               <p className="mt-1 text-sm text-zinc-300">
-                Business activa prueba de 14 días. Starter y Pro aplican pago directo mensual.
+                Business activa prueba de 14 dÃ­as. Starter y Pro aplican pago directo mensual.
               </p>
             </div>
 
@@ -289,7 +296,7 @@ export default function BillingPage() {
 
             {isBusinessTrial ? (
               <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100">
-                Prueba gratis por 14 días. Luego S/59/mes. Cancela cuando quieras. Sin compromiso.
+                Prueba gratis por 14 dÃ­as. Luego S/59/mes. Cancela cuando quieras. Sin compromiso.
               </div>
             ) : (
               <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
@@ -348,7 +355,7 @@ export default function BillingPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-60"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isBusinessTrial ? "Probar 14 días gratis" : selectedPlan === "PRO" ? "Comprar ahora" : "Empezar ahora"}
+              {isBusinessTrial ? "Probar 14 dÃ­as gratis" : selectedPlan === "PRO" ? "Comprar ahora" : "Empezar ahora"}
             </button>
           </form>
 
@@ -393,4 +400,5 @@ export default function BillingPage() {
     </div>
   );
 }
+
 

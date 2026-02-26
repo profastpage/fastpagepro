@@ -59,7 +59,7 @@ export default function SignupPage() {
           Crea tu version en minutos
         </h1>
         <p className="mt-3 text-zinc-300">
-          Primero elige tu rubro. Luego te llevamos al registro para activar tu proyecto.
+          Primero elige tu rubro. Luego te llevamos al registro para activar 14 dias gratis en Business.
         </p>
         <div className="mt-6">
           <VerticalSelector
@@ -82,7 +82,7 @@ export default function SignupPage() {
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href={`/auth?tab=register&vertical=${vertical}`}
+            href={`/auth?tab=register&vertical=${vertical}&trial=business14`}
             onClick={() =>
               void trackGrowthEvent("start_signup", {
                 vertical,

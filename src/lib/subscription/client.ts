@@ -10,6 +10,10 @@ export interface SubscriptionClientSummary {
   endDate: string;
   expiringSoon: boolean;
   daysRemaining: number;
+  isBusinessTrial: boolean;
+  trialDaysRemaining: number;
+  trialDaysTotal: number;
+  trialExpired: boolean;
   limits: {
     maxPublishedPages: number | null;
     maxBasicThemes: number | null;

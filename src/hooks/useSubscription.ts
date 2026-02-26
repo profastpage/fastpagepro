@@ -93,6 +93,12 @@ function buildSummaryFromFirestore(
   );
   const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
   const expiringSoon = daysRemaining > 0 && daysRemaining <= 7;
+  const trialDaysTotal =
+    plan === "BUSINESS"
+      ? Math.max(0, Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)))
+      : 0;
+  const isBusinessTrial = plan === "BUSINESS" && trialDaysTotal > 0 && trialDaysTotal <= 14;
+  const trialExpired = isBusinessTrial && status === "EXPIRED";
   const limits = getPlanLimits(plan);
   const features = ALL_FEATURES.reduce<Record<SubscriptionFeature, boolean>>((acc, feature) => {
     acc[feature] = status === "ACTIVE" && canAccessFeature(plan, feature);
@@ -107,6 +113,10 @@ function buildSummaryFromFirestore(
     endDate: endDate.toISOString(),
     expiringSoon,
     daysRemaining,
+    isBusinessTrial,
+    trialDaysRemaining: isBusinessTrial && status === "ACTIVE" ? daysRemaining : 0,
+    trialDaysTotal: isBusinessTrial ? trialDaysTotal : 0,
+    trialExpired,
     limits,
     usage: baseSummary?.usage || { publishedPages: 0 },
     features,
@@ -159,14 +169,14 @@ export function useSubscription(enabled = true) {
       const userData = userDoc.data() as FirestorePlanPayload | undefined;
       const firestoreSummary = buildSummaryFromFirestore(currentUser.uid, userData || {}, apiSummary);
 
-      if (firestoreSummary) {
-        setSummary(firestoreSummary);
-        setPendingRequests(apiPending);
-        setError(null);
-      } else if (apiSummary) {
+      if (apiSummary) {
         setSummary(apiSummary);
         setPendingRequests(apiPending);
         setError(apiError);
+      } else if (firestoreSummary) {
+        setSummary(firestoreSummary);
+        setPendingRequests(apiPending);
+        setError(null);
       } else {
         setError(apiError || "No se pudo cargar suscripcion");
       }

@@ -76,6 +76,7 @@ function AuthContent() {
   const [isGoogleError, setIsGoogleError] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
+  const trialIntent = String(searchParams.get("trial") || "").trim().toLowerCase();
 
   const isCanonicalRedirectNeeded = () => {
     if (typeof window === "undefined") return false;
@@ -115,6 +116,35 @@ function AuthContent() {
   const showToast = (message: string) => {
     setToast(message);
     setTimeout(() => setToast(""), 3000);
+  };
+
+  const activateBusinessTrial = async (firebaseUser: any) => {
+    if (!firebaseUser?.uid) return;
+    const shouldStartTrial = tab === "register" || trialIntent === "business14";
+    if (!shouldStartTrial) return;
+
+    try {
+      const token = await firebaseUser.getIdToken();
+      const formData = new FormData();
+      formData.append("plan", "BUSINESS");
+      formData.append("trial", "true");
+      formData.append("paymentMethod", "TRANSFERENCIA");
+      await fetch("/api/subscription/request", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      await fetch("/api/subscription/session", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      console.warn("[Auth] No se pudo activar trial Business automaticamente.", error);
+    }
   };
 
   const resolvePostAuthTarget = (email?: string | null) => {
@@ -203,6 +233,7 @@ function AuthContent() {
 
       // 3. Sincronizar con Firestore - Esperar a que se complete para asegurar que el Admin lo vea
       await syncUserToFirestore(user, preferredVertical);
+      await activateBusinessTrial(user);
 
       showToast("Cuenta creada exitosamente!");
       
@@ -298,6 +329,7 @@ function AuthContent() {
         if (result?.user) {
           // Sincronizacion prioritaria
           await syncUserToFirestore(result.user, preferredVertical);
+          await activateBusinessTrial(result.user);
           if (tab === "register") {
             void trackGrowthEvent("signup_complete", {
               vertical: preferredVertical,
@@ -330,6 +362,7 @@ function AuthContent() {
       if (result.user) {
         // Sincronizacion prioritaria (esperamos a que se guarde en Firestore)
         await syncUserToFirestore(result.user, preferredVertical);
+        await activateBusinessTrial(result.user);
         if (tab === "register") {
           void trackGrowthEvent("signup_complete", {
             vertical: preferredVertical,

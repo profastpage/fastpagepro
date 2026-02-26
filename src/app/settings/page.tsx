@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -302,7 +302,7 @@ export default function SettingsPage() {
                       {tabs.find(t => t.id === activeTab)?.icon}
                     </div>
                     <div className="text-left">
-                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Sección Actual</p>
+                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">SecciÃ³n Actual</p>
                       <p className="text-lg font-bold text-white">{tabs.find(t => t.id === activeTab)?.label}</p>
                     </div>
                   </div>
@@ -344,7 +344,7 @@ export default function SettingsPage() {
                     <Shield className="w-6 h-6 text-amber-500" />
                   </div>
                   <p className="text-white font-black text-sm uppercase tracking-widest mb-1">Privacidad Total</p>
-                  <p className="text-zinc-500 text-xs leading-relaxed">Tus datos están cifrados con estándares AES-256.</p>
+                  <p className="text-zinc-500 text-xs leading-relaxed">Tus datos estÃ¡n cifrados con estÃ¡ndares AES-256.</p>
                 </div>
               </div>
             </div>
@@ -409,7 +409,7 @@ export default function SettingsPage() {
                     <SettingInput label={t("settings.profile.name")} icon={User} value={formData.displayName} onChange={(v: string) => setFormData({...formData, displayName: v})} placeholder="Escribe tu nombre" />
                     <SettingInput label={t("settings.profile.company")} icon={Briefcase} value={formData.company} onChange={(v: string) => setFormData({...formData, company: v})} placeholder="Nombre de tu marca" />
                     <SettingInput label={t("settings.profile.website")} icon={LinkIcon} value={formData.website} onChange={(v: string) => setFormData({...formData, website: v})} placeholder="https://tuportafolio.com" type="url" />
-                    <SettingInput label={t("settings.profile.location")} icon={MapPin} value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} placeholder="Ciudad, País" />
+                    <SettingInput label={t("settings.profile.location")} icon={MapPin} value={formData.address} onChange={(v: string) => setFormData({...formData, address: v})} placeholder="Ciudad, PaÃ­s" />
                     
                     <div className="md:col-span-2 space-y-3">
                       <label className="text-xs font-black text-zinc-500 uppercase tracking-widest ml-1 flex items-center gap-2">
@@ -443,9 +443,9 @@ export default function SettingsPage() {
                           value={formData.language}
                           onChange={(e) => setFormData({...formData, language: e.target.value})}
                         >
-                          <option value="es" className="bg-zinc-900">Español (Latinoamérica)</option>
+                          <option value="es" className="bg-zinc-900">EspaÃ±ol (LatinoamÃ©rica)</option>
                           <option value="en" className="bg-zinc-900">English (Global)</option>
-                          <option value="pt" className="bg-zinc-900">Português (Brasil)</option>
+                          <option value="pt" className="bg-zinc-900">PortuguÃªs (Brasil)</option>
                         </select>
                         <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600 group-hover:text-white transition-colors rotate-90" />
                       </div>
@@ -476,9 +476,9 @@ export default function SettingsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
-                      { id: "Free", price: "0", desc: "Para experimentadores", features: ["3 Proyectos", "Dominio Fastpage", "Soporte Básico"] },
-                      { id: "Pro", price: "29", desc: "Más popular", features: ["Proyectos Ilimitados", "Dominio Personal", "Métricas Pro", "Soporte 24/7"] },
-                      { id: "Business", price: "79", desc: "Para agencias", features: ["Todo en Pro", "Marca Blanca", "Multi-usuario", "API Acceso"] }
+                      { id: "Starter", price: "29", desc: "Pago directo mensual", features: ["1 proyecto activo", "Hasta 10 productos", "Sin soporte", "🔒 Dominio e IA"] },
+                      { id: "Business", price: "59", desc: "14 dias gratis", features: ["Hasta 5 proyectos", "Hasta 50 productos", "📧 Soporte por correo max. 24h", "Metricas y tienda completa"] },
+                      { id: "Pro", price: "99", desc: "Escala con todo desbloqueado", features: ["Hasta 20 proyectos", "Productos ilimitados", "💬 Soporte en vivo por WhatsApp", "Clonador + IA avanzada"] }
                     ].map((plan) => (
                       <button
                         key={plan.id}
@@ -520,7 +520,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-6">
                       <CreditCard className="w-10 h-10 text-zinc-500 group-hover:text-amber-500 transition-colors" />
                       <div>
-                        <p className="text-white text-xl font-black">VISA •••• 4242</p>
+                        <p className="text-white text-xl font-black">VISA â€¢â€¢â€¢â€¢ 4242</p>
                         <p className="text-zinc-600 text-xs font-bold">Vence el 12/26</p>
                       </div>
                     </div>
@@ -533,21 +533,21 @@ export default function SettingsPage() {
 
               {/* Security Tab */}
               {activeTab === "security" && (
-                <SettingSection title={t("settings.security.title")} desc="Controla quién accede a tu cuenta y refuerza tus barreras de protección.">
+                <SettingSection title={t("settings.security.title")} desc="Controla quiÃ©n accede a tu cuenta y refuerza tus barreras de protecciÃ³n.">
                   <div className="space-y-4">
                     <SettingToggle 
                       label={t("settings.security.2fa_email")} 
                       icon={Mail} 
                       active={formData.twoFactorEmail} 
                       onToggle={() => setFormData({...formData, twoFactorEmail: !formData.twoFactorEmail})}
-                      desc="Recibe un código único cada vez que inicies sesión."
+                      desc="Recibe un cÃ³digo Ãºnico cada vez que inicies sesiÃ³n."
                     />
                     <SettingToggle 
                       label={t("settings.security.2fa_sms")} 
                       icon={Smartphone} 
                       active={formData.twoFactorPhone} 
                       onToggle={() => setFormData({...formData, twoFactorPhone: !formData.twoFactorPhone})}
-                      desc="Seguridad reforzada a través de tu dispositivo móvil."
+                      desc="Seguridad reforzada a travÃ©s de tu dispositivo mÃ³vil."
                     />
 
                     <div className="pt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -561,8 +561,8 @@ export default function SettingsPage() {
 
                       <button 
                         onClick={() => {
-                          if (confirm("¿Estás seguro de que deseas eliminar tu cuenta? Esta acción es irreversible.")) {
-                            alert("Función de eliminación en desarrollo.");
+                          if (confirm("Â¿EstÃ¡s seguro de que deseas eliminar tu cuenta? Esta acciÃ³n es irreversible.")) {
+                            alert("FunciÃ³n de eliminaciÃ³n en desarrollo.");
                           }
                         }}
                         className="flex items-center justify-between p-6 bg-red-500/5 border border-red-500/10 rounded-3xl hover:bg-red-500/10 transition-all group"
@@ -581,8 +581,8 @@ export default function SettingsPage() {
               {/* Action Footer */}
               <div className="mt-16 pt-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-8">
                 <div className="text-center sm:text-left">
-                  <p className="text-zinc-600 text-xs font-bold uppercase tracking-widest mb-1">Sincronización</p>
-                  <p className="text-zinc-400 text-sm font-medium italic">Estado: En línea</p>
+                  <p className="text-zinc-600 text-xs font-bold uppercase tracking-widest mb-1">SincronizaciÃ³n</p>
+                  <p className="text-zinc-400 text-sm font-medium italic">Estado: En lÃ­nea</p>
                 </div>
                 
                 <button
@@ -607,3 +607,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+

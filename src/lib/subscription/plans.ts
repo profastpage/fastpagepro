@@ -22,7 +22,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     id: "FREE",
     name: "STARTER",
     monthlyPriceLabel: "S/ 29 / mes",
-    subtitle: "Pago directo mensual. Sin trial.",
+    subtitle: "Pago directo mensual. Sin trial. ⚡",
     ctaLabel: "Empezar ahora",
     billingFlow: "direct",
     features: [],
@@ -31,6 +31,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       "Hasta 10 productos por proyecto",
       "Branding visible obligatorio",
       "Subdominio fastpage.app",
+      "❌ Sin soporte directo",
       "🔒 Dominio propio (Business o Pro)",
       "🔒 IA (Business o Pro)",
     ],
@@ -39,10 +40,10 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     id: "BUSINESS",
     name: "BUSINESS",
     monthlyPriceLabel: "S/ 59 / mes",
-    subtitle: "Prueba gratis por 14 días. Luego S/59/mes. Cancela cuando quieras.",
-    ctaLabel: "Probar 14 días gratis",
+    subtitle: "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.",
+    ctaLabel: "Probar 14 dias gratis",
     billingFlow: "trial",
-    badgeLabel: "Mas elegido",
+    badgeLabel: "🔥 Mas elegido",
     note: "Sin compromiso.",
     trialDays: 14,
     features: [
@@ -60,7 +61,8 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       "Tienda Virtual y Carta Digital completas",
       "Hasta 50 productos por proyecto",
       "Dominio propio permitido (cliente compra su dominio)",
-      "IA básica para descripciones y ayuda de textos",
+      "IA basica para descripciones y ayuda de textos",
+      "📧 Soporte por correo (respuesta maxima 24h)",
       "Branding visible (no removible)",
     ],
     highlighted: true,
@@ -69,7 +71,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     id: "PRO",
     name: "PRO",
     monthlyPriceLabel: "S/ 99 / mes",
-    subtitle: "Pago directo mensual para escalar en serio. Sin trial.",
+    subtitle: "Pago directo mensual para escalar en serio. Sin trial. 🚀",
     ctaLabel: "Comprar ahora",
     billingFlow: "direct",
     features: [
@@ -94,6 +96,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       "Clonador habilitado y exportaciones avanzadas",
       "Branding removible",
       "IA avanzada para conversion y optimizacion automatica",
+      "💬 Soporte en vivo por WhatsApp",
       "Insights automaticos y rendimiento tecnico (LCP/SEO/Accesibilidad)",
     ],
   },
@@ -102,4 +105,3 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
 export function getPlanDefinition(plan: PlanType): PlanDefinition {
   return PLAN_DEFINITIONS.find((entry) => entry.id === plan) || PLAN_DEFINITIONS[0];
 }
-

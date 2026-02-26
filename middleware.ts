@@ -15,8 +15,8 @@ const GUARDS: Guard[] = [
   { pattern: /^\/api\/ai(?:\/|$)/, feature: "aiOptimization", mode: "api" },
   { pattern: /^\/metrics(?:\/|$)/, feature: "basicMetrics", mode: "page" },
   { pattern: /^\/api\/metrics(?:\/|$)/, feature: "basicMetrics", mode: "api" },
-  { pattern: /^\/builder(?:\/|$)/, feature: "fullStore", mode: "page" },
-  { pattern: /^\/templates(?:\/|$)/, feature: "fullStore", mode: "page" },
+  { pattern: /^\/builder(?:\/|$)/, feature: "clonerAccess", mode: "page" },
+  { pattern: /^\/templates(?:\/|$)/, feature: "clonerAccess", mode: "page" },
   { pattern: /^\/store(?:\/|$)/, feature: "fullStore", mode: "page" },
   { pattern: /^\/cloner\/web(?:\/|$)/, feature: "clonerAccess", mode: "page" },
   { pattern: /^\/dashboard\/domain(?:\/|$)/, feature: "customDomain", mode: "page" },
@@ -26,6 +26,10 @@ const GUARDS: Guard[] = [
 ];
 
 const EXCLUDED_PATHS = ["/dashboard/billing", "/api/subscription/"];
+const ACTIVE_ONLY_PATHS = [
+  /^\/linkhub(?:\/|$)/,
+  /^\/published(?:\/|$)/,
+];
 
 const DEFAULT_CANONICAL_HOST = "www.fastpagepro.com";
 const DEFAULT_ALLOWED_PUBLIC_HOSTS = ["www.fastpagepro.com", "fastpagepro.com"];
@@ -79,7 +83,8 @@ export async function middleware(request: NextRequest) {
   }
 
   const guard = GUARDS.find((entry) => entry.pattern.test(path));
-  if (!guard) {
+  const activeOnlyGuard = ACTIVE_ONLY_PATHS.some((entry) => entry.test(path));
+  if (!guard && !activeOnlyGuard) {
     return NextResponse.next();
   }
 
@@ -92,9 +97,15 @@ export async function middleware(request: NextRequest) {
   const payload = token ? await verifySubscriptionSessionToken(token, secret) : null;
   const userPlan = payload?.plan || "FREE";
   const isActive = payload?.status === "ACTIVE" && new Date(payload.endDate).getTime() > Date.now();
-  const hasFeature = isActive && canAccessFeature(userPlan, guard.feature);
+  const hasFeature = guard ? isActive && canAccessFeature(userPlan, guard.feature) : false;
 
-  if (hasFeature) {
+  if (activeOnlyGuard && payload && !isActive) {
+    const billingUrl = request.nextUrl.clone();
+    billingUrl.pathname = "/dashboard/billing";
+    return NextResponse.redirect(billingUrl);
+  }
+
+  if (!guard || hasFeature) {
     return NextResponse.next();
   }
 

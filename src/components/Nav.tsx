@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import { useSubscription } from "@/hooks/useSubscription";
 import { ChevronLeft, ChevronRight, Zap, LogOut, Lock } from "lucide-react";
 
 export default function Nav() {
@@ -18,6 +19,7 @@ export default function Nav() {
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
   const permissions = usePlanPermissions(Boolean(session?.uid));
+  const { summary } = useSubscription(Boolean(session?.uid));
 
   const toggleLanguage = () => {
     setLanguage(language === "es" ? "en" : "es");
@@ -48,21 +50,58 @@ export default function Nav() {
     }
 
     const isStarter = permissions.canonicalPlan === "starter";
-    const starterLockedRoutes = new Set(["/builder", "/templates", "/cloner/web", "/store"]);
+    const isBusiness = permissions.canonicalPlan === "business";
+    const isExpired = summary?.status === "EXPIRED";
+    const starterLockedRoutes = new Set(["/builder", "/templates", "/cloner/web", "/store", "/metrics"]);
+    const businessLockedRoutes = new Set(["/builder", "/templates", "/cloner/web"]);
+    const expiredUnlockedRoutes = new Set(["/dashboard/billing", "/settings", "/hub"]);
+
+    const resolveLockHint = (href: string) => {
+      if (isExpired && !expiredUnlockedRoutes.has(href)) {
+        return "Tu periodo activo termino. Renueva en Billing para reactivar paneles.";
+      }
+      if (["/builder", "/templates", "/cloner/web"].includes(href)) {
+        return "Disponible solo en plan PRO.";
+      }
+      return "Disponible en Business o Pro.";
+    };
+
+    const resolveRequiredFeature = (href: string) => {
+      if (["/builder", "/templates", "/cloner/web"].includes(href)) return "clonerAccess";
+      if (href === "/store") return "fullStore";
+      if (href === "/metrics") return "basicMetrics";
+      return "";
+    };
+
+    const isLockedRoute = (href: string) => {
+      if (isExpired && !expiredUnlockedRoutes.has(href)) return true;
+      if (isStarter && starterLockedRoutes.has(href)) return true;
+      if (isBusiness && businessLockedRoutes.has(href)) return true;
+      return false;
+    };
+
+    const mapItem = (name: string, href: string, emoji = "") => ({
+      name,
+      href,
+      emoji,
+      locked: isLockedRoute(href),
+      lockHint: resolveLockHint(href),
+      requiredFeature: resolveRequiredFeature(href),
+    });
 
     return [
-      { name: t("nav.hub"), href: "/hub", emoji: "" },
-      { name: t("nav.builder"), href: "/builder", emoji: "", locked: isStarter && starterLockedRoutes.has("/builder") },
-      { name: t("nav.templates"), href: "/templates", emoji: "", locked: isStarter && starterLockedRoutes.has("/templates") },
-      { name: t("nav.cloner"), href: "/cloner/web", emoji: "", locked: isStarter && starterLockedRoutes.has("/cloner/web") },
-      { name: t("nav.store"), href: "/store", emoji: "", locked: isStarter && starterLockedRoutes.has("/store") },
-      { name: t("nav.linkhub"), href: "/linkhub", emoji: "" },
-      { name: t("nav.published"), href: "/published", emoji: "" },
-      { name: t("nav.metrics"), href: "/metrics", emoji: "" },
-      { name: "Billing", href: "/dashboard/billing", emoji: "" },
-      { name: t("nav.settings"), href: "/settings", emoji: "" },
+      mapItem(t("nav.hub"), "/hub"),
+      mapItem(t("nav.builder"), "/builder"),
+      mapItem(t("nav.templates"), "/templates"),
+      mapItem(t("nav.cloner"), "/cloner/web"),
+      mapItem(t("nav.store"), "/store"),
+      mapItem(t("nav.linkhub"), "/linkhub"),
+      mapItem(t("nav.published"), "/published"),
+      mapItem(t("nav.metrics"), "/metrics"),
+      mapItem("Billing", "/dashboard/billing"),
+      mapItem(t("nav.settings"), "/settings"),
     ];
-  }, [permissions.canonicalPlan, session, t]);
+  }, [permissions.canonicalPlan, session, summary?.status, t]);
 
   if (
     pathname === "/auth" ||
@@ -105,11 +144,16 @@ export default function Nav() {
                 <>
                   <button
                     type="button"
-                    onClick={() =>
-                      setDesktopLockedOpen((current) => (current === link.href ? null : link.href))
-                    }
+                    onClick={() => {
+                      setDesktopLockedOpen((current) => (current === link.href ? null : link.href));
+                      const requiredFeature = String(link.requiredFeature || "");
+                      const target = requiredFeature
+                        ? `/dashboard/billing?requiredFeature=${requiredFeature}`
+                        : "/dashboard/billing";
+                      router.push(target);
+                    }}
                     className="nav-link-glow inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] font-bold text-zinc-400 transition-all hover:text-amber-200"
-                    title="Disponible en Business o Pro"
+                    title={link.lockHint}
                   >
                     {link.name}
                     <Lock className="h-3.5 w-3.5 text-amber-300" />
@@ -119,7 +163,7 @@ export default function Nav() {
                       desktopLockedOpen === link.href ? "opacity-100" : "pointer-events-none opacity-0"
                     }`}
                   >
-                    Actualiza a plan Business o Pro para desbloquear esta funcion.
+                    {link.lockHint}
                   </div>
                 </>
               ) : (
@@ -330,9 +374,14 @@ export default function Nav() {
                         <>
                           <button
                             type="button"
-                            onClick={() =>
-                              setMobileLockedOpen((current) => (current === link.href ? null : link.href))
-                            }
+                            onClick={() => {
+                              setMobileLockedOpen((current) => (current === link.href ? null : link.href));
+                              const requiredFeature = String(link.requiredFeature || "");
+                              const target = requiredFeature
+                                ? `/dashboard/billing?requiredFeature=${requiredFeature}`
+                                : "/dashboard/billing";
+                              router.push(target);
+                            }}
                             className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold leading-tight text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
                           >
                             <span>{link.name}</span>
@@ -340,7 +389,7 @@ export default function Nav() {
                           </button>
                           {mobileLockedOpen === link.href ? (
                             <div className="rounded-xl border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm text-amber-100">
-                              Actualiza a plan Business o Pro para desbloquear esta funcion.
+                              {link.lockHint}
                             </div>
                           ) : null}
                         </>

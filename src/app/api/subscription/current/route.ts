@@ -74,6 +74,10 @@ export async function GET(request: NextRequest) {
             endDate: endDate.toISOString(),
             expiringSoon: false,
             daysRemaining: 3650,
+            isBusinessTrial: false,
+            trialDaysRemaining: 0,
+            trialDaysTotal: 0,
+            trialExpired: false,
             limits: getPlanLimits("FREE"),
             usage: {
               publishedPages: 0,
@@ -107,6 +111,10 @@ export async function GET(request: NextRequest) {
           endDate: endDate.toISOString(),
           expiringSoon: false,
           daysRemaining: 3650,
+          isBusinessTrial: false,
+          trialDaysRemaining: 0,
+          trialDaysTotal: 0,
+          trialExpired: false,
           limits: getPlanLimits("FREE"),
           usage: {
             publishedPages: 0,
