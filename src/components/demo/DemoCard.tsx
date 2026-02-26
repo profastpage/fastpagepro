@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import type { DemoCatalogItem } from "@/lib/demoCatalog";
 import { getDemoUrl, type DemoType } from "@/lib/demoRouting";
+import DemoImage from "@/components/demo/DemoImage";
 
 type DemoCardProps = {
   item: DemoCatalogItem;
@@ -16,9 +16,10 @@ export default function DemoCard({ item, onOpen }: DemoCardProps) {
   return (
     <article className="overflow-hidden rounded-2xl border border-white/10 bg-black/45 transition hover:-translate-y-1 hover:border-amber-300/45">
       <div className="relative h-44 w-full">
-        <Image
+        <DemoImage
           src={item.coverImage}
           alt={item.title}
+          fallbackLabel={item.title}
           fill
           unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

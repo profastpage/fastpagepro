@@ -1,6 +1,5 @@
-﻿"use client";
+"use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   Clock3,
@@ -14,6 +13,12 @@ import {
 } from "lucide-react";
 import type { RestaurantMenuData, RestaurantMenuItem } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
+import DemoImage from "@/components/demo/DemoImage";
+import {
+  OFFICIAL_DEMO_WHATSAPP,
+  buildOfficialDemoWhatsappUrl,
+  buildRestaurantDemoMessage,
+} from "@/lib/demoWhatsapp";
 
 type CartMap = Record<string, number>;
 type RestaurantTab = "contact" | "menu" | "location";
@@ -24,11 +29,6 @@ function formatMoney(value: number) {
     currency: "PEN",
     maximumFractionDigits: 2,
   }).format(value);
-}
-
-function buildWhatsappMessage(lines: string[], phone: string) {
-  const normalized = String(phone || "").replace(/\D/g, "");
-  return `https://wa.me/${normalized}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
 
 function normalizeBadge(value?: string) {
@@ -55,7 +55,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const mainImage = demo.items.find((item) => item.favoriteOfDay || item.featured)?.image || demo.items[0]?.image || demo.coverImage;
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(demo.address)}&output=embed`;
   const mapsOpen = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`;
-  const callHref = `tel:${String(demo.whatsappNumber || "").replace(/\D/g, "")}`;
+  const callHref = `tel:${OFFICIAL_DEMO_WHATSAPP}`;
 
   const categories = useMemo(() => ["Todos", ...demo.categories], [demo.categories]);
 
@@ -111,19 +111,18 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   };
 
   const whatsappHref = useMemo(() => {
-    const lines = [
-      `Hola, quiero pedir en ${demo.title}:`,
-      "",
-      ...cartItems.map(
-        (item, index) =>
-          `${index + 1}. ${item.name} x${item.quantity} - ${formatMoney(item.price * item.quantity)}`,
-      ),
-      "",
-      `Total: ${formatMoney(total)}`,
-      `Direccion referencial: ${demo.address}`,
-    ];
-    return buildWhatsappMessage(lines, demo.whatsappNumber);
-  }, [cartItems, demo.address, demo.title, demo.whatsappNumber, total]);
+    const lines = buildRestaurantDemoMessage({
+      title: demo.title,
+      address: demo.address,
+      items: cartItems.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+        lineTotal: formatMoney(item.price * item.quantity),
+      })),
+      total: formatMoney(total),
+    });
+    return buildOfficialDemoWhatsappUrl(lines);
+  }, [cartItems, demo.address, demo.title, total]);
 
   const navButton =
     "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition md:h-12 md:text-sm";
@@ -135,7 +134,15 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)]">
-                <Image src={mainImage} alt={demo.title} fill unoptimized sizes="40px" className="object-cover" />
+                <DemoImage
+                  src={mainImage}
+                  alt={demo.title}
+                  fallbackLabel={demo.title}
+                  fill
+                  unoptimized
+                  sizes="40px"
+                  className="object-cover"
+                />
               </div>
               <p className="truncate text-sm font-semibold">{demo.title}</p>
             </div>
@@ -183,10 +190,26 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           {tab === "contact" ? (
             <section className="space-y-4">
               <div className="relative h-44 overflow-hidden rounded-3xl border border-[var(--fp-border)] md:h-72">
-                <Image src={demo.coverImage} alt={demo.title} fill unoptimized sizes="100vw" className="object-cover" />
+                <DemoImage
+                  src={demo.coverImage}
+                  alt={demo.title}
+                  fallbackLabel={demo.title}
+                  fill
+                  unoptimized
+                  sizes="100vw"
+                  className="object-cover"
+                />
                 <div className="absolute inset-x-0 -bottom-10 flex justify-center">
                   <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white/80 md:h-28 md:w-28">
-                    <Image src={mainImage} alt={demo.title} fill unoptimized sizes="112px" className="object-cover" />
+                    <DemoImage
+                      src={mainImage}
+                      alt={demo.title}
+                      fallbackLabel={demo.title}
+                      fill
+                      unoptimized
+                      sizes="112px"
+                      className="object-cover"
+                    />
                   </div>
                 </div>
               </div>
@@ -264,9 +287,10 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       <article key={item.id} className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3">
                         <div className="flex gap-3">
                           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--fp-border)] md:h-28 md:w-28">
-                            <Image
+                            <DemoImage
                               src={item.image}
                               alt={item.name}
+                              fallbackLabel={item.name}
                               fill
                               unoptimized
                               sizes="120px"
@@ -285,9 +309,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                             <p className="mt-1 line-clamp-2 text-sm text-[var(--fp-muted)] md:text-base">{item.description}</p>
                             <div className="mt-2 flex items-end gap-2">
                               {item.compareAtPrice ? (
-                                <p className="text-xs line-through text-[var(--fp-muted)] md:text-sm">{formatMoney(item.compareAtPrice)}</p>
+                                <p className="text-[11px] line-through text-[var(--fp-muted)] md:text-xs">{formatMoney(item.compareAtPrice)}</p>
                               ) : null}
-                              <p className="text-3xl font-black text-[var(--fp-primary)] md:text-5xl">{formatMoney(item.price)}</p>
+                              <p className="text-2xl font-black text-[var(--fp-primary)] md:text-3xl">{formatMoney(item.price)}</p>
                             </div>
                             <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-2 py-1">
                               <button

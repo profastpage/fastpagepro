@@ -951,3 +951,18 @@ sin cambios de rutas publicas ni cambios de esquema en Firestore.
 - Se agrego host-guard en `middleware.ts`:
   - en produccion, cualquier host no permitido redirige 308 al canonico.
   - para `/api/*` en host no permitido responde `403 Host no permitido`.
+
+## Demo WhatsApp Unification + Resilient Images (2026-02-26)
+
+- Modulos ajustados: demos publicas /demo/* (restaurant, ecommerce, services).
+- WhatsApp oficial unificado para todas las demos: +51 919 662 011 (51919662011).
+- Mensajeria de demo mejorada:
+  - saludo inicial en negrita
+  - estructura ordenada por secciones
+  - tono amable con emojis y puntuacion.
+- UX de precios en demos:
+  - precio principal reducido ligeramente para mejor balance visual en mobile.
+- Carga de imagenes robusta:
+  - nuevo DemoImage con fallback SVG local cuando falla una URL remota.
+  - aplicado en cards de demo y vistas demo para evitar bloques vacios.
+
