@@ -271,7 +271,6 @@ async function saveSubscriptionRecordToFirestore(record: SubscriptionRecord): Pr
     const storeSnapshots = await adminDb
       .collection("cloned_sites")
       .where("userId", "==", record.userId)
-      .where("source", "==", "store-builder")
       .get();
 
     if (!storeSnapshots.empty) {
@@ -323,12 +322,14 @@ export async function countPublishedPagesByUser(userId: string): Promise<number>
 
 export async function getLatestSubscription(userId: string): Promise<SubscriptionRecord | null> {
   try {
-    const row = await prisma.subscription.findFirst({
+    const rows = await prisma.subscription.findMany({
       where: { userId },
       orderBy: [{ createdAt: "desc" }],
+      take: 20,
     });
-    if (row) {
-      return mapPrismaSubscription(row);
+    if (rows.length > 0) {
+      const effective = rows.find((entry) => entry.status !== "PENDING") || rows[0];
+      return mapPrismaSubscription(effective);
     }
   } catch (error) {
     console.error("[Subscription] Prisma read fallback (single):", error);
@@ -359,7 +360,13 @@ export async function getLatestSubscriptionsByUsers(userIds: string[]): Promise<
 
     const latestByUser = new Map<string, SubscriptionRecord>();
     for (const row of rows) {
-      if (!latestByUser.has(row.userId)) {
+      const previous = latestByUser.get(row.userId);
+      if (!previous) {
+        latestByUser.set(row.userId, mapPrismaSubscription(row));
+        continue;
+      }
+
+      if (previous.status === "PENDING" && row.status !== "PENDING") {
         latestByUser.set(row.userId, mapPrismaSubscription(row));
       }
     }
@@ -576,8 +583,29 @@ export async function assignSubscriptionPlanByAdmin(input: {
 export async function resolveUserSubscription(userId: string): Promise<SubscriptionRecord> {
   let current = await getLatestSubscription(userId);
   if (!current) {
-    current = await createDefaultFreeSubscription(userId);
-    return current;
+    try {
+      current = await startBusinessTrial(userId);
+      return current;
+    } catch (error: any) {
+      const message = String(error?.message || "");
+      if (!message.startsWith("BUSINESS_TRIAL_ALREADY_USED")) {
+        console.error("[Subscription Auto Trial] Could not activate trial for new account:", error);
+      }
+      current = await createDefaultFreeSubscription(userId);
+      return current;
+    }
+  }
+
+  if (current.plan === "FREE" && current.status === "ACTIVE") {
+    try {
+      const trial = await startBusinessTrial(userId);
+      return trial;
+    } catch (error: any) {
+      const message = String(error?.message || "");
+      if (!message.startsWith("BUSINESS_TRIAL_ALREADY_USED")) {
+        console.error("[Subscription Auto Trial] Could not activate trial for existing account:", error);
+      }
+    }
   }
 
   if (current.status === "ACTIVE" && current.endDate.getTime() < Date.now()) {

@@ -32,6 +32,9 @@ const ACTIVE_ONLY_PATHS = [
   /^\/editor(?:\/|$)/,
   /^\/preview(?:\/|$)/,
   /^\/app\/new(?:\/|$)/,
+  /^\/api\/publish(?:\/|$)/,
+  /^\/api\/sites(?:\/|$)/,
+  /^\/api\/clone(?:\/|$)/,
 ];
 
 const DEFAULT_CANONICAL_HOST = "www.fastpagepro.com";
@@ -103,6 +106,14 @@ export async function middleware(request: NextRequest) {
   const hasFeature = guard ? isActive && canAccessFeature(userPlan, guard.feature) : false;
 
   if (activeOnlyGuard && payload && !isActive) {
+    if (path.startsWith("/api/")) {
+      return NextResponse.json(
+        {
+          error: "Suscripcion expirada. Renueva en Billing para reactivar funciones.",
+        },
+        { status: 403 },
+      );
+    }
     const billingUrl = request.nextUrl.clone();
     billingUrl.pathname = "/dashboard/billing";
     return NextResponse.redirect(billingUrl);
