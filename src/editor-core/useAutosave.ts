@@ -10,6 +10,7 @@ interface UseAutosaveOptions<TData = any> {
   debounceTextMs?: number;
   debounceImageMs?: number;
   debounceBulkMs?: number;
+  intervalMs?: number;
 }
 
 function resolveDebounce(kind: EditorChangeKind | undefined, options: UseAutosaveOptions) {
@@ -74,6 +75,16 @@ export function useAutosave<TData = any>(options: UseAutosaveOptions<TData>) {
       }
     };
   }, [options, saveNow, state.lastChangeKind, state.status]);
+
+  useEffect(() => {
+    if (!options.enabled) return;
+    if (!options.intervalMs || options.intervalMs <= 0) return;
+    const timer = setInterval(() => {
+      if (stateRef.current.status !== "dirty") return;
+      void saveNow("debounced");
+    }, options.intervalMs);
+    return () => clearInterval(timer);
+  }, [options.enabled, options.intervalMs, saveNow]);
 
   return useMemo(
     () => ({

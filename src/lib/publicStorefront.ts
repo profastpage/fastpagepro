@@ -113,6 +113,7 @@ function normalizeStoreProduct(raw: DocumentData, index: number): PublicStorePro
     active: raw.active !== false,
     badge: badge || undefined,
     sku: safeText(raw.sku) || undefined,
+    stockQty: Math.max(0, safeInt(raw.stockQty, 0)),
     category: normalizeCategory(raw),
     displayPriceCents: displayPrice,
     compareAtPriceCents: compareAt > displayPrice ? compareAt : undefined,
@@ -196,6 +197,7 @@ export function createProductCategoryList(products: PublicStoreProduct[]): strin
 function normalizeStoreConfig(raw: DocumentData): StoreConfig {
   const fromDoc = (raw.storeConfig || {}) as Partial<StoreConfig>;
   const currency = safeText(fromDoc.currency || "PEN");
+  const ecommerce = (fromDoc.ecommerce || {}) as NonNullable<StoreConfig["ecommerce"]>;
 
   return {
     storeName: safeText(fromDoc.storeName || raw.templateName || "Tienda"),
@@ -207,6 +209,22 @@ function normalizeStoreConfig(raw: DocumentData): StoreConfig {
     customRgb: fromDoc.customRgb || undefined,
     content: fromDoc.content || undefined,
     features: Array.isArray(fromDoc.features) ? fromDoc.features : undefined,
+    ecommerce: {
+      deliveryEnabled: ecommerce.deliveryEnabled !== false,
+      pickupEnabled: ecommerce.pickupEnabled !== false,
+      inStoreEnabled: ecommerce.inStoreEnabled === true,
+      shippingBaseFeeCents: safeInt(ecommerce.shippingBaseFeeCents, 0),
+      freeShippingFromCents: safeInt(ecommerce.freeShippingFromCents, 0),
+      yapeEnabled: ecommerce.yapeEnabled !== false,
+      plinEnabled: ecommerce.plinEnabled !== false,
+      transferEnabled: ecommerce.transferEnabled !== false,
+      cashEnabled: ecommerce.cashEnabled !== false,
+      cardEnabled: ecommerce.cardEnabled === true,
+      termsRequired: ecommerce.termsRequired !== false,
+      termsText:
+        safeText(ecommerce.termsText || "Acepto terminos y condiciones de compra.") ||
+        "Acepto terminos y condiciones de compra.",
+    },
     storeSlug: resolveStoreSlug(fromDoc, safeText(raw.id), safeText(raw.storeSlug)),
   } as StoreConfig;
 }

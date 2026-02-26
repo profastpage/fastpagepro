@@ -41,6 +41,7 @@ export type StoreProduct = {
   category?: string;
   compareAtPriceCents?: number;
   ctaLabel?: string;
+  stockQty?: number;
 };
 
 export type StoreFeature = {
@@ -108,6 +109,20 @@ export type StoreConfig = {
   };
 
   features?: StoreFeature[];
+  ecommerce?: {
+    deliveryEnabled?: boolean;
+    pickupEnabled?: boolean;
+    inStoreEnabled?: boolean;
+    shippingBaseFeeCents?: number;
+    freeShippingFromCents?: number;
+    yapeEnabled?: boolean;
+    plinEnabled?: boolean;
+    transferEnabled?: boolean;
+    cashEnabled?: boolean;
+    cardEnabled?: boolean;
+    termsRequired?: boolean;
+    termsText?: string;
+  };
 };
 
 export const STORE_THEMES: StoreTheme[] = [

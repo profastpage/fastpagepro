@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -25,6 +25,8 @@ import {
 import { getVisualStoreTheme, getVisualStoreVars } from "@/lib/storeVisualTheme";
 
 type SortOption = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
+type ShippingMethod = "delivery" | "pickup" | "instore";
+type PaymentMethod = "yape" | "plin" | "transfer" | "cash" | "card";
 
 type CartItem = {
   id: string;
@@ -55,6 +57,20 @@ function isOffer(item: {
   );
 }
 
+function paymentMethodLabel(method: PaymentMethod) {
+  if (method === "yape") return "Yape";
+  if (method === "plin") return "Plin";
+  if (method === "transfer") return "Transferencia";
+  if (method === "cash") return "Efectivo";
+  return "Tarjeta";
+}
+
+function shippingMethodLabel(method: ShippingMethod) {
+  if (method === "delivery") return "Delivery";
+  if (method === "pickup") return "Recojo en tienda";
+  return "Consumir en local";
+}
+
 export default function PublicStorePage() {
   const params = useParams<{ slug: string }>();
   const slug = useMemo(() => sanitizeStoreSlug(params?.slug || ""), [params?.slug]);
@@ -76,6 +92,11 @@ export default function PublicStorePage() {
   const [checkoutPhone, setCheckoutPhone] = useState("");
   const [checkoutAddress, setCheckoutAddress] = useState("");
   const [checkoutNote, setCheckoutNote] = useState("");
+  const [checkoutShippingMethod, setCheckoutShippingMethod] =
+    useState<ShippingMethod>("delivery");
+  const [checkoutPaymentMethod, setCheckoutPaymentMethod] =
+    useState<PaymentMethod>("yape");
+  const [checkoutAcceptedTerms, setCheckoutAcceptedTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [checkoutSuccess, setCheckoutSuccess] = useState("");
@@ -158,6 +179,56 @@ export default function PublicStorePage() {
   const theme = getVisualStoreTheme(themeConfig);
   const vars = getVisualStoreVars(themeConfig);
 
+  const ecommerce = useMemo(() => {
+    const settings = store?.config?.ecommerce || {};
+    return {
+      deliveryEnabled: settings.deliveryEnabled !== false,
+      pickupEnabled: settings.pickupEnabled !== false,
+      inStoreEnabled: settings.inStoreEnabled === true,
+      shippingBaseFeeCents: Math.max(0, Number(settings.shippingBaseFeeCents || 0)),
+      freeShippingFromCents: Math.max(0, Number(settings.freeShippingFromCents || 0)),
+      yapeEnabled: settings.yapeEnabled !== false,
+      plinEnabled: settings.plinEnabled !== false,
+      transferEnabled: settings.transferEnabled !== false,
+      cashEnabled: settings.cashEnabled !== false,
+      cardEnabled: settings.cardEnabled === true,
+      termsRequired: settings.termsRequired !== false,
+      termsText:
+        String(settings.termsText || "").trim() ||
+        "Acepto terminos y condiciones de compra.",
+    };
+  }, [store?.config?.ecommerce]);
+
+  const availableShippingMethods = useMemo<ShippingMethod[]>(() => {
+    const methods: ShippingMethod[] = [];
+    if (ecommerce.deliveryEnabled) methods.push("delivery");
+    if (ecommerce.pickupEnabled) methods.push("pickup");
+    if (ecommerce.inStoreEnabled) methods.push("instore");
+    return methods.length ? methods : (["delivery"] as ShippingMethod[]);
+  }, [ecommerce.deliveryEnabled, ecommerce.inStoreEnabled, ecommerce.pickupEnabled]);
+
+  const availablePaymentMethods = useMemo<PaymentMethod[]>(() => {
+    const methods: PaymentMethod[] = [];
+    if (ecommerce.yapeEnabled) methods.push("yape");
+    if (ecommerce.plinEnabled) methods.push("plin");
+    if (ecommerce.transferEnabled) methods.push("transfer");
+    if (ecommerce.cashEnabled) methods.push("cash");
+    if (ecommerce.cardEnabled) methods.push("card");
+    return methods.length ? methods : (["yape"] as PaymentMethod[]);
+  }, [
+    ecommerce.cardEnabled,
+    ecommerce.cashEnabled,
+    ecommerce.plinEnabled,
+    ecommerce.transferEnabled,
+    ecommerce.yapeEnabled,
+  ]);
+
+  const productsById = useMemo(() => {
+    const map = new Map<string, NonNullable<PublicStorefront["products"]>[number]>();
+    (store?.products || []).forEach((item) => map.set(item.id, item));
+    return map;
+  }, [store?.products]);
+
   const offerProducts = useMemo(
     () => (store?.products || []).filter((p) => p.active && isOffer(p)),
     [store?.products],
@@ -184,15 +255,46 @@ export default function PublicStorePage() {
     if (page > totalPages) setPage(1);
   }, [page, totalPages]);
 
+  useEffect(() => {
+    if (availableShippingMethods.includes(checkoutShippingMethod)) return;
+    setCheckoutShippingMethod(availableShippingMethods[0] || "delivery");
+  }, [availableShippingMethods, checkoutShippingMethod]);
+
+  useEffect(() => {
+    if (availablePaymentMethods.includes(checkoutPaymentMethod)) return;
+    setCheckoutPaymentMethod(availablePaymentMethods[0] || "yape");
+  }, [availablePaymentMethods, checkoutPaymentMethod]);
+
   const cartCount = useMemo(() => cart.reduce((a, b) => a + b.quantity, 0), [cart]);
   const cartSubtotal = useMemo(() => cart.reduce((a, b) => a + b.priceCents * b.quantity, 0), [cart]);
+  const shippingFeeCents = useMemo(() => {
+    if (checkoutShippingMethod !== "delivery") return 0;
+    const freeFrom = ecommerce.freeShippingFromCents || 0;
+    if (freeFrom > 0 && cartSubtotal >= freeFrom) return 0;
+    return ecommerce.shippingBaseFeeCents || 0;
+  }, [
+    cartSubtotal,
+    checkoutShippingMethod,
+    ecommerce.freeShippingFromCents,
+    ecommerce.shippingBaseFeeCents,
+  ]);
+  const cartTotal = cartSubtotal + shippingFeeCents;
 
   const addToCart = (product: any) => {
+    const maxStock = Math.max(0, Number(product?.stockQty ?? 0));
+    if (maxStock === 0) {
+      setCheckoutError("Este producto esta agotado temporalmente.");
+      return;
+    }
     setCheckoutError("");
     setCheckoutSuccess("");
     setCart((prev) => {
       const idx = prev.findIndex((x) => x.id === product.id);
       if (idx >= 0) {
+        if (prev[idx].quantity >= maxStock) {
+          setCheckoutError("No hay mas stock disponible para este producto.");
+          return prev;
+        }
         const copy = [...prev];
         copy[idx] = { ...copy[idx], quantity: clampQty(copy[idx].quantity + 1) };
         return copy;
@@ -216,9 +318,11 @@ export default function PublicStorePage() {
       prev
         .map((item) => {
           if (item.id !== id) return item;
+          const maxStock = Math.max(0, Number(productsById.get(id)?.stockQty ?? 0));
+          if (maxStock === 0) return null;
           const next = item.quantity + delta;
           if (next <= 0) return null;
-          return { ...item, quantity: clampQty(next) };
+          return { ...item, quantity: clampQty(Math.min(next, maxStock)) };
         })
         .filter(Boolean) as CartItem[],
     );
@@ -229,13 +333,25 @@ export default function PublicStorePage() {
   async function submitOrder() {
     if (!store) return;
     if (!cart.length) {
-      setCheckoutError("Tu carrito está vacío.");
+      setCheckoutError("Tu carrito esta vacio.");
       return;
     }
-    if (!checkoutName.trim() || !checkoutPhone.trim() || !checkoutAddress.trim()) {
-      setCheckoutError("Completa nombre, celular y dirección.");
+
+    const needsAddress = checkoutShippingMethod === "delivery";
+    if (!checkoutName.trim() || !checkoutPhone.trim() || (needsAddress && !checkoutAddress.trim())) {
+      setCheckoutError(
+        needsAddress
+          ? "Completa nombre, celular y direccion."
+          : "Completa nombre y celular.",
+      );
       return;
     }
+
+    if (ecommerce.termsRequired && !checkoutAcceptedTerms) {
+      setCheckoutError("Debes aceptar los terminos de compra para continuar.");
+      return;
+    }
+
     setSubmitting(true);
     setCheckoutError("");
     setCheckoutSuccess("");
@@ -252,13 +368,17 @@ export default function PublicStorePage() {
         totals: {
           items: cartCount,
           subtotalCents: cartSubtotal,
-          totalCents: cartSubtotal,
+          shippingFeeCents,
+          totalCents: cartTotal,
         },
         customer: {
           name: checkoutName.trim(),
           phone: checkoutPhone.trim(),
           address: checkoutAddress.trim(),
           note: checkoutNote.trim(),
+          shippingMethod: checkoutShippingMethod,
+          paymentMethod: checkoutPaymentMethod,
+          acceptedTerms: checkoutAcceptedTerms,
         },
         items: cart.map((item) => ({
           id: item.id,
@@ -277,15 +397,33 @@ export default function PublicStorePage() {
         const lines = [
           `Hola, quiero finalizar mi pedido en ${store.config.storeName}:`,
           "",
-          ...cart.map((item, i) => `${i + 1}. ${item.name} x${item.quantity} - ${formatStoreMoney(item.priceCents * item.quantity, store.config.currency)}`),
+          ...cart.map(
+            (item, i) =>
+              `${i + 1}. ${item.name} x${item.quantity} - ${formatStoreMoney(
+                item.priceCents * item.quantity,
+                store.config.currency,
+              )}`,
+          ),
           "",
           `Subtotal: ${formatStoreMoney(cartSubtotal, store.config.currency)}`,
+          `Envio: ${
+            shippingFeeCents > 0
+              ? formatStoreMoney(shippingFeeCents, store.config.currency)
+              : "Gratis"
+          }`,
+          `Total: ${formatStoreMoney(cartTotal, store.config.currency)}`,
+          `Entrega: ${shippingMethodLabel(checkoutShippingMethod)}`,
+          `Pago: ${paymentMethodLabel(checkoutPaymentMethod)}`,
           `Nombre: ${checkoutName.trim()}`,
           `Celular: ${checkoutPhone.trim()}`,
-          `Dirección: ${checkoutAddress.trim()}`,
+          checkoutAddress.trim() ? `Direccion: ${checkoutAddress.trim()}` : "",
           checkoutNote.trim() ? `Nota: ${checkoutNote.trim()}` : "",
         ].filter(Boolean);
-        window.open(`https://wa.me/${wa}?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener,noreferrer");
+        window.open(
+          `https://wa.me/${wa}?text=${encodeURIComponent(lines.join("\n"))}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
       }
 
       setCart([]);
@@ -295,6 +433,7 @@ export default function PublicStorePage() {
       setCheckoutPhone("");
       setCheckoutAddress("");
       setCheckoutNote("");
+      setCheckoutAcceptedTerms(false);
       setCheckoutSuccess("Pedido registrado correctamente.");
     } catch (e: any) {
       setCheckoutError(e?.message || "No se pudo finalizar el pedido.");
@@ -302,13 +441,12 @@ export default function PublicStorePage() {
       setSubmitting(false);
     }
   }
-
   if (loading) {
     return <div className="grid min-h-screen place-items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   if (notFound || !store) {
-    return <div className="grid min-h-screen place-items-center text-center"><div><h1 className="text-2xl font-black">Tienda no disponible</h1><p className="mt-2 text-slate-500">Esta tienda no existe o no está publicada.</p></div></div>;
+    return <div className="grid min-h-screen place-items-center text-center"><div><h1 className="text-2xl font-black">Tienda no disponible</h1><p className="mt-2 text-slate-500">Esta tienda no existe o no esta publicada.</p></div></div>;
   }
 
   return (
@@ -332,7 +470,7 @@ export default function PublicStorePage() {
       </header>
 
       <section className="text-center text-sm font-bold text-white" style={{ background: theme.dark }}>
-        <div className="mx-auto max-w-6xl px-3 py-2">{content.topStripText || "Promoción activa"}</div>
+        <div className="mx-auto max-w-6xl px-3 py-2">{content.topStripText || "Promocion activa"}</div>
       </section>
 
       <section className="relative mx-auto max-w-6xl overflow-hidden border-x border-b bg-white" style={{ borderColor: "var(--vs-border)" }}>
@@ -355,7 +493,7 @@ export default function PublicStorePage() {
       <div className="mx-auto mt-8 max-w-6xl px-3 md:px-6">
         {offerProducts.length > 0 && (
           <section>
-            <h2 className="text-4xl font-black">{content.offerSectionTitle || "🔥 Ofertas Especiales"}</h2>
+            <h2 className="text-4xl font-black">{content.offerSectionTitle || "ðŸ”¥ Ofertas Especiales"}</h2>
             <div className="mt-4 flex snap-x gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible">
               {offerProducts.slice(0, 9).map((product) => (
                 <article key={`offer-${product.id}`} className="min-w-[84%] snap-start overflow-hidden rounded-2xl border bg-white md:min-w-0" style={{ borderColor: "var(--vs-border)" }}>
@@ -368,7 +506,16 @@ export default function PublicStorePage() {
                   <div className="p-4">
                     <p className="text-xl font-black">{product.name}</p>
                     <p className="mt-1 text-3xl font-black" style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(product.displayPriceCents, store.config.currency)}</p>
-                    <button onClick={() => addToCart(product)} className="mt-3 h-11 w-full rounded-xl text-base font-black text-white" style={{ background: "var(--vs-accent)" }}>{product.ctaLabel || "Ver oferta"}</button>
+                    <button
+                      onClick={() => addToCart(product)}
+                      disabled={(product.stockQty ?? 0) <= 0}
+                      className="mt-3 h-11 w-full rounded-xl text-base font-black text-white disabled:opacity-55"
+                      style={{ background: "var(--vs-accent)" }}
+                    >
+                      {(product.stockQty ?? 0) <= 0
+                        ? "Agotado"
+                        : product.ctaLabel || "Ver oferta"}
+                    </button>
                   </div>
                 </article>
               ))}
@@ -396,21 +543,33 @@ export default function PublicStorePage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--vs-muted)" }}>{product.category || "General"}</p>
                 <h3 className="mt-1 line-clamp-2 text-xl font-black">{product.name}</h3>
                 <p className="line-clamp-1 text-sm" style={{ color: "var(--vs-muted)" }}>{product.description}</p>
+                <p className="mt-1 text-xs font-semibold" style={{ color: "var(--vs-muted)" }}>
+                  Stock: {Math.max(0, Number(product.stockQty || 0))}
+                </p>
                 {(product.compareAtPriceCents || 0) > product.displayPriceCents ? <p className="mt-1 text-sm line-through" style={{ color: "var(--vs-muted)" }}>{formatStoreMoney(product.compareAtPriceCents || 0, store.config.currency)}</p> : <div className="h-5" />}
                 <p className="text-3xl font-black" style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(product.displayPriceCents, store.config.currency)}</p>
-                <button onClick={() => addToCart(product)} className="mt-2 h-11 w-full rounded-xl text-base font-black text-white" style={{ background: "var(--vs-accent)" }}>{product.ctaLabel || "Ver producto"}</button>
+                <button
+                  onClick={() => addToCart(product)}
+                  disabled={(product.stockQty ?? 0) <= 0}
+                  className="mt-2 h-11 w-full rounded-xl text-base font-black text-white disabled:opacity-55"
+                  style={{ background: "var(--vs-accent)" }}
+                >
+                  {(product.stockQty ?? 0) <= 0
+                    ? "Agotado"
+                    : product.ctaLabel || "Ver producto"}
+                </button>
               </div>
             </article>
           ))}
         </section>
 
         <div className="mt-6 flex items-center justify-center gap-2">
-          <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>« Anterior</button>
+          <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>&lt; Anterior</button>
           {Array.from({ length: totalPages }).slice(0, 5).map((_, i) => {
             const p = i + 1;
             return <button key={p} onClick={() => setPage(p)} className="h-10 w-10 rounded-xl border text-sm font-black" style={p === page ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" } : { borderColor: "var(--vs-border)" }}>{p}</button>;
           })}
-          <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>Siguiente »</button>
+          <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>Siguiente &gt;</button>
         </div>
       </div>
 
@@ -422,11 +581,11 @@ export default function PublicStorePage() {
             { label: "TikTok", url: content.tiktokUrl || "#" },
           ].map((social) => (
             <div key={social.label} className="mb-3 flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
-              <div><p className="text-xs text-white/70">Síguenos en {social.label}</p><p className="text-xl font-black">{store.config.storeName}</p></div>
+              <div><p className="text-xs text-white/70">Siguenos en {social.label}</p><p className="text-xl font-black">{store.config.storeName}</p></div>
               <a href={social.url} target="_blank" rel="noopener noreferrer" className="rounded-full bg-black/50 px-5 py-2 text-sm font-black">Seguir</a>
             </div>
           ))}
-          <p className="mt-5 text-center text-sm text-white/75">{content.footerLeft || "© 2026 Fast Page"}</p>
+          <p className="mt-5 text-center text-sm text-white/75">{content.footerLeft || "(c) 2026 Fast Page"}</p>
         </div>
       </footer>
 
@@ -443,7 +602,7 @@ export default function PublicStorePage() {
             {!checkoutOpen && (
               <div className="mt-4 flex h-[calc(100%-88px)] flex-col">
                 <div className="flex-1 overflow-y-auto pr-1">
-                  {!cart.length ? <div className="rounded-xl border border-dashed p-4 text-sm" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>Tu carrito está vacío.</div> : cart.map((item) => (
+                  {!cart.length ? <div className="rounded-xl border border-dashed p-4 text-sm" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>Tu carrito esta vacio.</div> : cart.map((item) => (
                     <article key={item.id} className="mb-3 rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
                       <div className="flex gap-3">
                         <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-slate-100">{item.imageUrl ? <Image src={item.imageUrl} alt={item.name} fill unoptimized sizes="64px" className="object-cover" /> : null}</div>
@@ -454,7 +613,26 @@ export default function PublicStorePage() {
                   ))}
                 </div>
                 <div className="border-t pt-3" style={{ borderColor: "var(--vs-border)" }}>
-                  <div className="flex items-center justify-between text-sm"><span style={{ color: "var(--vs-muted)" }}>Subtotal</span><span className="text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(cartSubtotal, store.config.currency)}</span></div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: "var(--vs-muted)" }}>Subtotal</span>
+                    <span className="font-black" style={{ color: "var(--vs-accent)" }}>
+                      {formatStoreMoney(cartSubtotal, store.config.currency)}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-sm">
+                    <span style={{ color: "var(--vs-muted)" }}>Envio</span>
+                    <span className="font-black" style={{ color: "var(--vs-accent)" }}>
+                      {shippingFeeCents > 0
+                        ? formatStoreMoney(shippingFeeCents, store.config.currency)
+                        : "Gratis"}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-sm">
+                    <span style={{ color: "var(--vs-muted)" }}>Total</span>
+                    <span className="text-xl font-black" style={{ color: "var(--vs-accent)" }}>
+                      {formatStoreMoney(cartTotal, store.config.currency)}
+                    </span>
+                  </div>
                   <button disabled={!cart.length} onClick={() => setCheckoutOpen(true)} className="mt-3 h-11 w-full rounded-xl text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-accent)" }}>Finalizar pedido</button>
                 </div>
               </div>
@@ -464,12 +642,83 @@ export default function PublicStorePage() {
                 <div className="flex-1 space-y-3 overflow-y-auto pr-1">
                   <input value={checkoutName} onChange={(e) => setCheckoutName(e.target.value)} placeholder="Nombre" className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
                   <input value={checkoutPhone} onChange={(e) => setCheckoutPhone(e.target.value)} placeholder="Celular" className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
-                  <input value={checkoutAddress} onChange={(e) => setCheckoutAddress(e.target.value)} placeholder="Dirección" className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--vs-muted)" }}>
+                      Metodo de entrega
+                    </p>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      {availableShippingMethods.map((method) => (
+                        <button
+                          key={method}
+                          type="button"
+                          onClick={() => setCheckoutShippingMethod(method)}
+                          className="h-10 rounded-xl border px-2 text-xs font-bold"
+                          style={
+                            checkoutShippingMethod === method
+                              ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" }
+                              : { borderColor: "var(--vs-border)" }
+                          }
+                        >
+                          {shippingMethodLabel(method)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {checkoutShippingMethod === "delivery" ? (
+                    <input value={checkoutAddress} onChange={(e) => setCheckoutAddress(e.target.value)} placeholder="Direccion de entrega" className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                  ) : null}
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--vs-muted)" }}>
+                      Metodo de pago
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {availablePaymentMethods.map((method) => (
+                        <button
+                          key={method}
+                          type="button"
+                          onClick={() => setCheckoutPaymentMethod(method)}
+                          className="h-10 rounded-xl border px-2 text-xs font-bold"
+                          style={
+                            checkoutPaymentMethod === method
+                              ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" }
+                              : { borderColor: "var(--vs-border)" }
+                          }
+                        >
+                          {paymentMethodLabel(method)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <textarea value={checkoutNote} onChange={(e) => setCheckoutNote(e.target.value)} placeholder="Nota" className="min-h-[88px] w-full rounded-xl border px-3 py-2 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                  {ecommerce.termsRequired ? (
+                    <label className="flex items-start gap-2 rounded-xl border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--vs-border)" }}>
+                      <input
+                        type="checkbox"
+                        checked={checkoutAcceptedTerms}
+                        onChange={(e) => setCheckoutAcceptedTerms(e.target.checked)}
+                        className="mt-0.5 h-4 w-4"
+                      />
+                      <span>{ecommerce.termsText}</span>
+                    </label>
+                  ) : null}
                   {checkoutError ? <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{checkoutError}</p> : null}
                   {checkoutSuccess ? <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-600">{checkoutSuccess}</p> : null}
                 </div>
                 <div className="border-t pt-3" style={{ borderColor: "var(--vs-border)" }}>
+                  <div className="mb-2 space-y-1 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span style={{ color: "var(--vs-muted)" }}>Subtotal</span>
+                      <b>{formatStoreMoney(cartSubtotal, store.config.currency)}</b>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span style={{ color: "var(--vs-muted)" }}>Envio</span>
+                      <b>{shippingFeeCents > 0 ? formatStoreMoney(shippingFeeCents, store.config.currency) : "Gratis"}</b>
+                    </div>
+                    <div className="flex items-center justify-between text-base">
+                      <span>Total</span>
+                      <b style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(cartTotal, store.config.currency)}</b>
+                    </div>
+                  </div>
                   <button onClick={submitOrder} disabled={submitting} className="h-11 w-full rounded-xl text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-accent)" }}>{submitting ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Enviar pedido por WhatsApp"}</button>
                   <button onClick={() => setCheckoutOpen(false)} className="mt-2 h-11 w-full rounded-xl border text-xs font-black uppercase" style={{ borderColor: "var(--vs-border)" }}>Volver al carrito</button>
                 </div>
@@ -481,3 +730,4 @@ export default function PublicStorePage() {
     </main>
   );
 }
+

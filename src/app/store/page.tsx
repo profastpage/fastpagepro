@@ -65,7 +65,23 @@ const FIREBASE_PUBLIC_CONFIG = {
 
 type VisualSort = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
 type VisualContent = NonNullable<StoreConfig["content"]>;
+type EcommerceSettings = NonNullable<StoreConfig["ecommerce"]>;
 type StoreEditorSnapshot = { config: StoreConfig; products: StoreProduct[] };
+
+const DEFAULT_ECOMMERCE_SETTINGS: EcommerceSettings = {
+  deliveryEnabled: true,
+  pickupEnabled: true,
+  inStoreEnabled: false,
+  shippingBaseFeeCents: 1000,
+  freeShippingFromCents: 12000,
+  yapeEnabled: true,
+  plinEnabled: true,
+  transferEnabled: true,
+  cashEnabled: true,
+  cardEnabled: false,
+  termsRequired: true,
+  termsText: "Acepto terminos y condiciones de compra.",
+};
 
 const DEFAULT_CONFIG: StoreConfig = {
   vertical: "ecommerce",
@@ -105,7 +121,11 @@ const DEFAULT_CONFIG: StoreConfig = {
     whatsappUrl: "https://wa.me/51999999999",
     phoneUrl: "tel:+51999999999",
     footerLeft: "Edita aqui: mensaje final, politicas o copyright.",
+    checkoutTitle: "Finaliza tu pedido",
+    checkoutButton: "Confirmar pedido",
+    continueButton: "Seguir comprando",
   },
+  ecommerce: DEFAULT_ECOMMERCE_SETTINGS,
 };
 
 const DEFAULT_PRODUCTS: StoreProduct[] = [
@@ -122,6 +142,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Oferta",
     ctaLabel: "Ver producto",
     sku: "ROP-001",
+    stockQty: 25,
   },
   {
     id: "prod-smartwatch",
@@ -136,6 +157,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Oferta",
     ctaLabel: "Ver oferta",
     sku: "TEC-002",
+    stockQty: 18,
   },
   {
     id: "prod-backpack",
@@ -150,6 +172,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Top",
     ctaLabel: "Ver producto",
     sku: "ACC-003",
+    stockQty: 32,
   },
   {
     id: "prod-headphones",
@@ -164,6 +187,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Oferta",
     ctaLabel: "Ver producto",
     sku: "TEC-004",
+    stockQty: 14,
   },
   {
     id: "prod-bag",
@@ -178,6 +202,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Nuevo",
     ctaLabel: "Ver producto",
     sku: "ROP-005",
+    stockQty: 20,
   },
   {
     id: "prod-camera",
@@ -192,6 +217,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Oferta",
     ctaLabel: "Ver producto",
     sku: "TEC-006",
+    stockQty: 9,
   },
   {
     id: "prod-glasses",
@@ -206,6 +232,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Oferta",
     ctaLabel: "Ver oferta",
     sku: "ACC-007",
+    stockQty: 27,
   },
   {
     id: "prod-desk-kit",
@@ -220,6 +247,7 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     badge: "Nuevo",
     ctaLabel: "Ver producto",
     sku: "ACC-008",
+    stockQty: 40,
   },
 ];
 
@@ -238,6 +266,10 @@ function mergeConfigWithDefaults(input?: StoreConfig, slug?: string): StoreConfi
     content: {
       ...(cloneDefaultConfig().content || {}),
       ...((input?.content || {}) as VisualContent),
+    },
+    ecommerce: {
+      ...DEFAULT_ECOMMERCE_SETTINGS,
+      ...((input?.ecommerce || {}) as EcommerceSettings),
     },
   };
   if (slug) merged.storeSlug = slug;
@@ -403,6 +435,10 @@ function StoreEditorPage() {
   const liveConfig = editorState.previewData?.config || config;
   const liveProducts = editorState.previewData?.products || products;
   const content = (liveConfig.content || {}) as VisualContent;
+  const ecommerce = {
+    ...DEFAULT_ECOMMERCE_SETTINGS,
+    ...((liveConfig.ecommerce || {}) as EcommerceSettings),
+  };
   const themeVars = getVisualStoreVars(liveConfig);
   const visualTheme = getVisualStoreTheme(liveConfig);
   const currentVertical = normalizeVertical(liveConfig.vertical || "ecommerce");
@@ -534,6 +570,16 @@ function StoreEditorPage() {
   const setContent = (patch: Partial<VisualContent>) =>
     setConfig((prev) => ({ ...prev, content: { ...(prev.content || {}), ...patch } }));
 
+  const setEcommerce = (patch: Partial<EcommerceSettings>) =>
+    setConfig((prev) => ({
+      ...prev,
+      ecommerce: {
+        ...DEFAULT_ECOMMERCE_SETTINGS,
+        ...((prev.ecommerce || {}) as EcommerceSettings),
+        ...patch,
+      },
+    }));
+
   const applyThemePreset = (themeId: StoreThemeId) => {
     const preset = STORE_THEMES.find((theme) => theme.id === themeId);
     setConfig((prev) => ({
@@ -574,6 +620,7 @@ function StoreEditorPage() {
         badge: "Nuevo",
         ctaLabel: "Ver producto",
         sku: "",
+        stockQty: 10,
       },
       ...prev,
     ]);
@@ -718,6 +765,7 @@ function StoreEditorPage() {
     onSave: async () => {
       await saveProject(false);
     },
+    intervalMs: 30000,
   });
 
   const publishFlow = usePublish<StoreEditorSnapshot>({
@@ -759,8 +807,8 @@ function StoreEditorPage() {
           </div>
         </header>
 
-        <div className="mt-6 grid grid-cols-1 items-start gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
-          <section className="order-1 min-w-0 rounded-3xl border bg-white p-3 md:p-5 xl:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+        <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <section className="order-1 min-w-0 rounded-3xl border bg-white p-3 md:p-5 lg:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
             <div className="mb-4 rounded-2xl border bg-white px-4 py-3 text-xs font-semibold" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>
               Haz clic en cualquier campo para editar. Encontraras texto base de marketing listo para personalizar y fotos demo para reemplazar.
             </div>
@@ -845,10 +893,43 @@ function StoreEditorPage() {
                           <input value={p.description} onChange={(e) => updateProduct(p.id, { description: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: descripcion comercial" />
                           <input value={p.category || ""} onChange={(e) => updateProduct(p.id, { category: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: categoria" />
                           <div className="grid grid-cols-2 gap-2">
+                            <input
+                              value={p.sku || ""}
+                              onChange={(e) => updateProduct(p.id, { sku: e.target.value })}
+                              className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none"
+                              style={{ borderColor: SOFT_INPUT_BORDER }}
+                              placeholder="SKU"
+                            />
+                            <input
+                              value={String(p.stockQty ?? 0)}
+                              onChange={(e) => {
+                                const n = Number(e.target.value);
+                                updateProduct(p.id, {
+                                  stockQty: Number.isFinite(n) ? clampInt(n, 0, 9999) : 0,
+                                });
+                              }}
+                              className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none"
+                              style={{ borderColor: SOFT_INPUT_BORDER }}
+                              placeholder="Stock"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
                             <input value={String((p.priceCents || 0) / 100)} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) return; updateProduct(p.id, { priceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Precio" />
                             <input value={String(((p.compareAtPriceCents || 0) / 100) || "")} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (!Number.isFinite(n)) { updateProduct(p.id, { compareAtPriceCents: 0 }); return; } updateProduct(p.id, { compareAtPriceCents: clampInt(Math.round(n * 100), 0, 99999999) }); }} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Antes" />
                           </div>
                           <input value={p.ctaLabel || "Ver producto"} onChange={(e) => updateProduct(p.id, { ctaLabel: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: texto del boton" />
+                          <button
+                            type="button"
+                            onClick={() => updateProduct(p.id, { active: !(p.active !== false) })}
+                            className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold"
+                            style={
+                              p.active !== false
+                                ? { borderColor: "#bbf7d0", background: "#f0fdf4", color: "#166534" }
+                                : { borderColor: "#fecaca", background: "#fff7ed", color: "#9a3412" }
+                            }
+                          >
+                            {p.active !== false ? "Producto activo" : "Producto oculto"}
+                          </button>
                           <button onClick={() => removeProduct(p.id)} className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold text-red-600" style={{ borderColor: "#fecaca", background: "#fff5f5" }}><Trash2 className="h-3.5 w-3.5" />Eliminar</button>
                         </div>
                       </article>
@@ -861,13 +942,13 @@ function StoreEditorPage() {
             </div>
           </section>
 
-          <aside className="order-2 min-w-0 space-y-4 self-start xl:order-1 xl:sticky xl:top-[150px]">
+          <aside className="order-2 min-w-0 space-y-4 self-start lg:order-1 lg:sticky lg:top-[150px]">
             <EditorSidebar
               contentTab={<p className="text-xs text-zinc-600">Contenido editable rapido + panel avanzado sincronizados.</p>}
               designTab={<p className="text-xs text-zinc-600">Tema, colores y layout desktop/mobile.</p>}
               aiTab={<p className="text-xs text-zinc-600">IA por plan: basic en Business, advanced en Pro.</p>}
               seoTab={<p className="text-xs text-zinc-600">SEO aplicado al publicar en /t/{'{slug}'}.</p>}
-              settingsTab={<p className="text-xs text-zinc-600">Autosave inteligente activo.</p>}
+              settingsTab={<p className="text-xs text-zinc-600">Autosave activo: guardado por cambios + respaldo automatico cada 30 segundos.</p>}
             />
             <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinamico</h3>
@@ -920,6 +1001,185 @@ function StoreEditorPage() {
                 <label className="text-xs font-semibold">Secundario<input type="color" value={rgbToHex(config.customRgb?.accent2)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent2: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
               </div>
               <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>/t/{publicStoreSlug}</b></div>
+            </section>
+            <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+              <h3 className="text-sm font-black uppercase tracking-[0.15em]">Ecommerce real</h3>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
+                Configura ventas reales: moneda, WhatsApp, envio, metodos de pago y terminos.
+              </p>
+              <div className="mt-3 space-y-3">
+                <label className="block text-xs font-semibold">
+                  WhatsApp de ventas
+                  <input
+                    value={config.supportWhatsapp || ""}
+                    onChange={(e) => setConfig((prev) => ({ ...prev, supportWhatsapp: e.target.value.replace(/\D/g, "") }))}
+                    className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                    style={{ borderColor: "var(--vs-border)" }}
+                    placeholder="51999999999"
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-xs font-semibold">
+                    Moneda
+                    <select
+                      value={config.currency}
+                      onChange={(e) =>
+                        setConfig((prev) => ({
+                          ...prev,
+                          currency: e.target.value as StoreConfig["currency"],
+                        }))
+                      }
+                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      style={{ borderColor: "var(--vs-border)" }}
+                    >
+                      <option value="PEN">PEN (Soles)</option>
+                      <option value="USD">USD</option>
+                      <option value="EUR">EUR</option>
+                    </select>
+                  </label>
+                  <label className="block text-xs font-semibold">
+                    CTA principal
+                    <input
+                      value={config.primaryCta || ""}
+                      onChange={(e) => setConfig((prev) => ({ ...prev, primaryCta: e.target.value }))}
+                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      style={{ borderColor: "var(--vs-border)" }}
+                      placeholder="Comprar ahora"
+                    />
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => setEcommerce({ deliveryEnabled: !ecommerce.deliveryEnabled })}
+                    className="rounded-lg border px-3 py-2 text-xs font-bold"
+                    style={
+                      ecommerce.deliveryEnabled
+                        ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" }
+                        : { borderColor: "var(--vs-border)" }
+                    }
+                  >
+                    Delivery
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEcommerce({ pickupEnabled: !ecommerce.pickupEnabled })}
+                    className="rounded-lg border px-3 py-2 text-xs font-bold"
+                    style={
+                      ecommerce.pickupEnabled
+                        ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" }
+                        : { borderColor: "var(--vs-border)" }
+                    }
+                  >
+                    Recojo en tienda
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEcommerce({ inStoreEnabled: !ecommerce.inStoreEnabled })}
+                    className="rounded-lg border px-3 py-2 text-xs font-bold"
+                    style={
+                      ecommerce.inStoreEnabled
+                        ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" }
+                        : { borderColor: "var(--vs-border)" }
+                    }
+                  >
+                    Consumir en local
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-xs font-semibold">
+                    Envio base
+                    <input
+                      value={String((ecommerce.shippingBaseFeeCents || 0) / 100)}
+                      onChange={(e) => {
+                        const n = Number(e.target.value.replace(",", "."));
+                        setEcommerce({
+                          shippingBaseFeeCents: Number.isFinite(n)
+                            ? clampInt(Math.round(n * 100), 0, 99999999)
+                            : 0,
+                        });
+                      }}
+                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      style={{ borderColor: "var(--vs-border)" }}
+                      placeholder="10"
+                    />
+                  </label>
+                  <label className="block text-xs font-semibold">
+                    Envio gratis desde
+                    <input
+                      value={String((ecommerce.freeShippingFromCents || 0) / 100)}
+                      onChange={(e) => {
+                        const n = Number(e.target.value.replace(",", "."));
+                        setEcommerce({
+                          freeShippingFromCents: Number.isFinite(n)
+                            ? clampInt(Math.round(n * 100), 0, 99999999)
+                            : 0,
+                        });
+                      }}
+                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      style={{ borderColor: "var(--vs-border)" }}
+                      placeholder="120"
+                    />
+                  </label>
+                </div>
+                <p className="text-[11px] font-semibold" style={{ color: "var(--vs-muted)" }}>
+                  Metodos de pago activos
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(
+                    [
+                      ["yapeEnabled", "Yape"],
+                      ["plinEnabled", "Plin"],
+                      ["transferEnabled", "Transferencia"],
+                      ["cashEnabled", "Efectivo"],
+                      ["cardEnabled", "Tarjeta"],
+                    ] as Array<[keyof EcommerceSettings, string]>
+                  ).map(([key, label]) => {
+                    const active = Boolean(ecommerce[key]);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() =>
+                          setEcommerce({ [key]: !active } as Partial<EcommerceSettings>)
+                        }
+                        className="rounded-lg border px-3 py-2 text-xs font-bold"
+                        style={
+                          active
+                            ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" }
+                            : { borderColor: "var(--vs-border)" }
+                        }
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <label className="block text-xs font-semibold">
+                  Terminos de compra
+                  <input
+                    value={ecommerce.termsText || ""}
+                    onChange={(e) => setEcommerce({ termsText: e.target.value })}
+                    className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                    style={{ borderColor: "var(--vs-border)" }}
+                    placeholder="Acepto terminos y condiciones de compra."
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setEcommerce({ termsRequired: !ecommerce.termsRequired })}
+                  className="w-full rounded-lg border px-3 py-2 text-xs font-bold"
+                  style={
+                    ecommerce.termsRequired
+                      ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" }
+                      : { borderColor: "var(--vs-border)" }
+                  }
+                >
+                  {ecommerce.termsRequired
+                    ? "Terminos obligatorios activados"
+                    : "Terminos obligatorios desactivados"}
+                </button>
+              </div>
             </section>
           </aside>
         </div>
