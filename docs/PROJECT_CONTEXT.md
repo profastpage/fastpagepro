@@ -1119,3 +1119,15 @@ o-scrollbar para evitar barra visible.
   - respuesta de `/api/subscription/request` diferencia error de autenticacion vs almacenamiento de suscripcion.
 - Objetivo:
   - eliminar el falso `Servicio de autenticacion no disponible` al activar los 14 dias gratis en entornos con restricciones de API key o configuracion parcial de Admin SDK.
+
+## Subscription trial storage fallback via Firestore REST (2026-02-26)
+
+- Modulo ajustado: `src/app/api/subscription/request/route.ts`.
+- Problema corregido:
+  - al activar trial Business, si Prisma o Admin SDK no estaban disponibles, el endpoint devolvia 503 (`subscription storage unavailable`).
+- Correccion aplicada:
+  - para `trial=true` y plan `BUSINESS`, se agrega fallback de escritura directa en Firestore REST usando el ID token del usuario autenticado.
+  - se escribe en `users/{uid}`: plan business, ventana de 14 dias y flags de trial usado.
+  - se sincroniza `link_profiles/{uid}` para desbloqueo de acceso activo cuando corresponde.
+- Resultado:
+  - los clientes guardados en Firebase pueden activar trial aunque el storage SQL/Admin SDK falle temporalmente.
