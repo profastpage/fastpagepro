@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Fragment } from "react";
 import { Check, Lock } from "lucide-react";
@@ -45,7 +45,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   {
     label: "Dominio propio",
     values: {
-      FREE: "🔒 Solo Business/Pro",
+      FREE: "ðŸ”’ Solo Business/Pro",
       BUSINESS: "Permitido (cliente compra dominio)",
       PRO: "Permitido",
     },
@@ -53,7 +53,7 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   {
     label: "IA",
     values: {
-      FREE: "🔒 Solo Business/Pro",
+      FREE: "ðŸ”’ Solo Business/Pro",
       BUSINESS: "IA basica",
       PRO: "IA avanzada",
     },
@@ -61,9 +61,9 @@ const COMPARISON_ROWS: ComparisonRow[] = [
   {
     label: "Soporte",
     values: {
-      FREE: "❌ Sin soporte",
-      BUSINESS: "📧 Correo (max. 24h)",
-      PRO: "💬 En vivo por WhatsApp",
+      FREE: "âŒ Sin soporte",
+      BUSINESS: "ðŸ“§ Correo (max. 24h)",
+      PRO: "ðŸ’¬ En vivo por WhatsApp",
     },
   },
   {
@@ -114,7 +114,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
           return (
             <article
               key={plan.id}
-              className={`rounded-2xl border p-4 transition ${
+              className={`flex h-full flex-col rounded-2xl border p-4 transition ${
                 plan.highlighted ? "border-amber-400/40 bg-amber-400/10" : "border-white/10 bg-black/25"
               }`}
             >
@@ -143,7 +143,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
                 type="button"
                 disabled={isActive || isLoading}
                 onClick={() => onSelectPlan?.(plan.id)}
-                className={`mt-6 w-full rounded-xl border px-4 py-2 text-sm font-bold transition ${
+                className={`mt-auto w-full rounded-xl border px-4 py-2 text-sm font-bold transition ${
                   isActive
                     ? "border-emerald-300/40 bg-emerald-400/10 text-emerald-100"
                     : "border-amber-300/40 bg-amber-400/10 text-amber-100 hover:bg-amber-400/20"
@@ -191,3 +191,4 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
     </div>
   );
 }
+

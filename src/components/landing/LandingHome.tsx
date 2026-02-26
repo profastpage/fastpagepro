@@ -729,7 +729,7 @@ export default function LandingHome() {
           <h2 className="text-3xl font-black text-white md:text-4xl">Planes para vender y escalar 💸</h2>
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
-          <article className="rounded-3xl border border-white/10 bg-black/45 p-6">
+          <article className="flex h-full flex-col rounded-3xl border border-white/10 bg-black/45 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">STARTER</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 29</p>
             <p className="mt-2 text-sm font-semibold text-zinc-200">Pago directo mensual (sin trial) ⚡</p>
@@ -741,12 +741,12 @@ export default function LandingHome() {
               <li>❌ Sin soporte directo</li>
               <li>🔒 IA (Business o Pro)</li>
             </ul>
-            <Link href={heroSignupHref} className="mt-5 inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
+            <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
               Empezar ahora
             </Link>
           </article>
 
-          <article className="relative rounded-3xl border border-amber-300/45 bg-gradient-to-b from-amber-300/10 to-black/60 p-6">
+          <article className="relative flex h-full flex-col rounded-3xl border border-amber-300/45 bg-gradient-to-b from-amber-300/10 to-black/60 p-6">
             <span className="absolute -top-3 right-4 rounded-full border border-amber-300/45 bg-black px-3 py-1 text-xs font-bold text-amber-200">⭐ Mas elegido</span>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">BUSINESS</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 59</p>
@@ -762,12 +762,12 @@ export default function LandingHome() {
               <li>Metricas basicas</li>
               <li>📧 Soporte por correo (max. 24h)</li>
             </ul>
-            <Link href={heroSignupHref} className="mt-5 inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
+            <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
               Probar 14 dias gratis
             </Link>
           </article>
 
-          <article className="rounded-3xl border border-cyan-300/35 bg-gradient-to-b from-cyan-300/10 to-black/60 p-6">
+          <article className="flex h-full flex-col rounded-3xl border border-cyan-300/35 bg-gradient-to-b from-cyan-300/10 to-black/60 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">PRO</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 99</p>
             <p className="mt-2 text-sm font-semibold text-cyan-100">Pago directo mensual para escalar en serio (sin trial) 🚀</p>
@@ -779,7 +779,7 @@ export default function LandingHome() {
               <li>💬 Soporte en vivo por WhatsApp</li>
               <li>Metricas PRO + insights</li>
             </ul>
-            <Link href={heroSignupHref} className="mt-5 inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
+            <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
               Comprar ahora
             </Link>
           </article>
@@ -987,5 +987,6 @@ export default function LandingHome() {
     </main>
   );
 }
+
 
 
