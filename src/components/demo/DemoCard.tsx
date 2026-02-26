@@ -4,17 +4,13 @@ import { ExternalLink } from "lucide-react";
 import type { DemoCatalogItem } from "@/lib/demoCatalog";
 import { getDemoUrl, type DemoType } from "@/lib/demoRouting";
 
-const DELUXE_DEMO_BUTTON =
-  "inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-4 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
-
 type DemoCardProps = {
   item: DemoCatalogItem;
   onOpen?: (vertical: string, slug: string) => void;
 };
 
 export default function DemoCard({ item, onOpen }: DemoCardProps) {
-  const demoType: DemoType =
-    item.vertical === "ecommerce" ? "store" : item.vertical;
+  const demoType: DemoType = item.vertical === "ecommerce" ? "store" : item.vertical;
   const demoUrl = getDemoUrl(demoType, item.slug);
 
   return (
@@ -47,7 +43,7 @@ export default function DemoCard({ item, onOpen }: DemoCardProps) {
             }
             onOpen?.(item.vertical, item.slug);
           }}
-          className={DELUXE_DEMO_BUTTON}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10"
         >
           ✨ Abrir demo
           <ExternalLink className="h-4 w-4" />

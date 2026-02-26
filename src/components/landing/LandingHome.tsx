@@ -313,6 +313,8 @@ const TESTIMONIALS = [
 
 const DELUXE_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-5 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
+const SOFT_BUTTON_BASE =
+  "inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50";
 
 export default function LandingHome() {
   const { user, loading } = useAuth();
@@ -406,9 +408,9 @@ export default function LandingHome() {
                     location: "hero_secondary",
                   })
                 }
-                className={`${DELUXE_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
+                className={`${SOFT_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
               >
-                <PlayCircle className="h-4 w-4" />✨ Ver demo</Link>
+                <PlayCircle className="h-4 w-4" /> ✨ Ver demo</Link>
               <a
                 href="#pricing"
                 onClick={() =>
@@ -439,7 +441,7 @@ export default function LandingHome() {
             <p className="mt-3 text-sm text-zinc-300">
               Elige demo, personaliza tu version y registra solo cuando ya viste el valor.
             </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2">
               {FLOW_STEPS.map((step) => (
                 <div key={step.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">{step.title}</p>
@@ -471,20 +473,23 @@ export default function LandingHome() {
             Visitas → Landing → WhatsApp → Metricas → Escala.
           </p>
           <div className="mx-auto mt-3 grid max-w-sm grid-cols-5 gap-2 sm:hidden">
-            {FLOW_STEPS.map((step) => {
+            {FLOW_STEPS.map((step, index) => {
               const Icon = step.icon;
               return (
-                <div key={`mobile-step-${step.title}`} className="flex flex-col items-center gap-2">
+                <div key={`mobile-step-${step.title}`} className="relative flex flex-col items-center gap-2">
                   <p className="text-[10px] font-extrabold uppercase tracking-[0.14em] text-zinc-300">{step.title}</p>
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-amber-300/40 bg-zinc-950 shadow-[inset_0_1px_0_rgba(251,191,36,0.25),0_8px_18px_-14px_rgba(251,191,36,0.55)]">
-                    <Icon className="h-5 w-5 text-amber-300" />
+                    <Icon className="h-4 w-4 text-amber-300" />
                   </span>
+                  {index < FLOW_STEPS.length - 1 ? (
+                    <ArrowRight className="absolute -right-2 top-[1.95rem] h-3.5 w-3.5 text-amber-300/80" />
+                  ) : null}
                 </div>
               );
             })}
           </div>
         </div>
-        <div className="grid gap-3 md:grid-cols-[repeat(9,minmax(0,1fr))] md:items-center">
+        <div className="hidden gap-3 md:grid md:grid-cols-[repeat(9,minmax(0,1fr))] md:items-center">
           {FLOW_STEPS.map((step, index) => {
             const Icon = step.icon;
             return (
@@ -514,7 +519,7 @@ export default function LandingHome() {
             Builder, templates, cloner, tienda, carta digital, IA y metricas en un solo sistema.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {MODULES.map((module) => {
             const Icon = module.icon;
             return (
@@ -527,14 +532,14 @@ export default function LandingHome() {
                     slug: `module_${module.id}`,
                   })
                 }
-                className="group rounded-2xl border border-white/10 bg-black/40 p-5 transition hover:-translate-y-1 hover:border-amber-300/45"
+                className="group flex aspect-square flex-col rounded-2xl border border-white/10 bg-black/40 p-3 transition hover:-translate-y-1 hover:border-amber-300/45 md:p-4"
               >
-                <div className="inline-flex rounded-xl border border-amber-300/35 bg-amber-300/10 p-2.5">
-                  <Icon className="h-5 w-5 text-amber-300" />
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-amber-300/35 bg-amber-300/10">
+                  <Icon className="h-4 w-4 text-amber-300" />
                 </div>
-                <p className="mt-4 text-lg font-black text-white">{module.title}</p>
-                <p className="mt-2 text-sm text-zinc-300">{module.line}</p>
-                <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-amber-300">
+                <p className="mt-3 text-base font-black text-white md:text-lg">{module.title}</p>
+                <p className="mt-1 text-xs leading-snug text-zinc-300 md:text-sm">{module.line}</p>
+                <span className="mt-auto inline-flex items-center gap-1 pt-2 text-xs font-bold text-amber-300 md:text-sm">
                   Ver modulo
                   <ArrowRight className="h-4 w-4" />
                 </span>
@@ -570,8 +575,8 @@ export default function LandingHome() {
             const itemCopy = getVerticalCopy(item.vertical);
             return (
               <article key={item.vertical} className="rounded-2xl border border-white/10 bg-black/45 p-6">
-                <div className="inline-flex rounded-xl border border-amber-300/35 bg-amber-300/10 p-2.5">
-                  <Icon className="h-5 w-5 text-amber-300" />
+                <div className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-amber-300/35 bg-amber-300/10">
+                  <Icon className="h-4 w-4 text-amber-300" />
                 </div>
                 <p className="mt-4 text-2xl font-black text-white">{itemCopy.label}</p>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-300">{item.copy}</p>
@@ -584,7 +589,7 @@ export default function LandingHome() {
                         slug: "rubro_card",
                       })
                     }
-                    className={`${DELUXE_BUTTON_BASE} rounded-xl px-4 py-2`}
+                    className={`${SOFT_BUTTON_BASE} rounded-xl px-4 py-2`}
                   >✨ Ver demo</Link>
                   <Link
                     href={`/signup?vertical=${item.vertical}`}
@@ -783,7 +788,7 @@ export default function LandingHome() {
                   slug: "final",
                 })
               }
-              className={`${DELUXE_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
+              className={`${SOFT_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
             >✨ Ver demo</Link>
           </div>
         </div>
