@@ -20,7 +20,9 @@ export type VerticalCopy = {
 
 const FALLBACK_VERTICAL: BusinessVertical = "restaurant";
 
-export const VERTICAL_COPY: Record<BusinessVertical, VerticalCopy> = {
+type SupportedLanguage = "es" | "en" | "pt";
+
+const VERTICAL_COPY_ES: Record<BusinessVertical, VerticalCopy> = {
   restaurant: {
     label: "Restaurante",
     emoji: "🍽️",
@@ -50,6 +52,42 @@ export const VERTICAL_COPY: Record<BusinessVertical, VerticalCopy> = {
   },
 };
 
+const VERTICAL_COPY_EN: Record<BusinessVertical, VerticalCopy> = {
+  restaurant: {
+    label: "Restaurant",
+    emoji: "ðŸ½ï¸",
+    headline: "Your digital menu + WhatsApp orders in 1 day",
+    subheadline:
+      "Activate menu, categories, and direct ordering with no commissions to sell more.",
+    demoCta: "See restaurant demo",
+    signupCta: "Create my digital menu free",
+  },
+  ecommerce: {
+    label: "Online Store",
+    emoji: "ðŸ›ï¸",
+    headline: "Your store ready to sell + cart connected to WhatsApp",
+    subheadline:
+      "Publish catalog, offers, and fast checkout to turn traffic into sales.",
+    demoCta: "See online store demo",
+    signupCta: "Create my store free",
+  },
+  services: {
+    label: "Services",
+    emoji: "ðŸ§©",
+    headline: "Landing that converts + instant contact",
+    subheadline:
+      "Capture qualified leads with clear messaging and conversion-focused CTAs.",
+    demoCta: "See services demo",
+    signupCta: "Create my landing free",
+  },
+};
+
+const VERTICAL_COPY_BY_LANGUAGE: Record<SupportedLanguage, Record<BusinessVertical, VerticalCopy>> = {
+  es: VERTICAL_COPY_ES,
+  en: VERTICAL_COPY_EN,
+  pt: VERTICAL_COPY_ES,
+};
+
 export function normalizeVertical(value: unknown): BusinessVertical {
   const input = String(value || "")
     .trim()
@@ -61,8 +99,12 @@ export function normalizeVertical(value: unknown): BusinessVertical {
   return FALLBACK_VERTICAL;
 }
 
-export function getVerticalCopy(vertical: unknown): VerticalCopy {
-  return VERTICAL_COPY[normalizeVertical(vertical)];
+export function getVerticalCopy(
+  vertical: unknown,
+  language: SupportedLanguage = "es",
+): VerticalCopy {
+  const safeLanguage = language in VERTICAL_COPY_BY_LANGUAGE ? language : "es";
+  return VERTICAL_COPY_BY_LANGUAGE[safeLanguage][normalizeVertical(vertical)];
 }
 
 export function verticalToSignupHref(vertical: unknown) {

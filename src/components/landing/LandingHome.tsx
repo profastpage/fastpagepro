@@ -423,6 +423,9 @@ export default function LandingHome() {
               FastPage te ayuda a vender mas con landing, tienda y carta digital en un solo sistema.
             </p>
             <p className="max-w-2xl text-sm text-zinc-400">{verticalCopy.subheadline}</p>
+            <p className="max-w-2xl text-xs font-semibold text-amber-200/90">
+              +120 negocios ya activaron su flujo de pedidos y ventas en FastPage.
+            </p>
 
             <VerticalSelector
               value={vertical}
@@ -447,7 +450,7 @@ export default function LandingHome() {
                 }
                 className={`${DELUXE_BUTTON_BASE} rounded-full px-7 py-3 uppercase tracking-[0.12em]`}
               >
-                Probar gratis
+                Crear mi version gratis
               </Link>
               <Link
                 href={heroDemoHref}
@@ -475,14 +478,15 @@ export default function LandingHome() {
                 Ver planes
               </a>
             </div>
+            <p className="text-xs font-semibold text-amber-200/85">
+              Esta semana es clave para vender mas: activa tu version hoy.
+            </p>
 
             <div className="flex flex-wrap gap-2">
-              {["Sin codigo", "Publica hoy", "Mas pedidos por WhatsApp", "IA para copy"].map((item) => (
+              {["Listo en minutos", "Pedidos por WhatsApp", "Sin comisiones"].map((item) => (
                 <span
                   key={item}
-                  className={`rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-zinc-200 ${
-                    item === "IA para copy" ? "hidden sm:inline-flex" : "inline-flex"
-                  }`}
+                  className="inline-flex rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-zinc-200"
                 >
                   {item}
                 </span>
@@ -751,6 +755,9 @@ export default function LandingHome() {
         </div>
         <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
           Conecta tu dominio desde Business y manten una marca profesional.
+        </p>
+        <p className="mt-2 text-center text-xs font-semibold text-zinc-300">
+          Empieza gratis. Sin compromisos.
         </p>
       </section>
 
