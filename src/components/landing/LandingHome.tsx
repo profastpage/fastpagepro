@@ -440,6 +440,9 @@ const DELUXE_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-5 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
 const SOFT_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50";
+const HERO_CTA_VARIANT_ES = "B" as "A" | "B";
+const HERO_PRIMARY_CTA_LABEL_ES =
+  HERO_CTA_VARIANT_ES === "A" ? "PROBAR 14 DÍAS GRATIS" : "Probar gratis 14 días";
 
 export default function LandingHome() {
   const { user, loading } = useAuth();
@@ -541,17 +544,17 @@ export default function LandingHome() {
             heroTitle: "Convierte visitas en pedidos por WhatsApp en minutos",
             heroDesc:
               "Landing, tienda y carta digital conectadas a WhatsApp en un solo sistema.",
-            heroProof: "Más de 120 negocios ya venden por WhatsApp con FastPage.",
+            heroProof: "Más de 120 negocios ya reciben pedidos por WhatsApp con FastPage.",
             heroChecklist: [
               "Activo en minutos",
               "Sin comisiones por venta",
               "Prueba gratis por 14 días",
             ],
-            ctaPrimary: "Probar 14 días gratis",
+            ctaPrimary: HERO_PRIMARY_CTA_LABEL_ES,
             ctaPrimaryHelper: "Luego desde 59 soles/mes • Sin comisiones",
             ctaDemo: "Ver demo en vivo",
             ctaPlans: "Ver planes",
-            urgency: "Activa hoy tu sistema y empieza a recibir pedidos.",
+            urgency: "Actívalo hoy y empieza a recibir pedidos.",
             chips: ["Listo en minutos", "Pedidos por WhatsApp", "Sin comisiones"],
             panelTag: "Sistema FastPage",
             panelDesc: "Elige una demo, adapta tu negocio y empieza a vender hoy.",
@@ -631,7 +634,7 @@ export default function LandingHome() {
 
       <section className="relative z-10 mx-auto min-h-[calc(100svh-84px)] w-full max-w-7xl px-4 pb-12 pt-24 sm:px-6 md:pt-28 lg:px-8 lg:pt-32">
         <div className="grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
-          <div className="space-y-5">
+          <div className="space-y-4">
             <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
               {copy.heroTag}
             </p>
@@ -641,8 +644,7 @@ export default function LandingHome() {
             <p className="max-w-2xl text-base text-zinc-300 md:text-lg">
               {copy.heroDesc}
             </p>
-            <p className="max-w-2xl text-sm text-zinc-400">{verticalCopy.subheadline}</p>
-            <div className="max-w-2xl space-y-1 text-left text-xs font-medium text-zinc-200 sm:text-sm">
+            <div className="max-w-2xl space-y-0.5 text-left text-[11px] font-medium leading-[1.3] text-zinc-300 sm:text-xs">
               {copy.heroChecklist.map((item) => (
                 <p key={item}>✅ {item}</p>
               ))}
