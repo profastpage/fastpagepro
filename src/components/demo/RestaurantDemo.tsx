@@ -4,12 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Clock3,
   MapPin,
+  MessageCircle,
   Menu,
   Minus,
   Phone,
   Plus,
   Search,
   Share2,
+  ShoppingCart,
 } from "lucide-react";
 import type { RestaurantMenuData, RestaurantMenuItem } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
@@ -387,9 +389,11 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               location: "restaurant_floating",
             })
           }
-          className="fixed bottom-24 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-3 py-2 text-xs font-black text-white shadow-2xl md:bottom-8 md:px-4 md:py-3 md:text-sm"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-3 py-2 text-xs font-black text-white shadow-2xl md:bottom-20 md:px-4 md:py-3 md:text-sm"
         >
-          💬 Mi pedido ({cartCount})
+          <MessageCircle className="h-3.5 w-3.5" />
+          <ShoppingCart className="h-3.5 w-3.5" />
+          <span>Mi pedido ({cartCount})</span>
         </a>
       ) : null}
 

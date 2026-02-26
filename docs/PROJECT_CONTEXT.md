@@ -1080,3 +1080,13 @@ o-scrollbar para evitar barra visible.
   - `StickyCTA` se reposiciona mas arriba usando safe-area (`bottom-[calc(env(safe-area-inset-bottom)+6.75rem)]`).
   - evita solape visual con la barra inferior de navegacion del demo (`Contacto/Carta/Ubicacion`).
 - Desktop: sin cambios de layout.
+
+## Restaurant Demo Cart CTA Non-Overlap + WhatsApp Cart Icon (2026-02-26)
+
+- Componente ajustado: `src/components/demo/RestaurantDemo.tsx`.
+- Seccion `Carta` en demos de landing:
+  - boton flotante `Mi pedido` reposicionado para evitar solape con `StickyCTA` en mobile y desktop.
+  - iconografia mejorada en boton de pedido: `WhatsApp + carrito` junto al texto.
+- Validacion puntual en `/demo/restaurant/sushi-prime`:
+  - viewport 375: sin x-scroll y sin overlap.
+  - viewport 1440: sin x-scroll y sin overlap.
