@@ -504,6 +504,22 @@ export function generateStorefrontHtml(args: {
   const currency = args.config.currency || "PEN";
   const supportWhatsapp = (args.config.supportWhatsapp || "").trim();
   const primaryCta = escapeHtml(args.config.primaryCta || "Comprar ahora");
+  const ecommerce = {
+    deliveryEnabled: args.config.ecommerce?.deliveryEnabled !== false,
+    pickupEnabled: args.config.ecommerce?.pickupEnabled !== false,
+    inStoreEnabled: Boolean(args.config.ecommerce?.inStoreEnabled),
+    shippingBaseFeeCents: clamp(Number(args.config.ecommerce?.shippingBaseFeeCents || 0), 0, 999999999),
+    freeShippingFromCents: clamp(Number(args.config.ecommerce?.freeShippingFromCents || 0), 0, 999999999),
+    yapeEnabled: args.config.ecommerce?.yapeEnabled !== false,
+    plinEnabled: args.config.ecommerce?.plinEnabled !== false,
+    transferEnabled: args.config.ecommerce?.transferEnabled !== false,
+    cashEnabled: args.config.ecommerce?.cashEnabled !== false,
+    cardEnabled: Boolean(args.config.ecommerce?.cardEnabled),
+    termsRequired: args.config.ecommerce?.termsRequired !== false,
+    termsText: String(
+      args.config.ecommerce?.termsText || "Acepto terminos y condiciones de compra.",
+    ),
+  };
 
   const content = args.config.content || {};
   const kicker = sanitizeRichText(content.kickerHtml || content.kicker || "Ecommerce Deluxe");
@@ -535,6 +551,7 @@ export function generateStorefrontHtml(args: {
   const checkoutTitle = escapeHtml(content.checkoutTitle || "Checkout");
   const checkoutButton = escapeHtml(content.checkoutButton || "Finalizar compra");
   const continueButton = escapeHtml(content.continueButton || "Seguir comprando");
+  const checkoutTermsText = escapeHtml(ecommerce.termsText);
   const footerLeft = sanitizeRichText(content.footerLeftHtml || content.footerLeft || "Publicado con Fast Page");
 
   const features: StoreFeature[] =
@@ -563,6 +580,7 @@ export function generateStorefrontHtml(args: {
     currency,
     supportWhatsapp,
     primaryCta,
+    ecommerce,
     products,
     content: {
       cartLabel,
@@ -676,8 +694,10 @@ export function generateStorefrontHtml(args: {
       .modal-body{padding:18px;display:grid;gap:10px}
       .field{display:grid;gap:6px}
       .field label{font-size:12px;color:var(--muted);font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-      .field input,.field textarea{width:100%;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);padding:12px 12px;color:var(--text);outline:none;font-weight:700}
+      .field input,.field textarea,.field select{width:100%;border-radius:16px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);padding:12px 12px;color:var(--text);outline:none;font-weight:700}
       .field textarea{min-height:88px;resize:vertical}
+      .terms-check{display:flex;align-items:flex-start;gap:10px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);border-radius:16px;padding:12px}
+      .terms-check input{margin-top:2px}
       .notice{font-size:12px;color:var(--muted);line-height:1.4}
       .success{display:none;border:1px solid color-mix(in srgb, var(--accent) 40%, rgba(255,255,255,.12));background:color-mix(in srgb, var(--accent) 12%, rgba(255,255,255,.03));padding:14px;border-radius:18px;color:var(--text)}
       .success.show{display:block}
@@ -730,7 +750,7 @@ export function generateStorefrontHtml(args: {
 
     <div class="drawer" id="cartDrawer" aria-hidden="true"><div class="backdrop" id="drawerBackdrop"></div><aside class="panel" role="dialog" aria-modal="true" aria-label="${cartLabel}"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h4>${cartLabel}</h4><button class="x" id="btnCloseCart" type="button" aria-label="Cerrar">?</button></div><div class="cart-items" id="cartItems"></div><div class="totals"><div class="totals-row"><span class="muted">Total</span><span id="cartTotal">0</span></div><div class="checkout"><button class="btn primary" id="btnCheckout" type="button">${checkoutButton}</button><button class="btn" id="btnContinue" type="button">${continueButton}</button></div></div></aside></div>
 
-    <div class="modal" id="checkoutModal" aria-hidden="true"><div class="backdrop" id="modalBackdrop"></div><div class="modal-card" role="dialog" aria-modal="true" aria-label="Checkout"><div class="modal-head"><b>${checkoutTitle}</b><button class="x" id="btnCloseCheckout" type="button" aria-label="Cerrar">?</button></div><div class="modal-body"><div class="success" id="orderSuccess"><b>Pedido recibido</b><div style="margin-top:6px;color:var(--muted);font-weight:800;font-size:12px">Gracias. Te contactaremos para coordinar el pago y entrega.</div></div><div class="field"><label>Nombre</label><input id="cName" placeholder="Tu nombre" autocomplete="name"></div><div class="field"><label>Correo</label><input id="cEmail" placeholder="correo@ejemplo.com" autocomplete="email"></div><div class="field"><label>Telefono</label><input id="cPhone" placeholder="+51..." autocomplete="tel"></div><div class="field"><label>Direccion</label><textarea id="cAddress" placeholder="Distrito, direccion, referencias"></textarea></div><p class="notice" id="syncNotice">Intentaremos sincronizar tu pedido con Firebase.</p><button class="btn primary" id="btnPlaceOrder" type="button">Confirmar pedido</button></div></div></div>
+    <div class="modal" id="checkoutModal" aria-hidden="true"><div class="backdrop" id="modalBackdrop"></div><div class="modal-card" role="dialog" aria-modal="true" aria-label="Checkout"><div class="modal-head"><b>${checkoutTitle}</b><button class="x" id="btnCloseCheckout" type="button" aria-label="Cerrar">?</button></div><div class="modal-body"><div class="success" id="orderSuccess"><b>Pedido recibido</b><div style="margin-top:6px;color:var(--muted);font-weight:800;font-size:12px">Gracias. Te contactaremos para coordinar el pago y entrega.</div></div><div class="field"><label>Nombre</label><input id="cName" placeholder="Tu nombre" autocomplete="name"></div><div class="field"><label>Correo</label><input id="cEmail" placeholder="correo@ejemplo.com" autocomplete="email"></div><div class="field"><label>Telefono</label><input id="cPhone" placeholder="+51..." autocomplete="tel"></div><div class="field"><label>Direccion</label><textarea id="cAddress" placeholder="Distrito, direccion, referencias"></textarea></div><div class="field"><label>Entrega</label><select id="cDelivery"></select></div><div class="field"><label>Metodo de pago</label><select id="cPayment"></select></div><label class="terms-check" id="termsRow"><input type="checkbox" id="cTerms"><span>${checkoutTermsText}</span></label><p class="notice" id="shippingNotice"></p><p class="notice" id="syncNotice">Intentaremos sincronizar tu pedido con Firebase.</p><button class="btn primary" id="btnPlaceOrder" type="button">Confirmar pedido</button></div></div></div>
 
     <script type="application/json" id="fpStoreData">${escapeHtml(JSON.stringify(storefrontData))}</script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -742,6 +762,10 @@ export function generateStorefrontHtml(args: {
         const storeId = String(data.storeId || '');
         const currency = String(data.currency || 'PEN');
         const products = Array.isArray(data.products) ? data.products : [];
+        const ecommerceDefaults = { deliveryEnabled: true, pickupEnabled: true, inStoreEnabled: false, shippingBaseFeeCents: 0, freeShippingFromCents: 0, yapeEnabled: true, plinEnabled: true, transferEnabled: true, cashEnabled: true, cardEnabled: false, termsRequired: true, termsText: 'Acepto terminos y condiciones de compra.' };
+        const ecommerce = Object.assign({}, ecommerceDefaults, data.ecommerce || {});
+        const deliveryOptions = [ecommerce.deliveryEnabled ? ['delivery', 'Delivery'] : null, ecommerce.pickupEnabled ? ['pickup', 'Recojo en tienda'] : null, ecommerce.inStoreEnabled ? ['instore', 'Consumir en local'] : null].filter(Boolean);
+        const paymentOptions = [ecommerce.yapeEnabled ? ['yape', 'Yape'] : null, ecommerce.plinEnabled ? ['plin', 'Plin'] : null, ecommerce.transferEnabled ? ['transfer', 'Transferencia'] : null, ecommerce.cashEnabled ? ['cash', 'Efectivo'] : null, ecommerce.cardEnabled ? ['card', 'Tarjeta'] : null].filter(Boolean);
         const money = (cents) => { const v = (Number(cents||0) / 100); try { return new Intl.NumberFormat('es-PE', { style: 'currency', currency }).format(v); } catch { return (v.toFixed(2) + ' ' + currency); } };
         const cartKey = 'fp_cart_' + storeId;
         const loadCart = () => { try { return JSON.parse(localStorage.getItem(cartKey) || '[]'); } catch { return []; } };
@@ -757,6 +781,11 @@ export function generateStorefrontHtml(args: {
         const elCheckout = document.getElementById('checkoutModal');
         const elSuccess = document.getElementById('orderSuccess');
         const elSyncNotice = document.getElementById('syncNotice');
+        const elShippingNotice = document.getElementById('shippingNotice');
+        const elDelivery = document.getElementById('cDelivery');
+        const elPayment = document.getElementById('cPayment');
+        const elTerms = document.getElementById('cTerms');
+        const elTermsRow = document.getElementById('termsRow');
         const openDrawer = () => { elDrawer.classList.add('open'); elDrawer.setAttribute('aria-hidden','false'); renderCart(); };
         const closeDrawer = () => { elDrawer.classList.remove('open'); elDrawer.setAttribute('aria-hidden','true'); };
         const openCheckout = () => { elCheckout.classList.add('open'); elCheckout.setAttribute('aria-hidden','false'); };
@@ -775,6 +804,22 @@ export function generateStorefrontHtml(args: {
           elItems.querySelectorAll('.qty').forEach(row => { const id = row.getAttribute('data-id'); row.querySelector('[data-dec]').addEventListener('click', () => { const idx = cart.findIndex(x => x.id === id); if (idx < 0) return; cart[idx].qty = Math.max(1, (cart[idx].qty||1) - 1); saveCart(cart); renderCart(); });
             row.querySelector('[data-inc]').addEventListener('click', () => { const idx = cart.findIndex(x => x.id === id); if (idx < 0) return; cart[idx].qty = (cart[idx].qty||1) + 1; saveCart(cart); renderCart(); }); });
           elTotal.textContent = money(getTotal(cart));
+        };
+        const renderCheckoutConfig = () => {
+          if (elDelivery) {
+            elDelivery.innerHTML = deliveryOptions.map(opt => '<option value=\"' + opt[0] + '\">' + opt[1] + '</option>').join('');
+          }
+          if (elPayment) {
+            elPayment.innerHTML = paymentOptions.map(opt => '<option value=\"' + opt[0] + '\">' + opt[1] + '</option>').join('');
+          }
+          if (elTermsRow) {
+            elTermsRow.style.display = ecommerce.termsRequired ? 'flex' : 'none';
+          }
+          if (elShippingNotice) {
+            const shipping = money(ecommerce.shippingBaseFeeCents || 0);
+            const freeFrom = money(ecommerce.freeShippingFromCents || 0);
+            elShippingNotice.textContent = 'Envio base: ' + shipping + ' | Gratis desde: ' + freeFrom + '.';
+          }
         };
         const btnWhats = document.getElementById('btnWhats');
         if (btnWhats && data.supportWhatsapp) { const msg = encodeURIComponent('Hola, estoy interesado en comprar. Mi carrito tiene ' + getCount(cart) + ' productos.'); btnWhats.setAttribute('href', 'https://wa.me/' + String(data.supportWhatsapp).replace(/\\D/g,'') + '?text=' + msg); btnWhats.setAttribute('target','_blank'); }
@@ -798,8 +843,15 @@ export function generateStorefrontHtml(args: {
           const email = (document.getElementById('cEmail').value || '').trim();
           const phone = (document.getElementById('cPhone').value || '').trim();
           const address = (document.getElementById('cAddress').value || '').trim();
+          const deliveryMode = (elDelivery && elDelivery.value) || (deliveryOptions[0] && deliveryOptions[0][0]) || 'delivery';
+          const paymentMethod = (elPayment && elPayment.value) || (paymentOptions[0] && paymentOptions[0][0]) || 'transfer';
+          const termsAccepted = !ecommerce.termsRequired || Boolean(elTerms && elTerms.checked);
           if (!name || !phone) { alert('Completa tu nombre y telefono.'); return; }
-          const order = { storeId, createdAt: Date.now(), status: 'new', currency, totals: { items: getCount(cart), totalCents: getTotal(cart) }, customer: { name, email, phone, address }, items: cart.map(it => ({ id: it.id, name: it.name, priceCents: it.priceCents, qty: it.qty, imageUrl: it.imageUrl || '' })), source: 'storefront' };
+          if (!termsAccepted) { alert('Debes aceptar los terminos de compra.'); return; }
+          const subtotalCents = getTotal(cart);
+          const shippingCents = deliveryMode === 'delivery' ? (subtotalCents >= (ecommerce.freeShippingFromCents || 0) ? 0 : Number(ecommerce.shippingBaseFeeCents || 0)) : 0;
+          const totalCents = subtotalCents + shippingCents;
+          const order = { storeId, createdAt: Date.now(), status: 'new', currency, totals: { items: getCount(cart), subtotalCents, shippingCents, totalCents }, checkout: { deliveryMode, paymentMethod, termsAccepted, termsText: ecommerce.termsText || '' }, customer: { name, email, phone, address }, items: cart.map(it => ({ id: it.id, name: it.name, priceCents: it.priceCents, qty: it.qty, imageUrl: it.imageUrl || '' })), source: 'storefront' };
           let synced = false;
           if (firestore) { try { await firestore.collection('store_orders').add(order); synced = true; } catch (e) { synced = false; } }
           try { const key = 'fp_orders_' + storeId; const prev = JSON.parse(localStorage.getItem(key) || '[]'); prev.unshift(order); localStorage.setItem(key, JSON.stringify(prev.slice(0, 50))); } catch {}
@@ -808,6 +860,7 @@ export function generateStorefrontHtml(args: {
           cart = []; saveCart(cart); renderCart(); upCount();
         };
         document.getElementById('btnPlaceOrder').addEventListener('click', placeOrder);
+        renderCheckoutConfig();
         renderProducts(); upCount();
       })();
     </script>

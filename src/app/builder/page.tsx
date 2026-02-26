@@ -7,7 +7,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
-import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
+import {
+  assertCanPublishWithMode,
+  confirmPublishSlot,
+  requestPublishTarget,
+  type PublishTargetMode,
+} from "@/lib/subscription/publishClient";
 import { getThemesByVertical } from "@/lib/themes";
 import MobileSavePublishBar from "@/components/MobileSavePublishBar";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
@@ -140,6 +145,7 @@ function BuilderEditorPage() {
   const [savingProject, setSavingProject] = useState(false);
   const [publishingProject, setPublishingProject] = useState(false);
   const [builderProjectId, setBuilderProjectId] = useState<string | null>(null);
+  const [builderProjectPublished, setBuilderProjectPublished] = useState(false);
   const [projectStatus, setProjectStatus] = useState<"saved" | "dirty">("saved");
   const [showPublished, setShowPublished] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
@@ -148,6 +154,7 @@ function BuilderEditorPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [demoThemeIntent, setDemoThemeIntent] = useState("");
   const demoThemeAppliedRef = useRef(false);
+  const publishModeRef = useRef<PublishTargetMode>("existing");
 
   const [isClient, setIsClient] = useState(false);
   const [primaryColor, setPrimaryColor] = useState("#fbbf24");
@@ -193,6 +200,7 @@ function BuilderEditorPage() {
           setBlocks(data.builderBlocks as Block[]);
           setProjectStatus("saved");
         }
+        setBuilderProjectPublished(Boolean(data?.published));
         if (typeof data.builderPrimaryColor === "string") {
           setPrimaryColor(data.builderPrimaryColor);
         }
@@ -403,35 +411,61 @@ function BuilderEditorPage() {
     return fullHtml;
   };
 
-  const upsertBuilderProject = async (publishNow: boolean) => {
+  const upsertBuilderProject = async (
+    publishNow: boolean,
+    publishMode: PublishTargetMode = "existing",
+  ) => {
     if (!user?.uid) {
       throw new Error("Debes iniciar sesion para guardar o publicar.");
-    }
-    if (publishNow) {
-      await assertCanPublishPageByPlan();
     }
     const fullHtml = serializeBuilderHtml();
     if (!fullHtml) {
       throw new Error("No se pudo capturar el contenido del constructor.");
     }
 
+    const targetMode: PublishTargetMode =
+      publishNow ? (builderProjectId ? publishMode : "new") : "existing";
+    const useExistingProjectId = Boolean(builderProjectId) && (!publishNow || targetMode === "existing");
+    const existingProjectId = useExistingProjectId ? builderProjectId : null;
+    let existingWasPublished = builderProjectPublished;
+
+    if (publishNow) {
+      if (existingProjectId) {
+        try {
+          const existingSnap = await getDoc(firestoreDoc(db, "cloned_sites", existingProjectId));
+          existingWasPublished = Boolean(existingSnap.data()?.published);
+        } catch {
+          // keep cached published state
+        }
+      }
+      const quota = await assertCanPublishWithMode({
+        mode: targetMode,
+        alreadyPublished: targetMode === "existing" ? existingWasPublished : false,
+      });
+      if (!confirmPublishSlot(quota)) {
+        throw new Error("Publicacion cancelada por el usuario.");
+      }
+    }
+
     const projectId =
-      builderProjectId ||
+      existingProjectId ||
       (typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID().slice(0, 8)
         : Math.random().toString(36).slice(2, 10));
 
     const htmlToStore = publishNow ? injectMetricsTracking(fullHtml, projectId) : fullHtml;
     const now = Date.now();
+    const keepPublished = !publishNow && Boolean(existingProjectId) && existingWasPublished;
+    const persistedPublished = publishNow || keepPublished;
     const payload: Record<string, any> = {
       id: projectId,
       html: htmlToStore,
       userId: user.uid,
       source: "builder",
       type: "landing-page",
-      status: publishNow ? "published" : "draft",
-      published: publishNow,
-      createdAt: now,
+      status: persistedPublished ? "published" : "draft",
+      published: persistedPublished,
+      ...(existingProjectId ? {} : { createdAt: now }),
       updatedAt: now,
       templateName: "Constructor Fast Page",
       url: "builder://custom",
@@ -465,12 +499,13 @@ function BuilderEditorPage() {
       });
     }
 
-    if (!builderProjectId) {
+    if (builderProjectId !== projectId) {
       setBuilderProjectId(projectId);
       localStorage.setItem("fastpage_builder_project_id", projectId);
     }
+    setBuilderProjectPublished(persistedPublished);
     setProjectStatus("saved");
-    editor.markSaved(publishNow ? "published" : "draft");
+    editor.markSaved(persistedPublished ? "published" : "draft");
     return projectId;
   };
 
@@ -483,7 +518,7 @@ function BuilderEditorPage() {
 
   const publishFlow = usePublish<BuilderEditorSnapshot>({
     onPublish: async () => {
-      const projectId = await upsertBuilderProject(true);
+      const projectId = await upsertBuilderProject(true, publishModeRef.current);
       router.push(`/published?highlight=${projectId}&kind=site`);
     },
   });
@@ -503,6 +538,12 @@ function BuilderEditorPage() {
 
   const handlePublishProject = async () => {
     if (publishingProject || publishFlow.publishing) return;
+    const mode = requestPublishTarget({
+      hasExistingProject: Boolean(builderProjectId),
+      entityLabel: "landing",
+    });
+    if (mode === "cancelled") return;
+    publishModeRef.current = mode;
     setPublishingProject(true);
     setProjectError(null);
     try {
@@ -511,6 +552,9 @@ function BuilderEditorPage() {
         throw new Error(editor.state.lastError || "No se pudo publicar el proyecto.");
       }
     } catch (error: any) {
+      if (String(error?.message || "").toLowerCase().includes("cancelada por el usuario")) {
+        return;
+      }
       setProjectError(error?.message || "No se pudo publicar el proyecto.");
     } finally {
       setPublishingProject(false);

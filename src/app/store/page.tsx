@@ -4,7 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
+import {
+  assertCanPublishWithMode,
+  confirmPublishSlot,
+  requestPublishTarget,
+  type PublishTargetMode,
+} from "@/lib/subscription/publishClient";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import { resolveStoreSlug, sanitizeStoreSlug } from "@/lib/publicStorefront";
@@ -25,7 +30,6 @@ import {
   saveEditorDraft,
   useAutosave,
   useEditorState,
-  usePublish,
 } from "@/editor-core";
 import InlineEditable from "@/components/editor/InlineEditable";
 import EditorSidebar from "@/components/editor/EditorSidebar";
@@ -423,6 +427,7 @@ function StoreEditorPage() {
   } = useEditorState<StoreEditorSnapshot>();
 
   const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectPublished, setProjectPublished] = useState(false);
   const [config, setConfig] = useState<StoreConfig>(() => cloneDefaultConfig());
   const [products, setProducts] = useState<StoreProduct[]>(() => cloneDefaultProducts());
 
@@ -534,6 +539,7 @@ function StoreEditorPage() {
         if (cancelled) return;
         setConfig(loadedConfig);
         setProducts(loadedProducts);
+        setProjectPublished(Boolean(data?.published));
         setIsDirty(false);
         replaceData(
           {
@@ -549,6 +555,7 @@ function StoreEditorPage() {
           setConfig(cloneDefaultConfig());
           setProducts(cloneDefaultProducts());
           setProjectId(null);
+          setProjectPublished(false);
           if (typeof window !== "undefined" && user?.uid) {
             localStorage.removeItem(scopedStoreProjectKey(user.uid));
             localStorage.removeItem("fastpage_store_project_id");
@@ -684,17 +691,43 @@ function StoreEditorPage() {
     node.scrollBy({ left: direction === "left" ? -delta : delta, behavior: "smooth" });
   };
 
-  const saveProject = async (publishNow: boolean) => {
+  const saveProject = async (
+    publishNow: boolean,
+    publishMode: PublishTargetMode = "existing",
+  ) => {
     if (saving || publishing) return;
     publishNow ? setPublishing(true) : setSaving(true);
     setError(null);
     if (publishNow) setSyncWarning(null);
     try {
-      if (authLoading) throw new Error("Validando sesión...");
-      if (!user?.uid) throw new Error("Debes iniciar sesión.");
-      if (publishNow) await assertCanPublishPageByPlan();
+      if (authLoading) throw new Error("Validando sesion...");
+      if (!user?.uid) throw new Error("Debes iniciar sesion.");
 
-      let id = projectId || newId();
+      const targetMode: PublishTargetMode =
+        publishNow ? (projectId ? publishMode : "new") : "existing";
+      const reuseExistingId = Boolean(projectId) && (!publishNow || targetMode === "existing");
+      const existingId = reuseExistingId ? projectId : null;
+      let existingWasPublished = projectPublished;
+
+      if (publishNow) {
+        if (existingId) {
+          try {
+            const existingSnap = await getDoc(firestoreDoc(db, "cloned_sites", existingId));
+            existingWasPublished = Boolean(existingSnap.data()?.published);
+          } catch {
+            // Keep cached value
+          }
+        }
+        const quota = await assertCanPublishWithMode({
+          mode: targetMode,
+          alreadyPublished: targetMode === "existing" ? existingWasPublished : false,
+        });
+        if (!confirmPublishSlot(quota)) return;
+      }
+
+      const keepPublished = !publishNow && Boolean(existingId) && existingWasPublished;
+      const persistedPublished = publishNow || keepPublished;
+      let id = existingId || newId();
       let storeSlug = resolveStoreSlug(config, id);
       const nextProducts = mergeProductsWithDefaults(products);
       const now = Date.now();
@@ -712,16 +745,16 @@ function StoreEditorPage() {
         storeProducts: nextProducts,
         html,
         updatedAt: now,
-        status: publishNow ? "published" : "draft",
-        published: publishNow,
+        status: persistedPublished ? "published" : "draft",
+        published: persistedPublished,
       };
-      if (!projectId) payload.createdAt = now;
+      if (!existingId) payload.createdAt = now;
       if (publishNow) payload.publishedAt = now;
 
       try {
         await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
       } catch (writeError: any) {
-        if (!(projectId && isPermissionDeniedError(writeError))) throw writeError;
+        if (!(existingId && isPermissionDeniedError(writeError))) throw writeError;
         id = newId();
         storeSlug = resolveStoreSlug(config, id);
         nextConfig = mergeConfigWithDefaults(config, storeSlug);
@@ -762,10 +795,11 @@ function StoreEditorPage() {
         localStorage.setItem(scopedStoreProjectKey(user.uid), id);
         localStorage.removeItem("fastpage_store_project_id");
       }
+      setProjectPublished(persistedPublished);
       if (config.storeSlug !== storeSlug) setConfig((prev) => ({ ...prev, storeSlug }));
 
       setIsDirty(false);
-      markSaved(publishNow ? "published" : "draft");
+      markSaved(persistedPublished ? "published" : "draft");
       if (publishNow) router.push(`/published?highlight=${id}&kind=site`);
       else {
         setSavedToast(true);
@@ -796,16 +830,19 @@ function StoreEditorPage() {
     intervalMs: 30000,
   });
 
-  const publishFlow = usePublish<StoreEditorSnapshot>({
-    onPublish: async () => {
-      await saveProject(true);
-    },
-  });
+  const handlePublishClick = async () => {
+    const mode = requestPublishTarget({
+      hasExistingProject: Boolean(projectId),
+      entityLabel: "tienda",
+    });
+    if (mode === "cancelled") return;
+    await saveProject(true, mode);
+  };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#030712] pt-24 md:pt-28 pb-10 md:pb-12" style={{ ...themeVars, color: "var(--vs-text)" }}>
+    <div className="min-h-screen overflow-x-hidden bg-[#030712] pt-24 md:pt-28 pb-10 md:pb-12" style={{ ...themeVars }}>
       <div className="mx-auto max-w-[1600px] px-3 md:px-6">
-        <header className="sticky top-[72px] md:top-20 z-40 rounded-2xl border bg-white/90 px-3 py-3 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+        <header className="sticky top-[72px] md:top-20 z-40 rounded-2xl border bg-white/90 px-3 py-3 text-slate-900 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <button onClick={() => (window.history.length > 1 ? router.back() : router.push("/hub"))} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
@@ -830,17 +867,17 @@ function StoreEditorPage() {
               <button onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><ExternalLink className="h-4 w-4" />Ver tienda</button>
               <button onClick={applyMarketingTemplate} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><Wand2 className="h-4 w-4" />Plantilla marketing</button>
               <button onClick={() => saveProject(false)} disabled={saving || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold disabled:opacity-60" style={{ borderColor: "var(--vs-border)" }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Guardar</button>
-              <button onClick={() => void publishFlow.publish()} disabled={publishing || publishFlow.publishing || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-dark)" }}>{publishing || publishFlow.publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}Publicar</button>
+              <button onClick={() => void handlePublishClick()} disabled={publishing || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-dark)" }}>{publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}Publicar</button>
             </div>
           </div>
         </header>
 
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <section className="order-1 min-w-0 rounded-3xl border bg-white p-3 md:p-5 lg:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+          <section className="order-1 min-w-0 rounded-3xl border bg-white p-3 text-slate-900 md:p-5 lg:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
             <div className="mb-4 rounded-2xl border bg-white px-4 py-3 text-xs font-semibold" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>
               Haz clic en cualquier campo para editar. Encontraras texto base de marketing listo para personalizar y fotos demo para reemplazar.
             </div>
-            <div className={viewMode === "mobile" ? "mx-auto w-full min-w-0 max-w-[430px] overflow-x-clip" : "w-full min-w-0"}>
+            <div className={viewMode === "mobile" ? "mx-auto w-full min-w-0 max-w-[430px] overflow-x-clip" : "w-full min-w-0"} style={{ color: "var(--vs-text)" }}>
               <div className="overflow-hidden rounded-[30px] border bg-[var(--vs-surface)]" style={{ borderColor: "var(--vs-border-strong)" }}>
                 <div className="px-4 py-2 text-center text-sm font-bold text-white" style={{ background: "var(--vs-dark)" }}>
                   <input value={content.topStripText || ""} onChange={(e) => setContent({ topStripText: e.target.value })} placeholder="Edita aqui: promo principal" className="w-full bg-transparent text-center outline-none" />
@@ -897,7 +934,7 @@ function StoreEditorPage() {
                       className={useOffersCarousel ? "no-scrollbar mt-3 grid grid-flow-col auto-cols-[100%] gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth touch-pan-x" : "mt-4 grid grid-cols-3 gap-4"}
                     >
                       {offerProducts.map((p) => (
-                        <article key={`offer-${p.id}`} className={`${useOffersCarousel ? "w-full snap-start" : ""} overflow-hidden rounded-2xl border bg-white`} style={{ borderColor: "#edf2f7" }}>
+                        <article key={`offer-${p.id}`} className={`${useOffersCarousel ? "w-full snap-start" : ""} overflow-hidden rounded-2xl border bg-white text-slate-900`} style={{ borderColor: "#edf2f7" }}>
                           <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: "var(--vs-accent)" }}>{p.badge || "Oferta"}</span></div>
                           <div className="p-3"><p className="font-black">{p.name}</p><p className="mt-1 text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatMoney(p.priceCents, config.currency)}</p><button className="mt-2 h-10 w-full rounded-xl text-sm font-black text-white" style={{ background: "var(--vs-accent)" }}>{p.ctaLabel || "Ver oferta"}</button></div>
                         </article>
@@ -905,7 +942,7 @@ function StoreEditorPage() {
                     </div>
                   </div>
 
-                  <div className="mt-8 rounded-2xl border bg-white p-3" style={{ borderColor: "var(--vs-border)" }}>
+                  <div className="mt-8 rounded-2xl border bg-white p-3 text-slate-900" style={{ borderColor: "var(--vs-border)" }}>
                     <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={content.searchPlaceholder || "Buscar producto..."} className="h-10 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
                     <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{categories.map((c) => <button key={c} onClick={() => setCategory(c)} className="shrink-0 rounded-xl border px-4 py-2 text-sm font-bold" style={category === c ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" } : { borderColor: "var(--vs-border)" }}>{c}</button>)}</div>
                     <div className="mt-3 flex items-center justify-between"><p className="text-sm font-semibold" style={{ color: "var(--vs-muted)" }}>Total: {filteredProducts.length} productos</p><select value={sortBy} onChange={(e) => setSortBy(e.target.value as VisualSort)} className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none" style={{ borderColor: "var(--vs-border)" }}><option value="featured">Ordenar por</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option><option value="nameAsc">Nombre A-Z</option></select></div>
@@ -913,7 +950,7 @@ function StoreEditorPage() {
 
                   <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
                     {filteredProducts.map((p) => (
-                      <article key={p.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "#edf2f7" }}>
+                      <article key={p.id} className="overflow-hidden rounded-2xl border bg-white text-slate-900" style={{ borderColor: "#edf2f7" }}>
                         <div className="relative h-36 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">Sube foto</div>}<label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img })); e.target.value = ""; }} /></label></div>
                         <div className="space-y-2 p-3">
                           <input value={p.badge || ""} onChange={(e) => updateProduct(p.id, { badge: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs font-bold uppercase text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: badge" />
@@ -978,7 +1015,7 @@ function StoreEditorPage() {
               seoTab={<p className="text-xs text-zinc-600">SEO aplicado al publicar en /t/{'{slug}'}.</p>}
               settingsTab={<p className="text-xs text-zinc-600">Autosave activo: guardado por cambios + respaldo automatico cada 30 segundos.</p>}
             />
-            <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section className="rounded-2xl border bg-white p-4 text-slate-900" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinamico</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Selecciona rubro y aplica temas relacionados.</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
@@ -1028,9 +1065,9 @@ function StoreEditorPage() {
                 <label className="text-xs font-semibold">Primario<input type="color" value={rgbToHex(config.customRgb?.accent)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
                 <label className="text-xs font-semibold">Secundario<input type="color" value={rgbToHex(config.customRgb?.accent2)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent2: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
               </div>
-              <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>/t/{publicStoreSlug}</b></div>
+              <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>{`/t/${publicStoreSlug}`}</b></div>
             </section>
-            <section className="rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section className="rounded-2xl border bg-white p-4 text-slate-900" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Ecommerce real</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
                 Configura ventas reales: moneda, WhatsApp, envio, metodos de pago y terminos.

@@ -8,7 +8,12 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { assertCanPublishPageByPlan } from "@/lib/subscription/client";
+import {
+  assertCanPublishWithMode,
+  confirmPublishSlot,
+  requestPublishTarget,
+  type PublishTargetMode,
+} from "@/lib/subscription/publishClient";
 import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
@@ -69,6 +74,7 @@ function EditorPageContent() {
   const [showValidation, setShowValidation] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [siteAlreadyPublished, setSiteAlreadyPublished] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
@@ -255,7 +261,12 @@ function EditorPageContent() {
         if (!snap.exists()) {
           throw new Error("Proyecto no encontrado.");
         }
-        const data = snap.data() as { html?: string; userId?: string };
+        const data = snap.data() as {
+          html?: string;
+          userId?: string;
+          published?: boolean;
+          status?: string;
+        };
         if (data.userId && data.userId !== session.uid) {
           throw new Error("No tienes permisos para abrir este proyecto.");
         }
@@ -263,8 +274,10 @@ function EditorPageContent() {
           throw new Error("Proyecto sin contenido.");
         }
         setHtml(data.html);
+        const currentlyPublished = Boolean(data?.published || data?.status === "published");
+        setSiteAlreadyPublished(currentlyPublished);
         editor.replaceData({ html: data.html }, { markDirty: false, syncPreview: true, changeKind: "bulk" });
-        editor.markSaved("draft");
+        editor.markSaved(currentlyPublished ? "published" : "draft");
       } catch (error: any) {
         console.error("Error loading site:", error);
         setError(error?.message || "No se pudo cargar el proyecto desde Firebase.");
@@ -366,39 +379,67 @@ function EditorPageContent() {
   };
 
   const handlePublish = async () => {
+    const mode = requestPublishTarget({
+      hasExistingProject: true,
+      entityLabel: "pagina",
+    });
+    if (mode === "cancelled") return;
+
     setPublishing(true);
     setError(null);
     try {
       if (authLoading) {
         throw new Error("Espera un momento mientras validamos tu sesion.");
       }
-      // 1. Primero guardamos los cambios actuales y obtenemos el HTML limpio
       const cleanHtml = await handleSave();
-      
+
       if (!cleanHtml) {
-        // El error ya lo maneja handleSave via setError
         return;
       }
 
-      // 2. Publicar directamente en Firestore usando la sesión del usuario
       if (!session?.uid) {
         throw new Error("Debes iniciar sesion para publicar.");
       }
-      await assertCanPublishPageByPlan();
+
+      const publishMode: PublishTargetMode = mode;
+      const quota = await assertCanPublishWithMode({
+        mode: publishMode,
+        alreadyPublished: publishMode === "existing" ? siteAlreadyPublished : false,
+      });
+      if (!confirmPublishSlot(quota)) return;
+
+      const targetId =
+        publishMode === "new"
+          ? typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID().slice(0, 8)
+            : Math.random().toString(36).slice(2, 10)
+          : id;
+      const now = Date.now();
 
       const publishPayload: Record<string, any> = {
-        id,
-        html: injectMetricsTracking(cleanHtml, id),
+        id: targetId,
+        html: injectMetricsTracking(cleanHtml, targetId),
         userId: session.uid,
         published: true,
         status: "published",
-        publishedAt: Date.now(),
-        updatedAt: Date.now()
+        publishedAt: now,
+        updatedAt: now,
+        ...(publishMode === "new" ? { createdAt: now } : {}),
       };
 
-      await setDoc(firestoreDoc(db, "cloned_sites", id), publishPayload, { merge: true });
+      await setDoc(firestoreDoc(db, "cloned_sites", targetId), publishPayload, { merge: true });
+      setSiteAlreadyPublished(true);
 
-      router.push(`/published?highlight=${id}&kind=site`);
+      await publishEditorDraft({
+        projectId: targetId,
+        userId: session.uid,
+        projectType: "clone",
+        data: { html: cleanHtml },
+        publishedUrl: `/preview/${targetId}`,
+      });
+      await ensureAnalyticsDocument(targetId);
+
+      router.push(`/published?highlight=${targetId}&kind=site`);
     } catch (error: any) {
       console.error("Error publishing site:", error);
       setError("Error al publicar: " + error.message);
@@ -406,7 +447,6 @@ function EditorPageContent() {
       setPublishing(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col overflow-hidden">
       {/* Top Bar Editor */}

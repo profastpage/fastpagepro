@@ -182,6 +182,10 @@ function PublishedProjectsContent() {
     permissions.maxProjects == null
       ? `${permissions.usage.publishedProjects}`
       : `${permissions.usage.publishedProjects}/${permissions.maxProjects}`;
+  const availableProjectsLabel =
+    permissions.maxProjects == null
+      ? "Ilimitado"
+      : `${Math.max(permissions.maxProjects - permissions.usage.publishedProjects, 0)} disponibles`;
   const daysRemaining = Math.max(0, Number(subscriptionSummary?.daysRemaining || 0));
 
   async function copyUrl(url: string, id: string) {
@@ -235,6 +239,9 @@ function PublishedProjectsContent() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
                   Proyectos en plan: {publishedLimitLabel}
+                </span>
+                <span className="rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100">
+                  Cupo: {availableProjectsLabel}
                 </span>
                 <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
                   Dias restantes: {daysRemaining}

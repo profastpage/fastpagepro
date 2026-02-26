@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
+import { requestPublishTarget } from "@/lib/subscription/publishClient";
 import {
   buildDefaultLinkHubProfile,
   createLinkHubCatalogCategory,
@@ -1522,6 +1523,19 @@ export default function LinkHubPage() {
       const maxProjects = latestSummary?.limits?.maxProjects ?? latestSummary?.limits?.maxPublishedPages ?? null;
       const usedProjects = Number(latestSummary?.usage?.publishedPages || 0);
       const alreadyPublished = Boolean(profile.published);
+      const publishTarget = requestPublishTarget({
+        hasExistingProject: alreadyPublished,
+        entityLabel: "carta digital",
+      });
+      if (publishTarget === "cancelled") {
+        return;
+      }
+      if (publishTarget === "new" && alreadyPublished) {
+        const confirmed = window.confirm(
+          "Carta Digital usa un perfil activo por cuenta. Se actualizara el proyecto existente. Deseas continuar?",
+        );
+        if (!confirmed) return;
+      }
       const nextProjects = alreadyPublished ? usedProjects : usedProjects + 1;
 
       if (planStatus !== "ACTIVE") {
