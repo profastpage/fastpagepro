@@ -1090,3 +1090,17 @@ o-scrollbar para evitar barra visible.
 - Validacion puntual en `/demo/restaurant/sushi-prime`:
   - viewport 375: sin x-scroll y sin overlap.
   - viewport 1440: sin x-scroll y sin overlap.
+
+## Auth API hardening for subscription trial (2026-02-26)
+
+- Modulo ajustado: `src/lib/server/requireFirebaseUser.ts`.
+- Problema corregido:
+  - en algunos entornos, al activar "14 dias gratis", la validacion server-side del token podia caer en `Identity Toolkit` y fallar por restricciones de API key, devolviendo `Servicio de autenticacion no disponible`.
+- Correccion aplicada:
+  - se agrega verificacion principal por certificados publicos de Firebase Secure Token (Google x509) sin depender de API key.
+  - orden de fallback actualizado:
+    1) Firebase Admin SDK
+    2) verificacion JWT por certificados publicos
+    3) Identity Toolkit (ultimo recurso)
+- Resultado:
+  - mayor estabilidad al crear/activar trial Business desde Billing, incluso cuando Firebase Admin no esta disponible en runtime.
