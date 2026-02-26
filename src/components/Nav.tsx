@@ -18,6 +18,7 @@ export default function Nav() {
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
+  const isEnglish = language === "en";
   const permissions = usePlanPermissions(Boolean(session?.uid));
   const { summary } = useSubscription(Boolean(session?.uid));
 
@@ -58,12 +59,14 @@ export default function Nav() {
 
     const resolveLockHint = (href: string) => {
       if (isExpired && !expiredUnlockedRoutes.has(href)) {
-        return "Tu periodo activo termino. Renueva en Billing para reactivar paneles.";
+        return isEnglish
+          ? "Your active period ended. Renew in Billing to reactivate panels."
+          : "Tu periodo activo termino. Renueva en Billing para reactivar paneles.";
       }
       if (["/builder", "/templates", "/cloner/web"].includes(href)) {
-        return "Disponible solo en plan PRO.";
+        return isEnglish ? "Available only on PRO plan." : "Disponible solo en plan PRO.";
       }
-      return "Disponible en Business o Pro.";
+      return isEnglish ? "Available on Business or Pro." : "Disponible en Business o Pro.";
     };
 
     const resolveRequiredFeature = (href: string) => {
@@ -101,7 +104,7 @@ export default function Nav() {
       mapItem("Billing", "/dashboard/billing"),
       mapItem(t("nav.settings"), "/settings"),
     ];
-  }, [permissions.canonicalPlan, session, summary?.status, t]);
+  }, [isEnglish, permissions.canonicalPlan, session, summary?.status, t]);
 
   if (
     pathname === "/auth" ||

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions, type PlanUpsellReason } from "@/hooks/usePlanPermissions";
 import { auth } from "@/lib/firebase";
+import { useLanguage } from "@/context/LanguageContext";
 import PricingTable from "@/components/subscription/PricingTable";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
@@ -13,11 +14,18 @@ import { PLAN_DEFINITIONS, type PlanType } from "@/lib/subscription/plans";
 
 type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA";
 
-const PAYMENT_INSTRUCTIONS: Record<PaymentMethod, string> = {
+const PAYMENT_INSTRUCTIONS_ES: Record<PaymentMethod, string> = {
   YAPE: "Yape al 999 999 999. En el motivo coloca tu correo de Fast Page.",
   PLIN: "Plin al 999 999 998. En el detalle incluye el plan que deseas activar.",
   TRANSFERENCIA:
     "Transferencia a BCP Cuenta Corriente 191-1234567-0-98 (CCI: 00219100123456709811).",
+};
+
+const PAYMENT_INSTRUCTIONS_EN: Record<PaymentMethod, string> = {
+  YAPE: "Yape to 999 999 999. Include your Fast Page email in the note.",
+  PLIN: "Plin to 999 999 998. Add the target plan in the detail.",
+  TRANSFERENCIA:
+    "Bank transfer to BCP Checking Account 191-1234567-0-98 (CCI: 00219100123456709811).",
 };
 
 const REASON_BY_FEATURE: Record<string, PlanUpsellReason> = {
@@ -36,6 +44,8 @@ const TARGET_TO_PLAN: Record<string, PlanType> = {
 
 export default function BillingPage() {
   const { user, loading: authLoading } = useAuth(true);
+  const { language } = useLanguage();
+  const isEnglish = language === "en";
   const { summary, pendingRequests, loading, error, reload } = useSubscription(Boolean(user?.uid));
   const permissions = usePlanPermissions(Boolean(user?.uid));
   const [requiredFeature, setRequiredFeature] = useState("");
@@ -49,6 +59,105 @@ export default function BillingPage() {
 
   const activePlan = summary?.plan || "FREE";
   const isBusinessTrial = selectedPlan === "BUSINESS";
+  const i18n = useMemo(
+    () =>
+      isEnglish
+        ? {
+            saasBilling: "SaaS Billing",
+            title: "Fast Page official plans",
+            subtitle:
+              "Starter S/29 without support, Business with 14-day free trial + email support, and Pro S/99 with live support.",
+            activePlan: "Active plan:",
+            trialExpired:
+              "Your 14-day trial ended. Activate Starter, Business, or Pro to reactivate features and pages.",
+            updateTitle: "Request plan upgrade",
+            updateSubtitle:
+              "Business activates 14-day trial. Starter and Pro are direct monthly payment.",
+            requestedPlan: "Requested plan",
+            paymentMethod: "Payment method",
+            trialBlock:
+              "14-day free trial. Then S/59/month. Cancel anytime. No commitment.",
+            uploadProof: "Upload payment proof",
+            uploadPlaceholder: "Attach PNG, JPG, WEBP or PDF (optional)",
+            notes: "Notes",
+            notesPlaceholder: "Add any extra details for the admin team.",
+            submitBusiness: "Activate 14-day trial",
+            submitPaid: "Submit payment request",
+            usageTitle: "Current usage and limits",
+            projects: "Published projects",
+            products: "Products in largest project",
+            customDomain: "Custom domain",
+            branding: "Removable branding",
+            ai: "AI",
+            metrics: "Metrics",
+            allowed: "Allowed",
+            unavailable: "Unavailable",
+            unlimited: "Unlimited",
+            pendingTitle: "Pending requests",
+            pendingEmpty: "No pending requests.",
+            pendingPlan: "Plan",
+            pendingStatus: "Status",
+            pendingMethod: "Method",
+            pendingCreated: "Created",
+            processing: "Processing...",
+          }
+        : {
+            saasBilling: "Facturacion SaaS",
+            title: "Planes oficiales Fast Page",
+            subtitle:
+              "Starter S/29 sin soporte, Business con 14 dias gratis + soporte por correo y Pro S/99 con soporte en vivo.",
+            activePlan: "Plan activo:",
+            trialExpired:
+              "Tu prueba de 14 dias finalizo. Activa Starter, Business o Pro para reactivar funciones y paginas.",
+            updateTitle: "Solicitar actualizacion de plan",
+            updateSubtitle:
+              "Business activa prueba de 14 dias. Starter y Pro aplican pago directo mensual.",
+            requestedPlan: "Plan solicitado",
+            paymentMethod: "Metodo de pago",
+            trialBlock:
+              "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras. Sin compromiso.",
+            uploadProof: "Subir comprobante",
+            uploadPlaceholder: "Adjuntar PNG, JPG, WEBP o PDF (opcional)",
+            notes: "Notas",
+            notesPlaceholder: "Agrega detalles extra para el equipo admin.",
+            submitBusiness: "Activar prueba de 14 dias",
+            submitPaid: "Enviar solicitud de pago",
+            usageTitle: "Uso actual y limites",
+            projects: "Proyectos publicados",
+            products: "Productos en proyecto mas grande",
+            customDomain: "Dominio propio",
+            branding: "Branding removible",
+            ai: "IA",
+            metrics: "Metricas",
+            allowed: "Permitido",
+            unavailable: "No disponible",
+            unlimited: "Ilimitado",
+            pendingTitle: "Solicitudes pendientes",
+            pendingEmpty: "No tienes solicitudes pendientes.",
+            pendingPlan: "Plan",
+            pendingStatus: "Estado",
+            pendingMethod: "Metodo",
+            pendingCreated: "Creado",
+            processing: "Procesando...",
+          },
+    [isEnglish],
+  );
+  const paymentInstructions = isEnglish ? PAYMENT_INSTRUCTIONS_EN : PAYMENT_INSTRUCTIONS_ES;
+  const planTextById = useMemo(
+    () =>
+      isEnglish
+        ? {
+            FREE: { price: "S/ 29 / month", cta: "Start now" },
+            BUSINESS: { price: "S/ 59 / month", cta: "Try 14 days free" },
+            PRO: { price: "S/ 99 / month", cta: "Buy now" },
+          }
+        : {
+            FREE: { price: "S/ 29 / mes", cta: "Empezar ahora" },
+            BUSINESS: { price: "S/ 59 / mes", cta: "Probar 14 dias gratis" },
+            PRO: { price: "S/ 99 / mes", cta: "Comprar ahora" },
+          },
+    [isEnglish],
+  );
 
   const requestedPlanOptions = useMemo(() => PLAN_DEFINITIONS, []);
 
@@ -76,37 +185,37 @@ export default function BillingPage() {
   const usageRows = useMemo(() => {
     return [
       {
-        label: "Proyectos publicados",
+        label: i18n.projects,
         value:
           permissions.maxProjects == null
-            ? `${permissions.usage.publishedProjects} / Ilimitado`
+            ? `${permissions.usage.publishedProjects} / ${i18n.unlimited}`
             : `${permissions.usage.publishedProjects} / ${permissions.maxProjects}`,
       },
       {
-        label: "Productos en proyecto mas grande",
+        label: i18n.products,
         value:
           permissions.maxProductsPerProject == null
-            ? `${permissions.usage.maxProductsInOneProject} / Ilimitado`
+            ? `${permissions.usage.maxProductsInOneProject} / ${i18n.unlimited}`
             : `${permissions.usage.maxProductsInOneProject} / ${permissions.maxProductsPerProject}`,
       },
       {
-        label: "Dominio propio",
-        value: permissions.canUseCustomDomain ? "Permitido" : "No disponible",
+        label: i18n.customDomain,
+        value: permissions.canUseCustomDomain ? i18n.allowed : i18n.unavailable,
       },
       {
-        label: "Branding removible",
-        value: permissions.canRemoveBranding ? "Si" : "No",
+        label: i18n.branding,
+        value: permissions.canRemoveBranding ? i18n.allowed : i18n.unavailable,
       },
       {
-        label: "IA",
+        label: i18n.ai,
         value: permissions.aiLevel,
       },
       {
-        label: "Metricas",
+        label: i18n.metrics,
         value: permissions.analyticsLevel,
       },
     ];
-  }, [permissions]);
+  }, [i18n.ai, i18n.allowed, i18n.branding, i18n.customDomain, i18n.metrics, i18n.products, i18n.projects, i18n.unavailable, i18n.unlimited, permissions]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -117,7 +226,11 @@ export default function BillingPage() {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
-        throw new Error("Tu sesion expiro. Inicia sesion nuevamente.");
+        throw new Error(
+          isEnglish
+            ? "Your session expired. Sign in again."
+            : "Tu sesion expiro. Inicia sesion nuevamente.",
+        );
       }
 
       const formData = new FormData();
@@ -139,14 +252,23 @@ export default function BillingPage() {
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data?.error || "No se pudo registrar la solicitud.");
+        throw new Error(
+          data?.error ||
+            (isEnglish
+              ? "Could not register your request."
+              : "No se pudo registrar la solicitud."),
+        );
       }
 
       setFeedback({
         type: "success",
         text: isBusinessTrial
-          ? "Business activo en prueba de 14 dias. Luego podras renovar mensual."
-          : "Solicitud enviada. Quedo en estado pendiente hasta validacion admin.",
+          ? isEnglish
+            ? "Business trial active for 14 days. Then you can renew monthly."
+            : "Business activo en prueba de 14 dias. Luego podras renovar mensual."
+          : isEnglish
+            ? "Request sent. It is pending admin validation."
+            : "Solicitud enviada. Quedo en estado pendiente hasta validacion admin.",
       });
       setProofFile(null);
       setNotes("");
@@ -154,7 +276,11 @@ export default function BillingPage() {
     } catch (submitError: any) {
       setFeedback({
         type: "error",
-        text: submitError?.message || "No se pudo procesar la solicitud de pago.",
+        text:
+          submitError?.message ||
+          (isEnglish
+            ? "Could not process your payment request."
+            : "No se pudo procesar la solicitud de pago."),
       });
     } finally {
       setSubmitting(false);
@@ -175,14 +301,12 @@ export default function BillingPage() {
         <header className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">Facturacion SaaS</p>
-              <h1 className="mt-2 text-3xl font-black">Planes oficiales Fast Page</h1>
-              <p className="mt-2 text-zinc-300">
-                Starter S/29 sin soporte, Business con 14 dias gratis + soporte por correo y Pro S/99 con soporte en vivo.
-              </p>
+              <p className="text-xs uppercase tracking-[0.18em] text-zinc-400">{i18n.saasBilling}</p>
+              <h1 className="mt-2 text-3xl font-black">{i18n.title}</h1>
+              <p className="mt-2 text-zinc-300">{i18n.subtitle}</p>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
-              <span className="text-xs text-zinc-400">Plan activo:</span>
+              <span className="text-xs text-zinc-400">{i18n.activePlan}</span>
               <PlanBadge plan={activePlan} />
             </div>
           </div>
@@ -197,7 +321,7 @@ export default function BillingPage() {
 
           {summary?.trialExpired ? (
             <p className="mt-3 rounded-xl border border-red-400/35 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100">
-              Tu prueba de 14 dias finalizo. Activa Starter, Business o Pro para reactivar funciones y paginas.
+              {i18n.trialExpired}
             </p>
           ) : null}
 
@@ -230,7 +354,7 @@ export default function BillingPage() {
                       onClick={() => setSelectedPlan(TARGET_TO_PLAN[upsell.targetPlan])}
                       className="mt-3 rounded-lg border border-amber-200/40 bg-amber-400/20 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em] text-amber-100"
                     >
-                      Ir a {TARGET_TO_PLAN[upsell.targetPlan]}
+                      {isEnglish ? "Go to" : "Ir a"} {TARGET_TO_PLAN[upsell.targetPlan]}
                     </button>
                   </div>
                 </div>
@@ -247,15 +371,13 @@ export default function BillingPage() {
             className="space-y-5 rounded-3xl border border-white/10 bg-zinc-950/70 p-6"
           >
             <div>
-              <h2 className="text-xl font-bold">Solicitar actualizacion de plan</h2>
-              <p className="mt-1 text-sm text-zinc-300">
-                Business activa prueba de 14 dÃ­as. Starter y Pro aplican pago directo mensual.
-              </p>
+              <h2 className="text-xl font-bold">{i18n.updateTitle}</h2>
+              <p className="mt-1 text-sm text-zinc-300">{i18n.updateSubtitle}</p>
             </div>
 
             <label className="block space-y-2">
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                Plan solicitado
+                {i18n.requestedPlan}
               </span>
               <select
                 className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm"
@@ -264,7 +386,7 @@ export default function BillingPage() {
               >
                 {requestedPlanOptions.map((plan) => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.name} - {plan.monthlyPriceLabel}
+                    {plan.name} - {planTextById[plan.id].price}
                   </option>
                 ))}
               </select>
@@ -273,7 +395,7 @@ export default function BillingPage() {
             {!isBusinessTrial ? (
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                  Metodo de pago
+                  {i18n.paymentMethod}
                 </span>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {(["YAPE", "PLIN", "TRANSFERENCIA"] as PaymentMethod[]).map((method) => (
@@ -296,23 +418,23 @@ export default function BillingPage() {
 
             {isBusinessTrial ? (
               <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100">
-                Prueba gratis por 14 dÃ­as. Luego S/59/mes. Cancela cuando quieras. Sin compromiso.
+                {i18n.trialBlock}
               </div>
             ) : (
               <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
-                {PAYMENT_INSTRUCTIONS[paymentMethod]}
+                {paymentInstructions[paymentMethod]}
               </div>
             )}
 
             {!isBusinessTrial ? (
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                  Subir comprobante
+                  {i18n.uploadProof}
                 </span>
                 <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-3 py-3 text-sm">
                   <UploadCloud className="h-4 w-4 text-zinc-300" />
                   <span className="truncate text-zinc-200">
-                    {proofFile ? proofFile.name : "Adjuntar PNG, JPG, WEBP o PDF (opcional)"}
+                    {proofFile ? proofFile.name : i18n.uploadPlaceholder}
                   </span>
                   <input
                     type="file"
@@ -326,14 +448,14 @@ export default function BillingPage() {
 
             <label className="block space-y-2">
               <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
-                Notas
+                {i18n.notes}
               </span>
               <textarea
                 rows={3}
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 className="w-full resize-none rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm"
-                placeholder="Ejemplo: pago realizado desde cuenta empresarial."
+                placeholder={i18n.notesPlaceholder}
               />
             </label>
 
@@ -355,12 +477,16 @@ export default function BillingPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-60"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isBusinessTrial ? "Probar 14 dÃ­as gratis" : selectedPlan === "PRO" ? "Comprar ahora" : "Empezar ahora"}
+              {submitting
+                ? i18n.processing
+                : isBusinessTrial
+                  ? i18n.submitBusiness
+                  : i18n.submitPaid}
             </button>
           </form>
 
           <aside className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6">
-            <h3 className="text-lg font-bold">Estado real de permisos</h3>
+            <h3 className="text-lg font-bold">{i18n.usageTitle}</h3>
             <div className="mt-4 space-y-2 text-sm">
               {usageRows.map((row) => (
                 <div key={row.label} className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-black/30 px-3 py-2">
@@ -371,12 +497,12 @@ export default function BillingPage() {
             </div>
 
             <h4 className="mt-6 text-sm font-black uppercase tracking-[0.15em] text-zinc-400">
-              Solicitudes pendientes
+              {i18n.pendingTitle}
             </h4>
             <div className="mt-3 space-y-3">
               {pendingRequests.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-white/15 bg-black/20 px-3 py-4 text-sm text-zinc-400">
-                  No tienes solicitudes pendientes.
+                  {i18n.pendingEmpty}
                 </p>
               ) : (
                 pendingRequests.map((request) => (
@@ -385,8 +511,8 @@ export default function BillingPage() {
                     className="rounded-xl border border-white/15 bg-black/30 px-3 py-3 text-sm"
                   >
                     <p className="font-semibold text-white">{request.requestedPlan}</p>
-                    <p className="text-zinc-300">Pago: {request.paymentMethod}</p>
-                    <p className="text-zinc-400">Estado: {request.status}</p>
+                    <p className="text-zinc-300">{i18n.pendingMethod}: {request.paymentMethod}</p>
+                    <p className="text-zinc-400">{i18n.pendingStatus}: {request.status}</p>
                     <p className="text-xs text-zinc-500">
                       {new Date(request.createdAt).toLocaleString()}
                     </p>

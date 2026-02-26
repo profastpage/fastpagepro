@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,8 +29,43 @@ export default function HubPage() {
   const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
   const planPermissions = usePlanPermissions(Boolean(user?.uid));
   const router = useRouter();
-  const { t } = useLanguage();
-  const userName = user?.name || "Creador";
+  const { t, language } = useLanguage();
+  const isEnglish = language === "en";
+  const userName = user?.name || (isEnglish ? "Creator" : "Creador");
+  const hubCopy = useMemo(
+    () =>
+      isEnglish
+        ? {
+            billingTitle: "Billing",
+            billingDesc:
+              "Manage Starter S/29, Business 14-day trial, Pro S/99, and support by plan.",
+            billingAction: "Open Billing",
+            lockExpired: "Your active period ended. Renew in Billing to reactivate panels.",
+            lockPro: "Available only on PRO plan.",
+            lockBusiness: "Available on Business or Pro.",
+            planLabel: "Plan:",
+            trialRemaining: (days: number) => `Business trial: ${days} days left.`,
+            trialExpired:
+              "Trial ended: features and pages are locked until you renew in Billing.",
+            adminPanel: "Administration Panel",
+          }
+        : {
+            billingTitle: "Billing",
+            billingDesc:
+              "Gestiona Starter S/29, Business 14 dias gratis, Pro S/99 y soporte por plan.",
+            billingAction: "Abrir Facturacion",
+            lockExpired:
+              "Tu periodo activo termino. Renueva en Billing para reactivar paneles.",
+            lockPro: "Disponible solo en plan PRO.",
+            lockBusiness: "Disponible en Business o Pro.",
+            planLabel: "Plan:",
+            trialRemaining: (days: number) => `Prueba Business: ${days} dias restantes.`,
+            trialExpired:
+              "Prueba finalizada: funciones y paginas bloqueadas hasta renovar en Billing.",
+            adminPanel: "Panel de Administracion",
+          },
+    [isEnglish],
+  );
   const isAdmin = user?.email === "afiliadosprobusiness@gmail.com";
   const isStarterPlan = planPermissions.canonicalPlan === "starter";
   const isBusinessPlan = planPermissions.canonicalPlan === "business";
@@ -121,10 +156,10 @@ export default function HubPage() {
     },
     {
       id: "billing",
-      title: "Billing",
-      description: "Gestiona Starter S/29, Business 14 dias gratis, Pro S/99 y soporte por plan.",
+      title: hubCopy.billingTitle,
+      description: hubCopy.billingDesc,
       icon: <CreditCard className="w-8 h-8 text-emerald-300" />,
-      action: "Abrir Facturacion",
+      action: hubCopy.billingAction,
       href: "/dashboard/billing",
       gradient: "from-zinc-900 to-zinc-900",
       border: "hover:border-emerald-400/50",
@@ -187,10 +222,10 @@ export default function HubPage() {
         (isStarterPlan && !starterUnlocked.has(panel.id)) ||
         (isBusinessPlan && ["builder", "templates", "cloner"].includes(panel.id)),
       lockHint: isSubscriptionExpired
-        ? "Tu periodo activo termino. Renueva para reactivar funciones y paginas."
+        ? hubCopy.lockExpired
         : ["builder", "templates", "cloner"].includes(panel.id)
-          ? "Disponible solo en plan PRO."
-          : "Disponible en Business o Pro.",
+          ? hubCopy.lockPro
+          : hubCopy.lockBusiness,
     }))
     .sort((a, b) => {
       if (isSubscriptionExpired) {
@@ -234,7 +269,7 @@ export default function HubPage() {
                 {t("hub.subtitle")}
               </p>
               <div className="mt-3 inline-flex items-center gap-2">
-                <span className="text-xs text-zinc-400">Plan:</span>
+                <span className="text-xs text-zinc-400">{hubCopy.planLabel}</span>
                 <PlanBadge plan={subscriptionSummary?.plan || "FREE"} />
               </div>
               {subscriptionSummary?.isBusinessTrial && subscriptionSummary?.status === "ACTIVE" ? (
@@ -245,12 +280,12 @@ export default function HubPage() {
                       : "text-amber-200"
                   }`}
                 >
-                  Prueba Business: {subscriptionSummary?.trialDaysRemaining || 0} dias restantes.
+                  {hubCopy.trialRemaining(subscriptionSummary?.trialDaysRemaining || 0)}
                 </p>
               ) : null}
               {subscriptionSummary?.trialExpired ? (
                 <p className="mt-2 text-xs font-bold text-red-300">
-                  Prueba finalizada: funciones y paginas bloqueadas hasta renovar en Billing.
+                  {hubCopy.trialExpired}
                 </p>
               ) : null}
             </div>
@@ -351,7 +386,7 @@ export default function HubPage() {
                 className="flex items-center gap-2 px-6 py-3 rounded-full text-amber-500 hover:text-white hover:bg-amber-500/10 transition-all duration-300 border border-amber-500/20"
               >
                 <ShieldAlert className="w-5 h-5" />
-                <span>Panel de AdministraciÃ³n</span>
+                <span>{hubCopy.adminPanel}</span>
               </button>
             )}
           </div>

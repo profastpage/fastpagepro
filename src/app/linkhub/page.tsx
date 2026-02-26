@@ -94,6 +94,21 @@ const LINK_TYPE_OPTIONS: Array<{ value: LinkHubLinkType; label: string }> = [
   { value: "x", label: "X / Twitter" },
 ];
 
+const RESTAURANT_SUBCATEGORY_OPTIONS = [
+  "Cafeteria",
+  "Pizzeria",
+  "Restobar",
+  "Panaderia",
+  "Cevicheria",
+  "Polleria",
+  "Hamburgueseria",
+  "Pasteleria",
+  "Sangucheria",
+  "Comida criolla",
+  "Comida saludable",
+  "Comida rapida",
+];
+
 const LINK_TYPE_ICON: Record<LinkHubLinkType, ComponentType<{ className?: string }>> = {
   website: Globe,
   instagram: Instagram,
@@ -551,6 +566,32 @@ export default function LinkHubPage() {
     });
   }, [profile]);
 
+  useEffect(() => {
+    if (!profile) return;
+    const nextLabel =
+      profile.categoryLabel && profile.categoryLabel.trim().length > 0
+        ? profile.categoryLabel.trim()
+        : "Cafeteria";
+    const needsRestaurantType = profile.businessType !== "restaurant";
+    const needsLabelFix =
+      !profile.categoryLabel || !RESTAURANT_SUBCATEGORY_OPTIONS.includes(nextLabel);
+    if (!needsRestaurantType && !needsLabelFix) return;
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const safeLabel =
+        prev.categoryLabel && RESTAURANT_SUBCATEGORY_OPTIONS.includes(prev.categoryLabel)
+          ? prev.categoryLabel
+          : "Cafeteria";
+      if (prev.businessType === "restaurant" && prev.categoryLabel === safeLabel) return prev;
+      return {
+        ...prev,
+        businessType: "restaurant",
+        categoryLabel: safeLabel,
+      };
+    });
+  }, [profile]);
+
   const publicUrl = useMemo(() => {
     if (!profile?.slug || !origin) return "";
     return `${origin}/bio/${profile.slug}`;
@@ -577,15 +618,12 @@ export default function LinkHubPage() {
     return LINK_HUB_THEME_CATEGORY_MAP[activeThemeCategory];
   }, [activeThemeCategory]);
 
-  const catalogLabel =
-    profile?.businessType === "restaurant" ? profile?.sectionLabels.menu : profile?.sectionLabels.catalog;
+  const catalogLabel = profile?.sectionLabels.menu;
 
   const resolvedCartaThemeId = useMemo(() => {
-    const rubroHint =
-      profile?.categoryLabel ||
-      (profile?.businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General");
+    const rubroHint = profile?.categoryLabel || "Restaurante / Cafeteria";
     return getSafeCartaThemeId(profile?.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint));
-  }, [profile?.businessType, profile?.cartaThemeId, profile?.categoryLabel]);
+  }, [profile?.cartaThemeId, profile?.categoryLabel]);
 
   const activeCartaTheme = useMemo(() => getCartaTheme(resolvedCartaThemeId), [resolvedCartaThemeId]);
   const isRestaurantProfile = profile?.businessType === "restaurant";
@@ -837,30 +875,28 @@ export default function LinkHubPage() {
     });
   }
 
-  function changeBusinessType(nextType: LinkHubBusinessType) {
+  function changeBusinessType(_nextType: LinkHubBusinessType) {
     setProfile((prev) => {
       if (!prev) return prev;
-      const nextThemeCategory =
-        nextType === "restaurant"
-          ? "food"
-          : prev.themeCategory === "food"
-            ? "fashion"
-            : getSafeLinkHubThemeCategory(prev.themeCategory);
+      const safeType: LinkHubBusinessType = "restaurant";
+      const nextThemeCategory: LinkHubThemeCategory = "food";
       const allowedThemes = LINK_HUB_THEME_CATEGORY_MAP[nextThemeCategory];
       const nextTheme = allowedThemes.includes(prev.theme) ? prev.theme : allowedThemes[0];
       const nextPreset = LINK_HUB_THEME_STYLES[nextTheme];
-      const recommendedCartaThemeId = recommendCartaThemeIdByRubro(
-        nextType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General",
-      );
+      const recommendedCartaThemeId = recommendCartaThemeIdByRubro("Restaurante / Cafeteria");
       const baseNext = {
         ...prev,
-        businessType: nextType,
+        businessType: safeType,
+        categoryLabel:
+          prev.categoryLabel && prev.categoryLabel.trim().length > 0
+            ? prev.categoryLabel
+            : "Cafeteria",
         cartaThemeId: prev.cartaThemeId || recommendedCartaThemeId,
         themeCategory: nextThemeCategory,
         sectionLabels: {
           ...prev.sectionLabels,
-          menu: nextType === "restaurant" ? "Carta" : prev.sectionLabels.menu,
-          catalog: nextType === "general" ? "Catalogo" : prev.sectionLabels.catalog,
+          menu: "Carta",
+          catalog: prev.sectionLabels.catalog,
         },
       };
       if (nextTheme === prev.theme) {
@@ -1659,7 +1695,6 @@ export default function LinkHubPage() {
                     onChange={(event) => changeBusinessType(event.target.value as LinkHubBusinessType)}
                   >
                     <option value="restaurant">Restaurante / Cafeteria</option>
-                    <option value="general">Tienda / General</option>
                   </select>
                 </label>
                 <label className="space-y-2">
@@ -1684,12 +1719,20 @@ export default function LinkHubPage() {
                 </label>
                 <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Etiqueta del rubro</span>
-                  <input
+                  <select
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                     value={profile.categoryLabel}
                     onChange={(event) => patchProfile("categoryLabel", event.target.value)}
-                    placeholder={profile.businessType === "restaurant" ? "Cevicheria" : "Tienda online"}
-                  />
+                  >
+                    {!RESTAURANT_SUBCATEGORY_OPTIONS.includes(profile.categoryLabel) ? (
+                      <option value={profile.categoryLabel}>{profile.categoryLabel || "Cafeteria"}</option>
+                    ) : null}
+                    {RESTAURANT_SUBCATEGORY_OPTIONS.map((subcategory) => (
+                      <option key={subcategory} value={subcategory}>
+                        {subcategory}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Foto de perfil</span>
@@ -2276,10 +2319,7 @@ export default function LinkHubPage() {
                       className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-100 hover:border-amber-300/40 hover:text-amber-100"
                       onClick={() => {
                         const suggestedThemeId = recommendCartaThemeIdByRubro(
-                          profile.categoryLabel ||
-                            (profile.businessType === "restaurant"
-                              ? "Restaurante / Cafeteria"
-                              : "Tienda / General"),
+                          profile.categoryLabel || "Restaurante / Cafeteria",
                         );
                         setProfile((prev) => {
                           if (!prev) return prev;
@@ -2676,7 +2716,7 @@ export default function LinkHubPage() {
                     {highlightLastWord(profile.displayName || "Tu negocio", activeCartaTheme.tokens.primary)}
                   </h3>
                   <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: activeCartaTheme.tokens.accent }}>
-                    {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
+                    {profile.categoryLabel || "Restaurante"}
                   </p>
                 </div>
 
@@ -2689,7 +2729,7 @@ export default function LinkHubPage() {
                     <input
                       value={previewSearch}
                       onChange={(event) => setPreviewSearch(event.target.value)}
-                      placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
+                      placeholder="Buscar en la carta..."
                       className="w-full bg-transparent text-xs focus:outline-none"
                       style={{ color: previewInputText }}
                     />

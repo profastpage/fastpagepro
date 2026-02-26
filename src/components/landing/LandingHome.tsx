@@ -27,6 +27,7 @@ import {
 import Footer from "@/components/Footer";
 import DemoCard from "@/components/demo/DemoCard";
 import VerticalSelector from "@/components/demo/VerticalSelector";
+import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { getDemoCatalog } from "@/lib/demoCatalog";
 import {
@@ -50,7 +51,7 @@ type ModuleCard = {
   icon: ComponentType<{ className?: string }>;
 };
 
-const MODULES: ModuleCard[] = [
+const MODULES_ES: ModuleCard[] = [
   {
     id: "menu",
     icon: UtensilsCrossed,
@@ -95,7 +96,52 @@ const MODULES: ModuleCard[] = [
   },
 ];
 
-const FLOW_STEPS = [
+const MODULES_EN: ModuleCard[] = [
+  {
+    id: "menu",
+    icon: UtensilsCrossed,
+    title: "Digital Menu",
+    line: "Get more peak-hour orders from one single link.",
+    href: "/demo/restaurant/sushi-prime",
+  },
+  {
+    id: "store",
+    icon: ShoppingCart,
+    title: "Online Store",
+    line: "Show products and close WhatsApp orders friction-free.",
+    href: "/demo/ecommerce/urban-wear",
+  },
+  {
+    id: "builder",
+    icon: WandSparkles,
+    title: "Builder",
+    line: "Create pages that turn clicks into ready-to-buy chats.",
+    href: "/builder",
+  },
+  {
+    id: "templates",
+    icon: Palette,
+    title: "Templates",
+    line: "Launch campaigns in hours with copy that already sells.",
+    href: "/demo/services/consultoria-pro",
+  },
+  {
+    id: "cloner",
+    icon: Copy,
+    title: "Cloner",
+    line: "Replicate winning offers and accelerate your sales.",
+    href: "/cloner/web",
+  },
+  {
+    id: "metrics",
+    icon: BarChart3,
+    title: "Pro Metrics",
+    line: "Identify what sells best and scale with data.",
+    href: "/demo/services/pro-metrics",
+  },
+];
+
+const FLOW_STEPS_ES = [
   { title: "Visitas", icon: Globe2, description: "Trae trafico desde anuncios, redes y recomendaciones." },
   { title: "Landing", icon: MonitorSmartphone, description: "Convierte interes en pedidos, reservas o cotizaciones." },
   { title: "WhatsApp", icon: MessageCircle, description: "Responde rapido y cierra ventas en la misma conversacion." },
@@ -103,13 +149,27 @@ const FLOW_STEPS = [
   { title: "Escala", icon: Rocket, description: "Duplica lo que funciona sin perder tiempo ni presupuesto." },
 ];
 
-const DEMO_TAB_CONFIG: Record<BusinessVertical, string> = {
+const FLOW_STEPS_EN = [
+  { title: "Traffic", icon: Globe2, description: "Bring traffic from ads, social channels, and referrals." },
+  { title: "Landing", icon: MonitorSmartphone, description: "Turn interest into orders, bookings, or quotes." },
+  { title: "WhatsApp", icon: MessageCircle, description: "Reply fast and close sales in the same chat." },
+  { title: "Metrics", icon: BarChart3, description: "Measure which sources and products generate more revenue." },
+  { title: "Scale", icon: Rocket, description: "Double down on what works without wasting time or budget." },
+];
+
+const DEMO_TAB_CONFIG_ES: Record<BusinessVertical, string> = {
   restaurant: "Carta Digital",
   ecommerce: "Online Store",
   services: "Landing",
 };
 
-const FAQS = [
+const DEMO_TAB_CONFIG_EN: Record<BusinessVertical, string> = {
+  restaurant: "Digital Menu",
+  ecommerce: "Online Store",
+  services: "Landing",
+};
+
+const FAQS_ES = [
   {
     q: "Necesito programar para usar FastPage?",
     a: "No. Todo es visual y puedes publicar sin escribir codigo.",
@@ -141,6 +201,41 @@ const FAQS = [
   {
     q: "Puedo cancelar cuando quiera?",
     a: "Si, puedes cancelar desde billing cuando lo necesites.",
+  },
+];
+
+const FAQS_EN = [
+  {
+    q: "Do I need coding skills to use FastPage?",
+    a: "No. Everything is visual and you can publish without writing code.",
+  },
+  {
+    q: "Can I use my own domain?",
+    a: "Yes. From Business plan, you can connect a domain bought by your business.",
+  },
+  {
+    q: "Can I remove branding?",
+    a: "Yes, on Pro plan (and Agency when enabled).",
+  },
+  {
+    q: "What is an active project?",
+    a: "Any published project from Builder, Templates, Cloner, Digital Menu, or Online Store.",
+  },
+  {
+    q: "Digital Menu vs Online Store?",
+    a: "Digital Menu is for restaurants. Online Store is for multi-category ecommerce.",
+  },
+  {
+    q: "What does Pro Metrics track?",
+    a: "Visits, conversion, time on page, clicks, weekly traffic, and technical performance.",
+  },
+  {
+    q: "What does AI do?",
+    a: "Business: basic copy help. Pro: advanced optimization for structure, copy, and conversion.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes, you can cancel from billing whenever you need.",
   },
 ];
 
@@ -348,7 +443,9 @@ const SOFT_BUTTON_BASE =
 
 export default function LandingHome() {
   const { user, loading } = useAuth();
+  const { language } = useLanguage();
   const router = useRouter();
+  const isEnglish = language === "en";
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [demoTab, setDemoTab] = useState<BusinessVertical>("restaurant");
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
@@ -381,11 +478,121 @@ export default function LandingHome() {
     return () => window.clearInterval(intervalId);
   }, []);
 
-  const verticalCopy = useMemo(() => getVerticalCopy(vertical), [vertical]);
+  const copy = useMemo(
+    () =>
+      isEnglish
+        ? {
+            heroTag: "More WhatsApp orders",
+            heroTitle: "Turn visits into WhatsApp orders, every day",
+            heroDesc:
+              "FastPage helps you sell more with landing, store, and digital menu in one system.",
+            heroProof: "+120 businesses already activated their orders and sales flow in FastPage.",
+            ctaPrimary: "Start 14-day free trial",
+            ctaDemo: "Watch live demo",
+            ctaPlans: "View plans",
+            urgency: "This week is key to sell more: activate your version today.",
+            chips: ["Ready in minutes", "WhatsApp orders", "No commissions"],
+            panelTag: "FastPage System",
+            panelDesc: "Pick a demo, adapt it to your business, and start selling today.",
+            panelCta: "Open demo and sell",
+            systemTitle: "FastPage System",
+            systemDesc: "Attract traffic, convert on WhatsApp, and measure sales to scale.",
+            allInOneTitle: "All in one",
+            allInOneDesc:
+              "Everything you need to attract customers, convert orders, and increase sales.",
+            moduleCta: "View module",
+            verticalTitle: "Choose your business type",
+            verticalCards: [
+              "Get more direct WhatsApp orders and spend less time on calls.",
+              "Turn traffic into purchases with catalog and chat checkout.",
+              "Capture clients ready to schedule and close by WhatsApp.",
+            ],
+            demosTitle: "Demos already selling by business type",
+            demosDesc: "Explore ready-to-convert cases to capture clients and close WhatsApp orders.",
+            pricingTitle: "Plans to sell and scale 💸",
+            starterSubtitle: "Direct monthly payment (no trial) ⚡",
+            starterCta: "Start now",
+            businessBadge: "⭐ Most chosen",
+            businessSubtitle: "Try free for 14 days. Then S/59/month. Cancel anytime.",
+            businessNote: "No commitment.",
+            businessCta: "Try 14 days free",
+            proSubtitle: "Direct monthly payment to scale seriously (no trial) 🚀",
+            proCta: "Buy now",
+            domainLine: "Connect your domain from Business and keep a professional brand.",
+            riskFree: "No commissions per order. Cancel anytime.",
+            resultsTitle: "Real business outcomes",
+            testimonialsLeft: "Scroll testimonials left",
+            testimonialsRight: "Scroll testimonials right",
+            testimonialBadges: ["WhatsApp", "Orders", "Bookings", "Checkout", "Metrics", "Conversion"],
+            faqTitle: "Frequently asked questions",
+            finalTitle: "Start today and get more WhatsApp orders",
+            finalDesc: "Activate your demo, personalize your business, and publish in minutes.",
+            liveActivity: "LIVE ACTIVITY",
+            from: "from",
+          }
+        : {
+            heroTag: "Mas pedidos por WhatsApp",
+            heroTitle: "Convierte visitas en pedidos por WhatsApp, todos los dias",
+            heroDesc:
+              "FastPage te ayuda a vender mas con landing, tienda y carta digital en un solo sistema.",
+            heroProof: "+120 negocios ya activaron su flujo de pedidos y ventas en FastPage.",
+            ctaPrimary: "Probar 14 dias gratis",
+            ctaDemo: "Ver demo en vivo",
+            ctaPlans: "Ver planes",
+            urgency: "Esta semana es clave para vender mas: activa tu version hoy.",
+            chips: ["Listo en minutos", "Pedidos por WhatsApp", "Sin comisiones"],
+            panelTag: "Sistema FastPage",
+            panelDesc: "Elige una demo, adapta tu negocio y empieza a vender hoy.",
+            panelCta: "Abrir demo y vender",
+            systemTitle: "Sistema FastPage",
+            systemDesc: "Atraes visitas, conviertes en WhatsApp y mides ventas para escalar.",
+            allInOneTitle: "Todo en uno",
+            allInOneDesc:
+              "Todo lo que necesitas para atraer clientes, convertir pedidos y aumentar ventas.",
+            moduleCta: "Ver modulo",
+            verticalTitle: "Elige tu rubro",
+            verticalCards: [
+              "Mas pedidos directos por WhatsApp y menos tiempo al telefono.",
+              "Convierte trafico en compras con catalogo y cierre en chat.",
+              "Capta clientes listos para agendar y cerrar por WhatsApp.",
+            ],
+            demosTitle: "Demos que ya venden por rubro",
+            demosDesc: "Explora casos listos para captar clientes y cerrar pedidos por WhatsApp.",
+            pricingTitle: "Planes para vender y escalar 💸",
+            starterSubtitle: "Pago directo mensual (sin trial) ⚡",
+            starterCta: "Empezar ahora",
+            businessBadge: "⭐ Mas elegido",
+            businessSubtitle: "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.",
+            businessNote: "Sin compromiso.",
+            businessCta: "Probar 14 dias gratis",
+            proSubtitle: "Pago directo mensual para escalar en serio (sin trial) 🚀",
+            proCta: "Comprar ahora",
+            domainLine: "Conecta tu dominio desde Business y manten una marca profesional.",
+            riskFree: "Sin comisiones por pedido. Cancela cuando quieras.",
+            resultsTitle: "Resultados de negocios reales",
+            testimonialsLeft: "Desplazar testimonios a la izquierda",
+            testimonialsRight: "Desplazar testimonios a la derecha",
+            testimonialBadges: ["WhatsApp", "Pedidos", "Reservas", "Checkout", "Metricas", "Conversion"],
+            faqTitle: "Preguntas frecuentes",
+            finalTitle: "Empieza hoy y recibe mas pedidos por WhatsApp",
+            finalDesc: "Activa tu demo, personaliza tu negocio y publica en minutos.",
+            liveActivity: "ACTIVIDAD EN VIVO",
+            from: "de",
+          },
+    [isEnglish],
+  );
+  const moduleCards = isEnglish ? MODULES_EN : MODULES_ES;
+  const flowSteps = isEnglish ? FLOW_STEPS_EN : FLOW_STEPS_ES;
+  const demoTabConfig = isEnglish ? DEMO_TAB_CONFIG_EN : DEMO_TAB_CONFIG_ES;
+  const faqs = isEnglish ? FAQS_EN : FAQS_ES;
+  const verticalCopy = useMemo(() => getVerticalCopy(vertical, language), [language, vertical]);
   const heroDemoHref = useMemo(() => verticalToDemoHref(vertical), [vertical]);
   const heroSignupHref = useMemo(() => `${verticalToSignupHref(vertical)}&trial=business14`, [vertical]);
   const demoItems = useMemo(() => getDemoCatalog(demoTab), [demoTab]);
   const activeLiveActivity = LIVE_ACTIVITY_FEED[activityIndex];
+  const activityTimeLabel = isEnglish
+    ? activeLiveActivity.timeAgo.replace("Hace ", "").replace("min", "min ago")
+    : activeLiveActivity.timeAgo;
 
   const scrollTestimonials = (direction: "left" | "right") => {
     const container = testimonialsRef.current;
@@ -414,17 +621,17 @@ export default function LandingHome() {
         <div className="grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
           <div className="space-y-5">
             <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
-              Mas pedidos por WhatsApp
+              {copy.heroTag}
             </p>
             <h1 className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
-              Convierte visitas en pedidos por WhatsApp, todos los dias
+              {copy.heroTitle}
             </h1>
             <p className="max-w-2xl text-base text-zinc-300 md:text-lg">
-              FastPage te ayuda a vender mas con landing, tienda y carta digital en un solo sistema.
+              {copy.heroDesc}
             </p>
             <p className="max-w-2xl text-sm text-zinc-400">{verticalCopy.subheadline}</p>
             <p className="max-w-2xl text-xs font-semibold text-amber-200/90">
-              +120 negocios ya activaron su flujo de pedidos y ventas en FastPage.
+              {copy.heroProof}
             </p>
 
             <VerticalSelector
@@ -450,7 +657,7 @@ export default function LandingHome() {
                 }
                 className={`${DELUXE_BUTTON_BASE} rounded-full px-7 py-3 uppercase tracking-[0.12em]`}
               >
-                Probar 14 dias gratis
+                {copy.ctaPrimary}
               </Link>
               <Link
                 href={heroDemoHref}
@@ -463,7 +670,7 @@ export default function LandingHome() {
                 }
                 className={`${SOFT_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
               >
-                <PlayCircle className="h-4 w-4" /> Ver demo en vivo</Link>
+                <PlayCircle className="h-4 w-4" /> {copy.ctaDemo}</Link>
               <a
                 href="#pricing"
                 onClick={() =>
@@ -475,15 +682,15 @@ export default function LandingHome() {
                 }
                 className="text-sm font-semibold text-amber-300 underline-offset-4 transition hover:text-amber-200 hover:underline"
               >
-                Ver planes
+                {copy.ctaPlans}
               </a>
             </div>
             <p className="text-xs font-semibold text-amber-200/85">
-              Esta semana es clave para vender mas: activa tu version hoy.
+              {copy.urgency}
             </p>
 
             <div className="flex flex-wrap gap-2">
-              {["Listo en minutos", "Pedidos por WhatsApp", "Sin comisiones"].map((item) => (
+              {copy.chips.map((item) => (
                 <span
                   key={item}
                   className="inline-flex rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-zinc-200"
@@ -495,13 +702,13 @@ export default function LandingHome() {
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-black/45 p-5 shadow-2xl backdrop-blur-md">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">Sistema FastPage</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">{copy.panelTag}</p>
             <h2 className="mt-3 text-3xl font-black text-white">{verticalCopy.headline}</h2>
             <p className="mt-3 text-sm text-zinc-300">
-              Elige una demo, adapta tu negocio y empieza a vender hoy.
+              {copy.panelDesc}
             </p>
             <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2">
-              {FLOW_STEPS.map((step) => (
+              {flowSteps.map((step) => (
                 <div key={step.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">{step.title}</p>
                   <p className="mt-1 text-sm font-semibold text-white">{step.description}</p>
@@ -518,7 +725,7 @@ export default function LandingHome() {
               }
               className={`${DELUXE_BUTTON_BASE} mt-5 w-full rounded-xl px-4 py-2.5 text-base`}
             >
-              Abrir demo y vender
+              {copy.panelCta}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -527,12 +734,12 @@ export default function LandingHome() {
 
       <section id="sistema-fastpage" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 text-center">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Sistema FastPage</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">{copy.systemTitle}</h2>
           <p className="mx-auto mt-3 hidden max-w-3xl text-zinc-300 sm:block">
-            Atraes visitas, conviertes en WhatsApp y mides ventas para escalar.
+            {copy.systemDesc}
           </p>
           <div className="mx-auto mt-3 grid max-w-sm grid-cols-5 gap-2 sm:hidden">
-            {FLOW_STEPS.map((step, index) => {
+            {flowSteps.map((step, index) => {
               const Icon = step.icon;
               return (
                 <div key={`mobile-step-${step.title}`} className="relative flex flex-col items-center gap-2">
@@ -540,7 +747,7 @@ export default function LandingHome() {
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-amber-300/40 bg-zinc-950 shadow-[inset_0_1px_0_rgba(251,191,36,0.25),0_8px_18px_-14px_rgba(251,191,36,0.55)]">
                     <Icon className="h-4 w-4 text-amber-300" />
                   </span>
-                  {index < FLOW_STEPS.length - 1 ? (
+                  {index < flowSteps.length - 1 ? (
                     <ArrowRight className="absolute -right-2 top-[1.95rem] h-3.5 w-3.5 text-amber-300/80" />
                   ) : null}
                 </div>
@@ -549,10 +756,10 @@ export default function LandingHome() {
           </div>
         </div>
         <div className="hidden gap-3 md:grid md:grid-cols-[repeat(9,minmax(0,1fr))] md:items-center">
-          {FLOW_STEPS.map((step, index) => {
+          {flowSteps.map((step, index) => {
             const Icon = step.icon;
             return (
-              <div key={step.title} className={index < FLOW_STEPS.length - 1 ? "md:col-span-2" : "md:col-span-1"}>
+              <div key={step.title} className={index < flowSteps.length - 1 ? "md:col-span-2" : "md:col-span-1"}>
                 <article className="group rounded-2xl border border-white/10 bg-black/45 p-4 transition hover:-translate-y-1 hover:border-amber-300/45">
                   <div className="inline-flex rounded-xl border border-amber-300/35 bg-amber-300/10 p-2">
                     <Icon className="h-5 w-5 text-amber-300 transition group-hover:scale-110" />
@@ -560,7 +767,7 @@ export default function LandingHome() {
                   <p className="mt-3 text-base font-black text-white">{step.title}</p>
                   <p className="mt-1 text-xs text-zinc-300">{step.description}</p>
                 </article>
-                {index < FLOW_STEPS.length - 1 ? (
+                {index < flowSteps.length - 1 ? (
                   <div className="hidden items-center justify-center py-2 md:flex">
                     <ArrowRight className="h-4 w-4 animate-pulse text-amber-300/80" />
                   </div>
@@ -573,13 +780,13 @@ export default function LandingHome() {
 
       <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 text-center">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Todo en uno</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">{copy.allInOneTitle}</h2>
           <p className="mx-auto mt-3 max-w-3xl text-zinc-300">
-            Todo lo que necesitas para atraer clientes, convertir pedidos y aumentar ventas.
+            {copy.allInOneDesc}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-          {MODULES.map((module) => {
+          {moduleCards.map((module) => {
             const Icon = module.icon;
             const isClickableModule = module.id === "menu" || module.id === "store";
 
@@ -616,7 +823,7 @@ export default function LandingHome() {
                 <p className="mt-3 text-base font-black text-white md:text-lg">{module.title}</p>
                 <p className="mt-1 text-xs leading-snug text-zinc-300 md:text-sm">{module.line}</p>
                 <span className="mt-auto inline-flex items-center gap-1 pt-2 text-xs font-bold text-amber-300 md:text-sm">
-                  Ver modulo
+                  {copy.moduleCta}
                   <ArrowRight className="h-4 w-4" />
                 </span>
               </Link>
@@ -627,24 +834,24 @@ export default function LandingHome() {
 
       <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 text-center">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Elige tu rubro</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">{copy.verticalTitle}</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
           {[
             {
               vertical: "restaurant" as const,
               icon: UtensilsCrossed,
-              copy: "Mas pedidos directos por WhatsApp y menos tiempo al telefono.",
+              copy: copy.verticalCards[0],
             },
             {
               vertical: "ecommerce" as const,
               icon: Store,
-              copy: "Convierte trafico en compras con catalogo y cierre en chat.",
+              copy: copy.verticalCards[1],
             },
             {
               vertical: "services" as const,
               icon: MessageCircle,
-              copy: "Capta clientes listos para agendar y cerrar por WhatsApp.",
+              copy: copy.verticalCards[2],
             },
           ].map((item) => {
             const Icon = item.icon;
@@ -666,7 +873,7 @@ export default function LandingHome() {
                       })
                     }
                     className={`${SOFT_BUTTON_BASE} rounded-xl px-4 py-2`}
-                  >Ver demo en vivo</Link>
+                  >{copy.ctaDemo}</Link>
                   <Link
                     href={`/signup?vertical=${item.vertical}`}
                     onClick={() =>
@@ -676,7 +883,7 @@ export default function LandingHome() {
                       })
                     }
                     className={`${DELUXE_BUTTON_BASE} rounded-xl px-4 py-2`}
-                  >Probar 14 dias gratis</Link>
+                  >{copy.ctaPrimary}</Link>
                 </div>
               </article>
             );
@@ -687,8 +894,8 @@ export default function LandingHome() {
       <section id="demos" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-3xl font-black text-white md:text-4xl">Demos que ya venden por rubro</h2>
-            <p className="mt-2 text-zinc-300">Explora casos listos para captar clientes y cerrar pedidos por WhatsApp.</p>
+            <h2 className="text-3xl font-black text-white md:text-4xl">{copy.demosTitle}</h2>
+            <p className="mt-2 text-zinc-300">{copy.demosDesc}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {(["restaurant", "ecommerce", "services"] as BusinessVertical[]).map((tab) => (
@@ -702,7 +909,7 @@ export default function LandingHome() {
                     : "border-white/20 bg-white/5 text-zinc-300"
                 }`}
               >
-                {DEMO_TAB_CONFIG[tab]}
+                {demoTabConfig[tab]}
               </button>
             ))}
           </div>
@@ -726,13 +933,13 @@ export default function LandingHome() {
 
       <section id="pricing" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 text-center">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Planes para vender y escalar 💸</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">{copy.pricingTitle}</h2>
         </div>
         <div className="grid gap-4 lg:grid-cols-3">
           <article className="flex h-full flex-col rounded-3xl border border-white/10 bg-black/45 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">STARTER</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 29</p>
-            <p className="mt-2 text-sm font-semibold text-zinc-200">Pago directo mensual (sin trial) ⚡</p>
+            <p className="mt-2 text-sm font-semibold text-zinc-200">{copy.starterSubtitle}</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-300">
               <li>1 proyecto activo</li>
               <li>10 productos por proyecto</li>
@@ -742,18 +949,18 @@ export default function LandingHome() {
               <li>🔒 IA (Business o Pro)</li>
             </ul>
             <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
-              Empezar ahora
+              {copy.starterCta}
             </Link>
           </article>
 
           <article className="relative flex h-full flex-col rounded-3xl border border-amber-300/45 bg-gradient-to-b from-amber-300/10 to-black/60 p-6">
-            <span className="absolute -top-3 right-4 rounded-full border border-amber-300/45 bg-black px-3 py-1 text-xs font-bold text-amber-200">⭐ Mas elegido</span>
+            <span className="absolute -top-3 right-4 rounded-full border border-amber-300/45 bg-black px-3 py-1 text-xs font-bold text-amber-200">{copy.businessBadge}</span>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">BUSINESS</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 59</p>
             <p className="mt-2 text-sm font-semibold text-amber-100">
-              Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.
+              {copy.businessSubtitle}
             </p>
-            <p className="mt-1 text-xs font-semibold text-amber-100/90">Sin compromiso.</p>
+            <p className="mt-1 text-xs font-semibold text-amber-100/90">{copy.businessNote}</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 5 proyectos activos</li>
               <li><strong>50 productos</strong> por proyecto</li>
@@ -763,14 +970,14 @@ export default function LandingHome() {
               <li>📧 Soporte por correo (max. 24h)</li>
             </ul>
             <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
-              Probar 14 dias gratis
+              {copy.businessCta}
             </Link>
           </article>
 
           <article className="flex h-full flex-col rounded-3xl border border-cyan-300/35 bg-gradient-to-b from-cyan-300/10 to-black/60 p-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">PRO</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 99</p>
-            <p className="mt-2 text-sm font-semibold text-cyan-100">Pago directo mensual para escalar en serio (sin trial) 🚀</p>
+            <p className="mt-2 text-sm font-semibold text-cyan-100">{copy.proSubtitle}</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 20 proyectos activos</li>
               <li><strong>Productos ilimitados</strong></li>
@@ -780,25 +987,25 @@ export default function LandingHome() {
               <li>Metricas PRO + insights</li>
             </ul>
             <Link href={heroSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
-              Comprar ahora
+              {copy.proCta}
             </Link>
           </article>
         </div>
         <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
-          Conecta tu dominio desde Business y manten una marca profesional.
+          {copy.domainLine}
         </p>
         <p className="mt-2 text-center text-xs font-semibold text-zinc-300">
-          Sin comisiones por pedido. Cancela cuando quieras.
+          {copy.riskFree}
         </p>
       </section>
 
       <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 flex items-center justify-between gap-3">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Resultados de negocios reales</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">{copy.resultsTitle}</h2>
           <div className="hidden items-center gap-2 md:flex">
             <button
               type="button"
-              aria-label="Desplazar testimonios a la izquierda"
+              aria-label={copy.testimonialsLeft}
               onClick={() => scrollTestimonials("left")}
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white transition hover:border-amber-300/45 hover:text-amber-200"
             >
@@ -806,7 +1013,7 @@ export default function LandingHome() {
             </button>
             <button
               type="button"
-              aria-label="Desplazar testimonios a la derecha"
+              aria-label={copy.testimonialsRight}
               onClick={() => scrollTestimonials("right")}
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-white transition hover:border-amber-300/45 hover:text-amber-200"
             >
@@ -850,7 +1057,7 @@ export default function LandingHome() {
           ))}
         </div>
         <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-300">
-          {["WhatsApp", "Pedidos", "Reservas", "Checkout", "Metricas", "Conversion"].map((badge) => (
+          {copy.testimonialBadges.map((badge) => (
             <span key={badge} className="rounded-full border border-white/15 bg-white/[0.04] px-3 py-1">
               {badge}
             </span>
@@ -860,10 +1067,10 @@ export default function LandingHome() {
 
       <section id="faq" className="relative z-10 mx-auto w-full max-w-4xl px-4 pb-14 sm:px-6 lg:px-8">
         <div className="mb-7 text-center">
-          <h2 className="text-3xl font-black text-white md:text-4xl">Preguntas frecuentes</h2>
+          <h2 className="text-3xl font-black text-white md:text-4xl">{copy.faqTitle}</h2>
         </div>
         <div className="space-y-3">
-          {FAQS.map((item, index) => {
+          {faqs.map((item, index) => {
             const isOpen = openFaqIndex === index;
             const panelId = `faq-panel-${index}`;
             return (
@@ -911,9 +1118,9 @@ export default function LandingHome() {
 
       <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-amber-300/35 bg-gradient-to-r from-amber-300/15 via-black/70 to-cyan-300/10 p-8 text-center">
-          <p className="text-3xl font-black text-white md:text-4xl">Empieza hoy y recibe mas pedidos por WhatsApp</p>
+          <p className="text-3xl font-black text-white md:text-4xl">{copy.finalTitle}</p>
           <p className="mx-auto mt-3 max-w-3xl text-zinc-200">
-            Activa tu demo, personaliza tu negocio y publica en minutos.
+            {copy.finalDesc}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -925,7 +1132,7 @@ export default function LandingHome() {
                 })
               }
               className={`${DELUXE_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
-            >Probar 14 dias gratis</Link>
+            >{copy.ctaPrimary}</Link>
             <Link
               href={heroDemoHref}
               onClick={() =>
@@ -935,7 +1142,7 @@ export default function LandingHome() {
                 })
               }
               className={`${SOFT_BUTTON_BASE} rounded-full px-6 py-3 uppercase tracking-[0.12em]`}
-            >Ver demo en vivo</Link>
+            >{copy.ctaDemo}</Link>
           </div>
         </div>
       </section>
@@ -950,13 +1157,13 @@ export default function LandingHome() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-amber-300">
-                  ACTIVIDAD EN VIVO
+                  {copy.liveActivity}
                 </p>
-                <p className="text-[10px] font-semibold text-zinc-400">{activeLiveActivity.timeAgo}</p>
+                <p className="text-[10px] font-semibold text-zinc-400">{activityTimeLabel}</p>
               </div>
               <p className="mt-1 truncate text-[1.05rem] font-black text-white">
                 {activeLiveActivity.name}
-                <span className="pl-1 text-sm font-semibold text-zinc-300">de {activeLiveActivity.city}</span>
+                <span className="pl-1 text-sm font-semibold text-zinc-300">{copy.from} {activeLiveActivity.city}</span>
               </p>
               <p className="mt-1 flex items-center gap-1.5 text-sm font-bold leading-snug text-zinc-100">
                 <span>{activeLiveActivity.action}</span>
@@ -979,7 +1186,7 @@ export default function LandingHome() {
           className={`${DELUXE_BUTTON_BASE} w-full rounded-2xl px-4 py-3 shadow-2xl backdrop-blur-md`}
         >
           <Rocket className="h-4 w-4" />
-          Probar 14 dias gratis
+          {copy.ctaPrimary}
         </Link>
       </div>
 

@@ -457,8 +457,8 @@ function getSafeLinkType(type: unknown): LinkHubLinkType {
   return "website";
 }
 
-function getSafeBusinessType(type: unknown): LinkHubBusinessType {
-  return safeText(type).toLowerCase() === "general" ? "general" : "restaurant";
+function getSafeBusinessType(_type: unknown): LinkHubBusinessType {
+  return "restaurant";
 }
 
 export function getSafeLinkHubFontFamily(type?: string): LinkHubFontFamily {
@@ -860,7 +860,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
   const baseTheme = LINK_HUB_THEME_STYLES.midnight;
   const businessType: LinkHubBusinessType = "restaurant";
   const categories = createDefaultCatalogCategories(businessType);
-  const rubroHint = businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General";
+  const rubroHint = "Restaurante / Cafeteria";
 
   return {
     userId: safeText(user.uid),
@@ -870,7 +870,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     avatarUrl: safeText(user.photoURL),
     coverImageUrl: "",
     coverImageUrls: [],
-    categoryLabel: businessType === "restaurant" ? "Cevicheria" : "Tienda online",
+    categoryLabel: "Cafeteria",
     phoneNumber: "",
     whatsappNumber: "",
     businessType,
@@ -1049,9 +1049,7 @@ export function normalizeLinkHubProfile(
 
   const safeTheme = getSafeLinkHubTheme(safeText(input.theme) || base.theme);
   const themePreset = LINK_HUB_THEME_STYLES[safeTheme] || LINK_HUB_THEME_STYLES.midnight;
-  const rubroHint =
-    safeText(input.categoryLabel) ||
-    (businessType === "restaurant" ? "Restaurante / Cafeteria" : "Tienda / General");
+  const rubroHint = safeText(input.categoryLabel) || "Restaurante / Cafeteria";
   const mappedCartaThemeId = recommendCartaThemeIdByLinkTheme(safeTheme);
   const cartaThemeId = getSafeCartaThemeId(
     safeText((input as Record<string, unknown>)["cartaThemeId"]) ||
@@ -1088,9 +1086,7 @@ export function normalizeLinkHubProfile(
     avatarUrl: safeText(input.avatarUrl) || base.avatarUrl,
     coverImageUrl: mergedCoverImageUrls[0] || "",
     coverImageUrls: mergedCoverImageUrls,
-    categoryLabel:
-      safeText(input.categoryLabel) ||
-      (businessType === "restaurant" ? "Restaurante" : "Tienda online"),
+    categoryLabel: safeText(input.categoryLabel) || "Restaurante",
     phoneNumber: safeText(input.phoneNumber),
     whatsappNumber: safeText(input.whatsappNumber),
     businessType,

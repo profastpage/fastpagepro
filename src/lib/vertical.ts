@@ -25,7 +25,7 @@ type SupportedLanguage = "es" | "en" | "pt";
 const VERTICAL_COPY_ES: Record<BusinessVertical, VerticalCopy> = {
   restaurant: {
     label: "Restaurante",
-    emoji: "🍽️",
+    emoji: "\u{1F37D}\uFE0F",
     headline: "Tu carta digital + pedidos por WhatsApp en 1 dia",
     subheadline:
       "Activa menu, categorias y pedido directo sin comisiones para vender mas.",
@@ -34,7 +34,7 @@ const VERTICAL_COPY_ES: Record<BusinessVertical, VerticalCopy> = {
   },
   ecommerce: {
     label: "Tienda Online",
-    emoji: "🛍️",
+    emoji: "\u{1F6CD}\uFE0F",
     headline: "Tu tienda lista para vender + carrito directo a WhatsApp",
     subheadline:
       "Publica catalogo, ofertas y checkout rapido para convertir trafico en ventas.",
@@ -43,7 +43,7 @@ const VERTICAL_COPY_ES: Record<BusinessVertical, VerticalCopy> = {
   },
   services: {
     label: "Servicios",
-    emoji: "🧩",
+    emoji: "\u{1F9E9}",
     headline: "Landing que convierte + contacto inmediato",
     subheadline:
       "Captura leads calificados con mensajes claros y CTA de conversion.",
@@ -55,7 +55,7 @@ const VERTICAL_COPY_ES: Record<BusinessVertical, VerticalCopy> = {
 const VERTICAL_COPY_EN: Record<BusinessVertical, VerticalCopy> = {
   restaurant: {
     label: "Restaurant",
-    emoji: "ðŸ½ï¸",
+    emoji: "\u{1F37D}\uFE0F",
     headline: "Your digital menu + WhatsApp orders in 1 day",
     subheadline:
       "Activate menu, categories, and direct ordering with no commissions to sell more.",
@@ -64,7 +64,7 @@ const VERTICAL_COPY_EN: Record<BusinessVertical, VerticalCopy> = {
   },
   ecommerce: {
     label: "Online Store",
-    emoji: "ðŸ›ï¸",
+    emoji: "\u{1F6CD}\uFE0F",
     headline: "Your store ready to sell + cart connected to WhatsApp",
     subheadline:
       "Publish catalog, offers, and fast checkout to turn traffic into sales.",
@@ -73,7 +73,7 @@ const VERTICAL_COPY_EN: Record<BusinessVertical, VerticalCopy> = {
   },
   services: {
     label: "Services",
-    emoji: "ðŸ§©",
+    emoji: "\u{1F9E9}",
     headline: "Landing that converts + instant contact",
     subheadline:
       "Capture qualified leads with clear messaging and conversion-focused CTAs.",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Zap } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   normalizeVertical,
   persistVerticalChoice,
@@ -48,7 +49,7 @@ export default function AuthPage() {
     <Suspense
       fallback={
         <div className="grid min-h-screen place-items-center bg-black text-sm font-semibold text-zinc-300">
-          Cargando...
+          Loading...
         </div>
       }
     >
@@ -60,15 +61,122 @@ export default function AuthPage() {
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { language, setLanguage } = useLanguage();
   const errorParam = searchParams.get("error");
+  const isEnglish = language === "en";
+  const i18n = useMemo(
+    () =>
+      isEnglish
+        ? {
+            loading: "Loading...",
+            suspended: "Your account has been temporarily suspended.",
+            disabled: "Your account has been disabled by the administrator.",
+            redirectingSecure: "Redirecting to secure domain:",
+            signupWelcome: "Start building your",
+            signupEmpire: "digital business",
+            loginWelcome: "Welcome back,",
+            creator: "creator",
+            selectedVertical: "Selected category:",
+            loginTab: "Sign In",
+            registerTab: "Create Account",
+            labelName: "Name",
+            labelEmail: "Email",
+            labelPassword: "Password",
+            placeholderName: "Your name",
+            placeholderEmail: "you@domain.com",
+            forgotPassword: "Forgot your password?",
+            submitLogin: "Enter",
+            submitRegister: "Create account",
+            fillAllFields: "Complete all fields",
+            accountCreated: "Account created successfully!",
+            emailInUse: "This email is already registered",
+            weakPassword: "Password is too weak (minimum 6 characters)",
+            authNotEnabled:
+              "Configuration error: Enable Authentication in Firebase Console",
+            genericError: "Error:",
+            enterCredentials: "Enter email and password",
+            useGoogle: "Use Google. Your account is linked to Google.",
+            invalidCredentials:
+              "Invalid credentials. If you used Google, use the button below.",
+            loginError: "Login error:",
+            redirectGoogle: "Redirecting to sign in with Google...",
+            unauthorizedDomainGoogle: "Unauthorized domain for Google. Redirecting...",
+            unauthorizedDomainFirebase:
+              "Unauthorized domain in Firebase. Add in Authorized domains:",
+            popupBlocked: "The browser blocked the popup window. Please enable it.",
+            loginCancelled: "Sign-in cancelled.",
+            browserSecurityError: "Browser security error. Please try again.",
+            unknownError: "Unknown error",
+            typeEmailForRecovery: "Type your email and then click Recover.",
+            recoverySent: "We sent you an email to reset your password.",
+            invalidEmail: "The email is not valid.",
+            accountNotFound: "No account exists with that email.",
+            recoveryFailed: "Could not send recovery email.",
+            continueWith: "Or continue with",
+            continueGoogle: "Continue with Google",
+            recoverButton: "Forgot your password? Recover",
+            rights: "All rights reserved.",
+          }
+        : {
+            loading: "Cargando...",
+            suspended: "Tu cuenta ha sido suspendida temporalmente.",
+            disabled: "Tu cuenta ha sido desactivada por el administrador.",
+            redirectingSecure: "Redirigiendo al dominio seguro:",
+            signupWelcome: "Comienza a construir tu",
+            signupEmpire: "imperio digital",
+            loginWelcome: "Bienvenido de nuevo,",
+            creator: "creador",
+            selectedVertical: "Rubro seleccionado:",
+            loginTab: "Iniciar Sesion",
+            registerTab: "Registrarse",
+            labelName: "Nombre",
+            labelEmail: "Email",
+            labelPassword: "Contrasena",
+            placeholderName: "Tu nombre",
+            placeholderEmail: "tucorreo@dominio.com",
+            forgotPassword: "Olvidaste tu contrasena?",
+            submitLogin: "Entrar",
+            submitRegister: "Crear cuenta",
+            fillAllFields: "Completa todos los campos",
+            accountCreated: "Cuenta creada exitosamente!",
+            emailInUse: "El email ya esta registrado",
+            weakPassword: "La contrasena es muy debil (minimo 6 caracteres)",
+            authNotEnabled:
+              "Error de configuracion: Habilita Authentication en Firebase Console",
+            genericError: "Error:",
+            enterCredentials: "Ingresa email y contrasena",
+            useGoogle: "Usa Google. Tu cuenta esta vinculada a Google.",
+            invalidCredentials:
+              "Credenciales invalidas. Si usaste Google, usa el boton de abajo.",
+            loginError: "Error al iniciar sesion:",
+            redirectGoogle: "Redirigiendo para iniciar sesion con Google...",
+            unauthorizedDomainGoogle: "Dominio no autorizado para Google. Redirigiendo...",
+            unauthorizedDomainFirebase:
+              "Dominio no autorizado en Firebase. Agrega en Authorized domains:",
+            popupBlocked: "El navegador bloqueo la ventana emergente. Por favor, habilitala.",
+            loginCancelled: "Inicio de sesion cancelado.",
+            browserSecurityError: "Error de seguridad del navegador. Intenta de nuevo.",
+            unknownError: "Error desconocido",
+            typeEmailForRecovery: "Escribe tu email y luego presiona Recuperar.",
+            recoverySent: "Te enviamos un correo para restablecer tu contrasena.",
+            invalidEmail: "El correo no es valido.",
+            accountNotFound: "No existe una cuenta con ese correo.",
+            recoveryFailed: "No se pudo enviar el correo de recuperacion.",
+            continueWith: "O continua con",
+            continueGoogle: "Continuar con Google",
+            recoverButton: "Olvidaste tu contrasena? Recuperar",
+            rights: "Todos los derechos reservados.",
+          },
+    [isEnglish],
+  );
 
   useEffect(() => {
     if (errorParam === "suspended") {
-      showToast("Tu cuenta ha sido suspendida temporalmente.");
+      showToast(i18n.suspended);
     } else if (errorParam === "disabled") {
-      showToast("Tu cuenta ha sido desactivada por el administrador.");
+      showToast(i18n.disabled);
     }
-  }, [errorParam]);
+  }, [errorParam, i18n.disabled, i18n.suspended]);
   const [tab, setTab] = useState<"login" | "register">("login");
   const [toast, setToast] = useState<string>("");
   const [loginEmail, setLoginEmail] = useState("");
@@ -109,9 +217,9 @@ function AuthContent() {
 
   useEffect(() => {
     if (!isCanonicalRedirectNeeded()) return;
-    showToast(`Redirigiendo al dominio seguro: ${CANONICAL_AUTH_HOST}`);
+    showToast(`${i18n.redirectingSecure} ${CANONICAL_AUTH_HOST}`);
     setTimeout(() => redirectToCanonicalAuthHost(), 700);
-  }, []);
+  }, [i18n.redirectingSecure]);
 
   const showToast = (message: string) => {
     setToast(message);
@@ -215,7 +323,7 @@ function AuthContent() {
     const password = String(form.get("password") || "");
 
     if (!email || !password || !name) {
-      showToast("Completa todos los campos");
+      showToast(i18n.fillAllFields);
       return;
     }
 
@@ -235,7 +343,7 @@ function AuthContent() {
       await syncUserToFirestore(user, preferredVertical);
       await activateBusinessTrial(user);
 
-      showToast("Cuenta creada exitosamente!");
+      showToast(i18n.accountCreated);
       
       // Redireccion basada en el rol
       const target = resolvePostAuthTarget(email);
@@ -247,13 +355,13 @@ function AuthContent() {
     } catch (error: any) {
       console.error(error);
       if (error.code === "auth/email-already-in-use") {
-        showToast("El email ya esta registrado");
+        showToast(i18n.emailInUse);
       } else if (error.code === "auth/weak-password") {
-        showToast("La contrasena es muy debil (minimo 6 caracteres)");
+        showToast(i18n.weakPassword);
       } else if (error.code === "auth/configuration-not-found") {
-        showToast("Error de configuracion: Habilita Authentication en Firebase Console");
+        showToast(i18n.authNotEnabled);
       } else {
-        showToast("Error: " + error.message);
+        showToast(`${i18n.genericError} ${error.message}`);
       }
     }
   };
@@ -267,7 +375,7 @@ function AuthContent() {
     const password = String(form.get("password") || "");
 
     if (!email || !password) {
-      showToast("Ingresa email y contrasena");
+      showToast(i18n.enterCredentials);
       return;
     }
 
@@ -291,7 +399,7 @@ function AuthContent() {
         const methods = await fetchSignInMethodsForEmail(auth, email);
         if (methods.includes("google.com") && !methods.includes("password")) {
           setIsGoogleError(true);
-          showToast("Usa Google. Tu cuenta esta vinculada a Google.");
+          showToast(i18n.useGoogle);
           setTimeout(() => setIsGoogleError(false), 3000);
           return;
         }
@@ -304,9 +412,9 @@ function AuthContent() {
         error.code === "auth/wrong-password" ||
         error.code === "auth/invalid-credential"
       ) {
-        showToast("Credenciales invalidas. Si usaste Google, usa el boton de abajo.");
+        showToast(i18n.invalidCredentials);
       } else {
-        showToast("Error al iniciar sesion: " + error.message);
+        showToast(`${i18n.loginError} ${error.message}`);
       }
     }
   };
@@ -348,7 +456,7 @@ function AuthContent() {
 
   const handleGoogleLogin = async () => {
     if (isCanonicalRedirectNeeded()) {
-      showToast("Redirigiendo para iniciar sesion con Google...");
+      showToast(i18n.redirectGoogle);
       setTimeout(() => redirectToCanonicalAuthHost(), 500);
       return;
     }
@@ -379,24 +487,24 @@ function AuthContent() {
       
       if (error.code === "auth/unauthorized-domain") {
         if (isCanonicalRedirectNeeded()) {
-          showToast("Dominio no autorizado para Google. Redirigiendo...");
+          showToast(i18n.unauthorizedDomainGoogle);
           setTimeout(() => redirectToCanonicalAuthHost(), 700);
         } else {
-          showToast(`Dominio no autorizado en Firebase. Agrega en Authorized domains: ${RECOMMENDED_FIREBASE_AUTH_DOMAINS.join(", ")}`);
+          showToast(`${i18n.unauthorizedDomainFirebase} ${RECOMMENDED_FIREBASE_AUTH_DOMAINS.join(", ")}`);
         }
       } else if (error.code === 'auth/popup-blocked') {
-        showToast("El navegador bloqueo la ventana emergente. Por favor, habilitala.");
+        showToast(i18n.popupBlocked);
       } else if (error.code === 'auth/cancelled-popup-request') {
         // Ignorar
       } else if (error.code === 'auth/popup-closed-by-user') {
-        showToast("Inicio de sesion cancelado.");
+        showToast(i18n.loginCancelled);
       } else if (error.message?.includes('Cross-Origin-Opener-Policy')) {
         console.log("Detectado error COOP, intentando redireccion...");
         try {
           const provider = new GoogleAuthProvider();
           await signInWithRedirect(auth, provider);
         } catch (redirectError: any) {
-          showToast("Error de seguridad del navegador. Intenta de nuevo.");
+          showToast(i18n.browserSecurityError);
         }
       } else {
         // Fallback general para otros errores
@@ -404,7 +512,7 @@ function AuthContent() {
           const provider = new GoogleAuthProvider();
           await signInWithRedirect(auth, provider);
         } catch (redirectError: any) {
-          showToast("Error al iniciar sesion: " + (error.message || "Error desconocido"));
+          showToast(`${i18n.loginError} ${error.message || i18n.unknownError}`);
         }
       }
     }
@@ -413,22 +521,22 @@ function AuthContent() {
   const handlePasswordRecovery = async () => {
     const email = loginEmail.trim().toLowerCase();
     if (!email) {
-      showToast("Escribe tu email y luego presiona Recuperar.");
+      showToast(i18n.typeEmailForRecovery);
       return;
     }
 
     setIsResettingPassword(true);
     try {
       await sendPasswordResetEmail(auth, email);
-      showToast("Te enviamos un correo para restablecer tu contrasena.");
+      showToast(i18n.recoverySent);
     } catch (error: any) {
       console.error("Password Recovery Error:", error);
       if (error.code === "auth/invalid-email") {
-        showToast("El correo no es valido.");
+        showToast(i18n.invalidEmail);
       } else if (error.code === "auth/user-not-found") {
-        showToast("No existe una cuenta con ese correo.");
+        showToast(i18n.accountNotFound);
       } else {
-        showToast("No se pudo enviar el correo de recuperacion.");
+        showToast(i18n.recoveryFailed);
       }
     } finally {
       setIsResettingPassword(false);
@@ -443,6 +551,16 @@ function AuthContent() {
       <div className="relative z-10 mx-auto flex w-full max-w-md flex-col items-stretch">
         {/* Logo/Header */}
         <div className="mb-8 min-h-[116px] text-center">
+          <div className="mb-3 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setLanguage(language === "es" ? "en" : "es")}
+              className="inline-flex h-8 min-w-[2.25rem] items-center justify-center rounded-full border border-white/20 bg-white/5 px-2 text-[10px] font-bold tracking-[0.08em] text-white transition hover:border-amber-300/45 hover:text-amber-200"
+              aria-label={isEnglish ? "Change language" : "Cambiar idioma"}
+            >
+              {language === "es" ? "EN" : "ES"}
+            </button>
+          </div>
           <Link href="/" className="inline-flex items-center gap-3 group">
             <Zap className="w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(255,215,0,0.6)] group-hover:scale-110 transition-transform duration-300" />
             <span className="text-3xl font-bold text-tornasolado tracking-tight transition-all">
@@ -452,18 +570,18 @@ function AuthContent() {
           <p className="mt-3 min-h-[24px] text-zinc-400 dark:text-white">
             {tab === "login" ? (
               <>
-                Bienvenido de nuevo,{" "}
-                <span className="text-gold-glow">creador</span>.
+                {i18n.loginWelcome}{" "}
+                <span className="text-gold-glow">{i18n.creator}</span>.
               </>
             ) : (
               <>
-                Comienza a construir tu{" "}
-                <span className="text-gold-glow">imperio digital</span>.
+                {i18n.signupWelcome}{" "}
+                <span className="text-gold-glow">{i18n.signupEmpire}</span>.
               </>
             )}
           </p>
           <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-300">
-            Rubro seleccionado: {preferredVertical}
+            {i18n.selectedVertical} {preferredVertical}
           </p>
         </div>
 
@@ -479,7 +597,7 @@ function AuthContent() {
                   : "text-muted hover:text-white hover:bg-white/5"
               }`}
             >
-              Iniciar Sesion
+              {i18n.loginTab}
             </button>
             <button
               onClick={() => {
@@ -495,7 +613,7 @@ function AuthContent() {
                   : "text-muted hover:text-white hover:bg-white/5"
               }`}
             >
-              Registrarse
+              {i18n.registerTab}
             </button>
           </div>
 
@@ -512,12 +630,12 @@ function AuthContent() {
               >
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
-                    Email
+                    {i18n.labelEmail}
                   </label>
                   <input
                     name="email"
                     type="email"
-                    placeholder="tucorreo@dominio.com"
+                    placeholder={i18n.placeholderEmail}
                     required
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
@@ -527,7 +645,7 @@ function AuthContent() {
                 <div className="space-y-2">
                   <div className="flex justify-between items-center ml-1">
                     <label className="text-sm font-medium text-gray-300">
-                      Contrasena
+                      {i18n.labelPassword}
                     </label>
                     <button
                       type="button"
@@ -535,7 +653,7 @@ function AuthContent() {
                       disabled={isResettingPassword}
                       className="text-xs text-yellow-500/80 hover:text-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      Olvidaste tu contrasena?
+                      {i18n.forgotPassword}
                     </button>
                   </div>
                   <div className="relative">
@@ -589,7 +707,7 @@ function AuthContent() {
                   type="submit"
                   className="btn-deluxe w-full py-3.5 rounded-full text-black font-bold text-lg shadow-lg hover:shadow-yellow-500/20 mt-2"
                 >
-                  Entrar
+                  {i18n.submitLogin}
                 </button>
               </form>
 
@@ -604,31 +722,31 @@ function AuthContent() {
               >
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
-                    Nombre
+                    {i18n.labelName}
                   </label>
                   <input
                     name="name"
                     type="text"
-                    placeholder="Tu nombre"
+                    placeholder={i18n.placeholderName}
                     required
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
-                    Email
+                    {i18n.labelEmail}
                   </label>
                   <input
                     name="email"
                     type="email"
-                    placeholder="tucorreo@dominio.com"
+                    placeholder={i18n.placeholderEmail}
                     required
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">
-                    Contrasena
+                    {i18n.labelPassword}
                   </label>
                   <div className="relative">
                     <input
@@ -681,7 +799,7 @@ function AuthContent() {
                   type="submit"
                   className="btn-deluxe w-full py-3.5 rounded-full text-black font-bold text-lg shadow-lg hover:shadow-yellow-500/20 mt-2"
                 >
-                  Crear cuenta
+                  {i18n.submitRegister}
                 </button>
               </form>
             </div>
@@ -690,7 +808,7 @@ function AuthContent() {
             <div className="flex items-center gap-4 my-6">
               <div className="h-[1px] bg-white/10 flex-1" />
               <span className="text-xs text-muted uppercase tracking-widest">
-                O continua con
+                {i18n.continueWith}
               </span>
               <div className="h-[1px] bg-white/10 flex-1" />
             </div>
@@ -727,7 +845,7 @@ function AuthContent() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Continuar con Google
+              {i18n.continueGoogle}
             </button>
             <div className="mt-4 min-h-[24px]">
             {tab === "login" ? (
@@ -737,7 +855,7 @@ function AuthContent() {
                 disabled={isResettingPassword}
                 className="w-full text-center text-sm text-slate-300 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Olvidaste tu contrasena? Recuperar
+                {i18n.recoverButton}
               </button>
             ) : null}
             </div>
@@ -745,8 +863,7 @@ function AuthContent() {
         </div>
 
         <p className="text-center text-sm text-zinc-400 dark:text-white mt-8">
-          &copy; {new Date().getFullYear()} Fast Page. Todos los derechos
-          reservados.
+          &copy; {new Date().getFullYear()} Fast Page. {i18n.rights}
         </p>
       </div>
 
