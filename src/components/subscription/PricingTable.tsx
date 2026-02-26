@@ -202,7 +202,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
         ? {
             FREE: {
               subtitle: "Direct monthly payment. No trial. ⚡",
-              ctaLabel: "Start now",
+              ctaLabel: "Buy now",
             },
             BUSINESS: {
               subtitle: "Try free for 14 days. Then S/59/month. Cancel anytime.",
@@ -218,7 +218,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
         : {
             FREE: {
               subtitle: "Pago directo mensual. Sin trial. ⚡",
-              ctaLabel: "Empezar ahora",
+              ctaLabel: "Comprar ahora",
             },
             BUSINESS: {
               subtitle: "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.",

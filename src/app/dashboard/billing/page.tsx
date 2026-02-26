@@ -28,6 +28,18 @@ const PAYMENT_INSTRUCTIONS_EN: Record<PaymentMethod, string> = {
     "Bank transfer to BCP Checking Account 191-1234567-0-98 (CCI: 00219100123456709811).",
 };
 
+const BANK_ACCOUNTS_ES = [
+  "BCP: Cta. Corriente 191-1234567-0-98 | CCI 00219100123456709811",
+  "Interbank: Cta. Ahorros 898-1234567890 | CCI 00389800123456789012",
+  "BBVA: Cta. Corriente 0011-0123-45-1234567890 | CCI 01112300012345678901",
+];
+
+const BANK_ACCOUNTS_EN = [
+  "BCP: Checking 191-1234567-0-98 | CCI 00219100123456709811",
+  "Interbank: Savings 898-1234567890 | CCI 00389800123456789012",
+  "BBVA: Checking 0011-0123-45-1234567890 | CCI 01112300012345678901",
+];
+
 const REASON_BY_FEATURE: Record<string, PlanUpsellReason> = {
   aiOptimization: "ai",
   removeBranding: "branding",
@@ -57,9 +69,16 @@ export default function BillingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const pricingPlansRef = useRef<HTMLElement | null>(null);
+  const paymentFormRef = useRef<HTMLFormElement | null>(null);
+  const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim();
 
   const activePlan = summary?.plan || "FREE";
-  const isBusinessTrial = selectedPlan === "BUSINESS";
+  const isBusinessTrial =
+    selectedPlan === "BUSINESS" && activePlan === "FREE" && !Boolean(summary?.trialExpired);
+  const showPaymentFlow = !isBusinessTrial;
+  const isCurrentBusinessTrialActive = Boolean(
+    summary?.isBusinessTrial && summary?.status === "ACTIVE",
+  );
   const i18n = useMemo(
     () =>
       isEnglish
@@ -78,8 +97,16 @@ export default function BillingPage() {
             paymentMethod: "Payment method",
             trialBlock:
               "14-day free trial. Then S/59/month. Cancel anytime. No commitment.",
+            trialActive:
+              "Your Business trial is already active. When it reaches 0 days, renew to keep access.",
             uploadProof: "Upload payment proof",
             uploadPlaceholder: "Attach PNG, JPG, WEBP or PDF (optional)",
+            paymentDestinationsTitle: "Payment destinations",
+            paymentDestinationsHint:
+              "Send payment with your account email in the note. Then upload proof for manual approval by the super admin.",
+            yapeQr: "Yape QR",
+            yapeQrMissing: "Yape QR will be provided by admin support.",
+            bankAccounts: "Bank accounts",
             notes: "Notes",
             notesPlaceholder: "Add any extra details for the admin team.",
             submitBusiness: "Activate 14-day trial",
@@ -117,8 +144,16 @@ export default function BillingPage() {
             paymentMethod: "Metodo de pago",
             trialBlock:
               "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras. Sin compromiso.",
+            trialActive:
+              "Tu prueba Business ya esta activa. Cuando llegue a 0 dias, renueva para mantener acceso.",
             uploadProof: "Subir comprobante",
             uploadPlaceholder: "Adjuntar PNG, JPG, WEBP o PDF (opcional)",
+            paymentDestinationsTitle: "Destinos de pago",
+            paymentDestinationsHint:
+              "Realiza el pago con tu correo de cuenta en el detalle. Luego adjunta el comprobante para aprobacion manual del super admin.",
+            yapeQr: "QR de Yape",
+            yapeQrMissing: "El QR de Yape sera compartido por soporte admin.",
+            bankAccounts: "Cuentas bancarias",
             notes: "Notas",
             notesPlaceholder: "Agrega detalles extra para el equipo admin.",
             submitBusiness: "Activar prueba de 14 dias",
@@ -144,16 +179,17 @@ export default function BillingPage() {
     [isEnglish],
   );
   const paymentInstructions = isEnglish ? PAYMENT_INSTRUCTIONS_EN : PAYMENT_INSTRUCTIONS_ES;
+  const bankAccounts = isEnglish ? BANK_ACCOUNTS_EN : BANK_ACCOUNTS_ES;
   const planTextById = useMemo(
     () =>
       isEnglish
         ? {
-            FREE: { price: "S/ 29 / month", cta: "Start now" },
+            FREE: { price: "S/ 29 / month", cta: "Buy now" },
             BUSINESS: { price: "S/ 59 / month", cta: "Try 14 days free" },
             PRO: { price: "S/ 99 / month", cta: "Buy now" },
           }
         : {
-            FREE: { price: "S/ 29 / mes", cta: "Empezar ahora" },
+            FREE: { price: "S/ 29 / mes", cta: "Comprar ahora" },
             BUSINESS: { price: "S/ 59 / mes", cta: "Probar 14 dias gratis" },
             PRO: { price: "S/ 99 / mes", cta: "Comprar ahora" },
           },
@@ -167,6 +203,15 @@ export default function BillingPage() {
     const params = new URLSearchParams(window.location.search);
     setRequiredFeature(String(params.get("requiredFeature") || "").trim());
   }, []);
+
+  useEffect(() => {
+    if (!summary) return;
+    if (summary.plan === "PRO") {
+      setSelectedPlan("PRO");
+      return;
+    }
+    setSelectedPlan("BUSINESS");
+  }, [summary?.plan]);
 
   const upsells = useMemo(() => {
     const reasons = new Set<PlanUpsellReason>(["ai", "branding", "insights", "cloner", "limit"]);
@@ -226,6 +271,14 @@ export default function BillingPage() {
     });
   };
 
+  const goToPayment = (plan: PlanType) => {
+    setSelectedPlan(plan);
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      paymentFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setFeedback(null);
@@ -247,7 +300,7 @@ export default function BillingPage() {
       formData.append("paymentMethod", paymentMethod);
       formData.append("trial", isBusinessTrial ? "true" : "false");
       formData.append("notes", notes);
-      if (proofFile && !isBusinessTrial) {
+      if (proofFile && showPaymentFlow) {
         formData.append("proof", proofFile);
       }
 
@@ -373,11 +426,12 @@ export default function BillingPage() {
         )}
 
         <section id="billing-plans" ref={pricingPlansRef} className="scroll-mt-24">
-          <PricingTable activePlan={activePlan} onSelectPlan={setSelectedPlan} loadingPlan={null} />
+          <PricingTable activePlan={activePlan} onSelectPlan={goToPayment} loadingPlan={null} />
         </section>
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_1fr]">
           <form
+            ref={paymentFormRef}
             onSubmit={handleSubmit}
             className="space-y-5 rounded-3xl border border-white/10 bg-zinc-950/70 p-6"
           >
@@ -403,7 +457,7 @@ export default function BillingPage() {
               </select>
             </label>
 
-            {!isBusinessTrial ? (
+            {showPaymentFlow ? (
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
                   {i18n.paymentMethod}
@@ -427,17 +481,47 @@ export default function BillingPage() {
               </label>
             ) : null}
 
+            {isCurrentBusinessTrialActive && selectedPlan === "BUSINESS" ? (
+              <div className="rounded-xl border border-amber-300/35 bg-amber-500/10 px-3 py-3 text-sm text-amber-100">
+                {i18n.trialActive}
+              </div>
+            ) : null}
+
             {isBusinessTrial ? (
               <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100">
                 {i18n.trialBlock}
               </div>
             ) : (
-              <div className="rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
-                {paymentInstructions[paymentMethod]}
+              <div className="space-y-3 rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
+                <p className="font-semibold">{paymentInstructions[paymentMethod]}</p>
+                <p className="text-xs text-cyan-100/90">{i18n.paymentDestinationsHint}</p>
+                <div className="rounded-lg border border-cyan-200/20 bg-black/20 px-3 py-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em]">{i18n.yapeQr}</p>
+                  {yapeQrUrl ? (
+                    <a
+                      href={yapeQrUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-flex text-xs font-semibold underline"
+                    >
+                      {isEnglish ? "Open QR" : "Abrir QR"}
+                    </a>
+                  ) : (
+                    <p className="mt-1 text-xs">{i18n.yapeQrMissing}</p>
+                  )}
+                </div>
+                <div className="rounded-lg border border-cyan-200/20 bg-black/20 px-3 py-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.12em]">{i18n.bankAccounts}</p>
+                  <ul className="mt-1 space-y-1 text-xs text-cyan-100/95">
+                    {bankAccounts.map((account) => (
+                      <li key={account}>{account}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             )}
 
-            {!isBusinessTrial ? (
+            {showPaymentFlow ? (
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
                   {i18n.uploadProof}
