@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PaymentMethod, PlanType } from "@prisma/client";
 import { createSubscriptionRequest, startBusinessTrial } from "@/lib/subscription/service";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
+import { calculateSubscriptionAmountSoles, type PlanType as BillingPlanType } from "@/lib/subscription/plans";
 
 const SUPPORTED_MIME_TYPES = new Set([
   "image/png",
@@ -333,19 +334,25 @@ export async function POST(request: NextRequest) {
     const billingCycle = toBillingCycle(String(formData.get("billingCycle") || ""));
     const durationMonths = toDurationMonths(String(formData.get("durationMonths") || ""), billingCycle);
     const durationDays = durationMonths * 30;
-    const discountPercent = Math.max(0, Math.min(100, Number(formData.get("discountPercent") || 0) || 0));
-    const amountSoles = Math.max(0, Number(formData.get("amountSoles") || 0) || 0);
     const proof = formData.get("proof");
+
+    if (!plan) {
+      return NextResponse.json({ error: "Debes seleccionar un plan valido." }, { status: 400 });
+    }
+
+    const pricing = calculateSubscriptionAmountSoles({
+      plan: plan as BillingPlanType,
+      months: durationMonths,
+      annualBilling: billingCycle === "ANNUAL",
+    });
+    const discountPercent = pricing.discountPercent;
+    const amountSoles = pricing.total;
     const notesWithDuration = sanitizeText(
       [notes, `ciclo=${billingCycle}`, `meses=${durationMonths}`, `dias=${durationDays}`, `descuento=${discountPercent}%`, `monto=S/${amountSoles.toFixed(2)}`]
         .filter(Boolean)
         .join(" | "),
       900,
     );
-
-    if (!plan) {
-      return NextResponse.json({ error: "Debes seleccionar un plan valido." }, { status: 400 });
-    }
 
     if (isBusinessTrial) {
       let trialSubscription;

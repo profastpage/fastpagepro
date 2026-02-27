@@ -1232,3 +1232,13 @@ o-scrollbar para evitar barra visible.
   - No route changes.
   - No button action changes.
   - No API contract or Firestore schema changes.
+
+## Billing discounts by monthly duration (2026-02-27)
+
+- Updated discount rules for MONTHLY cycle in billing:
+  - 3 months: 5% discount for all plans (Starter, Business, Pro).
+  - 6 months: Starter 5%, Business 10%, Pro 15%.
+- Annual cycle keeps existing yearly discounts:
+  - Starter 10%, Business 20%, Pro 30%.
+- Centralized logic in src/lib/subscription/plans.ts and reused in API route.
+- Server now recalculates discount and total amount in /api/subscription/request to keep values consistent with UI.

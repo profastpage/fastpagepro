@@ -121,6 +121,26 @@ export function getPlanDefinition(plan: PlanType): PlanDefinition {
   return PLAN_DEFINITIONS.find((entry) => entry.id === plan) || PLAN_DEFINITIONS[0];
 }
 
+export function getSubscriptionDiscountPercent(input: {
+  plan: PlanType;
+  months: number;
+  annualBilling: boolean;
+}) {
+  const definition = getPlanDefinition(input.plan);
+  if (input.annualBilling) {
+    return definition.annualDiscountPercent;
+  }
+
+  const safeMonths = Math.max(1, Math.floor(input.months || 1));
+  if (safeMonths === 3) return 5;
+  if (safeMonths === 6) {
+    if (input.plan === "PRO") return 15;
+    if (input.plan === "BUSINESS") return 10;
+    return 5;
+  }
+  return 0;
+}
+
 export function calculateSubscriptionAmountSoles(input: {
   plan: PlanType;
   months: number;
@@ -129,7 +149,7 @@ export function calculateSubscriptionAmountSoles(input: {
   const definition = getPlanDefinition(input.plan);
   const safeMonths = Math.max(1, Math.floor(input.months || 1));
   const subtotal = definition.monthlyPriceSoles * safeMonths;
-  const discountPercent = input.annualBilling ? definition.annualDiscountPercent : 0;
+  const discountPercent = getSubscriptionDiscountPercent(input);
   const discountAmount = Number(((subtotal * discountPercent) / 100).toFixed(2));
   const total = Number((subtotal - discountAmount).toFixed(2));
 
