@@ -70,8 +70,9 @@ async function readPublishedStoreProjects(uid: string): Promise<Array<Record<str
 }
 
 async function readUsageSnapshot(uid: string, fallbackPublishedPages: number): Promise<UsageSnapshot> {
-  const [publishedSites, linkProfileSnapshot] = await Promise.all([
+  const [publishedSites, linkProfilesByOwnerSnapshot, legacyLinkProfileSnapshot] = await Promise.all([
     readPublishedStoreProjects(uid),
+    getDocs(query(collection(db, "link_profiles"), where("userId", "==", uid))),
     getDoc(doc(db, "link_profiles", uid)),
   ]);
 
@@ -80,15 +81,22 @@ async function readUsageSnapshot(uid: string, fallbackPublishedPages: number): P
     return Math.max(max, extractProductCount(project));
   }, 0);
 
-  if (linkProfileSnapshot.exists()) {
-    const linkProfile = linkProfileSnapshot.data() as Record<string, unknown>;
+  const linkProfilesById = new Map<string, Record<string, unknown>>();
+  linkProfilesByOwnerSnapshot.docs.forEach((docSnap) => {
+    linkProfilesById.set(docSnap.id, docSnap.data() as Record<string, unknown>);
+  });
+  if (legacyLinkProfileSnapshot.exists()) {
+    linkProfilesById.set(legacyLinkProfileSnapshot.id, legacyLinkProfileSnapshot.data() as Record<string, unknown>);
+  }
+
+  linkProfilesById.forEach((linkProfile) => {
     if (linkProfile.published === true) {
       publishedProjects += 1;
     }
     if (Array.isArray(linkProfile.catalogItems)) {
       maxProductsInOneProject = Math.max(maxProductsInOneProject, linkProfile.catalogItems.length);
     }
-  }
+  });
 
   return {
     publishedProjects: Math.max(publishedProjects, fallbackPublishedPages),

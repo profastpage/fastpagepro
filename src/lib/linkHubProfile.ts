@@ -1250,7 +1250,8 @@ export async function getLinkHubProfileByUserId(userId: string): Promise<LinkHub
   const profileRef = doc(db, LINK_HUB_COLLECTION, userId);
   const snapshot = await getDoc(profileRef);
   if (!snapshot.exists()) {
-    return null;
+    const profiles = await listLinkHubProfilesByUserId(userId);
+    return profiles[0]?.profile || null;
   }
 
   return normalizeLinkHubProfile(
@@ -1262,11 +1263,54 @@ export async function getLinkHubProfileByUserId(userId: string): Promise<LinkHub
   );
 }
 
+export type LinkHubProfileRecord = {
+  id: string;
+  profile: LinkHubProfile;
+};
+
+export async function listLinkHubProfilesByUserId(userId: string): Promise<LinkHubProfileRecord[]> {
+  const recordsById = new Map<string, LinkHubProfileRecord>();
+
+  const addRecord = (id: string, payload: Partial<LinkHubProfile>) => {
+    recordsById.set(id, {
+      id,
+      profile: normalizeLinkHubProfile(
+        {
+          ...payload,
+          userId,
+        },
+        { uid: userId },
+      ),
+    });
+  };
+
+  const [legacySnapshot, userProfilesSnapshot] = await Promise.all([
+    getDoc(doc(db, LINK_HUB_COLLECTION, userId)),
+    getDocs(query(collection(db, LINK_HUB_COLLECTION), where("userId", "==", userId), limit(25))),
+  ]);
+
+  if (legacySnapshot.exists()) {
+    addRecord(legacySnapshot.id, legacySnapshot.data() as Partial<LinkHubProfile>);
+  }
+
+  userProfilesSnapshot.docs.forEach((item) => {
+    addRecord(item.id, item.data() as Partial<LinkHubProfile>);
+  });
+
+  return Array.from(recordsById.values()).sort((a, b) => {
+    const aUpdated = Number(a.profile.updatedAt || a.profile.createdAt || 0);
+    const bUpdated = Number(b.profile.updatedAt || b.profile.createdAt || 0);
+    return bUpdated - aUpdated;
+  });
+}
+
 export async function saveLinkHubProfileForUser(
   userId: string,
   profile: LinkHubProfile,
-): Promise<void> {
-  const profileRef = doc(db, LINK_HUB_COLLECTION, userId);
+  profileId?: string,
+): Promise<string> {
+  const targetId = safeText(profileId) || userId;
+  const profileRef = doc(db, LINK_HUB_COLLECTION, targetId);
   const normalized = normalizeLinkHubProfile(
     {
       ...profile,
@@ -1276,11 +1320,13 @@ export async function saveLinkHubProfileForUser(
   );
 
   await setDoc(profileRef, normalized, { merge: true });
+  return targetId;
 }
 
 export async function isLinkHubSlugAvailable(
   slug: string,
   currentUserId: string,
+  currentProfileId?: string,
 ): Promise<boolean> {
   const normalized = sanitizeSlug(slug);
   if (!normalized) return false;
@@ -1289,13 +1335,12 @@ export async function isLinkHubSlugAvailable(
     const slugQuery = query(
       collection(db, LINK_HUB_COLLECTION),
       where("slug", "==", normalized),
-      limit(1),
+      limit(10),
     );
     const snapshot = await getDocs(slugQuery);
     if (snapshot.empty) return true;
-
-    const first = snapshot.docs[0];
-    return first.id === currentUserId;
+    const activeProfileId = safeText(currentProfileId) || currentUserId;
+    return snapshot.docs.every((item) => item.id === activeProfileId);
   } catch (error: unknown) {
     const code = safeText((error as { code?: string })?.code);
     if (code.includes("permission-denied")) {

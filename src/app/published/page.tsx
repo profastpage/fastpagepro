@@ -52,6 +52,9 @@ function PublishedProjectsContent() {
   const searchParams = useSearchParams();
   const highlight = searchParams.get("highlight") || "";
   const filter = searchParams.get("kind") || "all";
+  const normalizedHighlight = highlight.startsWith("linkhub-")
+    ? highlight.replace(/^linkhub-/, "")
+    : highlight;
 
   const [items, setItems] = useState<PublishedProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -117,23 +120,32 @@ function PublishedProjectsContent() {
           })
           .filter(Boolean) as PublishedProject[];
 
-        const linkHubSnapshot = await getDoc(firestoreDoc(db, "link_profiles", user.uid));
-        const linkHubItems: PublishedProject[] = [];
-        if (linkHubSnapshot.exists()) {
-          const data = linkHubSnapshot.data() as any;
-          if (data?.published && data?.slug) {
-            linkHubItems.push({
-              id: `linkhub-${user.uid}`,
-              kind: "linkhub",
+        const [linkHubByOwnerSnapshot, legacyLinkHubSnapshot] = await Promise.all([
+          getDocs(query(collection(db, "link_profiles"), where("userId", "==", user.uid))),
+          getDoc(firestoreDoc(db, "link_profiles", user.uid)),
+        ]);
+        const linkHubById = new Map<string, Record<string, unknown>>();
+        linkHubByOwnerSnapshot.docs.forEach((docSnap) => {
+          linkHubById.set(docSnap.id, docSnap.data() as Record<string, unknown>);
+        });
+        if (legacyLinkHubSnapshot.exists()) {
+          linkHubById.set(legacyLinkHubSnapshot.id, legacyLinkHubSnapshot.data() as Record<string, unknown>);
+        }
+        const linkHubItems: PublishedProject[] = Array.from(linkHubById.entries())
+          .map(([docId, data]) => {
+            if (!data?.published || !data?.slug) return null;
+            return {
+              id: docId,
+              kind: "linkhub" as const,
               title: String(data.displayName || "Carta Digital"),
               subtitle: `@${String(data.slug)}`,
               sourceLabel: "Carta Digital",
               publishedAt: Number(data.publishedAt || data.updatedAt || data.createdAt || 0),
               publishedUrl: `/bio/${String(data.slug)}`,
-              editPath: "/cartadigital",
-            });
-          }
-        }
+              editPath: `/cartadigital?profileId=${encodeURIComponent(docId)}`,
+            };
+          })
+          .filter(Boolean) as PublishedProject[];
 
         const merged = [...linkHubItems, ...siteItems].sort(
           (a, b) => b.publishedAt - a.publishedAt,
@@ -315,7 +327,7 @@ function PublishedProjectsContent() {
         ) : (
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
             {filteredItems.map((item) => {
-              const isHighlighted = highlight === item.id;
+              const isHighlighted = normalizedHighlight === item.id;
               const liveUrl = /^https?:\/\//.test(item.publishedUrl)
                 ? item.publishedUrl
                 : `${origin}${item.publishedUrl}`;

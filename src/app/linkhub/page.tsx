@@ -11,7 +11,6 @@ import {
   createLinkHubCatalogCategory,
   createLinkHubCatalogItem,
   getSafeLinkHubCartaBackgroundMode,
-  getLinkHubProfileByUserId,
   getLinkHubThemeColors,
   getSafeLinkHubThemeCategory,
   getSafeLinkHubTheme,
@@ -42,6 +41,7 @@ import {
   normalizeLinkHubProfile,
   normalizeGoogleMapsLocationInput,
   sanitizeSlug,
+  listLinkHubProfilesByUserId,
   saveLinkHubProfileForUser,
   MAX_LINK_HUB_LINKS,
 } from "@/lib/linkHubProfile";
@@ -433,6 +433,7 @@ export default function LinkHubPage() {
   const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
   const router = useRouter();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
+  const [activeProfileId, setActiveProfileId] = useState<string>("");
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -447,6 +448,7 @@ export default function LinkHubPage() {
   const descriptionSeedRef = useRef<number>(Date.now());
   const [demoSlugIntent, setDemoSlugIntent] = useState("");
   const [demoThemeIntent, setDemoThemeIntent] = useState("");
+  const [requestedProfileId, setRequestedProfileId] = useState("");
   const hasAppliedIncomingDemoTheme = useRef(false);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
@@ -469,6 +471,7 @@ export default function LinkHubPage() {
     const params = new URLSearchParams(window.location.search);
     setDemoSlugIntent(sanitizeDemoParam(params.get("demoSlug")));
     setDemoThemeIntent(sanitizeDemoParam(params.get("demoTheme")));
+    setRequestedProfileId(sanitizeDemoParam(params.get("profileId")));
   }, []);
 
   useEffect(() => {
@@ -479,21 +482,35 @@ export default function LinkHubPage() {
       setIsLoadingProfile(true);
 
       try {
-        const stored = await getLinkHubProfileByUserId(user.uid);
+        const records = await listLinkHubProfilesByUserId(user.uid);
         if (!active) return;
+
+        const legacyRecord = records.find((item) => item.id === user.uid);
+        const selectedRecord =
+          (requestedProfileId ? records.find((item) => item.id === requestedProfileId) : null)
+          || legacyRecord
+          || records[0]
+          || null;
+        const selectedProfileId = selectedRecord?.id || user.uid;
+        setActiveProfileId(selectedProfileId);
 
         let localDraft: LinkHubProfile | null = null;
         try {
-          const cached = window.localStorage.getItem(`linkhub_draft_${user.uid}`);
+          const scopedKey = `linkhub_draft_${user.uid}_${selectedProfileId}`;
+          const fallbackKey = `linkhub_draft_${user.uid}`;
+          const cached = window.localStorage.getItem(scopedKey) || window.localStorage.getItem(fallbackKey);
           if (cached) {
-            localDraft = normalizeLinkHubProfile(JSON.parse(cached) as Partial<LinkHubProfile>, user);
+            localDraft = normalizeLinkHubProfile(
+              JSON.parse(cached) as Partial<LinkHubProfile>,
+              user,
+            );
           }
         } catch {
           localDraft = null;
         }
 
-        if (stored) {
-          const normalized = normalizeLinkHubProfile(stored, user);
+        if (selectedRecord) {
+          const normalized = normalizeLinkHubProfile(selectedRecord.profile, user);
           const nextProfile =
             localDraft && Number(localDraft.updatedAt || 0) > Number(normalized.updatedAt || 0)
               ? localDraft
@@ -511,6 +528,7 @@ export default function LinkHubPage() {
           localDraft && Number(localDraft.updatedAt || 0) > Number(defaultProfile.updatedAt || 0)
             ? localDraft
             : defaultProfile;
+        setActiveProfileId(user.uid);
         setProfile(nextProfile);
         setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
       } catch (error) {
@@ -518,6 +536,7 @@ export default function LinkHubPage() {
         if (active) {
           // Fallback prevents infinite loading if Firestore rules temporarily block reads.
           const fallback = buildDefaultLinkHubProfile(user);
+          setActiveProfileId(user.uid);
           setProfile(fallback);
           setPreviewCategoryId(fallback.catalogCategories[0]?.id || "");
         }
@@ -539,16 +558,20 @@ export default function LinkHubPage() {
     return () => {
       active = false;
     };
-  }, [loading, user]);
+  }, [loading, requestedProfileId, user]);
 
   useEffect(() => {
     if (!profile || !user?.uid) return;
+    const profileId = activeProfileId || user.uid;
     try {
-      window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(profile));
+      window.localStorage.setItem(`linkhub_draft_${user.uid}_${profileId}`, JSON.stringify(profile));
+      if (profileId === user.uid) {
+        window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(profile));
+      }
     } catch {
       // Ignore storage errors (private mode/quota).
     }
-  }, [profile, user?.uid]);
+  }, [activeProfileId, profile, user?.uid]);
 
   useEffect(() => {
     if (!profile || hasAppliedIncomingDemoTheme.current) return;
@@ -1725,6 +1748,9 @@ export default function LinkHubPage() {
       return;
     }
 
+    const currentProfileId = activeProfileId || user.uid;
+    let publishTargetMode: "existing" | "new" = "existing";
+
     if (mode === "publish") {
       let latestSummary = subscriptionSummary;
       try {
@@ -1744,13 +1770,13 @@ export default function LinkHubPage() {
       if (publishTarget === "cancelled") {
         return;
       }
-      if (publishTarget === "new" && alreadyPublished) {
-        const confirmed = window.confirm(
-          "Carta Digital usa un perfil activo por cuenta. Se actualizara el proyecto existente. Deseas continuar?",
-        );
-        if (!confirmed) return;
-      }
-      const nextProjects = alreadyPublished ? usedProjects : usedProjects + 1;
+      publishTargetMode = publishTarget;
+      const nextProjects =
+        publishTarget === "new"
+          ? usedProjects + 1
+          : alreadyPublished
+            ? usedProjects
+            : usedProjects + 1;
 
       if (planStatus !== "ACTIVE") {
         setMessage({
@@ -1770,7 +1796,7 @@ export default function LinkHubPage() {
         return;
       }
 
-      if (!alreadyPublished && maxProjects != null && nextProjects >= 2) {
+      if (publishTargetMode === "new" && maxProjects != null && nextProjects >= 2) {
         const confirmed = window.confirm(
           `Se publicara como proyecto ${nextProjects}/${maxProjects}. Deseas continuar?`,
         );
@@ -1784,10 +1810,41 @@ export default function LinkHubPage() {
     setMessage(null);
 
     try {
-      const available = await isLinkHubSlugAvailable(sanitizedSlug, user.uid);
-      if (!available) {
-        setMessage({ type: "error", text: "Ese slug ya esta en uso. Elige uno diferente." });
-        return;
+      const isNewPublishedProject = mode === "publish" && publishTargetMode === "new";
+      const targetProfileId = isNewPublishedProject
+        ? `${user.uid}-${crypto.randomUUID()}`
+        : currentProfileId;
+
+      let finalSlug = sanitizedSlug;
+      let slugAdjustedForNewProject = false;
+      const hasBaseSlugAvailable = await isLinkHubSlugAvailable(finalSlug, user.uid, targetProfileId);
+
+      if (!hasBaseSlugAvailable) {
+        if (!isNewPublishedProject) {
+          setMessage({ type: "error", text: "Ese slug ya esta en uso. Elige uno diferente." });
+          return;
+        }
+
+        let candidateFound = false;
+        for (let attempt = 2; attempt <= 25; attempt += 1) {
+          const candidate = sanitizeSlug(`${sanitizedSlug}-${attempt}`);
+          if (!candidate) continue;
+          const candidateAvailable = await isLinkHubSlugAvailable(candidate, user.uid, targetProfileId);
+          if (candidateAvailable) {
+            finalSlug = candidate;
+            slugAdjustedForNewProject = true;
+            candidateFound = true;
+            break;
+          }
+        }
+
+        if (!candidateFound) {
+          setMessage({
+            type: "error",
+            text: "No se pudo generar un alias unico para el nuevo proyecto. Cambia el alias e intenta nuevamente.",
+          });
+          return;
+        }
       }
 
       const safeTheme = getSafeLinkHubTheme(profile.theme);
@@ -1813,7 +1870,7 @@ export default function LinkHubPage() {
         {
           ...profile,
           userId: user.uid,
-          slug: sanitizedSlug,
+          slug: finalSlug,
           displayName: profile.displayName.trim(),
           bio: profile.bio.trim(),
           avatarUrl: profile.avatarUrl.trim(),
@@ -1860,11 +1917,15 @@ export default function LinkHubPage() {
         user,
       );
 
-      await saveLinkHubProfileForUser(user.uid, nextProfile);
+      const savedProfileId = await saveLinkHubProfileForUser(user.uid, nextProfile, targetProfileId);
+      setActiveProfileId(savedProfileId);
       setProfile(nextProfile);
       setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
       try {
-        window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(nextProfile));
+        window.localStorage.setItem(`linkhub_draft_${user.uid}_${savedProfileId}`, JSON.stringify(nextProfile));
+        if (savedProfileId === user.uid) {
+          window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(nextProfile));
+        }
       } catch {
         // ignore
       }
@@ -1872,11 +1933,13 @@ export default function LinkHubPage() {
         type: "success",
         text:
           mode === "publish"
-            ? "Carta Digital publicada. Ya puedes compartir tu URL."
+            ? slugAdjustedForNewProject
+              ? `Carta Digital publicada como proyecto nuevo (@${finalSlug}).`
+              : "Carta Digital publicada. Ya puedes compartir tu URL."
             : "Borrador guardado correctamente.",
       });
       if (mode === "publish") {
-        router.push(`/published?highlight=linkhub-${user.uid}&kind=linkhub`);
+        router.push(`/published?highlight=${encodeURIComponent(savedProfileId)}&kind=linkhub`);
       }
     } catch (error) {
       console.error("[LinkHub] Save error:", error);

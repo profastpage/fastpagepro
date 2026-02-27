@@ -358,13 +358,27 @@ async function saveSubscriptionRecordToFirestore(record: SubscriptionRecord): Pr
     { merge: true },
   );
 
-  await adminDb
-    .collection("link_profiles")
-    .doc(record.userId)
-    .set(publicAccessPayload, { merge: true })
-    .catch((error) => {
-      console.error("[Subscription Sync] Link profile access sync warning:", error);
+  try {
+    const linkProfilesRef = adminDb.collection("link_profiles");
+    const linkProfilesByOwner = await linkProfilesRef
+      .where("userId", "==", record.userId)
+      .get();
+    const batch = adminDb.batch();
+    const touched = new Set<string>();
+
+    linkProfilesByOwner.docs.forEach((profileDoc) => {
+      touched.add(profileDoc.id);
+      batch.set(profileDoc.ref, publicAccessPayload, { merge: true });
     });
+
+    if (!touched.has(record.userId)) {
+      batch.set(linkProfilesRef.doc(record.userId), publicAccessPayload, { merge: true });
+    }
+
+    await batch.commit();
+  } catch (error) {
+    console.error("[Subscription Sync] Link profile access sync warning:", error);
+  }
 
   try {
     const storeSnapshots = await adminDb
@@ -407,10 +421,24 @@ export async function countPublishedPagesByUser(userId: string): Promise<number>
       publishedProjects += byLegacyFlag.size;
     }
 
-    const linkProfile = await adminDb.collection("link_profiles").doc(userId).get();
-    if (linkProfile.exists && linkProfile.data()?.published === true) {
-      publishedProjects += 1;
+    const publishedLinkProfileIds = new Set<string>();
+    try {
+      const ownedProfiles = await adminDb.collection("link_profiles").where("userId", "==", userId).get();
+      ownedProfiles.docs.forEach((profileDoc) => {
+        if (profileDoc.data()?.published === true) {
+          publishedLinkProfileIds.add(profileDoc.id);
+        }
+      });
+    } catch (error) {
+      console.error("[Subscription] countPublishedPagesByUser link_profiles query warning:", error);
     }
+
+    const legacyLinkProfile = await adminDb.collection("link_profiles").doc(userId).get();
+    if (legacyLinkProfile.exists && legacyLinkProfile.data()?.published === true) {
+      publishedLinkProfileIds.add(legacyLinkProfile.id);
+    }
+
+    publishedProjects += publishedLinkProfileIds.size;
 
     return publishedProjects;
   } catch (error) {

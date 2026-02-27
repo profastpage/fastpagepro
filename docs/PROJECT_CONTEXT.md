@@ -1322,3 +1322,18 @@ o-scrollbar para evitar barra visible.
 - Navegacion y entrypoints actualizados al nuevo path:
   - `Nav`, `Footer`, `Hub`, `Published (editPath)`, y `app/new` para vertical restaurante.
 - Se conservo toda la logica, componentes y estado existente del modulo (sin cambios funcionales fuera del cambio de URL).
+
+## Carta Digital multi-project publish fix (2026-02-27)
+
+- Ruta privada ajustada: `/cartadigital` (modulo LinkHub/Carta Digital).
+- Se corrige el flujo de publicacion:
+  - opcion `2 = Publicar como proyecto nuevo` ahora crea un documento nuevo real en `link_profiles` (restaurante nuevo), sin sobreescribir el proyecto actual.
+  - la publicacion nueva incrementa el conteo real de proyectos publicados para limites de plan (ej. Business 5 max).
+- Persistencia multi-proyecto:
+  - `link_profiles` ahora soporta multiples documentos por usuario (owner por `userId`), manteniendo compatibilidad con el documento legacy `link_profiles/{uid}`.
+  - el editor puede abrir un proyecto especifico via `?profileId=...` y guarda borrador local por proyecto.
+- Publicados y conteo:
+  - `/published` ahora lista todas las cartas digitales publicadas del usuario (no solo una).
+  - `usePlanPermissions` y resumen de suscripcion cuentan todas las cartas publicadas del usuario para reflejar `n/max`.
+- Reglas Firestore:
+  - `link_profiles` create/update reforzados por ownership en `request.resource.data.userId == auth.uid`, permitiendo crear nuevos proyectos con IDs distintos.

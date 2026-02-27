@@ -174,7 +174,7 @@ service cloud.firestore {
         return signedIn()
           && (
             profileId == request.auth.uid
-            || resource.data.userId == request.auth.uid
+            || (resource.data.userId is string && resource.data.userId == request.auth.uid)
           );
       }
 
@@ -190,11 +190,8 @@ service cloud.firestore {
         ));
 
       allow create: if signedIn()
-        && profileId == request.auth.uid
-        && (
-          !request.resource.data.keys().hasAny(["userId"])
-          || request.resource.data.userId == request.auth.uid
-        );
+        && request.resource.data.userId is string
+        && request.resource.data.userId == request.auth.uid;
 
       allow update: if isAdmin()
         || (
