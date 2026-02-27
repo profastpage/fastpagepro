@@ -344,6 +344,8 @@ function rgbToHex(rgb?: { r: number; g: number; b: number }) {
 }
 
 const SOFT_INPUT_BORDER = "#ecf1f7";
+const DARK_FORM_FIELD_CLASS =
+  "bg-zinc-700/95 text-white placeholder:text-zinc-300";
 
 function isPermissionDeniedError(error: unknown) {
   const message = String((error as any)?.message || "").toLowerCase();
@@ -1078,7 +1080,7 @@ function StoreEditorPage() {
                   <input
                     value={config.supportWhatsapp || ""}
                     onChange={(e) => setConfig((prev) => ({ ...prev, supportWhatsapp: e.target.value.replace(/\D/g, "") }))}
-                    className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                    className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                     style={{ borderColor: "var(--vs-border)" }}
                     placeholder="51999999999"
                   />
@@ -1094,7 +1096,7 @@ function StoreEditorPage() {
                           currency: e.target.value as StoreConfig["currency"],
                         }))
                       }
-                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                       style={{ borderColor: "var(--vs-border)" }}
                     >
                       <option value="PEN">PEN (Soles)</option>
@@ -1107,7 +1109,7 @@ function StoreEditorPage() {
                     <input
                       value={config.primaryCta || ""}
                       onChange={(e) => setConfig((prev) => ({ ...prev, primaryCta: e.target.value }))}
-                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                       style={{ borderColor: "var(--vs-border)" }}
                       placeholder="Comprar ahora"
                     />
@@ -1164,7 +1166,7 @@ function StoreEditorPage() {
                             : 0,
                         });
                       }}
-                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                       style={{ borderColor: "var(--vs-border)" }}
                       placeholder="10"
                     />
@@ -1181,7 +1183,7 @@ function StoreEditorPage() {
                             : 0,
                         });
                       }}
-                      className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                      className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                       style={{ borderColor: "var(--vs-border)" }}
                       placeholder="120"
                     />
@@ -1225,7 +1227,7 @@ function StoreEditorPage() {
                   <input
                     value={ecommerce.termsText || ""}
                     onChange={(e) => setEcommerce({ termsText: e.target.value })}
-                    className="mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none"
+                    className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                     style={{ borderColor: "var(--vs-border)" }}
                     placeholder="Acepto terminos y condiciones de compra."
                   />

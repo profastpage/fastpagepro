@@ -1282,3 +1282,11 @@ o-scrollbar para evitar barra visible.
   - vercel.json crons: 0 * * * *
 - Firestore rules updated for demo groups/admin index access control.
 - No changes to existing user auth flow beyond optional demo reset behavior.
+
+## Store editor contrast fix (2026-02-27)
+
+- In /store, Ecommerce real dark fields now force readable text:
+  - input/select text color set to white
+  - placeholder color set to light zinc
+- Applied to: WhatsApp, Moneda, CTA principal, Envio base, Envio gratis desde, Terminos de compra.
+- No layout or behavior changes; visual accessibility fix only.
