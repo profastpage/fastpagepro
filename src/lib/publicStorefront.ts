@@ -80,6 +80,36 @@ function normalizeThemeId(value: unknown): StoreConfig["themeId"] {
   return STORE_THEMES[0].id;
 }
 
+function normalizeTestimonials(raw: unknown): NonNullable<StoreConfig["testimonials"]> {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item, index) => {
+      const row = (item || {}) as Record<string, unknown>;
+      return {
+        id: safeText(row.id) || `ts-${index + 1}`,
+        name: safeText(row.name) || `Cliente ${index + 1}`,
+        role: safeText(row.role) || "",
+        text: safeText(row.text) || "Excelente experiencia de compra.",
+        rating: Math.max(1, Math.min(5, safeInt(row.rating, 5))),
+      };
+    })
+    .slice(0, 12);
+}
+
+function normalizeFaq(raw: unknown): NonNullable<StoreConfig["faq"]> {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item, index) => {
+      const row = (item || {}) as Record<string, unknown>;
+      return {
+        id: safeText(row.id) || `faq-${index + 1}`,
+        question: safeText(row.question) || `Pregunta ${index + 1}`,
+        answer: safeText(row.answer) || "Respuesta pendiente.",
+      };
+    })
+    .slice(0, 20);
+}
+
 function normalizeCategory(raw: DocumentData): string {
   const explicit = safeText(
     raw.category || raw.collection || raw.department || raw.segment,
@@ -209,6 +239,37 @@ function normalizeStoreConfig(raw: DocumentData): StoreConfig {
     customRgb: fromDoc.customRgb || undefined,
     content: fromDoc.content || undefined,
     features: Array.isArray(fromDoc.features) ? fromDoc.features : undefined,
+    ai: {
+      enabled: fromDoc.ai?.enabled !== false,
+      mode: fromDoc.ai?.mode === "pro" ? "pro" : "business",
+      tone:
+        fromDoc.ai?.tone === "premium" || fromDoc.ai?.tone === "directo"
+          ? fromDoc.ai.tone
+          : "comercial",
+      promoFocus: safeText(fromDoc.ai?.promoFocus || ""),
+      autoCopyEnabled: fromDoc.ai?.autoCopyEnabled !== false,
+    },
+    cart: {
+      floatingButtonEnabled: fromDoc.cart?.floatingButtonEnabled !== false,
+      floatingButtonLabel: safeText(fromDoc.cart?.floatingButtonLabel || "Carrito"),
+    },
+    widget: {
+      enabled: fromDoc.widget?.enabled === true,
+      mode: fromDoc.widget?.mode === "assistant" ? "assistant" : "whatsapp",
+      title: safeText(fromDoc.widget?.title || "Asistente de tienda"),
+      welcomeMessage:
+        safeText(
+          fromDoc.widget?.welcomeMessage ||
+            "Hola, te ayudo con productos, precios y pedidos.",
+        ) || "Hola, te ayudo con productos, precios y pedidos.",
+      assistantPlaceholder:
+        safeText(fromDoc.widget?.assistantPlaceholder || "Escribe tu consulta...") ||
+        "Escribe tu consulta...",
+      ctaLabel: safeText(fromDoc.widget?.ctaLabel || "Abrir chat"),
+      position: fromDoc.widget?.position === "left" ? "left" : "right",
+    },
+    testimonials: normalizeTestimonials(fromDoc.testimonials),
+    faq: normalizeFaq(fromDoc.faq),
     ecommerce: {
       deliveryEnabled: ecommerce.deliveryEnabled !== false,
       pickupEnabled: ecommerce.pickupEnabled !== false,

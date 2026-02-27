@@ -56,6 +56,20 @@ export type StoreRgb = {
   b: number;
 };
 
+export type StoreTestimonial = {
+  id: string;
+  name: string;
+  role?: string;
+  text: string;
+  rating?: number;
+};
+
+export type StoreFaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+};
+
 export type StoreConfig = {
   storeName: string;
   storeSlug?: string;
@@ -109,6 +123,28 @@ export type StoreConfig = {
   };
 
   features?: StoreFeature[];
+  ai?: {
+    enabled?: boolean;
+    mode?: "business" | "pro";
+    tone?: "comercial" | "premium" | "directo";
+    promoFocus?: string;
+    autoCopyEnabled?: boolean;
+  };
+  cart?: {
+    floatingButtonEnabled?: boolean;
+    floatingButtonLabel?: string;
+  };
+  widget?: {
+    enabled?: boolean;
+    mode?: "assistant" | "whatsapp";
+    title?: string;
+    welcomeMessage?: string;
+    assistantPlaceholder?: string;
+    ctaLabel?: string;
+    position?: "left" | "right";
+  };
+  testimonials?: StoreTestimonial[];
+  faq?: StoreFaqItem[];
   ecommerce?: {
     deliveryEnabled?: boolean;
     pickupEnabled?: boolean;

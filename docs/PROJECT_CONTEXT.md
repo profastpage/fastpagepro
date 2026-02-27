@@ -1290,3 +1290,26 @@ o-scrollbar para evitar barra visible.
   - placeholder color set to light zinc
 - Applied to: WhatsApp, Moneda, CTA principal, Envio base, Envio gratis desde, Terminos de compra.
 - No layout or behavior changes; visual accessibility fix only.
+
+## Store Editor Tabbed Panels + Pro Commerce Blocks (2026-02-27)
+
+- Ruta privada ajustada: `/store`.
+- Se habilito comportamiento real por tab en sidebar del editor (`Contenido`, `Diseno`, `IA`, `SEO`, `Ajustes`):
+  - cada tab ahora muestra su submenu funcional en lugar de solo texto informativo.
+- Se agregaron configuraciones nuevas persistentes en `storeConfig`:
+  - `ai` (tono, modo Business/Pro, enfoque, auto-copy)
+  - `cart` (boton flotante editable)
+  - `widget` (modo WhatsApp o asistente)
+  - `testimonials` (lista editable)
+  - `faq` (lista editable)
+- Se actualizo `EditorSidebar` para modo controlado (`activeTab` + `onTabChange`) sin romper compatibilidad.
+
+## Public Storefront UX Expansion (2026-02-27)
+
+- Ruta publica ajustada: `/t/[slug]`.
+- La tienda publicada ahora consume los nuevos bloques de `storeConfig`:
+  - boton de carrito con etiqueta editable y control de visibilidad.
+  - widget configurable (WhatsApp directo o mini asistente con respuestas rapidas y salto a WhatsApp).
+  - seccion de testimonios con rotacion automatica.
+  - seccion FAQ renderizada con bloques desplegables.
+- Se extendio normalizacion en `publicStorefront` para mantener compatibilidad de datos legacy y defaults seguros.

@@ -3,7 +3,7 @@
 import { ReactNode, useMemo, useState } from "react";
 import { Bot, LayoutPanelTop, Palette, Search, Settings } from "lucide-react";
 
-type EditorSidebarTab = "content" | "design" | "ai" | "seo" | "settings";
+export type EditorSidebarTab = "content" | "design" | "ai" | "seo" | "settings";
 
 interface EditorSidebarProps {
   contentTab?: ReactNode;
@@ -11,6 +11,8 @@ interface EditorSidebarProps {
   aiTab?: ReactNode;
   seoTab?: ReactNode;
   settingsTab?: ReactNode;
+  activeTab?: EditorSidebarTab;
+  onTabChange?: (tab: EditorSidebarTab) => void;
   defaultTab?: EditorSidebarTab;
   className?: string;
 }
@@ -37,18 +39,29 @@ export default function EditorSidebar({
   aiTab,
   seoTab,
   settingsTab,
+  activeTab,
+  onTabChange,
   defaultTab = "content",
   className,
 }: EditorSidebarProps) {
-  const [activeTab, setActiveTab] = useState<EditorSidebarTab>(defaultTab);
+  const [internalTab, setInternalTab] = useState<EditorSidebarTab>(defaultTab);
+  const resolvedActiveTab = activeTab || internalTab;
 
   const content = useMemo(() => {
-    if (activeTab === "content") return contentTab;
-    if (activeTab === "design") return designTab;
-    if (activeTab === "ai") return aiTab;
-    if (activeTab === "seo") return seoTab;
+    if (resolvedActiveTab === "content") return contentTab;
+    if (resolvedActiveTab === "design") return designTab;
+    if (resolvedActiveTab === "ai") return aiTab;
+    if (resolvedActiveTab === "seo") return seoTab;
     return settingsTab;
-  }, [activeTab, aiTab, contentTab, designTab, seoTab, settingsTab]);
+  }, [resolvedActiveTab, aiTab, contentTab, designTab, seoTab, settingsTab]);
+
+  const handleTabChange = (tab: EditorSidebarTab) => {
+    if (onTabChange) {
+      onTabChange(tab);
+      return;
+    }
+    setInternalTab(tab);
+  };
 
   return (
     <aside className={`rounded-2xl border border-white/10 bg-zinc-950/80 ${className || ""}`}>
@@ -57,11 +70,11 @@ export default function EditorSidebar({
           <button
             key={tab}
             type="button"
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
             className={`inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-bold transition sm:flex-none sm:justify-start sm:px-2.5 ${
-              activeTab === tab ? "bg-cyan-500 text-black" : "text-zinc-300 hover:bg-white/10"
+              resolvedActiveTab === tab ? "bg-cyan-500 text-black" : "text-zinc-300 hover:bg-white/10"
             }`}
-            aria-pressed={activeTab === tab}
+            aria-pressed={resolvedActiveTab === tab}
           >
             {TAB_ICONS[tab]}
             <span className="truncate">{TAB_LABELS[tab]}</span>

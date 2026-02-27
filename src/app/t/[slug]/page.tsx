@@ -5,12 +5,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { addDoc, collection } from "firebase/firestore";
 import {
+  Bot,
   ChevronDown,
   Gift,
   Loader2,
+  MessageCircle,
   Minus,
   Plus,
   Search,
+  Send,
   ShoppingCart,
   X,
 } from "lucide-react";
@@ -71,6 +74,11 @@ function shippingMethodLabel(method: ShippingMethod) {
   return "Consumir en local";
 }
 
+function renderStars(value: number) {
+  const total = Math.max(1, Math.min(5, Math.round(value || 5)));
+  return "★".repeat(total) + "☆".repeat(5 - total);
+}
+
 export default function PublicStorePage() {
   const params = useParams<{ slug: string }>();
   const slug = useMemo(() => sanitizeStoreSlug(params?.slug || ""), [params?.slug]);
@@ -100,6 +108,10 @@ export default function PublicStorePage() {
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [checkoutSuccess, setCheckoutSuccess] = useState("");
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [widgetOpen, setWidgetOpen] = useState(false);
+  const [widgetMessage, setWidgetMessage] = useState("");
+  const [widgetReplies, setWidgetReplies] = useState<string[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -178,6 +190,36 @@ export default function PublicStorePage() {
   };
   const theme = getVisualStoreTheme(themeConfig);
   const vars = getVisualStoreVars(themeConfig);
+  const cartSettings = {
+    floatingButtonEnabled: store?.config?.cart?.floatingButtonEnabled !== false,
+    floatingButtonLabel: String(store?.config?.cart?.floatingButtonLabel || "Carrito"),
+  };
+  const widgetSettings = {
+    enabled: store?.config?.widget?.enabled === true,
+    mode: store?.config?.widget?.mode === "assistant" ? "assistant" : "whatsapp",
+    title: String(store?.config?.widget?.title || "Asistente de tienda"),
+    welcomeMessage:
+      String(
+        store?.config?.widget?.welcomeMessage ||
+          "Hola, te ayudo con productos, precios y pedidos.",
+      ) || "Hola, te ayudo con productos, precios y pedidos.",
+    ctaLabel: String(store?.config?.widget?.ctaLabel || "Abrir chat"),
+    assistantPlaceholder: String(
+      store?.config?.widget?.assistantPlaceholder || "Escribe tu consulta...",
+    ),
+    position: store?.config?.widget?.position === "left" ? "left" : "right",
+  } as const;
+  const testimonials = useMemo(() => {
+    const raw = store?.config?.testimonials;
+    return Array.isArray(raw) && raw.length ? raw : [];
+  }, [store?.config?.testimonials]);
+  const faqItems = useMemo(() => {
+    const raw = store?.config?.faq;
+    return Array.isArray(raw) && raw.length ? raw : [];
+  }, [store?.config?.faq]);
+  const currentTestimonial = testimonials.length
+    ? testimonials[Math.min(testimonialIndex, testimonials.length - 1)]
+    : null;
 
   const ecommerce = useMemo(() => {
     const settings = store?.config?.ecommerce || {};
@@ -256,6 +298,24 @@ export default function PublicStorePage() {
   }, [page, totalPages]);
 
   useEffect(() => {
+    if (!testimonials.length) return;
+    const timer = window.setInterval(() => {
+      setTestimonialIndex((prev) => (prev + 1) % testimonials.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [testimonials]);
+
+  useEffect(() => {
+    if (!testimonials.length) {
+      setTestimonialIndex(0);
+      return;
+    }
+    if (testimonialIndex >= testimonials.length) {
+      setTestimonialIndex(0);
+    }
+  }, [testimonialIndex, testimonials]);
+
+  useEffect(() => {
     if (availableShippingMethods.includes(checkoutShippingMethod)) return;
     setCheckoutShippingMethod(availableShippingMethods[0] || "delivery");
   }, [availableShippingMethods, checkoutShippingMethod]);
@@ -329,6 +389,39 @@ export default function PublicStorePage() {
   };
 
   const removeItem = (id: string) => setCart((prev) => prev.filter((x) => x.id !== id));
+
+  const openWhatsAppFromWidget = () => {
+    if (!store) return;
+    const wa = normalizeDigits(store.config.supportWhatsapp || "");
+    if (!wa) return;
+    const baseText =
+      widgetMessage.trim() ||
+      `Hola, quiero informacion de ${store.config.storeName}.`;
+    window.open(
+      `https://wa.me/${wa}?text=${encodeURIComponent(baseText)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  const sendAssistantMessage = () => {
+    const question = widgetMessage.trim();
+    if (!question) return;
+    const normalized = question.toLowerCase();
+    let response =
+      "Te ayudo con precios, stock y metodos de compra. Si prefieres, te atendemos por WhatsApp.";
+    if (normalized.includes("delivery")) {
+      response = "Tenemos delivery activo. El costo final se calcula segun tu zona.";
+    } else if (normalized.includes("precio") || normalized.includes("costo")) {
+      response = "Puedes ver precios actualizados en cada producto y agregar al carrito para cotizar.";
+    } else if (normalized.includes("pago") || normalized.includes("yape") || normalized.includes("plin")) {
+      response = "Aceptamos los metodos de pago activos de la tienda. Tambien puedes pedir soporte por WhatsApp.";
+    } else if (normalized.includes("stock")) {
+      response = "El stock visible se actualiza por producto. Si ves un item agotado, vuelve pronto o escribenos.";
+    }
+    setWidgetReplies((prev) => [...prev.slice(-4), `Tu: ${question}`, `Asistente: ${response}`]);
+    setWidgetMessage("");
+  };
 
   async function submitOrder() {
     if (!store) return;
@@ -464,7 +557,7 @@ export default function PublicStorePage() {
           </div>
           <button onClick={() => setCartOpen(true)} className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-black" style={{ borderColor: "var(--vs-border)" }}>
             <ShoppingCart className="h-4 w-4" />
-            {cartCount}
+            {cartSettings.floatingButtonLabel} ({cartCount})
           </button>
         </div>
       </header>
@@ -571,6 +664,45 @@ export default function PublicStorePage() {
           })}
           <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>Siguiente &gt;</button>
         </div>
+
+        {currentTestimonial ? (
+          <section className="mt-8 rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)" }}>
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-lg font-black">Testimonios reales</h3>
+              <p className="text-xs font-bold" style={{ color: "var(--vs-muted)" }}>
+                {testimonialIndex + 1}/{testimonials.length}
+              </p>
+            </div>
+            <div className="mt-3 rounded-xl border p-4" style={{ borderColor: "var(--vs-border)" }}>
+              <p className="text-sm font-black" style={{ color: "var(--vs-accent)" }}>
+                {renderStars(Number(currentTestimonial.rating || 5))}
+              </p>
+              <p className="mt-2 text-sm">{currentTestimonial.text}</p>
+              <p className="mt-3 text-xs font-black uppercase tracking-[0.08em]">
+                {currentTestimonial.name}
+              </p>
+              <p className="text-xs" style={{ color: "var(--vs-muted)" }}>
+                {currentTestimonial.role || "Cliente"}
+              </p>
+            </div>
+          </section>
+        ) : null}
+
+        {faqItems.length ? (
+          <section className="mt-8 rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)" }}>
+            <h3 className="text-lg font-black">Preguntas frecuentes</h3>
+            <div className="mt-3 space-y-2">
+              {faqItems.map((faq) => (
+                <details key={faq.id} className="rounded-xl border px-3 py-2" style={{ borderColor: "var(--vs-border)" }}>
+                  <summary className="cursor-pointer text-sm font-bold">{faq.question}</summary>
+                  <p className="mt-2 text-sm" style={{ color: "var(--vs-muted)" }}>
+                    {faq.answer}
+                  </p>
+                </details>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </div>
 
       <footer className="mt-10 border-t text-white" style={{ borderColor: "var(--vs-border)", background: theme.dark }}>
@@ -589,10 +721,82 @@ export default function PublicStorePage() {
         </div>
       </footer>
 
-      <button onClick={() => setCartOpen(true)} className="fixed bottom-5 right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full text-white shadow-2xl" style={{ background: theme.dark }}>
-        <Gift className="h-6 w-6" />
-        <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[11px] font-black">{cartCount}</span>
-      </button>
+      {cartSettings.floatingButtonEnabled ? (
+        <button onClick={() => setCartOpen(true)} className="fixed bottom-5 right-4 z-40 inline-flex h-14 min-w-[56px] items-center justify-center gap-1 rounded-full px-3 text-white shadow-2xl" style={{ background: theme.dark }}>
+          <Gift className="h-5 w-5" />
+          <span className="text-[11px] font-black uppercase">{cartSettings.floatingButtonLabel}</span>
+          <span className="absolute -right-1 -top-1 rounded-full bg-red-500 px-1.5 py-0.5 text-[11px] font-black">{cartCount}</span>
+        </button>
+      ) : null}
+
+      {widgetSettings.enabled ? (
+        <div
+          className={`fixed ${cartSettings.floatingButtonEnabled && widgetSettings.position !== "left" ? "bottom-24" : "bottom-5"} z-40 ${widgetSettings.position === "left" ? "left-4" : "right-4"}`}
+        >
+          {widgetOpen ? (
+            <div className="mb-2 w-[min(90vw,320px)] rounded-2xl border bg-white p-3 shadow-2xl" style={{ borderColor: "var(--vs-border)" }}>
+              <p className="text-sm font-black">{widgetSettings.title}</p>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>{widgetSettings.welcomeMessage}</p>
+              {widgetSettings.mode === "assistant" ? (
+                <div className="mt-3 space-y-2">
+                  <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border p-2 text-xs" style={{ borderColor: "var(--vs-border)" }}>
+                    {widgetReplies.length ? (
+                      widgetReplies.map((item, index) => (
+                        <p key={`${item}-${index}`}>{item}</p>
+                      ))
+                    ) : (
+                      <p style={{ color: "var(--vs-muted)" }}>Pregunta por delivery, pagos o stock.</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={widgetMessage}
+                      onChange={(e) => setWidgetMessage(e.target.value)}
+                      placeholder={widgetSettings.assistantPlaceholder}
+                      className="h-9 w-full rounded-lg border px-2 text-xs outline-none"
+                      style={{ borderColor: "var(--vs-border)" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={sendAssistantMessage}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white"
+                      style={{ background: "var(--vs-accent)" }}
+                    >
+                      <Send className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openWhatsAppFromWidget}
+                    className="h-9 w-full rounded-lg border text-xs font-black"
+                    style={{ borderColor: "var(--vs-border)" }}
+                  >
+                    Pasar a WhatsApp
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openWhatsAppFromWidget}
+                  className="mt-3 h-9 w-full rounded-lg text-xs font-black text-white"
+                  style={{ background: "var(--vs-accent)" }}
+                >
+                  Ir a WhatsApp
+                </button>
+              )}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setWidgetOpen((prev) => !prev)}
+            className="inline-flex h-12 items-center gap-2 rounded-full px-4 text-xs font-black text-white shadow-xl"
+            style={{ background: "var(--vs-accent)" }}
+          >
+            {widgetSettings.mode === "assistant" ? <Bot className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />}
+            {widgetSettings.ctaLabel}
+          </button>
+        </div>
+      ) : null}
 
       {cartOpen && (
         <div className="fixed inset-0 z-50">

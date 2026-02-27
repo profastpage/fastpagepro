@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
 import { db } from "@/lib/firebase";
 import {
   assertCanPublishWithMode,
@@ -19,8 +20,10 @@ import { normalizeVertical, type BusinessVertical } from "@/lib/vertical";
 import {
   generateStorefrontHtml,
   STORE_THEMES,
+  type StoreFaqItem,
   type StoreConfig,
   type StoreProduct,
+  type StoreTestimonial,
   type StoreThemeId,
 } from "@/lib/storefrontGenerator";
 import {
@@ -32,17 +35,20 @@ import {
   useEditorState,
 } from "@/editor-core";
 import InlineEditable from "@/components/editor/InlineEditable";
-import EditorSidebar from "@/components/editor/EditorSidebar";
+import EditorSidebar, { type EditorSidebarTab } from "@/components/editor/EditorSidebar";
 import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  Lock,
   Loader2,
+  MessageCircle,
   Monitor,
   Plus,
   Rocket,
   Save,
+  Sparkles,
   Smartphone,
   Trash2,
   Upload,
@@ -70,6 +76,9 @@ const FIREBASE_PUBLIC_CONFIG = {
 type VisualSort = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
 type VisualContent = NonNullable<StoreConfig["content"]>;
 type EcommerceSettings = NonNullable<StoreConfig["ecommerce"]>;
+type AiSettings = NonNullable<StoreConfig["ai"]>;
+type CartSettings = NonNullable<StoreConfig["cart"]>;
+type WidgetSettings = NonNullable<StoreConfig["widget"]>;
 type StoreEditorSnapshot = { config: StoreConfig; products: StoreProduct[] };
 
 const DEFAULT_ECOMMERCE_SETTINGS: EcommerceSettings = {
@@ -86,6 +95,71 @@ const DEFAULT_ECOMMERCE_SETTINGS: EcommerceSettings = {
   termsRequired: true,
   termsText: "Acepto terminos y condiciones de compra.",
 };
+
+const DEFAULT_AI_SETTINGS: AiSettings = {
+  enabled: true,
+  mode: "business",
+  tone: "comercial",
+  promoFocus: "Delivery rapido y cierre por WhatsApp",
+  autoCopyEnabled: true,
+};
+
+const DEFAULT_CART_SETTINGS: CartSettings = {
+  floatingButtonEnabled: true,
+  floatingButtonLabel: "Carrito",
+};
+
+const DEFAULT_WIDGET_SETTINGS: WidgetSettings = {
+  enabled: false,
+  mode: "whatsapp",
+  title: "Asistente de tienda",
+  welcomeMessage: "Hola, te ayudo con productos, precios y pedidos.",
+  assistantPlaceholder: "Escribe tu consulta...",
+  ctaLabel: "Abrir chat",
+  position: "right",
+};
+
+const DEFAULT_TESTIMONIALS: StoreTestimonial[] = [
+  {
+    id: "testimonial-1",
+    name: "Camila Ruiz",
+    role: "Cliente frecuente",
+    text: "La tienda responde rapido y el pedido llego exacto. Excelente experiencia.",
+    rating: 5,
+  },
+  {
+    id: "testimonial-2",
+    name: "Jorge Salazar",
+    role: "Compra semanal",
+    text: "El catalogo es claro y pude pagar y coordinar en minutos por WhatsApp.",
+    rating: 5,
+  },
+  {
+    id: "testimonial-3",
+    name: "Mariana Soto",
+    role: "Cliente nuevo",
+    text: "Todo bien explicado, envio puntual y productos en perfecto estado.",
+    rating: 5,
+  },
+];
+
+const DEFAULT_FAQ: StoreFaqItem[] = [
+  {
+    id: "faq-1",
+    question: "Cuanto demora el delivery?",
+    answer: "Normalmente entre 30 y 60 minutos segun la zona.",
+  },
+  {
+    id: "faq-2",
+    question: "Puedo recoger en tienda?",
+    answer: "Si, activa Recojo en tienda y coordinamos por WhatsApp.",
+  },
+  {
+    id: "faq-3",
+    question: "Que metodos de pago aceptan?",
+    answer: "Puedes habilitar Yape, Plin, transferencia, efectivo o tarjeta.",
+  },
+];
 
 const DEFAULT_CONFIG: StoreConfig = {
   vertical: "ecommerce",
@@ -129,6 +203,11 @@ const DEFAULT_CONFIG: StoreConfig = {
     checkoutButton: "Confirmar pedido",
     continueButton: "Seguir comprando",
   },
+  ai: DEFAULT_AI_SETTINGS,
+  cart: DEFAULT_CART_SETTINGS,
+  widget: DEFAULT_WIDGET_SETTINGS,
+  testimonials: DEFAULT_TESTIMONIALS,
+  faq: DEFAULT_FAQ,
   ecommerce: DEFAULT_ECOMMERCE_SETTINGS,
 };
 
@@ -264,17 +343,38 @@ function cloneDefaultProducts(): StoreProduct[] {
 }
 
 function mergeConfigWithDefaults(input?: StoreConfig, slug?: string): StoreConfig {
+  const defaults = cloneDefaultConfig();
   const merged: StoreConfig = {
-    ...cloneDefaultConfig(),
+    ...defaults,
     ...(input || {}),
     content: {
-      ...(cloneDefaultConfig().content || {}),
+      ...(defaults.content || {}),
       ...((input?.content || {}) as VisualContent),
     },
     ecommerce: {
       ...DEFAULT_ECOMMERCE_SETTINGS,
       ...((input?.ecommerce || {}) as EcommerceSettings),
     },
+    ai: {
+      ...DEFAULT_AI_SETTINGS,
+      ...((input?.ai || {}) as AiSettings),
+    },
+    cart: {
+      ...DEFAULT_CART_SETTINGS,
+      ...((input?.cart || {}) as CartSettings),
+    },
+    widget: {
+      ...DEFAULT_WIDGET_SETTINGS,
+      ...((input?.widget || {}) as WidgetSettings),
+    },
+    testimonials:
+      Array.isArray(input?.testimonials) && input?.testimonials.length
+        ? input.testimonials
+        : defaults.testimonials,
+    faq:
+      Array.isArray(input?.faq) && input?.faq.length
+        ? input.faq
+        : defaults.faq,
   };
   if (slug) merged.storeSlug = slug;
   merged.vertical = normalizeVertical(merged.vertical || "ecommerce");
@@ -416,6 +516,7 @@ export default function StorePage() {
 
 function StoreEditorPage() {
   const { user, loading: authLoading } = useAuth(true);
+  const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
   const router = useRouter();
   const hydratedRef = useRef(false);
   const demoThemeAppliedRef = useRef(false);
@@ -434,6 +535,7 @@ function StoreEditorPage() {
   const [products, setProducts] = useState<StoreProduct[]>(() => cloneDefaultProducts());
 
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("mobile");
+  const [activeSidebarTab, setActiveSidebarTab] = useState<EditorSidebarTab>("content");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
   const [sortBy, setSortBy] = useState<VisualSort>("featured");
@@ -454,6 +556,25 @@ function StoreEditorPage() {
     ...DEFAULT_ECOMMERCE_SETTINGS,
     ...((liveConfig.ecommerce || {}) as EcommerceSettings),
   };
+  const ai = {
+    ...DEFAULT_AI_SETTINGS,
+    ...((liveConfig.ai || {}) as AiSettings),
+  };
+  const cartSettings = {
+    ...DEFAULT_CART_SETTINGS,
+    ...((liveConfig.cart || {}) as CartSettings),
+  };
+  const widgetSettings = {
+    ...DEFAULT_WIDGET_SETTINGS,
+    ...((liveConfig.widget || {}) as WidgetSettings),
+  };
+  const testimonials = Array.isArray(liveConfig.testimonials)
+    ? liveConfig.testimonials
+    : DEFAULT_TESTIMONIALS;
+  const faqItems = Array.isArray(liveConfig.faq) ? liveConfig.faq : DEFAULT_FAQ;
+  const canUseBusinessAi =
+    subscriptionSummary?.plan === "BUSINESS" || subscriptionSummary?.plan === "PRO";
+  const isProPlan = subscriptionSummary?.plan === "PRO";
   const themeVars = getVisualStoreVars(liveConfig);
   const visualTheme = getVisualStoreTheme(liveConfig);
   const currentVertical = normalizeVertical(liveConfig.vertical || "ecommerce");
@@ -602,6 +723,138 @@ function StoreEditorPage() {
         ...patch,
       },
     }));
+
+  const setAi = (patch: Partial<AiSettings>) =>
+    setConfig((prev) => ({
+      ...prev,
+      ai: {
+        ...DEFAULT_AI_SETTINGS,
+        ...((prev.ai || {}) as AiSettings),
+        ...patch,
+      },
+    }));
+
+  const setCartSettings = (patch: Partial<CartSettings>) =>
+    setConfig((prev) => ({
+      ...prev,
+      cart: {
+        ...DEFAULT_CART_SETTINGS,
+        ...((prev.cart || {}) as CartSettings),
+        ...patch,
+      },
+    }));
+
+  const setWidgetSettings = (patch: Partial<WidgetSettings>) =>
+    setConfig((prev) => ({
+      ...prev,
+      widget: {
+        ...DEFAULT_WIDGET_SETTINGS,
+        ...((prev.widget || {}) as WidgetSettings),
+        ...patch,
+      },
+    }));
+
+  const updateTestimonial = (id: string, patch: Partial<StoreTestimonial>) => {
+    setConfig((prev) => ({
+      ...prev,
+      testimonials: (prev.testimonials || DEFAULT_TESTIMONIALS).map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      ),
+    }));
+  };
+
+  const addTestimonial = () => {
+    setConfig((prev) => ({
+      ...prev,
+      testimonials: [
+        ...(prev.testimonials || DEFAULT_TESTIMONIALS),
+        {
+          id: newId("ts-"),
+          name: "Cliente",
+          role: "Compra online",
+          text: "Excelente atencion y entrega rapida.",
+          rating: 5,
+        },
+      ],
+    }));
+  };
+
+  const removeTestimonial = (id: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      testimonials: (prev.testimonials || DEFAULT_TESTIMONIALS).filter(
+        (item) => item.id !== id,
+      ),
+    }));
+  };
+
+  const updateFaq = (id: string, patch: Partial<StoreFaqItem>) => {
+    setConfig((prev) => ({
+      ...prev,
+      faq: (prev.faq || DEFAULT_FAQ).map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      ),
+    }));
+  };
+
+  const addFaq = () => {
+    setConfig((prev) => ({
+      ...prev,
+      faq: [
+        ...(prev.faq || DEFAULT_FAQ),
+        {
+          id: newId("faq-"),
+          question: "Nueva pregunta",
+          answer: "Escribe aqui la respuesta.",
+        },
+      ],
+    }));
+  };
+
+  const removeFaq = (id: string) => {
+    setConfig((prev) => ({
+      ...prev,
+      faq: (prev.faq || DEFAULT_FAQ).filter((item) => item.id !== id),
+    }));
+  };
+
+  const applyAiStoreCopy = () => {
+    if (!canUseBusinessAi) {
+      setError("Activa Business o Pro para usar el panel IA.");
+      return;
+    }
+    const focus = ai.promoFocus?.trim() || "delivery rapido y cierre por WhatsApp";
+    const toneLabel =
+      ai.tone === "premium"
+        ? "premium"
+        : ai.tone === "directo"
+          ? "directo"
+          : "comercial";
+
+    setContent({
+      heroSubtitle: `Compra segura y atencion ${toneLabel} para ${focus}.`,
+      productsSubtitle: `Seleccion optimizada para convertir visitas en pedidos por WhatsApp.`,
+      tipText: `IA ${ai.mode === "pro" ? "PRO" : "Business"} activa: copys listos para vender mas rapido.`,
+    });
+
+    if (ai.autoCopyEnabled) {
+      setProducts((prev) =>
+        prev.map((product, index) => ({
+          ...product,
+          ctaLabel:
+            product.ctaLabel && product.ctaLabel.trim().length > 0
+              ? product.ctaLabel
+              : index % 2 === 0
+                ? "Comprar por WhatsApp"
+                : "Pedir ahora",
+          description:
+            product.description && product.description.trim().length > 0
+              ? product.description
+              : `Producto ideal para ${focus}. Entrega rapida y calidad garantizada.`,
+        })),
+      );
+    }
+  };
 
   const applyThemePreset = (themeId: StoreThemeId) => {
     const preset = STORE_THEMES.find((theme) => theme.id === themeId);
@@ -1011,13 +1264,15 @@ function StoreEditorPage() {
 
           <aside className="order-2 min-w-0 space-y-4 self-start lg:order-1 lg:sticky lg:top-[150px]">
             <EditorSidebar
-              contentTab={<p className="text-xs text-zinc-600">Contenido editable rapido + panel avanzado sincronizados.</p>}
+              activeTab={activeSidebarTab}
+              onTabChange={setActiveSidebarTab}
+              contentTab={<p className="text-xs text-zinc-600">Contenido comercial y configuracion ecommerce sincronizados.</p>}
               designTab={<p className="text-xs text-zinc-600">Tema, colores y layout desktop/mobile.</p>}
-              aiTab={<p className="text-xs text-zinc-600">IA por plan: basic en Business, advanced en Pro.</p>}
-              seoTab={<p className="text-xs text-zinc-600">SEO aplicado al publicar en /t/{'{slug}'}.</p>}
-              settingsTab={<p className="text-xs text-zinc-600">Autosave activo: guardado por cambios + respaldo automatico cada 30 segundos.</p>}
+              aiTab={<p className="text-xs text-zinc-600">Panel IA para copys de tienda: activo desde plan Business.</p>}
+              seoTab={<p className="text-xs text-zinc-600">Slug y metadata comercial para publicar en /t/{'{slug}'}.</p>}
+              settingsTab={<p className="text-xs text-zinc-600">Widget, carrito, testimonios y FAQ configurables con autosave.</p>}
             />
-            <section className="rounded-2xl border bg-white p-4 text-slate-900" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "design" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinamico</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Selecciona rubro y aplica temas relacionados.</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
@@ -1069,7 +1324,7 @@ function StoreEditorPage() {
               </div>
               <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>{`/t/${publicStoreSlug}`}</b></div>
             </section>
-            <section className="rounded-2xl border bg-white p-4 text-slate-900" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "content" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Ecommerce real</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
                 Configura ventas reales: moneda, WhatsApp, envio, metodos de pago y terminos.
@@ -1246,6 +1501,316 @@ function StoreEditorPage() {
                     ? "Terminos obligatorios activados"
                     : "Terminos obligatorios desactivados"}
                 </button>
+              </div>
+            </section>
+
+            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "ai" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+              <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.15em]">
+                <Sparkles className="h-4 w-4" />
+                Mini panel IA
+              </h3>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
+                Configura copys de venta. IA basica en Business y modo avanzado en Pro.
+              </p>
+              <div className="mt-3 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>
+                Plan detectado: <b>{subscriptionSummary?.plan || "FREE"}</b>
+              </div>
+              {!canUseBusinessAi ? (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-700">
+                  <div className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Activa Business o Pro para habilitar IA de tienda.
+                  </div>
+                </div>
+              ) : null}
+              <div className="mt-3 space-y-3">
+                <label className="block text-xs font-semibold">
+                  Tono de copy
+                  <select
+                    value={ai.tone}
+                    onChange={(e) => setAi({ tone: e.target.value as AiSettings["tone"] })}
+                    disabled={!canUseBusinessAi}
+                    className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none disabled:opacity-60 ${DARK_FORM_FIELD_CLASS}`}
+                    style={{ borderColor: "var(--vs-border)" }}
+                  >
+                    <option value="comercial">Comercial</option>
+                    <option value="directo">Directo</option>
+                    <option value="premium">Premium</option>
+                  </select>
+                </label>
+                <label className="block text-xs font-semibold">
+                  Enfoque de conversion
+                  <input
+                    value={ai.promoFocus || ""}
+                    onChange={(e) => setAi({ promoFocus: e.target.value })}
+                    disabled={!canUseBusinessAi}
+                    className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none disabled:opacity-60 ${DARK_FORM_FIELD_CLASS}`}
+                    style={{ borderColor: "var(--vs-border)" }}
+                    placeholder="delivery rapido, combos, ticket medio..."
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAi({ mode: "business" })}
+                    disabled={!canUseBusinessAi}
+                    className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-60"
+                    style={ai.mode === "business" ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" } : { borderColor: "var(--vs-border)" }}
+                  >
+                    IA Business
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAi({ mode: "pro" })}
+                    disabled={!isProPlan}
+                    className="rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-60"
+                    style={ai.mode === "pro" ? { borderColor: "#93c5fd", background: "#eff6ff", color: "#1d4ed8" } : { borderColor: "var(--vs-border)" }}
+                  >
+                    IA PRO
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAi({ autoCopyEnabled: !ai.autoCopyEnabled })}
+                  disabled={!canUseBusinessAi}
+                  className="w-full rounded-lg border px-3 py-2 text-xs font-bold disabled:opacity-60"
+                  style={ai.autoCopyEnabled ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" } : { borderColor: "var(--vs-border)" }}
+                >
+                  {ai.autoCopyEnabled ? "Copys auto por producto: ACTIVADO" : "Copys auto por producto: DESACTIVADO"}
+                </button>
+                <button
+                  type="button"
+                  onClick={applyAiStoreCopy}
+                  disabled={!canUseBusinessAi}
+                  className="w-full rounded-lg border px-3 py-2 text-xs font-black text-white disabled:opacity-60"
+                  style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}
+                >
+                  Aplicar copys IA en tienda
+                </button>
+              </div>
+            </section>
+            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "seo" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+              <h3 className="text-sm font-black uppercase tracking-[0.15em]">SEO tienda online</h3>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
+                Ajusta URL y textos clave para mejorar descubrimiento y conversion.
+              </p>
+              <div className="mt-3 space-y-3">
+                <label className="block text-xs font-semibold">
+                  Alias publico (slug)
+                  <input
+                    value={config.storeSlug || ""}
+                    onChange={(e) =>
+                      setConfig((prev) => ({
+                        ...prev,
+                        storeSlug: sanitizeStoreSlug(e.target.value),
+                      }))
+                    }
+                    className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                    style={{ borderColor: "var(--vs-border)" }}
+                    placeholder="mi-tienda-online"
+                  />
+                </label>
+                <label className="block text-xs font-semibold">
+                  Frase SEO principal
+                  <input
+                    value={content.kicker || ""}
+                    onChange={(e) => setContent({ kicker: e.target.value })}
+                    className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                    style={{ borderColor: "var(--vs-border)" }}
+                    placeholder="Tienda online + WhatsApp"
+                  />
+                </label>
+                <label className="block text-xs font-semibold">
+                  Placeholder de busqueda
+                  <input
+                    value={content.searchPlaceholder || ""}
+                    onChange={(e) => setContent({ searchPlaceholder: e.target.value })}
+                    className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                    style={{ borderColor: "var(--vs-border)" }}
+                    placeholder="Buscar producto..."
+                  />
+                </label>
+                <div className="rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>
+                  URL publica actual: <b>{`/t/${publicStoreSlug}`}</b>
+                </div>
+              </div>
+            </section>
+
+            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "settings" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+              <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.15em]">
+                <MessageCircle className="h-4 w-4" />
+                Ajustes PRO tienda
+              </h3>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
+                Autosave activo cada 30s. Configura carrito, widget, testimonios y FAQ.
+              </p>
+              <div className="mt-3 space-y-4">
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
+                  <p className="text-xs font-black uppercase tracking-[0.12em]">Carrito</p>
+                  <label className="mt-2 block text-xs font-semibold">
+                    Etiqueta del boton
+                    <input
+                      value={cartSettings.floatingButtonLabel || ""}
+                      onChange={(e) => setCartSettings({ floatingButtonLabel: e.target.value })}
+                      className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                      style={{ borderColor: "var(--vs-border)" }}
+                      placeholder="Carrito"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setCartSettings({ floatingButtonEnabled: !cartSettings.floatingButtonEnabled })}
+                    className="mt-2 w-full rounded-lg border px-3 py-2 text-xs font-bold"
+                    style={cartSettings.floatingButtonEnabled ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" } : { borderColor: "var(--vs-border)" }}
+                  >
+                    {cartSettings.floatingButtonEnabled ? "Boton flotante: ACTIVO" : "Boton flotante: INACTIVO"}
+                  </button>
+                </div>
+
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
+                  <p className="text-xs font-black uppercase tracking-[0.12em]">Widget WhatsApp / Asistente</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setWidgetSettings({ enabled: !widgetSettings.enabled })}
+                      className="rounded-lg border px-3 py-2 text-xs font-bold"
+                      style={widgetSettings.enabled ? { borderColor: "#86efac", background: "#f0fdf4", color: "#166534" } : { borderColor: "var(--vs-border)" }}
+                    >
+                      {widgetSettings.enabled ? "Widget activo" : "Widget apagado"}
+                    </button>
+                    <select
+                      value={widgetSettings.mode}
+                      onChange={(e) => setWidgetSettings({ mode: e.target.value as WidgetSettings["mode"] })}
+                      className={`h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                      style={{ borderColor: "var(--vs-border)" }}
+                    >
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="assistant">Asistente</option>
+                    </select>
+                  </div>
+                  <label className="mt-2 block text-xs font-semibold">
+                    Titulo del widget
+                    <input
+                      value={widgetSettings.title || ""}
+                      onChange={(e) => setWidgetSettings({ title: e.target.value })}
+                      className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                      style={{ borderColor: "var(--vs-border)" }}
+                      placeholder="Asistente de tienda"
+                    />
+                  </label>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <label className="block text-xs font-semibold">
+                      Texto del boton
+                      <input
+                        value={widgetSettings.ctaLabel || ""}
+                        onChange={(e) => setWidgetSettings({ ctaLabel: e.target.value })}
+                        className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                        style={{ borderColor: "var(--vs-border)" }}
+                        placeholder="Abrir chat"
+                      />
+                    </label>
+                    <label className="block text-xs font-semibold">
+                      Posicion
+                      <select
+                        value={widgetSettings.position}
+                        onChange={(e) => setWidgetSettings({ position: e.target.value as WidgetSettings["position"] })}
+                        className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                        style={{ borderColor: "var(--vs-border)" }}
+                      >
+                        <option value="right">Derecha</option>
+                        <option value="left">Izquierda</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label className="mt-2 block text-xs font-semibold">
+                    Mensaje inicial
+                    <textarea
+                      value={widgetSettings.welcomeMessage || ""}
+                      onChange={(e) => setWidgetSettings({ welcomeMessage: e.target.value })}
+                      className={`mt-1 min-h-[70px] w-full rounded-lg border px-3 py-2 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                      style={{ borderColor: "var(--vs-border)" }}
+                      placeholder="Hola, te ayudo con productos y pedidos."
+                    />
+                  </label>
+                  <label className="mt-2 block text-xs font-semibold">
+                    Placeholder del asistente
+                    <input
+                      value={widgetSettings.assistantPlaceholder || ""}
+                      onChange={(e) => setWidgetSettings({ assistantPlaceholder: e.target.value })}
+                      className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
+                      style={{ borderColor: "var(--vs-border)" }}
+                      placeholder="Escribe tu consulta..."
+                    />
+                  </label>
+                </div>
+
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
+                  <p className="text-xs font-black uppercase tracking-[0.12em]">Testimonios reales</p>
+                  <div className="mt-2 space-y-2">
+                    {testimonials.map((testimonial) => (
+                      <div key={testimonial.id} className="rounded-lg border p-2" style={{ borderColor: "var(--vs-border)" }}>
+                        <input
+                          value={testimonial.name}
+                          onChange={(e) => updateTestimonial(testimonial.id, { name: e.target.value })}
+                          className={`h-9 w-full rounded-lg border px-2 text-xs outline-none ${DARK_FORM_FIELD_CLASS}`}
+                          style={{ borderColor: "var(--vs-border)" }}
+                          placeholder="Nombre"
+                        />
+                        <input
+                          value={testimonial.text}
+                          onChange={(e) => updateTestimonial(testimonial.id, { text: e.target.value })}
+                          className={`mt-2 h-9 w-full rounded-lg border px-2 text-xs outline-none ${DARK_FORM_FIELD_CLASS}`}
+                          style={{ borderColor: "var(--vs-border)" }}
+                          placeholder="Testimonio"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeTestimonial(testimonial.id)}
+                          className="mt-2 h-8 w-full rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-600"
+                        >
+                          Eliminar testimonio
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={addTestimonial} className="mt-2 h-9 w-full rounded-lg border px-3 text-xs font-black text-white" style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}>
+                    Agregar testimonio
+                  </button>
+                </div>
+
+                <div className="rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
+                  <p className="text-xs font-black uppercase tracking-[0.12em]">FAQ</p>
+                  <div className="mt-2 space-y-2">
+                    {faqItems.map((faq) => (
+                      <div key={faq.id} className="rounded-lg border p-2" style={{ borderColor: "var(--vs-border)" }}>
+                        <input
+                          value={faq.question}
+                          onChange={(e) => updateFaq(faq.id, { question: e.target.value })}
+                          className={`h-9 w-full rounded-lg border px-2 text-xs outline-none ${DARK_FORM_FIELD_CLASS}`}
+                          style={{ borderColor: "var(--vs-border)" }}
+                          placeholder="Pregunta"
+                        />
+                        <textarea
+                          value={faq.answer}
+                          onChange={(e) => updateFaq(faq.id, { answer: e.target.value })}
+                          className={`mt-2 min-h-[64px] w-full rounded-lg border px-2 py-2 text-xs outline-none ${DARK_FORM_FIELD_CLASS}`}
+                          style={{ borderColor: "var(--vs-border)" }}
+                          placeholder="Respuesta"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFaq(faq.id)}
+                          className="mt-2 h-8 w-full rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-600"
+                        >
+                          Eliminar FAQ
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={addFaq} className="mt-2 h-9 w-full rounded-lg border px-3 text-xs font-black text-white" style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}>
+                    Agregar FAQ
+                  </button>
+                </div>
               </div>
             </section>
           </aside>
