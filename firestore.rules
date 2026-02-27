@@ -27,6 +27,22 @@ service cloud.firestore {
         );
     }
 
+    function isDemoUser() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isDemo == true;
+    }
+
+    function demoUserGroupId() {
+      return isDemoUser()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.demoGroupId is string
+          ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.demoGroupId
+          : "";
+    }
+
+    function canAccessOwnDemoGroup(demoGroupId) {
+      return isDemoUser() && demoUserGroupId() == demoGroupId;
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
@@ -38,6 +54,19 @@ service cloud.firestore {
         || isAdmin();
       allow update: if isOwner(userId) || isAdmin();
       allow delete: if isAdmin();
+    }
+
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /demoGroups/{demoGroupId} {
+      allow get, list: if isAdmin() || canAccessOwnDemoGroup(demoGroupId);
+      allow create, update, delete: if isAdmin();
+
+      match /{document=**} {
+        allow read, write: if isAdmin() || canAccessOwnDemoGroup(demoGroupId);
+      }
     }
 
     match /cloned_sites/{siteId} {

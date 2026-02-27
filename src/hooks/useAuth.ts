@@ -12,6 +12,11 @@ export interface User {
   status?: 'active' | 'suspended' | 'disabled';
 }
 
+function toDemoVersion(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+}
+
 export function useAuth(requireAuth = false) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,6 +72,33 @@ export function useAuth(requireAuth = false) {
         setUser(userData);
         // Update localStorage to keep it in sync
         localStorage.setItem('fp_session', JSON.stringify(userData));
+
+        // Optional demo reset on login (per demo account setting).
+        try {
+          if (
+            userDataFromDb?.isDemo === true &&
+            String(userDataFromDb?.resetMode || '').toLowerCase() === 'on_login'
+          ) {
+            const currentVersion = toDemoVersion(userDataFromDb?.demoVersion);
+            const resetGuardKey = `fp_demo_reset_${firebaseUser.uid}_v${currentVersion}`;
+            if (!sessionStorage.getItem(resetGuardKey)) {
+              const idToken = await firebaseUser.getIdToken(true);
+              const response = await fetch('/api/demo/reset-own-on-login', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${idToken}`,
+                },
+              });
+              const payload = await response.json().catch(() => ({}));
+              sessionStorage.setItem(resetGuardKey, '1');
+
+              const nextVersion = toDemoVersion(payload?.demoVersion || currentVersion);
+              sessionStorage.setItem(`fp_demo_reset_${firebaseUser.uid}_v${nextVersion}`, '1');
+            }
+          }
+        } catch (demoResetError) {
+          console.warn('[useAuth] Demo login reset failed.', demoResetError);
+        }
 
         // Sync subscription session cookie for middleware feature gating.
         try {

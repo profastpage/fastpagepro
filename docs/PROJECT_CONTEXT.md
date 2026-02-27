@@ -1251,3 +1251,34 @@ o-scrollbar para evitar barra visible.
   - Pro: Hasta 30% de descuento en plan anual
 - Billing pricing section (PricingTable) now shows equivalent per-plan annual discount labels.
 - Changes were UI-only copy badges; plan routes/actions and pricing structure remain unchanged.
+
+## Demo Accounts System (2026-02-27)
+
+- Added server-side demo account module with minimal integration:
+  - src/lib/server/demoAccounts/seeds.ts
+  - src/lib/server/demoAccounts/service.ts
+- Additive Firestore model support in users/admin/demoGroups:
+  - users: role, isDemo, demoGroupId, demoTemplate, demoExpiresAt, resetMode, lastResetAt, onboardingDone, demoVersion
+  - demoGroups/{demoGroupId}: ownerUid, template, createdAt, expiresAt (nullable), status
+  - admin/demoIndex/{uid}: email/template/group/reset/expiry/status
+- Implemented demo actions (server-side, superadmin protected):
+  - createDemoAccount
+  - resetDemoToFirstTime
+  - updateDemoSettings
+  - deleteDemoAccount
+  - deleteExpiredDemos
+- Implemented own-login reset for demo users:
+  - POST /api/demo/reset-own-on-login
+  - useAuth calls reset once per session when isDemo + resetMode=on_login
+  - server throttle: 10 minutes
+- Added Super Admin UI: /admin/demos
+  - create demos (template/resetMode/expiry nullable)
+  - reset to first-time
+  - update settings
+  - delete demo
+  - one-time credentials modal (password returned once, never stored)
+- Added cron endpoint + Vercel hourly schedule:
+  - GET /api/cron/delete-expired-demos
+  - vercel.json crons: 0 * * * *
+- Firestore rules updated for demo groups/admin index access control.
+- No changes to existing user auth flow beyond optional demo reset behavior.

@@ -622,6 +622,13 @@ export default function AdminPanel() {
             <p className="text-sm font-bold">{ROOT_ADMIN_EMAIL}</p>
             <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Sesión de Administrador</p>
           </div>
+          <button
+            onClick={() => router.push("/admin/demos")}
+            className="rounded-xl border border-amber-300/30 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20"
+            title="Gestionar demo accounts"
+          >
+            Demos
+          </button>
           <button 
             onClick={handleLogout}
             className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20"
