@@ -1217,3 +1217,18 @@ o-scrollbar para evitar barra visible.
 - Compatibilidad:
   - normalizacion backward-compatible para perfiles legacy sin nuevos campos.
   - Starter/Business mantienen visibilidad de features con estado bloqueado (sin romper datos existentes).
+
+## Dashboard Nav Global Plan Counter (2026-02-27)
+
+- Component: src/components/Nav.tsx.
+- Scope:
+  - Added persistent subscription status block in dashboard navigation.
+  - Always shows: Plan, Projects used/max, and Days left.
+  - If Business trial is active: shows trial days remaining text.
+- Responsive:
+  - Desktop: shown in the top-right account area.
+  - Mobile: shown inside the side menu for all dashboard modules.
+- Compatibility:
+  - No route changes.
+  - No button action changes.
+  - No API contract or Firestore schema changes.

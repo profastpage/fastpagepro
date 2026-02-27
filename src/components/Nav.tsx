@@ -8,6 +8,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { useSubscription } from "@/hooks/useSubscription";
+import PlanBadge from "@/components/subscription/PlanBadge";
 import { ChevronLeft, ChevronRight, Zap, LogOut, Lock } from "lucide-react";
 
 export default function Nav() {
@@ -21,6 +22,26 @@ export default function Nav() {
   const isEnglish = language === "en";
   const permissions = usePlanPermissions(Boolean(session?.uid));
   const { summary } = useSubscription(Boolean(session?.uid));
+  const projectsUsageLabel =
+    permissions.maxProjects == null
+      ? `${permissions.usage.publishedProjects}`
+      : `${permissions.usage.publishedProjects}/${permissions.maxProjects}`;
+  const computedPlanDays = summary?.isBusinessTrial ? summary?.trialDaysRemaining : summary?.daysRemaining;
+  const planDaysRemaining =
+    summary?.status === "ACTIVE" ? Math.max(0, Number(computedPlanDays || 0)) : 0;
+  const navStatusCopy = isEnglish
+    ? {
+        plan: "Plan:",
+        projects: "Projects:",
+        days: "Days left:",
+        trial: (days: number) => `Business trial: ${days} days left.`,
+      }
+    : {
+        plan: "Plan:",
+        projects: "Proyectos:",
+        days: "Dias restantes:",
+        trial: (days: number) => `Prueba Business: ${days} dias restantes.`,
+      };
 
   const toggleLanguage = () => {
     setLanguage(language === "es" ? "en" : "es");
@@ -115,6 +136,28 @@ export default function Nav() {
     pathname.startsWith("/bio/")
   ) return null;
 
+  const planStatusBlock = session ? (
+    <div className="rounded-2xl border border-amber-300/25 bg-black/70 px-3 py-2 backdrop-blur-sm">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-zinc-300">{navStatusCopy.plan}</span>
+        <PlanBadge plan={summary?.plan || "FREE"} />
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold text-zinc-200">
+          {navStatusCopy.projects} {projectsUsageLabel}
+        </span>
+        <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-[11px] font-semibold text-amber-100">
+          {navStatusCopy.days} {planDaysRemaining}
+        </span>
+      </div>
+      {summary?.isBusinessTrial ? (
+        <p className="mt-2 text-[11px] font-semibold text-amber-200">
+          {navStatusCopy.trial(Math.max(0, Number(summary?.trialDaysRemaining || 0)))}
+        </p>
+      ) : null}
+    </div>
+  ) : null;
+
   return (
     <>
       {/* Desktop Navigation Layout */}
@@ -186,72 +229,75 @@ export default function Nav() {
         </nav>
 
         {/* Auth - Top Right */}
-        <div className="fixed top-8 right-8 z-50 flex items-center gap-4">
-          <button
-            type="button"
-            onClick={toggleLanguage}
-            aria-label={t("floating.toggleLanguage")}
-            className="inline-flex h-9 min-w-[2.5rem] items-center justify-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-bold tracking-[0.08em] text-white transition hover:border-amber-300/45 hover:text-amber-200"
-          >
-            {language === "es" ? "EN" : "ES"}
-          </button>
-          {!session ? (
-            <>
-              <Link
-                href="/auth?tab=login"
-                className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-white transition-all"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+        <div className="fixed top-8 right-8 z-50 flex max-w-[45vw] flex-col items-end gap-2">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              aria-label={t("floating.toggleLanguage")}
+              className="inline-flex h-9 min-w-[2.5rem] items-center justify-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-bold tracking-[0.08em] text-white transition hover:border-amber-300/45 hover:text-amber-200"
+            >
+              {language === "es" ? "EN" : "ES"}
+            </button>
+            {!session ? (
+              <>
+                <Link
+                  href="/auth?tab=login"
+                  className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-white transition-all"
                 >
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                  <polyline points="10 17 15 12 10 7" />
-                  <line x1="15" y1="12" x2="3" y2="12" />
-                </svg>
-                {t("nav.login")}
-              </Link>
-              <Link
-                href="/auth?tab=register"
-                className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-white transition-all"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <polyline points="10 17 15 12 10 7" />
+                    <line x1="15" y1="12" x2="3" y2="12" />
+                  </svg>
+                  {t("nav.login")}
+                </Link>
+                <Link
+                  href="/auth?tab=register"
+                  className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-white transition-all"
                 >
-                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                {t("nav.create_account")}
-              </Link>
-            </>
-          ) : (
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-zinc-400 font-medium">{session.email}</span>
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full transition-all duration-300 border border-red-500/20 group"
-                title={t("nav.logout")}
-              >
-                <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold uppercase tracking-wider">{t("nav.logout")}</span>
-              </button>
-            </div>
-          )}
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  {t("nav.create_account")}
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-4">
+                <span className="max-w-[14rem] truncate text-sm text-zinc-400 font-medium">{session.email}</span>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-full transition-all duration-300 border border-red-500/20 group"
+                  title={t("nav.logout")}
+                >
+                  <LogOut className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                  <span className="text-xs font-bold uppercase tracking-wider">{t("nav.logout")}</span>
+                </button>
+              </div>
+            )}
+          </div>
+          {planStatusBlock}
         </div>
       </div>
 
@@ -369,6 +415,8 @@ export default function Nav() {
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                 </button>
+
+                {session ? <div className="mb-4">{planStatusBlock}</div> : null}
 
                 <div className="flex flex-col gap-2.5">
                   {navLinks.map((link) => (
