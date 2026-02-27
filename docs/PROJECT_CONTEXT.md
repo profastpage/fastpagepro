@@ -1313,3 +1313,12 @@ o-scrollbar para evitar barra visible.
   - seccion de testimonios con rotacion automatica.
   - seccion FAQ renderizada con bloques desplegables.
 - Se extendio normalizacion en `publicStorefront` para mantener compatibilidad de datos legacy y defaults seguros.
+
+## Carta Digital Route Rename (2026-02-27)
+
+- Ruta principal del editor de Carta Digital ahora expuesta como `/cartadigital`.
+- Se mantiene compatibilidad sin romper flujos existentes mediante redireccion 301:
+  - `/linkhub` -> `/cartadigital`.
+- Navegacion y entrypoints actualizados al nuevo path:
+  - `Nav`, `Footer`, `Hub`, `Published (editPath)`, y `app/new` para vertical restaurante.
+- Se conservo toda la logica, componentes y estado existente del modulo (sin cambios funcionales fuera del cambio de URL).

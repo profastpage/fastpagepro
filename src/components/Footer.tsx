@@ -10,7 +10,7 @@ const FOOTER_LINKS = [
   { labelKey: "nav.templates", fallback: "TEMPLATES", href: "/templates" },
   { labelKey: "nav.cloner", fallback: "CLONER", href: "/cloner/web" },
   { labelKey: "nav.store", fallback: "ONLINE STORE", href: "/store" },
-  { labelKey: "nav.linkhub", fallback: "CARTA DIGITAL", href: "/linkhub" },
+  { labelKey: "nav.linkhub", fallback: "CARTA DIGITAL", href: "/cartadigital" },
   { labelKey: "nav.pricing", fallback: "PRICING", href: "/dashboard/billing" },
   { labelKey: "nav.login", fallback: "LOGIN", href: "/auth?tab=login" },
 ];

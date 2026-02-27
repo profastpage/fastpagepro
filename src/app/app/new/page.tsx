@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { normalizeVertical, persistVerticalChoice, verticalToSignupHref } from "@/lib/vertical";
 
 function routeByVertical(vertical: ReturnType<typeof normalizeVertical>) {
-  if (vertical === "restaurant") return "/linkhub";
+  if (vertical === "restaurant") return "/cartadigital";
   if (vertical === "ecommerce") return "/store";
   return "/builder";
 }

@@ -137,7 +137,7 @@ export default function HubPage() {
       description: t("hub.linkhub.desc"),
       icon: <Link2 className="w-8 h-8 text-sky-400" />,
       action: t("hub.linkhub.action"),
-      href: "/linkhub",
+      href: "/cartadigital",
       gradient: "from-zinc-900 to-zinc-900",
       border: "hover:border-sky-500/50",
     },

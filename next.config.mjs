@@ -7,6 +7,11 @@ const nextConfig = {
         destination: "/templates",
         permanent: true,
       },
+      {
+        source: "/linkhub",
+        destination: "/cartadigital",
+        permanent: true,
+      },
     ];
   },
   async headers() {

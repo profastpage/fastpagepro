@@ -130,7 +130,7 @@ function PublishedProjectsContent() {
               sourceLabel: "Carta Digital",
               publishedAt: Number(data.publishedAt || data.updatedAt || data.createdAt || 0),
               publishedUrl: `/bio/${String(data.slug)}`,
-              editPath: "/linkhub",
+              editPath: "/cartadigital",
             });
           }
         }

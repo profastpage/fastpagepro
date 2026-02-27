@@ -119,7 +119,7 @@ export default function Nav() {
       mapItem(t("nav.templates"), "/templates"),
       mapItem(t("nav.cloner"), "/cloner/web"),
       mapItem(t("nav.store"), "/store"),
-      mapItem(t("nav.linkhub"), "/linkhub"),
+      mapItem(t("nav.linkhub"), "/cartadigital"),
       mapItem(t("nav.published"), "/published"),
       mapItem(t("nav.metrics"), "/metrics"),
       mapItem("Billing", "/dashboard/billing"),
