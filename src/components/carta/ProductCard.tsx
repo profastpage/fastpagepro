@@ -9,7 +9,9 @@ export type ProductCardBadge = "🔥 Más pedido" | "⭐ Favorito" | "🕒 Se ac
 type ProductCardProps = {
   title: string;
   description?: string;
+  salesCopy?: string;
   imageUrl?: string;
+  galleryImageUrls?: string[];
   price: string;
   oldPrice?: string;
   badge?: string;
@@ -25,7 +27,9 @@ type ProductCardProps = {
 const ProductCard = memo(function ProductCard({
   title,
   description,
+  salesCopy,
   imageUrl,
+  galleryImageUrls = [],
   price,
   oldPrice,
   badge,
@@ -38,6 +42,13 @@ const ProductCard = memo(function ProductCard({
   className,
 }: ProductCardProps) {
   const useStepper = Boolean(onIncrement && onDecrement);
+  const uniqueGallery = galleryImageUrls
+    .map((url) => String(url || "").trim())
+    .filter(Boolean)
+    .filter((url, index, list) => list.indexOf(url) === index)
+    .slice(0, 5);
+  const primaryImage = imageUrl || uniqueGallery[0] || "";
+  const galleryThumbnails = uniqueGallery.filter((url) => url !== primaryImage).slice(0, 3);
 
   return (
     <article
@@ -46,9 +57,9 @@ const ProductCard = memo(function ProductCard({
     >
       <div className="flex gap-3">
         <div className="relative h-[104px] w-[104px] shrink-0 overflow-hidden rounded-xl border border-[color:var(--carta-chip-border)]">
-          {imageUrl ? (
+          {primaryImage ? (
             <Image
-              src={imageUrl}
+              src={primaryImage}
               alt={title}
               fill
               loading="lazy"
@@ -85,6 +96,26 @@ const ProductCard = memo(function ProductCard({
             <p className="mt-1 line-clamp-2 text-sm" style={{ color: "var(--carta-muted-text)" }}>
               {description}
             </p>
+          ) : null}
+          {salesCopy ? (
+            <p className="mt-1 line-clamp-2 text-xs font-semibold" style={{ color: "var(--carta-accent)" }}>
+              {salesCopy}
+            </p>
+          ) : null}
+          {galleryThumbnails.length > 0 ? (
+            <div className="mt-2 flex items-center gap-1.5">
+              {galleryThumbnails.map((url) => (
+                <span
+                  key={url}
+                  className="relative h-7 w-7 overflow-hidden rounded-md border border-[color:var(--carta-chip-border)]"
+                >
+                  <Image src={url} alt={title} fill sizes="28px" className="object-cover" />
+                </span>
+              ))}
+              <span className="text-[10px] font-semibold" style={{ color: "var(--carta-muted-text)" }}>
+                +{galleryThumbnails.length}
+              </span>
+            </div>
           ) : null}
 
           <div className="mt-2 flex flex-wrap items-end justify-between gap-2">

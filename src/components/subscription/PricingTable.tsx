@@ -120,6 +120,14 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
               },
             },
             {
+              label: "PRO sales stack",
+              values: {
+                FREE: "🔒 Locked",
+                BUSINESS: "🔒 Locked",
+                PRO: "Testimonials + sales copy + gallery + dispatch modes",
+              },
+            },
+            {
               label: "Cloner",
               values: {
                 FREE: "No",
@@ -183,6 +191,14 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
                 FREE: "Sin metricas avanzadas",
                 BUSINESS: "Visitas, clicks y conversion media",
                 PRO: "Metricas PRO + insights automaticos",
+              },
+            },
+            {
+              label: "Stack de ventas PRO",
+              values: {
+                FREE: "🔒 Bloqueado",
+                BUSINESS: "🔒 Bloqueado",
+                PRO: "Testimonios + copys + galeria + modos de despacho",
               },
             },
             {

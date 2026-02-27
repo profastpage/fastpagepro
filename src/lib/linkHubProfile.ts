@@ -20,6 +20,8 @@ export const MAX_LINK_HUB_LINKS = 12;
 export const MAX_LINK_HUB_CATALOG_CATEGORIES = 16;
 export const MAX_LINK_HUB_CATALOG_ITEMS = 120;
 export const MAX_LINK_HUB_COVER_IMAGES = 5;
+export const MAX_LINK_HUB_ITEM_GALLERY_IMAGES = 5;
+export const LINK_HUB_PRO_TESTIMONIALS_COUNT = 5;
 
 export const LINK_HUB_THEME_STYLES = {
   midnight: {
@@ -348,11 +350,27 @@ export interface LinkHubCatalogItem {
   categoryId: string;
   title: string;
   description: string;
+  salesCopy?: string;
   imageUrl: string;
+  galleryImageUrls: string[];
   price: string;
   compareAtPrice?: string;
   badge?: string;
   emoji?: string;
+}
+
+export interface LinkHubProTestimonial {
+  id: string;
+  author: string;
+  role: string;
+  quote: string;
+  rating: number;
+}
+
+export interface LinkHubDeliveryModes {
+  delivery: boolean;
+  pickup: boolean;
+  dinein: boolean;
 }
 
 export interface LinkHubLocation {
@@ -410,6 +428,9 @@ export interface LinkHubProfile {
   links: LinkHubLink[];
   catalogCategories: LinkHubCatalogCategory[];
   catalogItems: LinkHubCatalogItem[];
+  proTestimonials: LinkHubProTestimonial[];
+  proDeliveryModes: LinkHubDeliveryModes;
+  proFeaturesUnlocked: boolean;
   location: LinkHubLocation;
   pricing: LinkHubPricingConfig;
   createdAt: number;
@@ -506,12 +527,54 @@ export function createLinkHubCatalogItem(categoryId = ""): LinkHubCatalogItem {
     categoryId,
     title: "",
     description: "",
+    salesCopy: "",
     imageUrl: "",
+    galleryImageUrls: [],
     price: "",
     compareAtPrice: "",
     badge: "",
     emoji: "",
   };
+}
+
+function createDefaultProTestimonials(displayName = "tu negocio"): LinkHubProTestimonial[] {
+  return [
+    {
+      id: createId("tst"),
+      author: "Cliente frecuente",
+      role: "Pedido semanal",
+      quote: `La carta de ${displayName} se ve clara y ahora pedir por WhatsApp es rapidisimo.`,
+      rating: 5,
+    },
+    {
+      id: createId("tst"),
+      author: "Cliente nuevo",
+      role: "Primer pedido",
+      quote: "Encontre mis platos favoritos en segundos y el pedido llego tal como se mostro.",
+      rating: 5,
+    },
+    {
+      id: createId("tst"),
+      author: "Cliente corporativo",
+      role: "Pedido para equipo",
+      quote: "Las fotos y descripciones ayudan mucho para decidir mas rapido en grupo.",
+      rating: 5,
+    },
+    {
+      id: createId("tst"),
+      author: "Cliente delivery",
+      role: "Compra recurrente",
+      quote: "El proceso de compra es simple y la experiencia se siente profesional.",
+      rating: 5,
+    },
+    {
+      id: createId("tst"),
+      author: "Cliente en local",
+      role: "Visita presencial",
+      quote: "Pude revisar opciones, promociones y escribir directo sin perder tiempo.",
+      rating: 5,
+    },
+  ];
 }
 
 export function createLinkHubPricingPlan(seed?: Partial<LinkHubPricingPlan>): LinkHubPricingPlan {
@@ -902,6 +965,13 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     ],
     catalogCategories: categories,
     catalogItems: createDefaultCatalogItems(categories, businessType),
+    proTestimonials: createDefaultProTestimonials(fallbackName),
+    proDeliveryModes: {
+      delivery: true,
+      pickup: true,
+      dinein: true,
+    },
+    proFeaturesUnlocked: false,
     location: {
       address: "",
       mapEmbedUrl: "",
@@ -977,7 +1047,16 @@ export function normalizeLinkHubProfile(
         categoryId,
         title: safeText(item?.title),
         description: safeText(item?.description),
+        salesCopy: safeText(item?.salesCopy),
         imageUrl: safeText(item?.imageUrl),
+        galleryImageUrls: [
+          ...(Array.isArray(item?.galleryImageUrls) ? item.galleryImageUrls : []),
+          safeText(item?.imageUrl),
+        ]
+          .map((image) => safeText(image))
+          .filter(Boolean)
+          .filter((image, index, list) => list.indexOf(image) === index)
+          .slice(0, MAX_LINK_HUB_ITEM_GALLERY_IMAGES),
         price: safeText(item?.price),
         compareAtPrice: safeText(item?.compareAtPrice),
         badge: safeText(item?.badge),
@@ -991,6 +1070,50 @@ export function normalizeLinkHubProfile(
     catalogItems.length > 0
       ? catalogItems
       : createDefaultCatalogItems(finalCategories, businessType);
+
+  const rawTestimonials = Array.isArray((input as Record<string, unknown>)["proTestimonials"])
+    ? ((input as Record<string, unknown>)["proTestimonials"] as unknown[])
+    : [];
+  const normalizedTestimonials = rawTestimonials
+    .map((entry) => {
+      const safeEntry = isRecord(entry) ? entry : {};
+      const ratingRaw = Number(safeEntry["rating"]);
+      const rating = Number.isFinite(ratingRaw) ? Math.max(1, Math.min(5, Math.round(ratingRaw))) : 5;
+      return {
+        id: safeText(safeEntry["id"]) || createId("tst"),
+        author: safeText(safeEntry["author"]),
+        role: safeText(safeEntry["role"]),
+        quote: safeText(safeEntry["quote"]),
+        rating,
+      } as LinkHubProTestimonial;
+    })
+    .filter((entry) => entry.quote.length > 0)
+    .slice(0, LINK_HUB_PRO_TESTIMONIALS_COUNT);
+  const fallbackTestimonials =
+    base.proTestimonials.length > 0 ? base.proTestimonials : createDefaultProTestimonials(base.displayName);
+  while (normalizedTestimonials.length < LINK_HUB_PRO_TESTIMONIALS_COUNT) {
+    normalizedTestimonials.push(
+      fallbackTestimonials[normalizedTestimonials.length] || createDefaultProTestimonials(base.displayName)[0],
+    );
+  }
+
+  const rawDeliveryModes = isRecord((input as Record<string, unknown>)["proDeliveryModes"])
+    ? ((input as Record<string, unknown>)["proDeliveryModes"] as Record<string, unknown>)
+    : {};
+  const deliveryModes: LinkHubDeliveryModes = {
+    delivery:
+      typeof rawDeliveryModes["delivery"] === "boolean"
+        ? (rawDeliveryModes["delivery"] as boolean)
+        : base.proDeliveryModes.delivery,
+    pickup:
+      typeof rawDeliveryModes["pickup"] === "boolean"
+        ? (rawDeliveryModes["pickup"] as boolean)
+        : base.proDeliveryModes.pickup,
+    dinein:
+      typeof rawDeliveryModes["dinein"] === "boolean"
+        ? (rawDeliveryModes["dinein"] as boolean)
+        : base.proDeliveryModes.dinein,
+  };
 
   const rawLocation: Record<string, unknown> = isRecord(input.location) ? input.location : {};
   const rawAddress = safeText(rawLocation["address"]);
@@ -1108,6 +1231,9 @@ export function normalizeLinkHubProfile(
     links: links.length > 0 ? links : base.links,
     catalogCategories: finalCategories,
     catalogItems: finalItems,
+    proTestimonials: normalizedTestimonials,
+    proDeliveryModes: deliveryModes,
+    proFeaturesUnlocked: Boolean((input as Record<string, unknown>)["proFeaturesUnlocked"]),
     location,
     pricing: {
       enabled: typeof rawPricing["enabled"] === "boolean" ? (rawPricing["enabled"] as boolean) : base.pricing.enabled,

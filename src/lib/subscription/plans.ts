@@ -71,6 +71,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       "Metricas basicas: visitas, clicks y conversion media",
       "Soporte por correo (respuesta maxima 24h)",
       "Branding visible (no removible)",
+      "Funciones PRO bloqueadas: testimonios, copys avanzados y galeria por producto",
     ],
     highlighted: true,
   },
@@ -108,6 +109,10 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
       "Metricas PRO + insights automaticos",
       "Soporte en vivo por WhatsApp",
       "Rendimiento tecnico avanzado (LCP/SEO/Accesibilidad)",
+      "Testimonios reales con transicion segun tema",
+      "Copys de venta instantaneos por plato/producto",
+      "Galeria PRO: hasta 5 fotos por producto",
+      "Despacho configurable: delivery, recojo o comer en local",
     ],
   },
 ];

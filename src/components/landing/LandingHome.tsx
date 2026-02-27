@@ -1005,6 +1005,7 @@ export default function LandingHome() {
               <li>IA basica</li>
               <li>Metricas basicas</li>
               <li>📧 Soporte por correo (max. 24h)</li>
+              <li>🔒 Testimonios, copys PRO y galeria avanzada</li>
             </ul>
             <Link href={businessSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
               {copy.businessCta}
@@ -1022,6 +1023,10 @@ export default function LandingHome() {
               <li><strong>IA avanzada</strong></li>
               <li>💬 Soporte en vivo por WhatsApp</li>
               <li>Metricas PRO + insights</li>
+              <li>Testimonios reales con transicion por tema</li>
+              <li>Copys de venta instantaneos por plato/producto</li>
+              <li>Galeria PRO: hasta 5 fotos por producto</li>
+              <li>Despacho configurable: delivery/recojo/comer en local</li>
             </ul>
             <Link href={proSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
               {copy.proCta}

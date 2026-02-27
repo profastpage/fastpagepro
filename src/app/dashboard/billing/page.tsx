@@ -127,7 +127,7 @@ export default function BillingPage() {
             saasBilling: "SaaS Billing",
             title: "Fast Page official plans",
             subtitle:
-              "Starter S/29 without support, Business with 14-day free trial + email support, and Pro S/99 with live support.",
+              "Starter S/29 without support, Business with 14-day free trial + email support, and Pro S/99 with testimonials, sales copy, gallery, and live support.",
             activePlan: "Active plan:",
             trialExpired:
               "Your 14-day trial ended (0 days left). Activate Starter, Business, or Pro to reactivate features and pages.",
@@ -192,7 +192,7 @@ export default function BillingPage() {
             saasBilling: "Facturacion SaaS",
             title: "Planes oficiales Fast Page",
             subtitle:
-              "Starter S/29 sin soporte, Business con 14 dias gratis + soporte por correo y Pro S/99 con soporte en vivo.",
+              "Starter S/29 sin soporte, Business con 14 dias gratis + soporte por correo y Pro S/99 con testimonios, copys de venta, galeria y soporte en vivo.",
             activePlan: "Plan activo:",
             trialExpired:
               "Tu prueba de 14 dias finalizo (0 dias restantes). Activa Starter, Business o Pro para reactivar funciones y paginas.",

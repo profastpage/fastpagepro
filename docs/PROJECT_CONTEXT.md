@@ -1186,3 +1186,34 @@ o-scrollbar para evitar barra visible.
   - se elimina falso error de permisos en autosave/publicacion para cuentas autenticadas.
   - la compatibilidad se aplica transversalmente a Store, Builder y Editor al compartir colecciones cloned_sites/projects.
 
+## Link Hub PRO sales features + pricing copy refresh (2026-02-27)
+
+- Modulos ajustados:
+  - `src/lib/linkHubProfile.ts`
+  - `src/app/linkhub/page.tsx`
+  - `src/app/bio/[slug]/page.tsx`
+  - `src/components/carta/ProductCard.tsx`
+  - `src/lib/subscription/plans.ts`
+  - `src/components/subscription/PricingTable.tsx`
+  - `src/components/landing/LandingHome.tsx`
+  - `src/app/dashboard/billing/page.tsx`
+- Cambios funcionales:
+  - se agregan capacidades PRO persistentes en `link_profiles`:
+    - `proTestimonials` (5 testimonios)
+    - `proDeliveryModes` (delivery, pickup, dinein)
+    - `proFeaturesUnlocked`
+    - por item: `salesCopy` y `galleryImageUrls` (hasta 5 fotos)
+  - dashboard `/linkhub` incorpora bloque "Funciones PRO para vender mas" con candado visible para Starter/Business.
+  - en plan PRO se habilita:
+    - edicion de testimonios reales
+    - copys de venta por item (individual y masivo)
+    - galeria extra por producto con upload/URL y eliminacion
+    - configuracion de despacho en checkout
+  - pagina publica `/bio/[slug]` consume funciones PRO:
+    - testimonios con transicion en tab contacto
+    - `salesCopy` y mini galeria en tarjetas de producto
+    - checkout filtra opciones de entrega segun configuracion PRO
+  - copy comercial de planes actualizado en Landing/Billing para reforzar beneficios PRO.
+- Compatibilidad:
+  - normalizacion backward-compatible para perfiles legacy sin nuevos campos.
+  - Starter/Business mantienen visibilidad de features con estado bloqueado (sin romper datos existentes).

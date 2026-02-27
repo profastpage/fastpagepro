@@ -26,14 +26,17 @@ import {
   LinkHubLinkType,
   LinkHubBusinessType,
   LinkHubCatalogItem,
+  LinkHubProTestimonial,
   LinkHubPricingPlan,
   LinkHubProfile,
   LinkHubThemeCategory,
   LinkHubTextTone,
   LinkHubTheme,
+  LINK_HUB_PRO_TESTIMONIALS_COUNT,
   MAX_LINK_HUB_CATALOG_CATEGORIES,
   MAX_LINK_HUB_CATALOG_ITEMS,
   MAX_LINK_HUB_COVER_IMAGES,
+  MAX_LINK_HUB_ITEM_GALLERY_IMAGES,
   normalizeHexColor,
   normalizeLinkUrl,
   normalizeLinkHubProfile,
@@ -81,6 +84,7 @@ import {
   MessageCircle,
   AtSign,
   Rocket,
+  Lock,
   X,
 } from "lucide-react";
 
@@ -208,6 +212,14 @@ function parseMultiline(input: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function mergeGalleryImages(images: string[]): string[] {
+  return images
+    .map((image) => String(image || "").trim())
+    .filter(Boolean)
+    .filter((image, index, list) => list.indexOf(image) === index)
+    .slice(0, MAX_LINK_HUB_ITEM_GALLERY_IMAGES);
 }
 
 function formatMultiline(lines: string[]): string {
@@ -438,6 +450,7 @@ export default function LinkHubPage() {
   const hasAppliedIncomingDemoTheme = useRef(false);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
+  const isProPlan = activePlan === "PRO";
   const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
   const canCustomizeColors = Boolean(subscriptionSummary?.features?.advancedColorCustomization);
   const publishedProjectsUsed = Number(subscriptionSummary?.usage?.publishedPages || 0);
@@ -689,6 +702,7 @@ export default function LinkHubPage() {
       return (
         item.title.toLowerCase().includes(term) ||
         item.description.toLowerCase().includes(term) ||
+        (item.salesCopy || "").toLowerCase().includes(term) ||
         (item.badge || "").toLowerCase().includes(term) ||
         (item.price || "").toLowerCase().includes(term)
       );
@@ -1030,6 +1044,147 @@ export default function LinkHubPage() {
         ),
       };
     });
+  }
+
+  function showProFeatureLocked(featureLabel: string) {
+    setMessage({
+      type: "error",
+      text: `${featureLabel} está bloqueado. Activa plan PRO para usar esta función.`,
+    });
+  }
+
+  function patchProTestimonial(index: number, patch: Partial<LinkHubProTestimonial>) {
+    if (!isProPlan) {
+      showProFeatureLocked("Testimonios PRO");
+      return;
+    }
+    setProfile((prev) => {
+      if (!prev) return prev;
+      if (index < 0 || index >= prev.proTestimonials.length) return prev;
+      const next = [...prev.proTestimonials];
+      next[index] = { ...next[index], ...patch };
+      return { ...prev, proTestimonials: next };
+    });
+  }
+
+  function patchProDeliveryMode(mode: keyof LinkHubProfile["proDeliveryModes"], enabled: boolean) {
+    if (!isProPlan) {
+      showProFeatureLocked("Opciones de despacho PRO");
+      return;
+    }
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        proDeliveryModes: {
+          ...prev.proDeliveryModes,
+          [mode]: enabled,
+        },
+      };
+    });
+  }
+
+  function appendCatalogGalleryImage(itemId: string, imageUrl: string) {
+    const normalizedUrl = String(imageUrl || "").trim();
+    if (!normalizedUrl) return;
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        catalogItems: prev.catalogItems.map((item) => {
+          if (item.id !== itemId) return item;
+          const nextGallery = mergeGalleryImages([...(item.galleryImageUrls || []), normalizedUrl]);
+          return {
+            ...item,
+            imageUrl: item.imageUrl || normalizedUrl,
+            galleryImageUrls: nextGallery,
+          };
+        }),
+      };
+    });
+  }
+
+  function removeCatalogGalleryImage(itemId: string, imageUrl: string) {
+    if (!isProPlan) {
+      showProFeatureLocked("Galería de fotos PRO");
+      return;
+    }
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        catalogItems: prev.catalogItems.map((item) => {
+          if (item.id !== itemId) return item;
+          const nextGallery = mergeGalleryImages((item.galleryImageUrls || []).filter((image) => image !== imageUrl));
+          return {
+            ...item,
+            imageUrl: item.imageUrl === imageUrl ? nextGallery[0] || "" : item.imageUrl,
+            galleryImageUrls: nextGallery,
+          };
+        }),
+      };
+    });
+  }
+
+  function addCatalogGalleryUrl(itemId: string) {
+    if (!isProPlan) {
+      showProFeatureLocked("Galería de fotos PRO");
+      return;
+    }
+    const url = window.prompt("Pega la URL de una foto adicional del producto");
+    if (!url) return;
+    appendCatalogGalleryImage(itemId, url);
+  }
+
+  async function suggestCatalogItemSalesCopy(itemId: string) {
+    if (!isProPlan) {
+      showProFeatureLocked("Copy de venta PRO");
+      return;
+    }
+    if (!profile) return;
+    const itemIndex = profile.catalogItems.findIndex((entry) => entry.id === itemId);
+    if (itemIndex < 0) return;
+
+    const item = profile.catalogItems[itemIndex];
+    const categoryName =
+      profile.catalogCategories.find((category) => category.id === item.categoryId)?.name.trim() || "";
+    const seed = getNextDescriptionSeed(itemIndex + 51);
+    const generatedCopy = buildCatalogDescriptionSuggestion(item, profile.businessType, categoryName, seed);
+    if (!generatedCopy) return;
+
+    patchCatalogItem(itemId, { salesCopy: generatedCopy });
+    setMessage({ type: "success", text: "Copy de venta PRO actualizado." });
+  }
+
+  function suggestSalesCopyForAllItems() {
+    if (!isProPlan) {
+      showProFeatureLocked("Copys de venta PRO");
+      return;
+    }
+    if (!profile) return;
+    let updatedCount = 0;
+    const nextItems = profile.catalogItems.map((item, index) => {
+      const categoryName =
+        profile.catalogCategories.find((category) => category.id === item.categoryId)?.name.trim() || "";
+      const generatedCopy = buildCatalogDescriptionSuggestion(
+        item,
+        profile.businessType,
+        categoryName,
+        getNextDescriptionSeed(index + 83),
+      );
+      if (!generatedCopy || generatedCopy === item.salesCopy) return item;
+      updatedCount += 1;
+      return {
+        ...item,
+        salesCopy: generatedCopy,
+      };
+    });
+    if (updatedCount <= 0) {
+      setMessage({ type: "error", text: "Completa titulo o imagen para generar copys de venta." });
+      return;
+    }
+    setProfile((prev) => (prev ? { ...prev, catalogItems: nextItems } : prev));
+    setMessage({ type: "success", text: `Copys PRO generados para ${updatedCount} items.` });
   }
 
   function suggestCatalogItemDescription(itemId: string) {
@@ -1408,11 +1563,59 @@ export default function LinkHubPage() {
     setUploadingCatalogItemId(itemId);
     try {
       const optimized = await optimizeImageFile(file, { maxSize: 960, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 980_000 });
-      patchCatalogItem(itemId, { imageUrl: optimized });
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          catalogItems: prev.catalogItems.map((item) => {
+            if (item.id !== itemId) return item;
+            const nextGallery = isProPlan
+              ? mergeGalleryImages([...(item.galleryImageUrls || []), optimized])
+              : item.galleryImageUrls || [];
+            return {
+              ...item,
+              imageUrl: optimized,
+              galleryImageUrls: nextGallery,
+            };
+          }),
+        };
+      });
       setMessage({ type: "success", text: "Imagen del producto actualizada." });
     } catch (error) {
       console.error("[LinkHub] Catalog image upload error:", error);
       setMessage({ type: "error", text: "No se pudo procesar la imagen del producto." });
+    } finally {
+      setUploadingCatalogItemId(null);
+    }
+  }
+
+  async function handleCatalogItemGalleryUpload(itemId: string, event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!isProPlan) {
+      showProFeatureLocked("Galería de fotos PRO");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Selecciona una imagen valida para la galeria." });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: "error", text: "La imagen es muy pesada (max 10MB)." });
+      return;
+    }
+
+    setUploadingCatalogItemId(itemId);
+    try {
+      const optimized = await optimizeImageFile(file, { maxSize: 960, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 980_000 });
+      appendCatalogGalleryImage(itemId, optimized);
+      setMessage({ type: "success", text: "Foto agregada a la galeria PRO." });
+    } catch (error) {
+      console.error("[LinkHub] Catalog gallery image upload error:", error);
+      setMessage({ type: "error", text: "No se pudo procesar la imagen para galeria." });
     } finally {
       setUploadingCatalogItemId(null);
     }
@@ -1472,7 +1675,9 @@ export default function LinkHubPage() {
         categoryId: categoryIds.has(item.categoryId) ? item.categoryId : fallbackCategoryId,
         title: item.title.trim(),
         description: item.description.trim(),
+        salesCopy: (item.salesCopy || "").trim(),
         imageUrl: item.imageUrl.trim(),
+        galleryImageUrls: mergeGalleryImages([...(item.galleryImageUrls || []), item.imageUrl]),
         price: item.price.trim(),
         compareAtPrice: (item.compareAtPrice || "").trim(),
         badge: (item.badge || "").trim(),
@@ -1497,6 +1702,15 @@ export default function LinkHubPage() {
       ctaUrl: plan.ctaUrl.trim(),
       features: plan.features.map((feature) => feature.trim()).filter(Boolean),
     }));
+    const cleanedTestimonials = profile.proTestimonials
+      .slice(0, LINK_HUB_PRO_TESTIMONIALS_COUNT)
+      .map((testimonial) => ({
+        ...testimonial,
+        author: testimonial.author.trim(),
+        role: testimonial.role.trim(),
+        quote: testimonial.quote.trim(),
+        rating: Math.max(1, Math.min(5, Number(testimonial.rating) || 5)),
+      }));
 
     if (profile.pricing.enabled && cleanedPlans.some((plan) => !plan.title || !plan.price)) {
       setMessage({ type: "error", text: "Cada plan debe tener titulo y precio." });
@@ -1616,6 +1830,13 @@ export default function LinkHubPage() {
           links: preparedLinks.length > 0 ? preparedLinks : [createEmptyLink()],
           catalogCategories: cleanedCategories,
           catalogItems: cleanedItems,
+          proTestimonials: cleanedTestimonials,
+          proDeliveryModes: {
+            delivery: Boolean(profile.proDeliveryModes.delivery),
+            pickup: Boolean(profile.proDeliveryModes.pickup),
+            dinein: Boolean(profile.proDeliveryModes.dinein),
+          },
+          proFeaturesUnlocked: isProPlan,
           location: {
             ...profile.location,
             address: profile.location.address.trim(),
@@ -2067,6 +2288,16 @@ export default function LinkHubPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={suggestSalesCopyForAllItems}
+                    disabled={profile.catalogItems.length === 0 || !isProPlan}
+                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-emerald-100 disabled:opacity-50"
+                    title={isProPlan ? "Generar copys de venta PRO" : "Bloqueado para Starter y Business"}
+                  >
+                    {isProPlan ? <Sparkles className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    Copys de venta PRO
+                  </button>
+                  <button
+                    type="button"
                     onClick={addCatalogItem}
                     disabled={profile.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS}
                     className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
@@ -2076,6 +2307,12 @@ export default function LinkHubPage() {
                   </button>
                 </div>
               </div>
+              {!isProPlan ? (
+                <p className="mb-4 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-100">
+                  <Lock className="mr-1 inline-flex h-3.5 w-3.5 align-[-2px]" />
+                  PRO desbloquea copys automáticos, galería de hasta 5 fotos por producto, testimonios y control de despacho.
+                </p>
+              ) : null}
 
               <div className="mb-4 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3">
                 <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
@@ -2084,7 +2321,7 @@ export default function LinkHubPage() {
                     className="w-full bg-transparent text-sm text-white placeholder:text-zinc-500 focus:outline-none"
                     value={editorItemSearch}
                     onChange={(event) => setEditorItemSearch(event.target.value)}
-                    placeholder="Buscar item por nombre, descripcion, categoria, precio o badge..."
+                    placeholder="Buscar item por nombre, descripcion, copy, categoria, precio o badge..."
                   />
                 </label>
                 <div className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-200">
@@ -2192,6 +2429,15 @@ export default function LinkHubPage() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => suggestCatalogItemSalesCopy(item.id)}
+                          disabled={!isProPlan}
+                          className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-100 sm:px-3 sm:text-[11px] disabled:opacity-50"
+                          title={isProPlan ? "Generar copy PRO de venta" : "Disponible en plan PRO"}
+                        >
+                          {isProPlan ? "Copy PRO" : "Copy 🔒"}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => removeCatalogItem(item.id)}
                           className="rounded-xl border border-red-300/30 bg-red-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-red-100 sm:px-3 sm:text-[11px]"
                         >
@@ -2222,13 +2468,70 @@ export default function LinkHubPage() {
                               disabled={uploadingCatalogItemId === item.id}
                             />
                           </label>
+                          <label
+                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] ${
+                              isProPlan
+                                ? "cursor-pointer border-emerald-300/40 bg-emerald-400/10 text-emerald-100"
+                                : "cursor-not-allowed border-white/10 bg-white/5 text-zinc-400"
+                            }`}
+                            title={isProPlan ? "Agregar foto extra a la galería" : "Disponible en plan PRO"}
+                          >
+                            {isProPlan ? <ImagePlus className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                            Foto extra
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => handleCatalogItemGalleryUpload(item.id, event)}
+                              className="hidden"
+                              disabled={!isProPlan || uploadingCatalogItemId === item.id}
+                            />
+                          </label>
                           <button
                             type="button"
-                            onClick={() => patchCatalogItem(item.id, { imageUrl: "" })}
+                            onClick={() => addCatalogGalleryUrl(item.id)}
+                            disabled={!isProPlan}
+                            className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            title={isProPlan ? "Agregar URL a galeria PRO" : "Disponible en plan PRO"}
+                          >
+                            {isProPlan ? "URL galeria" : "PRO"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              patchCatalogItem(item.id, {
+                                imageUrl: "",
+                                galleryImageUrls: [],
+                              })
+                            }
                             className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-red-100"
                           >
                             Quitar imagen
                           </button>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {mergeGalleryImages([...(item.galleryImageUrls || []), item.imageUrl]).map((galleryImage) => (
+                            <div key={`${item.id}-${galleryImage}`} className="relative">
+                              <img
+                                src={galleryImage}
+                                alt="Galeria"
+                                className="h-10 w-10 rounded-lg border border-white/15 object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeCatalogGalleryImage(item.id, galleryImage)}
+                                className="absolute -right-1 -top-1 inline-flex h-4 w-4 items-center justify-center rounded-full border border-red-300/45 bg-red-500/80 text-[9px] font-black text-white"
+                                disabled={!isProPlan}
+                                title={isProPlan ? "Quitar foto" : "Disponible en plan PRO"}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                          {item.galleryImageUrls?.length ? (
+                            <span className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-bold text-zinc-300">
+                              {mergeGalleryImages(item.galleryImageUrls).length}/{MAX_LINK_HUB_ITEM_GALLERY_IMAGES}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -2243,6 +2546,10 @@ export default function LinkHubPage() {
                         className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
                         value={item.imageUrl}
                         onChange={(event) => patchCatalogItem(item.id, { imageUrl: event.target.value })}
+                        onBlur={(event) => {
+                          if (!isProPlan) return;
+                          appendCatalogGalleryImage(item.id, event.target.value);
+                        }}
                         placeholder="URL imagen"
                       />
                       <label className="space-y-2 rounded-xl border border-white/10 bg-zinc-900/50 px-3 py-2">
@@ -2296,9 +2603,114 @@ export default function LinkHubPage() {
                           placeholder="Descripcion"
                         />
                       </label>
+                      <label className="space-y-2 md:col-span-2">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
+                          Copy de venta PRO
+                        </span>
+                        <input
+                          className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+                          value={item.salesCopy || ""}
+                          onChange={(event) => patchCatalogItem(item.id, { salesCopy: event.target.value })}
+                          placeholder="Ej: Plato top para cerrar pedidos más rápido."
+                          disabled={!isProPlan}
+                        />
+                      </label>
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-xl font-bold text-white">Funciones PRO para vender mas</h2>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${
+                    isProPlan
+                      ? "border-emerald-300/40 bg-emerald-500/10 text-emerald-100"
+                      : "border-amber-300/45 bg-amber-400/10 text-amber-100"
+                  }`}
+                >
+                  {isProPlan ? <Sparkles className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                  {isProPlan ? "PRO activo" : "Bloqueado en Starter/Business"}
+                </span>
+              </div>
+              <p className="text-xs text-zinc-300">
+                En PRO puedes activar testimonios con transicion, copys de venta automáticos por plato/producto,
+                galería extra por producto y control de despacho (delivery, recojo o comer en local).
+              </p>
+              {!isProPlan ? (
+                <p className="mt-3 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-100">
+                  Estas funciones se muestran como demo, pero solo se habilitan al subir a plan PRO.
+                </p>
+              ) : null}
+              <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
+                    Testimonios reales (5)
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    {profile.proTestimonials.slice(0, LINK_HUB_PRO_TESTIMONIALS_COUNT).map((testimonial, index) => (
+                      <div key={testimonial.id} className="rounded-xl border border-white/10 bg-zinc-900/40 p-3">
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <input
+                            className="rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                            value={testimonial.author}
+                            onChange={(event) => patchProTestimonial(index, { author: event.target.value })}
+                            placeholder="Cliente"
+                            disabled={!isProPlan}
+                          />
+                          <input
+                            className="rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                            value={testimonial.role}
+                            onChange={(event) => patchProTestimonial(index, { role: event.target.value })}
+                            placeholder="Contexto"
+                            disabled={!isProPlan}
+                          />
+                          <input
+                            className="rounded-lg border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white sm:col-span-2 disabled:opacity-60"
+                            value={testimonial.quote}
+                            onChange={(event) => patchProTestimonial(index, { quote: event.target.value })}
+                            placeholder="Comentario del cliente"
+                            disabled={!isProPlan}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+                <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
+                    Opciones de despacho PRO
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-2">
+                    {([
+                      { id: "delivery", label: "Delivery" },
+                      { id: "pickup", label: "Recoger en tienda" },
+                      { id: "dinein", label: "Comer en restaurante" },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() =>
+                          patchProDeliveryMode(option.id, !profile.proDeliveryModes[option.id])
+                        }
+                        disabled={!isProPlan}
+                        className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                          profile.proDeliveryModes[option.id]
+                            ? "border-emerald-300/45 bg-emerald-500/10 text-emerald-100"
+                            : "border-white/15 bg-white/5 text-zinc-200"
+                        }`}
+                      >
+                        {profile.proDeliveryModes[option.id] ? "✓ " : "○ "}
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-xs text-zinc-400">
+                    Estas opciones se reflejan en el checkout de la carta publicada cuando el perfil está en PRO.
+                  </p>
+                </article>
               </div>
             </div>
 
@@ -2837,7 +3249,7 @@ export default function LinkHubPage() {
                               {item.title || "Producto"}
                             </p>
                             <p className="line-clamp-1 text-[11px]" style={{ color: previewTextMuted }}>
-                              {item.description || "Descripcion comercial"}
+                              {item.salesCopy || item.description || "Descripcion comercial"}
                             </p>
                             <p className="mt-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
                               S/{item.price || "0.00"}

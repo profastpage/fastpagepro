@@ -311,6 +311,7 @@ export default function PublicBioPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [cartError, setCartError] = useState("");
   const [cartFeedback, setCartFeedback] = useState("");
+  const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
   const catalogScrollRef = useRef<HTMLDivElement | null>(null);
   const catalogStickyRef = useRef<HTMLDivElement | null>(null);
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -411,6 +412,33 @@ export default function PublicBioPage() {
     return () => window.clearInterval(timer);
   }, [activeTab, coverImages.length]);
 
+  const proFeaturesEnabled = Boolean(profile?.proFeaturesUnlocked);
+  const proTestimonials = useMemo(
+    () =>
+      proFeaturesEnabled
+        ? (profile?.proTestimonials || []).filter((entry) => String(entry.quote || "").trim().length > 0).slice(0, 5)
+        : [],
+    [profile?.proTestimonials, proFeaturesEnabled],
+  );
+
+  useEffect(() => {
+    if (!proTestimonials.length) {
+      setActiveTestimonialIndex(0);
+      return;
+    }
+    if (activeTestimonialIndex >= proTestimonials.length) {
+      setActiveTestimonialIndex(0);
+    }
+  }, [activeTestimonialIndex, proTestimonials.length]);
+
+  useEffect(() => {
+    if (activeTab !== "contact" || proTestimonials.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveTestimonialIndex((current) => (current + 1) % proTestimonials.length);
+    }, 3600);
+    return () => window.clearInterval(timer);
+  }, [activeTab, proTestimonials.length]);
+
   useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
@@ -506,12 +534,25 @@ export default function PublicBioPage() {
     pickup: "Recoger en local",
     dinein: "Comer en el lugar",
   };
+  const availableDeliveryOptions = (
+    proFeaturesEnabled
+      ? ORDER_DELIVERY_OPTIONS.filter((option) => profile?.proDeliveryModes?.[option.value] !== false)
+      : ORDER_DELIVERY_OPTIONS
+  ) as Array<{ value: DeliveryMethod; label: string }>;
   const paymentLabelMap: Record<PaymentMethod, string> = {
     cash: "Efectivo",
     transfer: "Transferencia",
     yape: "Yape",
     plin: "Plin",
   };
+
+  useEffect(() => {
+    if (!deliveryMethod) return;
+    const stillEnabled = availableDeliveryOptions.some((option) => option.value === deliveryMethod);
+    if (!stillEnabled) {
+      setDeliveryMethod("");
+    }
+  }, [availableDeliveryOptions, deliveryMethod]);
 
   const goldKeywordStyle: CSSProperties = {
     backgroundImage:
@@ -578,11 +619,15 @@ export default function PublicBioPage() {
     categoryName: string,
   ) {
     const unitPrice = parsePriceToNumber(item.price || "0");
+    const selectedImage =
+      (proFeaturesEnabled
+        ? (item.galleryImageUrls || []).find((url) => String(url || "").trim().length > 0)
+        : undefined) || item.imageUrl || "";
     setCartItems((prev) =>
       addItemToCartStore(prev, {
         id: item.id,
         title: item.title || "Producto",
-        imageUrl: item.imageUrl || "",
+        imageUrl: selectedImage,
         categoryName,
         priceLabel: item.price || "0.00",
         unitPrice,
@@ -629,10 +674,13 @@ export default function PublicBioPage() {
 
   function buildWhatsappOrderMessage(): string {
     const date = new Date();
+    const availableDeliveryValues = new Set(availableDeliveryOptions.map((option) => option.value));
+    const selectedDelivery =
+      deliveryMethod && availableDeliveryValues.has(deliveryMethod) ? deliveryMethod : "";
     const deliveryLabel =
-      deliveryMethod && deliveryLabelMap[deliveryMethod]
-        ? deliveryLabelMap[deliveryMethod]
-        : "Por confirmar";
+      selectedDelivery && deliveryLabelMap[selectedDelivery]
+        ? deliveryLabelMap[selectedDelivery]
+        : availableDeliveryOptions[0]?.label || "Por confirmar";
     const paymentLabel =
       paymentMethod && paymentLabelMap[paymentMethod]
         ? paymentLabelMap[paymentMethod]
@@ -695,6 +743,10 @@ export default function PublicBioPage() {
     }
     if (!whatsappTargetDigits) {
       setCartError("Este negocio no tiene WhatsApp configurado aun.");
+      return;
+    }
+    if (availableDeliveryOptions.length > 0 && !deliveryMethod) {
+      setCartError("Selecciona una opcion de entrega para continuar.");
       return;
     }
 
@@ -1168,6 +1220,51 @@ export default function PublicBioPage() {
                   </a>
                 )}
               </div>
+              {proTestimonials.length > 0 ? (
+                <div className="mt-4 rounded-2xl border p-3 md:mt-5 md:p-4" style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
+                  <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: accentWordColor }}>
+                    Testimonios reales
+                  </p>
+                  <div className="relative mt-2 min-h-[108px]">
+                    {proTestimonials.map((testimonial, index) => {
+                      const isActive = index === activeTestimonialIndex;
+                      return (
+                        <article
+                          key={testimonial.id}
+                          className={`absolute inset-0 rounded-xl border p-3 transition-all duration-700 ${
+                            isActive ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-1.5 opacity-0"
+                          }`}
+                          style={{
+                            borderColor: "var(--carta-chip-border)",
+                            background: "var(--carta-surface-2)",
+                          }}
+                        >
+                          <p className="text-sm font-semibold leading-relaxed" style={{ color: textPalette.heading }}>
+                            “{testimonial.quote}”
+                          </p>
+                          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: textPalette.muted }}>
+                            {testimonial.author} · {testimonial.role || "Cliente"}
+                          </p>
+                          <p className="mt-1 text-xs" style={{ color: accentWordColor }}>
+                            {"★".repeat(Math.max(1, Math.min(5, Number(testimonial.rating) || 5)))}
+                          </p>
+                        </article>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 flex items-center justify-center gap-1.5">
+                    {proTestimonials.map((testimonial, index) => (
+                      <span
+                        key={`dot-${testimonial.id}`}
+                        className={`h-1.5 w-5 rounded-full transition ${
+                          index === activeTestimonialIndex ? "opacity-100" : "opacity-35"
+                        }`}
+                        style={{ background: accentWordColor }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </section>
           )}
 
@@ -1260,7 +1357,9 @@ export default function PublicBioPage() {
                             className={cardClass}
                             title={item.title}
                             description={item.description}
+                            salesCopy={proFeaturesEnabled ? item.salesCopy : undefined}
                             imageUrl={item.imageUrl}
+                            galleryImageUrls={proFeaturesEnabled ? item.galleryImageUrls : []}
                             oldPrice={
                               item.compareAtPrice ||
                               (() => {
@@ -1617,9 +1716,12 @@ export default function PublicBioPage() {
                         onChange={(event) => setDeliveryMethod(event.target.value as DeliveryMethod)}
                         className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
+                        disabled={availableDeliveryOptions.length === 0}
                       >
-                        <option value="">Selecciona una opcion</option>
-                        {ORDER_DELIVERY_OPTIONS.map((option) => (
+                        <option value="">
+                          {availableDeliveryOptions.length === 0 ? "Sin opciones configuradas" : "Selecciona una opcion"}
+                        </option>
+                        {availableDeliveryOptions.map((option) => (
                           <option key={option.value} value={option.value}>{option.label}</option>
                         ))}
                       </select>
