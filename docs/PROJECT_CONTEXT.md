@@ -1242,3 +1242,12 @@ o-scrollbar para evitar barra visible.
   - Starter 10%, Business 20%, Pro 30%.
 - Centralized logic in src/lib/subscription/plans.ts and reused in API route.
 - Server now recalculates discount and total amount in /api/subscription/request to keep values consistent with UI.
+
+## Annual discount labels on pricing cards (2026-02-27)
+
+- Landing pricing cards now show small annual discount labels per plan:
+  - Starter: Hasta 10% de descuento en plan anual
+  - Business: Hasta 20% de descuento en plan anual
+  - Pro: Hasta 30% de descuento en plan anual
+- Billing pricing section (PricingTable) now shows equivalent per-plan annual discount labels.
+- Changes were UI-only copy badges; plan routes/actions and pricing structure remain unchanged.

@@ -520,12 +520,15 @@ export default function LandingHome() {
             demosDesc: "Explore ready-to-convert cases to capture clients and close WhatsApp orders.",
             pricingTitle: "Plans to sell and scale 💸",
             starterSubtitle: "Direct monthly payment (no trial) ⚡",
+            starterAnnualDiscount: "Up to 10% off annual plan",
             starterCta: "Start now",
             businessBadge: "⭐ Most chosen",
             businessSubtitle: "Try free for 14 days. Then S/59/month. Cancel anytime.",
+            businessAnnualDiscount: "Up to 20% off annual plan",
             businessNote: "No commitment.",
             businessCta: "Try 14 days free",
             proSubtitle: "Direct monthly payment to scale seriously (no trial) 🚀",
+            proAnnualDiscount: "Up to 30% off annual plan",
             proCta: "Buy now",
             domainLine: "Connect your domain from Business and keep a professional brand.",
             riskFree: "No commissions per order. Cancel anytime.",
@@ -575,12 +578,15 @@ export default function LandingHome() {
             demosDesc: "Explora casos listos para captar clientes y cerrar pedidos por WhatsApp.",
             pricingTitle: "Planes para vender y escalar 💸",
             starterSubtitle: "Pago directo mensual (sin trial) ⚡",
+            starterAnnualDiscount: "Hasta 10% de descuento en plan anual",
             starterCta: "Empezar ahora",
             businessBadge: "⭐ Mas elegido",
             businessSubtitle: "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.",
+            businessAnnualDiscount: "Hasta 20% de descuento en plan anual",
             businessNote: "Sin compromiso.",
             businessCta: "Probar 14 dias gratis",
             proSubtitle: "Pago directo mensual para escalar en serio (sin trial) 🚀",
+            proAnnualDiscount: "Hasta 30% de descuento en plan anual",
             proCta: "Comprar ahora",
             domainLine: "Conecta tu dominio desde Plan Business y manten una marca profesional.",
             riskFree: "Sin comisiones por pedido. Cancela cuando quieras.",
@@ -977,6 +983,9 @@ export default function LandingHome() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">STARTER</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 29</p>
             <p className="mt-2 text-sm font-semibold text-zinc-200">{copy.starterSubtitle}</p>
+            <p className="mt-1 inline-flex w-fit rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-100">
+              {copy.starterAnnualDiscount}
+            </p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-300">
               <li>1 proyecto activo</li>
               <li>10 productos por proyecto</li>
@@ -997,6 +1006,9 @@ export default function LandingHome() {
             <p className="mt-2 text-sm font-semibold text-amber-100">
               {copy.businessSubtitle}
             </p>
+            <p className="mt-1 inline-flex w-fit rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-100">
+              {copy.businessAnnualDiscount}
+            </p>
             <p className="mt-1 text-xs font-semibold text-amber-100/90">{copy.businessNote}</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 5 proyectos activos</li>
@@ -1016,6 +1028,9 @@ export default function LandingHome() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200">PRO</p>
             <p className="mt-2 text-4xl font-black text-white">S/ 99</p>
             <p className="mt-2 text-sm font-semibold text-cyan-100">{copy.proSubtitle}</p>
+            <p className="mt-1 inline-flex w-fit rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-100">
+              {copy.proAnnualDiscount}
+            </p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
               <li>Hasta 20 proyectos activos</li>
               <li><strong>Productos ilimitados</strong></li>

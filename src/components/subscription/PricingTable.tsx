@@ -275,6 +275,11 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-400">{localizedPlan.name}</p>
               <h3 className="mt-2 text-3xl font-black text-white">{localizedPlan.monthlyPriceLabel}</h3>
               <p className="mt-1 text-sm text-zinc-300">{localizedPlan.subtitle}</p>
+              <p className="mt-1 inline-flex w-fit rounded-full border border-emerald-300/30 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-100">
+                {isEnglish
+                  ? `Up to ${plan.annualDiscountPercent}% off annual plan`
+                  : `Hasta ${plan.annualDiscountPercent}% descuento en plan anual`}
+              </p>
               {localizedPlan.note ? <p className="mt-1 text-xs font-semibold text-amber-100">{localizedPlan.note}</p> : null}
               <ul className="mt-4 space-y-2 text-sm text-zinc-200">
                 {localizedPlan.bulletPoints.map((item) => (
