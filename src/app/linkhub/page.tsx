@@ -218,6 +218,12 @@ function normalizeDigits(value: string): string {
   return String(value || "").replace(/\D/g, "");
 }
 
+function isFirestorePermissionDenied(error: unknown): boolean {
+  const code = String((error as { code?: string })?.code || "").toLowerCase();
+  const message = String((error as { message?: string })?.message || "").toLowerCase();
+  return code.includes("permission-denied") || message.includes("insufficient permissions");
+}
+
 function parseMultiline(input: string): string[] {
   return input
     .split("\n")
@@ -513,7 +519,11 @@ export default function LinkHubPage() {
               autoCreatedRecordingDemo = true;
               recordingDemoEnsuredPublished = true;
             } catch (autoCreateError) {
-              console.error("[LinkHub] Failed auto-creating recording demo profile:", autoCreateError);
+              if (isFirestorePermissionDenied(autoCreateError)) {
+                console.warn("[LinkHub] Recording demo auto-create skipped due to Firestore permissions.");
+              } else {
+                console.error("[LinkHub] Failed auto-creating recording demo profile:", autoCreateError);
+              }
             }
           } else {
             try {
@@ -544,7 +554,11 @@ export default function LinkHubPage() {
                 recordingDemoEnsuredPublished = true;
               }
             } catch (autoPublishError) {
-              console.error("[LinkHub] Failed ensuring recording demo publication:", autoPublishError);
+              if (isFirestorePermissionDenied(autoPublishError)) {
+                console.warn("[LinkHub] Recording demo auto-publish skipped due to Firestore permissions.");
+              } else {
+                console.error("[LinkHub] Failed ensuring recording demo publication:", autoPublishError);
+              }
             }
           }
         }
@@ -1995,14 +2009,59 @@ export default function LinkHubPage() {
         user,
       );
 
-      const savedProfileId = await saveLinkHubProfileForUser(user.uid, nextProfile, targetProfileId);
-      setActiveProfileId(savedProfileId);
-      setProfile(nextProfile);
-      setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
+      let savedProfileId = "";
+      let persistedProfile = nextProfile;
+      let usedPermissionFallback = false;
+      let fallbackSlugAdjusted = false;
+
       try {
-        window.localStorage.setItem(`linkhub_draft_${user.uid}_${savedProfileId}`, JSON.stringify(nextProfile));
+        savedProfileId = await saveLinkHubProfileForUser(user.uid, persistedProfile, targetProfileId);
+      } catch (saveError) {
+        if (!isFirestorePermissionDenied(saveError) || targetProfileId === user.uid) {
+          throw saveError;
+        }
+
+        const fallbackProfileId = user.uid;
+        let fallbackSlug = finalSlug;
+        const baseAvailableInFallback = await isLinkHubSlugAvailable(fallbackSlug, user.uid, fallbackProfileId);
+        if (!baseAvailableInFallback) {
+          let found = false;
+          for (let attempt = 2; attempt <= 25; attempt += 1) {
+            const candidate = sanitizeSlug(`${sanitizedSlug}-main-${attempt}`);
+            if (!candidate) continue;
+            const available = await isLinkHubSlugAvailable(candidate, user.uid, fallbackProfileId);
+            if (available) {
+              fallbackSlug = candidate;
+              found = true;
+              fallbackSlugAdjusted = true;
+              break;
+            }
+          }
+          if (!found) {
+            throw saveError;
+          }
+        }
+
+        persistedProfile = normalizeLinkHubProfile(
+          {
+            ...persistedProfile,
+            slug: fallbackSlug,
+            updatedAt: Date.now(),
+          },
+          user,
+        );
+        finalSlug = fallbackSlug;
+        savedProfileId = await saveLinkHubProfileForUser(user.uid, persistedProfile, fallbackProfileId);
+        usedPermissionFallback = true;
+      }
+
+      setActiveProfileId(savedProfileId);
+      setProfile(persistedProfile);
+      setPreviewCategoryId(persistedProfile.catalogCategories[0]?.id || "");
+      try {
+        window.localStorage.setItem(`linkhub_draft_${user.uid}_${savedProfileId}`, JSON.stringify(persistedProfile));
         if (savedProfileId === user.uid) {
-          window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(nextProfile));
+          window.localStorage.setItem(`linkhub_draft_${user.uid}`, JSON.stringify(persistedProfile));
         }
       } catch {
         // ignore
@@ -2011,10 +2070,16 @@ export default function LinkHubPage() {
         type: "success",
         text:
           mode === "publish"
-            ? slugAdjustedForNewProject
-              ? `Carta Digital publicada como proyecto nuevo (@${finalSlug}).`
-              : "Carta Digital publicada. Ya puedes compartir tu URL."
-            : "Borrador guardado correctamente.",
+            ? usedPermissionFallback
+              ? fallbackSlugAdjusted
+                ? `Publicada en perfil principal por permisos de Firestore (@${finalSlug}).`
+                : "Publicada en perfil principal por permisos de Firestore."
+              : slugAdjustedForNewProject
+                ? `Carta Digital publicada como proyecto nuevo (@${finalSlug}).`
+                : "Carta Digital publicada. Ya puedes compartir tu URL."
+            : usedPermissionFallback
+              ? "Borrador guardado en perfil principal por permisos de Firestore."
+              : "Borrador guardado correctamente.",
       });
       if (mode === "publish") {
         router.push(`/published?highlight=${encodeURIComponent(savedProfileId)}&kind=linkhub`);

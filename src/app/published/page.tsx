@@ -48,6 +48,12 @@ function normalizeDigits(value: string): string {
   return String(value || "").replace(/\D/g, "");
 }
 
+function isFirestorePermissionDenied(error: unknown): boolean {
+  const code = String((error as { code?: string })?.code || "").toLowerCase();
+  const message = String((error as { message?: string })?.message || "").toLowerCase();
+  return code.includes("permission-denied") || message.includes("insufficient permissions");
+}
+
 function formatDate(value: number) {
   if (!value) return "Sin fecha";
   return new Date(value).toLocaleString();
@@ -95,36 +101,44 @@ function PublishedProjectsContent() {
         const normalizedEmail = String(user.email || "").trim().toLowerCase();
         const shouldEnsureRecordingDemo = normalizedEmail === RECORDING_DEMO_TARGET_EMAIL;
         if (shouldEnsureRecordingDemo) {
-          const recordingDemoProfileId = `${user.uid}-${RECORDING_DEMO_PROFILE_ID_SUFFIX}`;
-          const records = await listLinkHubProfilesByUserId(user.uid);
-          const existingRecordingDemo = records.find((item) => item.id === recordingDemoProfileId);
+          try {
+            const recordingDemoProfileId = `${user.uid}-${RECORDING_DEMO_PROFILE_ID_SUFFIX}`;
+            const records = await listLinkHubProfilesByUserId(user.uid);
+            const existingRecordingDemo = records.find((item) => item.id === recordingDemoProfileId);
 
-          if (!existingRecordingDemo) {
-            const demoProfile = buildRestaurantRecordingDemoProfile(user);
-            await saveLinkHubProfileForUser(user.uid, demoProfile, recordingDemoProfileId);
-          } else {
-            const normalizedExisting = normalizeLinkHubProfile(existingRecordingDemo.profile, user);
-            const whatsappDigits = normalizeDigits(normalizedExisting.whatsappNumber);
-            const needsPublished = !normalizedExisting.published;
-            const needsPublishedAt = !Number(normalizedExisting.publishedAt || 0);
-            const needsBusinessWhatsapp = whatsappDigits !== RECORDING_DEMO_BUSINESS_WHATSAPP;
+            if (!existingRecordingDemo) {
+              const demoProfile = buildRestaurantRecordingDemoProfile(user);
+              await saveLinkHubProfileForUser(user.uid, demoProfile, recordingDemoProfileId);
+            } else {
+              const normalizedExisting = normalizeLinkHubProfile(existingRecordingDemo.profile, user);
+              const whatsappDigits = normalizeDigits(normalizedExisting.whatsappNumber);
+              const needsPublished = !normalizedExisting.published;
+              const needsPublishedAt = !Number(normalizedExisting.publishedAt || 0);
+              const needsBusinessWhatsapp = whatsappDigits !== RECORDING_DEMO_BUSINESS_WHATSAPP;
 
-            if (needsPublished || needsPublishedAt || needsBusinessWhatsapp) {
-              const now = Date.now();
-              const ensuredProfile = normalizeLinkHubProfile(
-                {
-                  ...normalizedExisting,
-                  phoneNumber: normalizeDigits(normalizedExisting.phoneNumber)
-                    ? normalizedExisting.phoneNumber
-                    : RECORDING_DEMO_BUSINESS_WHATSAPP,
-                  whatsappNumber: RECORDING_DEMO_BUSINESS_WHATSAPP,
-                  published: true,
-                  publishedAt: Number(normalizedExisting.publishedAt || 0) || now,
-                  updatedAt: now,
-                },
-                user,
-              );
-              await saveLinkHubProfileForUser(user.uid, ensuredProfile, recordingDemoProfileId);
+              if (needsPublished || needsPublishedAt || needsBusinessWhatsapp) {
+                const now = Date.now();
+                const ensuredProfile = normalizeLinkHubProfile(
+                  {
+                    ...normalizedExisting,
+                    phoneNumber: normalizeDigits(normalizedExisting.phoneNumber)
+                      ? normalizedExisting.phoneNumber
+                      : RECORDING_DEMO_BUSINESS_WHATSAPP,
+                    whatsappNumber: RECORDING_DEMO_BUSINESS_WHATSAPP,
+                    published: true,
+                    publishedAt: Number(normalizedExisting.publishedAt || 0) || now,
+                    updatedAt: now,
+                  },
+                  user,
+                );
+                await saveLinkHubProfileForUser(user.uid, ensuredProfile, recordingDemoProfileId);
+              }
+            }
+          } catch (ensureError) {
+            if (isFirestorePermissionDenied(ensureError)) {
+              console.warn("[Published] Recording demo auto-provision skipped due to Firestore permissions.");
+            } else {
+              console.error("[Published] Recording demo auto-provision error:", ensureError);
             }
           }
         }

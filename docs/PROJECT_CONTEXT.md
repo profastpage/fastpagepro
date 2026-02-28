@@ -1396,3 +1396,15 @@ o-scrollbar para evitar barra visible.
   - estado published y publishedAt validos
   - WhatsApp de empresa +51919662011
 - Resultado: la demo aparece en la lista de publicados sin depender de entrar antes a /cartadigital.
+## Firestore permission-resilient publish fallback (2026-02-28)
+
+- Ruta ajustada: /cartadigital.
+- Si Firestore bloquea la creacion de proyecto nuevo (permission-denied), el guardado/publicacion ahora hace fallback automatico al perfil principal (uid) para no romper el flujo.
+- Incluye ajuste de slug alternativo cuando el slug no esta disponible en el fallback.
+- Mensajeria UX actualizada para informar que se aplico fallback por permisos.
+
+## Recording demo auto-provision hardening (2026-02-28)
+
+- Rutas ajustadas: /cartadigital y /published.
+- El auto-provision de demo Burger Lab ahora trata errores de permisos sin romper pantallas ni detener carga.
+- Los errores de permisos pasan a modo tolerante (warning) para evitar bloquear publicacion normal del usuario.
