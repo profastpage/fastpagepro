@@ -2050,7 +2050,7 @@ export default function LinkHubPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,560px)]">
           <section className="min-w-0 space-y-6">
             <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <h2 className="text-xl font-bold text-white mb-5">Identidad del Negocio</h2>
@@ -3187,8 +3187,9 @@ export default function LinkHubPage() {
 
           </section>
 
-          <aside className="min-w-0 h-fit xl:sticky xl:top-28 xl:w-[420px] xl:justify-self-end">
-            <div className="rounded-[2rem] border p-3.5 xl:p-3" style={previewShellStyle}>
+          <aside className="min-w-0 h-fit xl:sticky xl:top-28 xl:w-[560px] xl:justify-self-end">
+            <div className="md:flex md:items-start md:justify-end md:gap-3">
+            <div className="w-full max-w-[420px] rounded-[2rem] border p-3.5 xl:p-3" style={previewShellStyle}>
               <div className="overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
                 <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: previewTextMuted }}>
                   Preview Mobile
@@ -3405,11 +3406,11 @@ export default function LinkHubPage() {
                 </div>
               </div>
             </div>
-            <div className="mt-4 ml-auto hidden w-full max-w-[420px] md:flex items-center justify-end gap-2 rounded-2xl border border-white/10 bg-zinc-950/70 p-2.5 backdrop-blur-xl">
+            <div className="hidden md:flex md:w-[122px] md:flex-col md:items-stretch md:gap-2 rounded-2xl border border-white/10 bg-zinc-950/70 p-2.5 backdrop-blur-xl">
               <button
                 onClick={() => saveProfile("draft")}
                 disabled={isSaving}
-                className="inline-flex h-10 min-w-[108px] items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 text-[11px] font-bold text-white"
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 text-[11px] font-bold text-white"
                 title="Guardar borrador"
                 aria-label="Guardar borrador"
               >
@@ -3419,7 +3420,7 @@ export default function LinkHubPage() {
               <button
                 onClick={() => saveProfile("publish")}
                 disabled={isSaving}
-                className="inline-flex h-10 min-w-[108px] items-center justify-center gap-1.5 rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-3 text-[11px] font-bold text-emerald-100"
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-3 text-[11px] font-bold text-emerald-100"
                 title="Publicar Carta Digital"
                 aria-label="Publicar Carta Digital"
               >
@@ -3429,13 +3430,14 @@ export default function LinkHubPage() {
               <button
                 onClick={copyPublicUrl}
                 disabled={!publicUrl}
-                className="inline-flex h-10 min-w-[108px] items-center justify-center gap-1.5 rounded-xl border border-sky-300/40 bg-sky-400/10 px-3 text-[11px] font-bold text-sky-100 disabled:opacity-50"
+                className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-sky-300/40 bg-sky-400/10 px-3 text-[11px] font-bold text-sky-100 disabled:opacity-50"
                 title="Copiar URL"
                 aria-label="Copiar URL"
               >
                 <Copy className="w-3.5 h-3.5" />
                 <span className="truncate">Copiar</span>
               </button>
+            </div>
             </div>
           </aside>
         </div>
