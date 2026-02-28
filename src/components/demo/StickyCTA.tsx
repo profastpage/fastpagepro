@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { trackGrowthEvent } from "@/lib/analytics";
@@ -51,6 +51,9 @@ export default function StickyCTA({
     setPreviewOwnerEmail(queryOwner || storedOwner);
   }, [searchParams]);
 
+  const targetPrimary = verticalToSignupHref(vertical, { demoSlug: slug, demoTheme });
+  const targetSecondary = targetPrimary;
+
   if (user) {
     return null;
   }
@@ -58,16 +61,6 @@ export default function StickyCTA({
   if (previewOwnerEmail === RECORDING_DEMO_TARGET_EMAIL) {
     return null;
   }
-
-  const targetPrimary = useMemo(
-    () =>
-      verticalToSignupHref(vertical, { demoSlug: slug, demoTheme }),
-    [demoTheme, slug, vertical],
-  );
-  const targetSecondary = useMemo(
-    () => verticalToSignupHref(vertical, { demoSlug: slug, demoTheme }),
-    [demoTheme, slug, vertical],
-  );
 
   return (
     <div

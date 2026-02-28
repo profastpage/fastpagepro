@@ -1430,3 +1430,10 @@ o-scrollbar para evitar barra visible.
 - Mejora UX en Carta Digital:
   - indicador rapido por item: Imagen lista / Sube una foto para editar mas facil.
 - En settings, la foto de perfil pasa de input URL a carga por archivo desde el boton de camara.
+## Demo landing React hook-order crash fix (2026-02-28)
+
+- Ruta afectada: /demo/[vertical]/[slug] (ej. /demo/restaurant/coffee-route).
+- Causa: en src/components/demo/StickyCTA.tsx habia hooks (useMemo) declarados despues de retornos condicionales (if (user) return null), lo que rompe el orden de hooks en cliente.
+- Solucion aplicada:
+  - se elimina useMemo para 	argetPrimary/targetSecondary y se calculan como constantes antes de retornos condicionales.
+- Resultado: se evita el crash cliente en demos de landing y se mantiene el mismo comportamiento visual/funcional del CTA.
