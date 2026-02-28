@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { auth, db } from "@/lib/firebase";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import { updateProfile } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { 
@@ -243,6 +244,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <main className="flex-grow pt-20 md:pt-28 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <MobilePlanStatusCard userId={authUser?.uid} className="mb-6" />
         {/* Header Section */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
           <div>

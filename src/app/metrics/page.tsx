@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -98,7 +99,10 @@ export default function MetricsPage() {
 
   if (permissions.analyticsLevel === "none") {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-2xl">
+          <MobilePlanStatusCard userId={user?.uid} className="mb-4" />
+        </div>
         <div className="w-full max-w-2xl rounded-3xl border border-amber-300/25 bg-zinc-950/80 p-8 text-center">
           <h1 className="text-3xl font-black text-white">Metricas avanzadas bloqueadas en Starter</h1>
           <p className="mt-3 text-zinc-300">
@@ -164,6 +168,7 @@ export default function MetricsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <main className="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-6" />
         <div className="flex flex-col gap-8">
           
           {/* Header */}

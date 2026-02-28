@@ -8,6 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   Layout,
   Copy,
@@ -258,6 +259,7 @@ export default function HubPage() {
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10">
+          <MobilePlanStatusCard userId={user?.uid} className="mb-6" />
           {/* Header */}
           <div className="mb-8 md:mb-12 flex flex-col md:flex-row items-center gap-6 animate-fade-in">
             {user?.photoURL && (
@@ -279,7 +281,7 @@ export default function HubPage() {
                 <span className="text-xs text-zinc-400">{hubCopy.planLabel}</span>
                 <PlanBadge plan={subscriptionSummary?.plan || "FREE"} />
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+              <div className="mt-2 hidden md:flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold text-zinc-200">
                   Proyectos: {projectsUsageLabel}
                 </span>
@@ -289,7 +291,7 @@ export default function HubPage() {
               </div>
               {subscriptionSummary?.isBusinessTrial ? (
                 <p
-                  className={`mt-2 text-xs font-bold ${
+                  className={`mt-2 hidden md:block text-xs font-bold ${
                     subscriptionSummary?.trialExpired || (subscriptionSummary?.trialDaysRemaining || 0) <= 3
                       ? "text-red-300"
                       : "text-amber-200"
@@ -301,7 +303,7 @@ export default function HubPage() {
                 </p>
               ) : null}
               {subscriptionSummary?.trialExpired ? (
-                <p className="mt-2 text-xs font-bold text-red-300">
+                <p className="mt-2 hidden md:block text-xs font-bold text-red-300">
                   {hubCopy.trialExpired}
                 </p>
               ) : null}

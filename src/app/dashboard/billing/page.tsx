@@ -10,6 +10,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import PricingTable from "@/components/subscription/PricingTable";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   PLAN_DEFINITIONS,
   calculateSubscriptionAmountSoles,
@@ -491,8 +492,9 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black px-4 py-8 text-white md:px-8">
+    <div className="min-h-screen bg-black px-4 pt-24 pb-8 text-white md:px-8 md:pt-8">
       <div className="mx-auto max-w-6xl space-y-6">
+        <MobilePlanStatusCard userId={user?.uid} />
         <header className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -513,7 +515,7 @@ export default function BillingPage() {
               isBusinessTrial={Boolean(summary?.isBusinessTrial)}
             />
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 hidden md:flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
               {summary?.isBusinessTrial ? i18n.trialDaysLeft : i18n.planDaysLeft}: {daysRemaining}
             </span>

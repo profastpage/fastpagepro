@@ -7,6 +7,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { db } from "@/lib/firebase";
 import { collection, doc as firestoreDoc, getDoc, getDocs, query, where } from "firebase/firestore";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   CheckCircle2,
   Copy,
@@ -236,6 +237,7 @@ function PublishedProjectsContent() {
   return (
     <div className="min-h-screen bg-background text-foreground pt-24 md:pt-28 pb-16 px-4 md:px-8">
       <div className="mx-auto max-w-7xl">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-4" />
         <section className="rounded-[2.25rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.14),rgba(2,6,23,0.92)_45%,rgba(2,6,23,0.98)_100%)] p-6 md:p-8">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div>
@@ -248,7 +250,7 @@ function PublishedProjectsContent() {
               <p className="mt-3 text-zinc-300 max-w-3xl">
                 Centro unificado para todas tus publicaciones: Carta Digital, landings y tiendas.
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-3 hidden md:flex flex-wrap items-center gap-2">
                 <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
                   Proyectos en plan: {publishedLimitLabel}
                 </span>

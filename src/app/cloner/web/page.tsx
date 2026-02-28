@@ -9,6 +9,7 @@ import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from "fireb
 import { Globe, ArrowRight, AlertCircle, ExternalLink, Clock, Trash2, Edit3, Rocket, HelpCircle, BookOpen, ShieldCheck, Zap } from "lucide-react";
 import MobilePageBar from "@/components/MobilePageBar";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 
 function isValidUrl(url: string) {
   try {
@@ -183,6 +184,7 @@ export default function WebClonerPage() {
       />
 
       <main className="flex-grow pt-[7.5rem] md:pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-6" />
         {/* Help Button */}
         <button 
           onClick={() => setShowGuide(true)}

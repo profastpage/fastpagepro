@@ -36,6 +36,7 @@ import {
 } from "@/editor-core";
 import InlineEditable from "@/components/editor/InlineEditable";
 import EditorSidebar, { type EditorSidebarTab } from "@/components/editor/EditorSidebar";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -1097,6 +1098,7 @@ function StoreEditorPage() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#030712] pt-24 md:pt-28 pb-10 md:pb-12" style={{ ...themeVars }}>
       <div className="mx-auto max-w-[1600px] px-3 md:px-6">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-4" />
         <header className="sticky top-[72px] md:top-20 z-40 rounded-2xl border bg-white/90 px-3 py-3 text-slate-900 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-3 min-w-0">

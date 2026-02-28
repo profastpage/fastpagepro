@@ -4,6 +4,7 @@ import { ChangeEvent, ComponentType, useEffect, useMemo, useRef, useState } from
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import { requestPublishTarget } from "@/lib/subscription/publishClient";
 import {
@@ -56,6 +57,7 @@ import {
 } from "@/theme/cartaThemes";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   Copy,
   ExternalLink,
@@ -431,6 +433,7 @@ function buildCatalogDescriptionSuggestion(
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
   const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
+  const planPermissions = usePlanPermissions(Boolean(user?.uid));
   const router = useRouter();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
   const [activeProfileId, setActiveProfileId] = useState<string>("");
@@ -455,13 +458,13 @@ export default function LinkHubPage() {
   const isProPlan = activePlan === "PRO";
   const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
   const canCustomizeColors = Boolean(subscriptionSummary?.features?.advancedColorCustomization);
-  const publishedProjectsUsed = Number(subscriptionSummary?.usage?.publishedPages || 0);
-  const publishedProjectsLimit =
-    subscriptionSummary?.limits?.maxProjects ?? subscriptionSummary?.limits?.maxPublishedPages ?? null;
   const publishedProjectsLabel =
-    publishedProjectsLimit == null
-      ? `${publishedProjectsUsed}`
-      : `${Math.min(publishedProjectsUsed, publishedProjectsLimit)}/${publishedProjectsLimit}`;
+    planPermissions.maxProjects == null
+      ? `${planPermissions.usage.publishedProjects}`
+      : `${planPermissions.usage.publishedProjects}/${planPermissions.maxProjects}`;
+  const planDaysRemaining = subscriptionSummary?.isBusinessTrial
+    ? Math.max(0, Number(subscriptionSummary?.trialDaysRemaining || 0))
+    : Math.max(0, Number(subscriptionSummary?.daysRemaining || 0));
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -2008,6 +2011,7 @@ export default function LinkHubPage() {
         </div>
       </div>
       <div className="mx-auto w-full max-w-md md:max-w-7xl">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-4" />
         <div className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Carta Digital</h1>
@@ -2023,13 +2027,13 @@ export default function LinkHubPage() {
               daysRemaining={subscriptionSummary?.daysRemaining || 0}
             />
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-3 hidden md:flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
               Proyectos publicados: {publishedProjectsLabel}
             </span>
             <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
               {subscriptionSummary?.isBusinessTrial ? "Dias de prueba" : "Dias de plan"}:{" "}
-              {Math.max(0, Number(subscriptionSummary?.daysRemaining || 0))}
+              {planDaysRemaining}
             </span>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { db } from "@/lib/firebase";
 import { doc, setDoc } from "firebase/firestore";
 import { TemplateGenerator } from "@/lib/templateGenerator";
 import MobilePageBar from "@/components/MobilePageBar";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   Utensils,
   Cpu,
@@ -463,6 +464,7 @@ export default function ClonerPage() {
       />
 
       <main className="flex-grow pt-[7.5rem] md:pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-6" />
         {/* Background Effects */}
         <div className="fixed inset-0 pointer-events-none">
           <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(255,215,0,0.02),transparent_70%)]" />

@@ -16,6 +16,7 @@ import {
 import { getThemesByVertical } from "@/lib/themes";
 import MobileSavePublishBar from "@/components/MobileSavePublishBar";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   EditorProvider,
   ensureAnalyticsDocument,
@@ -713,6 +714,7 @@ function BuilderEditorPage() {
 
         {/* Main Canvas */}
         <main className="flex-grow lg:ml-80 bg-[#020617] p-4 md:p-8 flex flex-col items-center overflow-y-auto no-scrollbar">
+          <MobilePlanStatusCard userId={user?.uid} className="w-full max-w-5xl mb-4" />
           
           {/* Top Canvas Toolbar */}
           <div className="w-full max-w-5xl mb-6 flex items-center justify-between">
