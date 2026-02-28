@@ -382,142 +382,65 @@ details[open] summary .text-gold-iridescent {
   overflow: hidden;
 }
 
-.fp-cursor-ring {
+.fp-cursor-click {
   position: absolute;
-  width: 34px;
-  height: 34px;
-  border-radius: 9999px;
-  border: 1.5px solid rgba(251, 191, 36, 0.9);
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 244, 173, 0.25), rgba(255, 244, 173, 0) 60%);
-  box-shadow:
-    0 0 14px rgba(251, 191, 36, 0.45),
-    inset 0 0 8px rgba(16, 185, 129, 0.18);
-  opacity: 0;
-  transition:
-    opacity 0.18s ease,
-    width 0.18s ease,
-    height 0.18s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-  will-change: transform, opacity;
-}
-
-.fp-cursor-ring.is-visible {
-  opacity: 1;
-}
-
-.fp-cursor-ring.is-hovering {
-  width: 44px;
-  height: 44px;
-  border-color: rgba(250, 204, 21, 0.95);
-  box-shadow:
-    0 0 20px rgba(250, 204, 21, 0.6),
-    inset 0 0 12px rgba(16, 185, 129, 0.24);
-}
-
-.fp-cursor-ring.is-pressing {
-  width: 28px;
-  height: 28px;
-  border-color: rgba(16, 185, 129, 0.95);
-}
-
-.fp-cursor-dot {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 9999px;
-  background: linear-gradient(135deg, #fde68a, #34d399);
-  box-shadow:
-    0 0 9px rgba(250, 204, 21, 0.85),
-    0 0 14px rgba(16, 185, 129, 0.65);
-  opacity: 0;
-  transition: opacity 0.18s ease, transform 0.1s ease;
-  will-change: transform, opacity;
-}
-
-.fp-cursor-dot.is-visible {
-  opacity: 1;
-}
-
-.fp-cursor-dot.is-pressing {
-  transform: scale(0.7);
-}
-
-.fp-cursor-burst {
-  position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-8%, -88%);
   pointer-events: none;
-  animation: fp-cursor-burst-fade 0.9s ease-out forwards;
-  will-change: opacity;
+  will-change: transform, opacity;
 }
 
-.fp-cursor-burst-ring {
+.fp-cursor-click-bolt {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 14px;
-  height: 14px;
-  border-radius: 9999px;
-  border: 1.5px solid rgba(250, 204, 21, 0.9);
-  transform: translate(-50%, -50%);
-  background:
-    linear-gradient(
-      120deg,
-      rgba(251, 191, 36, 0.28),
-      rgba(255, 255, 255, 0.2),
-      rgba(16, 185, 129, 0.28)
-    );
-  box-shadow: 0 0 18px rgba(250, 204, 21, 0.55);
-  animation: fp-cursor-burst-ring 0.9s ease-out forwards;
-}
-
-.fp-cursor-burst-star {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 13px;
-  font-weight: 900;
+  left: 0;
+  top: 0;
+  transform: translate(0, 0);
+  font-size: 12px;
+  font-weight: 800;
   line-height: 1;
-  background: linear-gradient(120deg, #fde68a, #f59e0b, #fef3c7, #34d399);
-  background-size: 240% 240%;
+  background: linear-gradient(135deg, #fff4c2, #fbbf24, #d97706);
+  background-size: 180% 180%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
+  text-shadow:
+    0 0 8px rgba(251, 191, 36, 0.65),
+    0 0 14px rgba(251, 191, 36, 0.35);
   animation:
-    iridescent-gold 0.9s linear,
-    fp-cursor-burst-star 0.9s ease-out forwards;
+    iridescent-gold 0.45s linear,
+    fp-cursor-click-bolt 0.5s ease-out forwards;
 }
 
-@keyframes fp-cursor-burst-ring {
+@keyframes fp-cursor-click-bolt {
   0% {
-    width: 12px;
-    height: 12px;
+    transform: translate(0, 0) scale(0.75) rotate(-6deg);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(2px, -5px) scale(1.05) rotate(8deg);
     opacity: 0.95;
   }
   100% {
-    width: 56px;
-    height: 56px;
+    transform: translate(4px, -10px) scale(0.9) rotate(16deg);
     opacity: 0;
   }
 }
 
-@keyframes fp-cursor-burst-star {
-  0% {
-    transform: translate(-50%, -50%) scale(0.6) rotate(0deg);
-    opacity: 1;
+@media (pointer: fine) and (min-width: 1024px) {
+  .fp-gold-cursor-enabled,
+  .fp-gold-cursor-enabled body {
+    cursor: url("/cursors/gold-pointer.svg") 4 2, auto;
   }
-  100% {
-    transform: translate(-50%, -50%) scale(1.6) rotate(24deg);
-    opacity: 0;
-  }
-}
 
-@keyframes fp-cursor-burst-fade {
-  0% { opacity: 1; }
-  100% { opacity: 0; }
+  .fp-gold-cursor-enabled a,
+  .fp-gold-cursor-enabled button,
+  .fp-gold-cursor-enabled [role="button"],
+  .fp-gold-cursor-enabled input,
+  .fp-gold-cursor-enabled textarea,
+  .fp-gold-cursor-enabled select,
+  .fp-gold-cursor-enabled summary,
+  .fp-gold-cursor-enabled label {
+    cursor: url("/cursors/gold-pointer.svg") 4 2, pointer;
+  }
 }
 
 @layer utilities {

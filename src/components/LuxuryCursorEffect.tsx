@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type CursorBurst = {
+type CursorClick = {
   id: number;
   x: number;
   y: number;
@@ -18,17 +18,8 @@ function canEnableLuxuryCursor() {
 
 export default function LuxuryCursorEffect() {
   const [enabled, setEnabled] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const [hoveringInteractive, setHoveringInteractive] = useState(false);
-  const [pressing, setPressing] = useState(false);
-  const [bursts, setBursts] = useState<CursorBurst[]>([]);
-
-  const ringRef = useRef<HTMLDivElement | null>(null);
-  const dotRef = useRef<HTMLDivElement | null>(null);
-  const targetRef = useRef({ x: -100, y: -100 });
-  const currentRef = useRef({ x: -100, y: -100 });
-  const rafRef = useRef<number | null>(null);
-  const burstIdRef = useRef(0);
+  const [clicks, setClicks] = useState<CursorClick[]>([]);
+  const clickIdRef = useRef(0);
 
   useEffect(() => {
     const updateEnabled = () => setEnabled(canEnableLuxuryCursor());
@@ -53,99 +44,38 @@ export default function LuxuryCursorEffect() {
 
   useEffect(() => {
     if (!enabled) {
-      setVisible(false);
-      setHoveringInteractive(false);
-      setPressing(false);
+      document.documentElement.classList.remove("fp-gold-cursor-enabled");
       return;
     }
 
-    const move = (event: MouseEvent) => {
-      targetRef.current = { x: event.clientX, y: event.clientY };
-      setVisible(true);
-      const target = event.target as HTMLElement | null;
-      const isInteractive = Boolean(target?.closest("a, button, input, textarea, select, [role='button']"));
-      setHoveringInteractive(isInteractive);
-    };
+    document.documentElement.classList.add("fp-gold-cursor-enabled");
 
     const down = (event: MouseEvent) => {
-      setPressing(true);
-      setVisible(true);
-
-      const id = burstIdRef.current + 1;
-      burstIdRef.current = id;
-      const burst = { id, x: event.clientX, y: event.clientY };
-      setBursts((previous) => [...previous.slice(-3), burst]);
+      const id = clickIdRef.current + 1;
+      clickIdRef.current = id;
+      const click = { id, x: event.clientX, y: event.clientY };
+      setClicks((previous) => [...previous.slice(-4), click]);
 
       window.setTimeout(() => {
-        setBursts((previous) => previous.filter((item) => item.id !== id));
-      }, 900);
+        setClicks((previous) => previous.filter((item) => item.id !== id));
+      }, 520);
     };
 
-    const up = () => setPressing(false);
-    const leave = () => setVisible(false);
-
-    const animate = () => {
-      const target = targetRef.current;
-      const current = currentRef.current;
-      const nextX = current.x + (target.x - current.x) * 0.24;
-      const nextY = current.y + (target.y - current.y) * 0.24;
-      currentRef.current = { x: nextX, y: nextY };
-
-      if (ringRef.current) {
-        ringRef.current.style.transform = `translate3d(${nextX - 17}px, ${nextY - 17}px, 0)`;
-      }
-      if (dotRef.current) {
-        dotRef.current.style.transform = `translate3d(${nextX - 3}px, ${nextY - 3}px, 0)`;
-      }
-
-      rafRef.current = window.requestAnimationFrame(animate);
-    };
-
-    window.addEventListener("mousemove", move, { passive: true });
     window.addEventListener("mousedown", down);
-    window.addEventListener("mouseup", up);
-    window.addEventListener("mouseleave", leave);
-    window.addEventListener("blur", leave);
-
-    rafRef.current = window.requestAnimationFrame(animate);
 
     return () => {
-      window.removeEventListener("mousemove", move);
       window.removeEventListener("mousedown", down);
-      window.removeEventListener("mouseup", up);
-      window.removeEventListener("mouseleave", leave);
-      window.removeEventListener("blur", leave);
-      if (rafRef.current != null) {
-        window.cancelAnimationFrame(rafRef.current);
-      }
+      document.documentElement.classList.remove("fp-gold-cursor-enabled");
     };
   }, [enabled]);
-
-  const ringClass = useMemo(() => {
-    const parts = ["fp-cursor-ring"];
-    if (visible) parts.push("is-visible");
-    if (hoveringInteractive) parts.push("is-hovering");
-    if (pressing) parts.push("is-pressing");
-    return parts.join(" ");
-  }, [visible, hoveringInteractive, pressing]);
-
-  const dotClass = useMemo(() => {
-    const parts = ["fp-cursor-dot"];
-    if (visible) parts.push("is-visible");
-    if (pressing) parts.push("is-pressing");
-    return parts.join(" ");
-  }, [visible, pressing]);
 
   if (!enabled) return null;
 
   return (
     <div className="fp-cursor-layer" data-luxury-cursor="true" aria-hidden="true">
-      <div ref={ringRef} className={ringClass} />
-      <div ref={dotRef} className={dotClass} />
-      {bursts.map((burst) => (
-        <div key={burst.id} className="fp-cursor-burst" style={{ left: burst.x, top: burst.y }}>
-          <span className="fp-cursor-burst-ring" />
-          <span className="fp-cursor-burst-star">{"\u2726"}</span>
+      {clicks.map((click) => (
+        <div key={click.id} className="fp-cursor-click" style={{ left: click.x, top: click.y }}>
+          <span className="fp-cursor-click-bolt">{"\u26A1"}</span>
         </div>
       ))}
     </div>

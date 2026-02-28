@@ -1347,3 +1347,9 @@ o-scrollbar para evitar barra visible.
   - solo se activa cuando hay pointer: fine y viewport desktop (min-width: 1024px).
   - se desactiva automaticamente si el usuario tiene prefers-reduced-motion: reduce.
   - no aplica en mobile/tablet tactil y no altera el flujo/layout de componentes existentes.
+## Desktop cursor refinement (2026-02-28)
+
+- Se elimina overlay visual de anillo/circulo verde del cursor premium.
+- Nuevo cursor global desktop con flecha dorada personalizada (formato puntero clasico), aplicado via clase raiz.
+- El feedback de clic se simplifica a un rayito pequeno junto al puntero.
+- Mobile y dispositivos tactiles se mantienen sin cambios de cursor.
