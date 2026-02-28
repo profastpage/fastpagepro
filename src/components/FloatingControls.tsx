@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { ArrowUp } from "lucide-react";
 import { usePathname } from "next/navigation";
+import GuestSupportWidget from "@/components/GuestSupportWidget";
 
 export default function FloatingControls() {
   const [mounted, setMounted] = useState(false);
@@ -48,6 +49,8 @@ export default function FloatingControls() {
           <ArrowUp className="w-3.5 h-3.5 md:w-4 md:h-4 text-yellow-400" />
         </button>
       )}
+
+      {!isPublicBio && <GuestSupportWidget />}
 
     </div>
   );
