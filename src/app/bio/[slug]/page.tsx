@@ -546,14 +546,6 @@ export default function PublicBioPage() {
     plin: "Plin",
   };
 
-  useEffect(() => {
-    if (!deliveryMethod) return;
-    const stillEnabled = availableDeliveryOptions.some((option) => option.value === deliveryMethod);
-    if (!stillEnabled) {
-      setDeliveryMethod("");
-    }
-  }, [availableDeliveryOptions, deliveryMethod]);
-
   const goldKeywordStyle: CSSProperties = {
     backgroundImage:
       "linear-gradient(180deg, rgba(255,248,220,1) 0%, rgba(252,211,77,1) 46%, rgba(217,119,6,1) 100%)",

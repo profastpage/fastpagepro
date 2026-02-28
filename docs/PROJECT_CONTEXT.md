@@ -1381,3 +1381,10 @@ o-scrollbar para evitar barra visible.
   - si faltaba publishedAt, se completa automaticamente.
   - el WhatsApp objetivo se asegura a +51919662011 para que el flujo de pedido redireccione correctamente.
 - Resultado: la demo queda visible en /published lista para ver y grabar.
+## Public bio React hook-order crash fix (2026-02-28)
+
+- Ruta publica ajustada: /bio/[slug].
+- Se corrige un useEffect declarado debajo de retornos condicionales (loading/notFound) que podia disparar error de React #310 en produccion.
+- Resultado:
+  - se elimina el crash cliente en enlaces publicados
+  - /bio/* vuelve a renderizar estable en mobile/desktop.
