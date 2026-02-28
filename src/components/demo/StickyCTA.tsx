@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { trackGrowthEvent } from "@/lib/analytics";
 import { getVerticalCopy, verticalToSignupHref, type BusinessVertical } from "@/lib/vertical";
@@ -15,6 +16,9 @@ type StickyCTAProps = {
   compactMobileLeft?: boolean;
 };
 
+const RECORDING_DEMO_TARGET_EMAIL = "gozustrike@gmail.com";
+const PREVIEW_OWNER_STORAGE_KEY = "fp_preview_owner_email";
+
 export default function StickyCTA({
   vertical,
   slug,
@@ -24,9 +28,34 @@ export default function StickyCTA({
   compactMobileLeft = false,
 }: StickyCTAProps) {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const [previewOwnerEmail, setPreviewOwnerEmail] = useState("");
   const copy = getVerticalCopy(vertical);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const queryOwner = String(
+      searchParams?.get("previewOwner") ||
+      searchParams?.get("ownerEmail") ||
+      searchParams?.get("owner") ||
+      "",
+    )
+      .trim()
+      .toLowerCase();
+    if (queryOwner) {
+      window.localStorage.setItem(PREVIEW_OWNER_STORAGE_KEY, queryOwner);
+    }
+    const storedOwner = String(window.localStorage.getItem(PREVIEW_OWNER_STORAGE_KEY) || "")
+      .trim()
+      .toLowerCase();
+    setPreviewOwnerEmail(queryOwner || storedOwner);
+  }, [searchParams]);
+
   if (user) {
+    return null;
+  }
+
+  if (previewOwnerEmail === RECORDING_DEMO_TARGET_EMAIL) {
     return null;
   }
 

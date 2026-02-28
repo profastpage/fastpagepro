@@ -12,6 +12,9 @@ export interface User {
   status?: 'active' | 'suspended' | 'disabled';
 }
 
+const RECORDING_DEMO_TARGET_EMAIL = 'gozustrike@gmail.com';
+const PREVIEW_OWNER_STORAGE_KEY = 'fp_preview_owner_email';
+
 function toDemoVersion(value: unknown): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
@@ -72,6 +75,12 @@ export function useAuth(requireAuth = false) {
         setUser(userData);
         // Update localStorage to keep it in sync
         localStorage.setItem('fp_session', JSON.stringify(userData));
+        const normalizedEmail = String(userData.email || '').trim().toLowerCase();
+        if (normalizedEmail === RECORDING_DEMO_TARGET_EMAIL) {
+          localStorage.setItem(PREVIEW_OWNER_STORAGE_KEY, normalizedEmail);
+        } else {
+          localStorage.removeItem(PREVIEW_OWNER_STORAGE_KEY);
+        }
 
         // Optional demo reset on login (per demo account setting).
         try {

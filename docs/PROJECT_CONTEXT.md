@@ -1176,7 +1176,7 @@ o-scrollbar para evitar barra visible.
   - la notificacion de Billing aparece en super admin en tiempo real con menor dependencia de campos derivados.
 ## Firestore ownership compatibility hardening (2026-02-26)
 
-- Archivo ajustado: irestore.rules.
+- Archivo ajustado: firestore.rules.
 - Problema resuelto:
   - algunos documentos legacy en cloned_sites y projects no tenian userId, lo que provocaba permission-denied al guardar en Store/Builder/Editor para cuentas validas.
 - Cambio aplicado:
@@ -1408,3 +1408,12 @@ o-scrollbar para evitar barra visible.
 - Rutas ajustadas: /cartadigital y /published.
 - El auto-provision de demo Burger Lab ahora trata errores de permisos sin romper pantallas ni detener carga.
 - Los errores de permisos pasan a modo tolerante (warning) para evitar bloquear publicacion normal del usuario.
+## Demo preview CTA account-scoped hide (2026-02-28)
+
+- Componente ajustado: /demo/* via src/components/demo/StickyCTA.tsx.
+- Hook ajustado: src/hooks/useAuth.ts.
+- Se agrega bandera local fp_preview_owner_email para control de visualizacion en demos sin registro.
+- Comportamiento:
+  - cuando inicia sesion gozustrike@gmail.com, se persiste la bandera local del owner de preview.
+  - StickyCTA oculta el bloque Demo lista... si detecta ese owner (localStorage o query previewOwner/ownerEmail/owner).
+  - el CTA comercial sigue visible para visitantes normales sin esa marca.
