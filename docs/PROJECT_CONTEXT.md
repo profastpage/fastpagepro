@@ -1480,3 +1480,12 @@ o-scrollbar para evitar barra visible.
 - Alcance:
   - para cualquier visitante sin registro (todas las cuentas), la demo de carta restaurante ya no muestra ese banner flotante.
   - otras verticales de demo (tienda/servicios) mantienen su CTA actual.
+## Restaurant demo sticky/header simplification + square order CTA (2026-02-28)
+
+- Ruta afectada: /demo/restaurant/*.
+- Ajustes UX en tab Carta:
+  - el header superior (avatar + nombre + compartir) deja de ser sticky al hacer scroll.
+  - se mantiene sticky solo el bloque de buscador + chips de categorias para maximizar campo visual de productos.
+- Ajuste en boton flotante de pedido:
+  - se cambia a formato mas cuadrado/compacto.
+  - icono de carrito arriba, y en la fila inferior "Mi pedido" con contador al costado.

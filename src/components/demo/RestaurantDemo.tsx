@@ -191,7 +191,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   return (
     <section className="space-y-4">
       <article className="mx-auto w-full max-w-md overflow-visible rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl md:overflow-hidden">
-        <div className="sticky top-0 z-30 border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3 backdrop-blur-sm">
+        <div className="z-20 border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)]">
@@ -315,7 +315,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             <section className="space-y-4">
               <div
                 ref={menuStickyRef}
-                className="sticky top-[4.2rem] z-40 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] backdrop-blur-sm md:top-[6.1rem]"
+                className="sticky top-0 z-40 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] backdrop-blur-sm"
               >
                 <label className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3">
                   <Search className="h-4 w-4 text-[var(--fp-muted)]" />
@@ -453,14 +453,16 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               location: "restaurant_floating",
             })
           }
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex items-center gap-2 rounded-[1.05rem] border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,255,225,0.98),rgba(198,240,205,0.95))] px-3 py-2.5 text-[11px] font-black text-emerald-950 shadow-[0_12px_26px_-16px_rgba(16,185,129,0.75)] md:bottom-20 md:px-4 md:py-3 md:text-sm"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex w-[6.1rem] flex-col items-center justify-center gap-1.5 rounded-[1.15rem] border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,255,225,0.98),rgba(198,240,205,0.95))] px-2 py-2.5 text-emerald-950 shadow-[0_12px_26px_-16px_rgba(16,185,129,0.75)] md:bottom-20 md:w-[6.4rem]"
         >
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-[0.7rem] border border-emerald-300/60 bg-emerald-600/10">
             <ShoppingCart className="h-3.5 w-3.5" />
           </span>
-          <span className="leading-none">Mi pedido</span>
-          <span className="inline-flex min-w-6 items-center justify-center rounded-full border border-emerald-300/70 bg-white/70 px-1.5 py-0.5 text-[10px] font-black">
-            {cartCount}
+          <span className="inline-flex items-center gap-1">
+            <span className="text-[10px] font-black leading-none">Mi pedido</span>
+            <span className="inline-flex min-w-5 items-center justify-center rounded-full border border-emerald-300/70 bg-white/70 px-1.5 py-0.5 text-[10px] font-black leading-none">
+              {cartCount}
+            </span>
           </span>
         </a>
       ) : null}
