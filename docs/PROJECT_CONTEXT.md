@@ -1374,3 +1374,10 @@ o-scrollbar para evitar barra visible.
 - El mensaje de pedido ahora inicia con el nombre del restaurante en formato de solicitud:
   - Solicitud de pedido para {Restaurante}
   - saludo amable y luego detalle estructurado con emojis.
+## Carta demo auto-publish in Published (2026-02-28)
+
+- Ajuste en /cartadigital para gozustrike@gmail.com:
+  - la demo Burger Lab se fuerza en estado published si estaba sin publicar.
+  - si faltaba publishedAt, se completa automaticamente.
+  - el WhatsApp objetivo se asegura a +51919662011 para que el flujo de pedido redireccione correctamente.
+- Resultado: la demo queda visible en /published lista para ver y grabar.

@@ -906,7 +906,8 @@ export function buildRestaurantRecordingDemoProfile(user: LinkHubUserSeed): Link
       theme: "saffron",
       themePrimaryColor: "#ea580c",
       themeSecondaryColor: "#f59e0b",
-      published: false,
+      published: true,
+      publishedAt: now,
       links: [
         {
           id: createId("link"),

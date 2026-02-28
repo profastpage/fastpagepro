@@ -106,6 +106,7 @@ const LINK_TYPE_OPTIONS: Array<{ value: LinkHubLinkType; label: string }> = [
 
 const RECORDING_DEMO_TARGET_EMAIL = "gozustrike@gmail.com";
 const RECORDING_DEMO_PROFILE_ID_SUFFIX = "demo-burger-lab-recording";
+const RECORDING_DEMO_BUSINESS_WHATSAPP = "51919662011";
 
 const RESTAURANT_SUBCATEGORY_OPTIONS = [
   "Cafeteria",
@@ -211,6 +212,10 @@ function sanitizeDemoParam(value: string | null) {
   return String(value || "")
     .trim()
     .replace(/[^\w-]/g, "");
+}
+
+function normalizeDigits(value: string): string {
+  return String(value || "").replace(/\D/g, "");
 }
 
 function parseMultiline(input: string): string[] {
@@ -496,28 +501,61 @@ export default function LinkHubPage() {
         const shouldAutoCreateRecordingDemo = normalizedEmail === RECORDING_DEMO_TARGET_EMAIL;
         const recordingDemoProfileId = `${user.uid}-${RECORDING_DEMO_PROFILE_ID_SUFFIX}`;
         let autoCreatedRecordingDemo = false;
+        let recordingDemoEnsuredPublished = false;
 
         if (shouldAutoCreateRecordingDemo) {
-          const hasRecordingDemo = records.some((item) => item.id === recordingDemoProfileId);
-          if (!hasRecordingDemo) {
+          const existingRecordingDemo = records.find((item) => item.id === recordingDemoProfileId);
+          if (!existingRecordingDemo) {
             try {
               const demoProfile = buildRestaurantRecordingDemoProfile(user);
               await saveLinkHubProfileForUser(user.uid, demoProfile, recordingDemoProfileId);
               records = await listLinkHubProfilesByUserId(user.uid);
               autoCreatedRecordingDemo = true;
+              recordingDemoEnsuredPublished = true;
             } catch (autoCreateError) {
               console.error("[LinkHub] Failed auto-creating recording demo profile:", autoCreateError);
+            }
+          } else {
+            try {
+              const normalizedExisting = normalizeLinkHubProfile(existingRecordingDemo.profile, user);
+              const whatsappDigits = normalizeDigits(normalizedExisting.whatsappNumber);
+              const needsPublished = !normalizedExisting.published;
+              const needsPublishedAt = !Number(normalizedExisting.publishedAt || 0);
+              const needsBusinessWhatsapp = whatsappDigits !== RECORDING_DEMO_BUSINESS_WHATSAPP;
+
+              if (needsPublished || needsPublishedAt || needsBusinessWhatsapp) {
+                const now = Date.now();
+                const ensuredProfile = normalizeLinkHubProfile(
+                  {
+                    ...normalizedExisting,
+                    phoneNumber: normalizeDigits(normalizedExisting.phoneNumber)
+                      ? normalizedExisting.phoneNumber
+                      : RECORDING_DEMO_BUSINESS_WHATSAPP,
+                    whatsappNumber: RECORDING_DEMO_BUSINESS_WHATSAPP,
+                    published: true,
+                    publishedAt: Number(normalizedExisting.publishedAt || 0) || now,
+                    updatedAt: now,
+                  },
+                  user,
+                );
+
+                await saveLinkHubProfileForUser(user.uid, ensuredProfile, recordingDemoProfileId);
+                records = await listLinkHubProfilesByUserId(user.uid);
+                recordingDemoEnsuredPublished = true;
+              }
+            } catch (autoPublishError) {
+              console.error("[LinkHub] Failed ensuring recording demo publication:", autoPublishError);
             }
           }
         }
 
         const legacyRecord = records.find((item) => item.id === user.uid);
-        const autoCreatedRecord = autoCreatedRecordingDemo
+        const recordingDemoRecord = shouldAutoCreateRecordingDemo
           ? records.find((item) => item.id === recordingDemoProfileId)
           : null;
         const selectedRecord =
           (requestedProfileId ? records.find((item) => item.id === requestedProfileId) : null)
-          || autoCreatedRecord
+          || recordingDemoRecord
           || legacyRecord
           || records[0]
           || null;
@@ -552,7 +590,12 @@ export default function LinkHubPage() {
           } else if (autoCreatedRecordingDemo) {
             setMessage({
               type: "success",
-              text: "Demo real Burger Lab creada automaticamente para tu cuenta. Puedes editarla y publicar cuando quieras.",
+              text: "Demo real Burger Lab creada y publicada automaticamente. Ya aparece en Published.",
+            });
+          } else if (recordingDemoEnsuredPublished) {
+            setMessage({
+              type: "success",
+              text: "Demo Burger Lab actualizada y publicada. Ya aparece en Published.",
             });
           }
           return;
