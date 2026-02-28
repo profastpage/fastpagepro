@@ -1496,3 +1496,15 @@ o-scrollbar para evitar barra visible.
   - se elimina el recorte `md:overflow-hidden` del contenedor principal de RestaurantDemo.
 - Resultado:
   - en desktop, el bloque sticky de buscador + categorias se conserva fijo arriba al deslizar, igual que en movil.
+## Public carta real UX parity with demo improvements (2026-02-28)
+
+- Ruta afectada: /bio/[slug] (cuenta real publicada).
+- Mejoras aplicadas en catalogo/carta para movil y desktop:
+  - se oculta el header superior (avatar + compartir) solo en tab catalogo para ampliar campo visual.
+  - se elimina el boton de pedido del encabezado desktop para reducir ruido visual.
+  - el boton flotante de carrito ahora se usa como accion principal en ambos formatos.
+- Rediseño del boton flotante Mi pedido:
+  - formato mas cuadrado/compacto.
+  - icono de carrito arriba.
+  - texto "Mi pedido" con contador al costado en la fila inferior.
+  - posicion ajustada para no tapar el menu inferior en movil y quedar comodo en desktop.

@@ -41,7 +41,6 @@ import {
   Phone,
   Plus,
   Search,
-  ShoppingBag,
   Shirt,
   Store,
   Trash2,
@@ -958,7 +957,7 @@ export default function PublicBioPage() {
         style={wrapperStyle}
       >
         <div
-          className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"}`}
+          className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"} ${activeTab === "catalog" ? "hidden" : ""}`}
           style={headerBarStyle}
         >
           <div className="relative space-y-1.5 md:space-y-0">
@@ -1271,20 +1270,6 @@ export default function PublicBioPage() {
                     {profile.businessType === "restaurant" ? <Fish className="h-3.5 w-3.5" /> : <Store className="h-3.5 w-3.5" />}
                     {totalFilteredItems}
                   </div>
-                  <button
-                    type="button"
-                    onClick={submitOrderWhatsapp}
-                    className={`inline-flex items-center gap-2 border px-3 py-2 text-xs font-black uppercase tracking-[0.08em] ${buttonRadiusClass}`}
-                    style={interactiveStyle}
-                  >
-                    <ShoppingBag className="h-4 w-4" />
-                    Mi pedido
-                    {cartItemsCount > 0 && (
-                      <span className="rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: "var(--carta-chip-active-bg)", color: "var(--carta-chip-active-text)" }}>
-                        {cartItemsCount}
-                      </span>
-                    )}
-                  </button>
                 </div>
               </div>
 
@@ -1440,7 +1425,7 @@ export default function PublicBioPage() {
       {activeTab === "catalog" && (
         <FloatingCartButton
           cartCount={cartItemsCount}
-          buttonShapeClass={`${buttonRadiusClass} md:hidden`}
+          buttonShapeClass="rounded-[1.15rem]"
           visible={activeTab === "catalog"}
           onOpen={submitOrderWhatsapp}
         />
