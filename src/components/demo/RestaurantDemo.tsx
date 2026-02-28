@@ -389,10 +389,12 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               location: "restaurant_floating",
             })
           }
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--fp-primary)] px-3 py-2 text-xs font-black text-white shadow-2xl md:bottom-20 md:px-4 md:py-3 md:text-sm"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-[var(--fp-primary)] px-3 py-2.5 text-xs font-black text-white shadow-2xl md:bottom-20 md:px-4 md:py-3 md:text-sm"
         >
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-black/20">
+            <ShoppingCart className="h-3.5 w-3.5" />
+          </span>
           <MessageCircle className="h-3.5 w-3.5" />
-          <ShoppingCart className="h-3.5 w-3.5" />
           <span>Mi pedido ({cartCount})</span>
         </a>
       ) : null}

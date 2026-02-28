@@ -1437,3 +1437,12 @@ o-scrollbar para evitar barra visible.
 - Solucion aplicada:
   - se elimina useMemo para 	argetPrimary/targetSecondary y se calculan como constantes antes de retornos condicionales.
 - Resultado: se evita el crash cliente en demos de landing y se mantiene el mismo comportamiento visual/funcional del CTA.
+## Demo cart/scroll controls overlap fix (2026-02-28)
+
+- Ruta afectada: /demo/[vertical]/[slug] (demo mobile preview).
+- Ajustes UI no destructivos:
+  - src/components/FloatingControls.tsx:
+    - en rutas /demo*, el boton flotante subir ahora se posiciona arriba a la derecha para no cruzarse con el carrito de pedido.
+  - src/components/demo/RestaurantDemo.tsx:
+    - el boton flotante Mi pedido pasa de pill redondeado a estilo mas cuadrado (ounded-2xl) con icono de carrito en bloque visual.
+- Resultado: se elimina el solapamiento entre controles flotantes y mejora legibilidad del CTA de pedido por WhatsApp.
