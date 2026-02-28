@@ -1353,3 +1353,24 @@ o-scrollbar para evitar barra visible.
 - Nuevo cursor global desktop con flecha dorada personalizada (formato puntero clasico), aplicado via clase raiz.
 - El feedback de clic se simplifica a un rayito pequeno junto al puntero.
 - Mobile y dispositivos tactiles se mantienen sin cambios de cursor.
+## Carta Digital recording demo auto-provision (2026-02-28)
+
+- Ruta privada ajustada: /cartadigital (modulo LinkHub/Carta Digital).
+- Para la cuenta gozustrike@gmail.com, el sistema crea automaticamente un perfil real de demo (Burger Lab) si aun no existe:
+  - categorias e items completos con imagenes reales
+  - WhatsApp/telefono de empresa +51919662011
+  - ubicacion y horarios listos para grabacion de contenido
+- La demo se guarda como proyecto real en link_profiles con ID estable por usuario para evitar duplicados.
+
+## Demo CTA hidden for authenticated users (2026-02-28)
+
+- Componente ajustado: src/components/demo/StickyCTA.tsx.
+- El bloque promocional Demo lista... (imagen 4) ya no se muestra a usuarios autenticados, reduciendo ruido al grabar demos funcionales.
+- Visitantes no autenticados mantienen el CTA comercial.
+
+## Carta order WhatsApp message refinement (2026-02-28)
+
+- Ruta publica ajustada: /bio/[slug].
+- El mensaje de pedido ahora inicia con el nombre del restaurante en formato de solicitud:
+  - Solicitud de pedido para {Restaurante}
+  - saludo amable y luego detalle estructurado con emojis.

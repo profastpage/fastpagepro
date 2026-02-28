@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { trackGrowthEvent } from "@/lib/analytics";
-import { getVerticalCopy, verticalToCreateHref, verticalToSignupHref, type BusinessVertical } from "@/lib/vertical";
+import { getVerticalCopy, verticalToSignupHref, type BusinessVertical } from "@/lib/vertical";
 
 type StickyCTAProps = {
   vertical: BusinessVertical;
@@ -26,12 +26,14 @@ export default function StickyCTA({
   const { user } = useAuth();
   const copy = getVerticalCopy(vertical);
 
+  if (user) {
+    return null;
+  }
+
   const targetPrimary = useMemo(
     () =>
-      user
-        ? verticalToCreateHref(vertical, { demoSlug: slug, demoTheme })
-        : verticalToSignupHref(vertical, { demoSlug: slug, demoTheme }),
-    [demoTheme, slug, user, vertical],
+      verticalToSignupHref(vertical, { demoSlug: slug, demoTheme }),
+    [demoTheme, slug, vertical],
   );
   const targetSecondary = useMemo(
     () => verticalToSignupHref(vertical, { demoSlug: slug, demoTheme }),

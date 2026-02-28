@@ -734,6 +734,222 @@ export function createDefaultPricingPlans(): LinkHubPricingPlan[] {
   ];
 }
 
+export function buildRestaurantRecordingDemoProfile(user: LinkHubUserSeed): LinkHubProfile {
+  const now = Date.now();
+  const emailPrefix = safeText(String(user.email || "").split("@")[0]);
+  const slugSuffix = sanitizeSlug(emailPrefix || safeText(user.uid).slice(0, 8) || "demo");
+  const slug = sanitizeSlug(`burger-lab-${slugSuffix}`) || "burger-lab-demo";
+
+  const categories = [
+    createLinkHubCatalogCategory("Combos", "🍔"),
+    createLinkHubCatalogCategory("Hamburguesas", "🍟"),
+    createLinkHubCatalogCategory("Acompanamientos", "🍗"),
+    createLinkHubCatalogCategory("Bebidas", "🥤"),
+  ];
+
+  const byName = (name: string) =>
+    categories.find((category) => category.name === name)?.id || categories[0]?.id || "";
+  const comboId = byName("Combos");
+  const burgersId = byName("Hamburguesas");
+  const sidesId = byName("Acompanamientos");
+  const drinksId = byName("Bebidas");
+
+  const catalogItems: LinkHubCatalogItem[] = [
+    {
+      ...createLinkHubCatalogItem(comboId),
+      title: "Combo Doble Smash",
+      description: "Hamburguesa doble, papas y bebida grande.",
+      salesCopy: "Ideal para almuerzo fuerte y delivery rapido.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "35.00",
+      compareAtPrice: "42.00",
+      badge: "Mas pedido",
+      emoji: "🔥",
+    },
+    {
+      ...createLinkHubCatalogItem(comboId),
+      title: "Combo Bacon XL",
+      description: "Cheese bacon XL, papas crocantes y gaseosa.",
+      salesCopy: "Top ventas para cenas y antojos nocturnos.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "38.00",
+      compareAtPrice: "45.00",
+      badge: "Top",
+      emoji: "🍔",
+    },
+    {
+      ...createLinkHubCatalogItem(burgersId),
+      title: "Cheese Bacon Deluxe",
+      description: "Carne angus, queso cheddar, tocino y salsa de la casa.",
+      salesCopy: "Sabor intenso para fans de burger premium.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "29.00",
+      compareAtPrice: "34.00",
+      badge: "Favorito",
+      emoji: "⭐",
+    },
+    {
+      ...createLinkHubCatalogItem(burgersId),
+      title: "Classic Burger",
+      description: "Hamburguesa clasica con vegetales frescos y salsa especial.",
+      salesCopy: "La opcion segura para todo publico.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "24.00",
+      compareAtPrice: "28.00",
+      badge: "",
+      emoji: "🍔",
+    },
+    {
+      ...createLinkHubCatalogItem(sidesId),
+      title: "Papas cargadas",
+      description: "Papas fritas con queso fundido y trozos de tocino.",
+      salesCopy: "Perfectas para compartir entre dos.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1585238342024-78d387f4a707?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1585238342024-78d387f4a707?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "16.00",
+      compareAtPrice: "19.00",
+      badge: "",
+      emoji: "🍟",
+    },
+    {
+      ...createLinkHubCatalogItem(sidesId),
+      title: "Alitas BBQ x6",
+      description: "Alitas jugosas glaseadas en salsa BBQ artesanal.",
+      salesCopy: "Entrada potente para completar cualquier combo.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "22.00",
+      compareAtPrice: "",
+      badge: "Nuevo",
+      emoji: "🍗",
+    },
+    {
+      ...createLinkHubCatalogItem(drinksId),
+      title: "Limonada frozen",
+      description: "Limonada frozen natural con toque de hierbabuena.",
+      salesCopy: "Refrescante para balancear sabores intensos.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "9.00",
+      compareAtPrice: "",
+      badge: "",
+      emoji: "🥤",
+    },
+    {
+      ...createLinkHubCatalogItem(drinksId),
+      title: "Milkshake de Oreo",
+      description: "Batido cremoso con helado de vainilla y galleta Oreo.",
+      salesCopy: "Postre liquido para cerrar con broche de oro.",
+      imageUrl:
+        "https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=1200&q=80",
+      galleryImageUrls: [
+        "https://images.unsplash.com/photo-1577805947697-89e18249d767?auto=format&fit=crop&w=1200&q=80",
+      ],
+      price: "14.00",
+      compareAtPrice: "17.00",
+      badge: "Top",
+      emoji: "🥛",
+    },
+  ];
+
+  return normalizeLinkHubProfile(
+    {
+      userId: safeText(user.uid),
+      slug,
+      displayName: "Burger Lab",
+      bio: "Ideal para dark kitchens y restaurantes con alto volumen de pedidos diarios.",
+      avatarUrl:
+        "https://images.unsplash.com/photo-1576836165612-8bc9b07e7778?auto=format&fit=crop&w=400&q=80",
+      coverImageUrl:
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1400&q=80",
+      coverImageUrls: [
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=1400&q=80",
+      ],
+      categoryLabel: "Hamburgueseria",
+      phoneNumber: "51919662011",
+      whatsappNumber: "51919662011",
+      businessType: "restaurant",
+      themeCategory: "food",
+      fontFamily: "modern",
+      buttonShape: "rounded",
+      cardStyle: "solid",
+      textTone: "blackGold",
+      cartaThemeId: "fastfood",
+      cartaBackgroundMode: "white",
+      sectionLabels: getDefaultLinkHubSectionLabels(),
+      theme: "saffron",
+      themePrimaryColor: "#ea580c",
+      themeSecondaryColor: "#f59e0b",
+      published: false,
+      links: [
+        {
+          id: createId("link"),
+          title: "Instagram",
+          url: "https://instagram.com/fastpagepro",
+          type: "instagram",
+        },
+        {
+          id: createId("link"),
+          title: "WhatsApp",
+          url: "https://wa.me/51919662011",
+          type: "whatsapp",
+        },
+      ],
+      catalogCategories: categories,
+      catalogItems,
+      proTestimonials: createDefaultProTestimonials("Burger Lab"),
+      proDeliveryModes: {
+        delivery: true,
+        pickup: true,
+        dinein: true,
+      },
+      proFeaturesUnlocked: false,
+      location: {
+        address: "Jr. Bolognesi 220, Barranco",
+        mapEmbedUrl: "https://www.google.com/maps?q=Jr.+Bolognesi+220,+Barranco,+Lima&output=embed",
+        mapsUrl: "https://maps.google.com/?q=Jr.+Bolognesi+220,+Barranco,+Lima",
+        scheduleLines: ["12:00 pm - 11:00 pm", "Pedidos por WhatsApp todo el dia"],
+        ctaLabel: "Ir ahora",
+      },
+      pricing: {
+        enabled: true,
+        title: "Catalogo digital online",
+        subtitle: "Sistema listo para captar y convertir pedidos en WhatsApp.",
+        plans: createDefaultPricingPlans(),
+      },
+      createdAt: now,
+      updatedAt: now,
+    },
+    user,
+  );
+}
+
 function normalizeHexToLong(hex: string): string {
   if (hex.length !== 4) return hex;
   const [_, r, g, b] = hex;

@@ -9,6 +9,7 @@ import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import { requestPublishTarget } from "@/lib/subscription/publishClient";
 import {
   buildDefaultLinkHubProfile,
+  buildRestaurantRecordingDemoProfile,
   createLinkHubCatalogCategory,
   createLinkHubCatalogItem,
   getSafeLinkHubCartaBackgroundMode,
@@ -102,6 +103,9 @@ const LINK_TYPE_OPTIONS: Array<{ value: LinkHubLinkType; label: string }> = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "x", label: "X / Twitter" },
 ];
+
+const RECORDING_DEMO_TARGET_EMAIL = "gozustrike@gmail.com";
+const RECORDING_DEMO_PROFILE_ID_SUFFIX = "demo-burger-lab-recording";
 
 const RESTAURANT_SUBCATEGORY_OPTIONS = [
   "Cafeteria",
@@ -485,12 +489,35 @@ export default function LinkHubPage() {
       setIsLoadingProfile(true);
 
       try {
-        const records = await listLinkHubProfilesByUserId(user.uid);
+        let records = await listLinkHubProfilesByUserId(user.uid);
         if (!active) return;
 
+        const normalizedEmail = String(user.email || "").trim().toLowerCase();
+        const shouldAutoCreateRecordingDemo = normalizedEmail === RECORDING_DEMO_TARGET_EMAIL;
+        const recordingDemoProfileId = `${user.uid}-${RECORDING_DEMO_PROFILE_ID_SUFFIX}`;
+        let autoCreatedRecordingDemo = false;
+
+        if (shouldAutoCreateRecordingDemo) {
+          const hasRecordingDemo = records.some((item) => item.id === recordingDemoProfileId);
+          if (!hasRecordingDemo) {
+            try {
+              const demoProfile = buildRestaurantRecordingDemoProfile(user);
+              await saveLinkHubProfileForUser(user.uid, demoProfile, recordingDemoProfileId);
+              records = await listLinkHubProfilesByUserId(user.uid);
+              autoCreatedRecordingDemo = true;
+            } catch (autoCreateError) {
+              console.error("[LinkHub] Failed auto-creating recording demo profile:", autoCreateError);
+            }
+          }
+        }
+
         const legacyRecord = records.find((item) => item.id === user.uid);
+        const autoCreatedRecord = autoCreatedRecordingDemo
+          ? records.find((item) => item.id === recordingDemoProfileId)
+          : null;
         const selectedRecord =
           (requestedProfileId ? records.find((item) => item.id === requestedProfileId) : null)
+          || autoCreatedRecord
           || legacyRecord
           || records[0]
           || null;
@@ -522,6 +549,11 @@ export default function LinkHubPage() {
           setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
           if (nextProfile === localDraft) {
             setMessage({ type: "success", text: "Se recupero tu borrador local mas reciente." });
+          } else if (autoCreatedRecordingDemo) {
+            setMessage({
+              type: "success",
+              text: "Demo real Burger Lab creada automaticamente para tu cuenta. Puedes editarla y publicar cuando quieras.",
+            });
           }
           return;
         }

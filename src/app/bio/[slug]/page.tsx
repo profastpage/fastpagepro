@@ -709,9 +709,9 @@ export default function PublicBioPage() {
     const customerPhoneLine = customerPhone.trim() ? `- Celular de referencia: ${customerPhone.trim()}` : "";
 
     return [
-      `\u{1F44B} *Hola equipo ${businessName}!*`,
+      `\u{1F9FE} *Solicitud de pedido para ${businessName}*`,
       "",
-      "\u{1F4F2} Quiero realizar un pedido desde su Carta Digital.",
+      `\u{1F44B} Hola equipo ${businessName}, quisiera confirmar el siguiente pedido:`,
       "",
       "\u{1F9FE} *Detalle del pedido*",
       itemLines,
