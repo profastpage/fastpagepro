@@ -446,7 +446,7 @@ function rgbToHex(rgb?: { r: number; g: number; b: number }) {
 
 const SOFT_INPUT_BORDER = "#ecf1f7";
 const DARK_FORM_FIELD_CLASS =
-  "bg-zinc-700/95 text-white placeholder:text-zinc-300";
+  "bg-zinc-700/95 !text-white placeholder:text-zinc-300 [-webkit-text-fill-color:#ffffff] [caret-color:#ffffff] selection:bg-white/25";
 
 function isPermissionDeniedError(error: unknown) {
   const message = String((error as any)?.message || "").toLowerCase();
