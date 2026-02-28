@@ -1417,3 +1417,16 @@ o-scrollbar para evitar barra visible.
   - cuando inicia sesion gozustrike@gmail.com, se persiste la bandera local del owner de preview.
   - StickyCTA oculta el bloque Demo lista... si detecta ese owner (localStorage o query previewOwner/ownerEmail/owner).
   - el CTA comercial sigue visible para visitantes normales sin esa marca.
+
+## Image upload-only UX for editors (2026-02-28)
+
+- Rutas ajustadas: /cartadigital (LinkHub editor) y /settings.
+- Se eliminan campos URL para imagenes en Carta Digital:
+  - avatar
+  - portadas
+  - URL manual por item de carta
+  - URL manual de galeria PRO
+- La carga de imagen queda solo por Adjuntar/Subir (archivo), manteniendo compatibilidad con imagenes existentes (demos/temas y datos ya guardados).
+- Mejora UX en Carta Digital:
+  - indicador rapido por item: Imagen lista / Sube una foto para editar mas facil.
+- En settings, la foto de perfil pasa de input URL a carga por archivo desde el boton de camara.

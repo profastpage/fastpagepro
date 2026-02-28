@@ -461,7 +461,6 @@ export default function LinkHubPage() {
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewCategoryId, setPreviewCategoryId] = useState("");
   const [editorItemSearch, setEditorItemSearch] = useState("");
-  const [coverUrlInput, setCoverUrlInput] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const descriptionSeedRef = useRef<number>(Date.now());
   const [demoSlugIntent, setDemoSlugIntent] = useState("");
@@ -1241,16 +1240,6 @@ export default function LinkHubPage() {
     });
   }
 
-  function addCatalogGalleryUrl(itemId: string) {
-    if (!isProPlan) {
-      showProFeatureLocked("Galería de fotos PRO");
-      return;
-    }
-    const url = window.prompt("Pega la URL de una foto adicional del producto");
-    if (!url) return;
-    appendCatalogGalleryImage(itemId, url);
-  }
-
   async function suggestCatalogItemSalesCopy(itemId: string) {
     if (!isProPlan) {
       showProFeatureLocked("Copy de venta PRO");
@@ -1464,54 +1453,6 @@ export default function LinkHubPage() {
       const nextLinks = prev.links.filter((link) => link.id !== linkId);
       return { ...prev, links: nextLinks.length > 0 ? nextLinks : [createEmptyLink()] };
     });
-  }
-
-  function sanitizeCoverUrl(raw: string): string {
-    const value = raw.trim();
-    if (!value) return "";
-    if (value.startsWith("data:image/")) return value;
-    return normalizeLinkUrl(value);
-  }
-
-  function addCoverImageUrl() {
-    const normalized = sanitizeCoverUrl(coverUrlInput);
-    if (!normalized) {
-      setMessage({ type: "error", text: "Ingresa una URL valida para la portada." });
-      return;
-    }
-
-    if (!normalized.startsWith("data:image/") && !isValidExternalUrl(normalized)) {
-      setMessage({ type: "error", text: "La URL de portada debe comenzar con https://." });
-      return;
-    }
-
-    const currentCoverImages = profile?.coverImageUrls || [];
-    if (currentCoverImages.length >= MAX_LINK_HUB_COVER_IMAGES) {
-      setMessage({ type: "error", text: `Solo puedes tener hasta ${MAX_LINK_HUB_COVER_IMAGES} portadas.` });
-      return;
-    }
-
-    if (currentCoverImages.includes(normalized)) {
-      setMessage({ type: "error", text: "Esa imagen de portada ya fue agregada." });
-      return;
-    }
-
-    setProfile((prev) => {
-      if (!prev) return prev;
-      const merged = [...(prev.coverImageUrls || []), normalized]
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .filter((item, index, source) => source.indexOf(item) === index)
-        .slice(0, MAX_LINK_HUB_COVER_IMAGES);
-      return {
-        ...prev,
-        coverImageUrls: merged,
-        coverImageUrl: merged[0] || "",
-      };
-    });
-
-    setCoverUrlInput("");
-    setMessage({ type: "success", text: "Imagen de portada agregada." });
   }
 
   function removeCoverImageAt(indexToRemove: number) {
@@ -2232,13 +2173,7 @@ export default function LinkHubPage() {
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Foto de perfil</span>
-                  <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
-                    <input
-                      className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                      value={profile.avatarUrl}
-                      onChange={(event) => patchProfile("avatarUrl", event.target.value)}
-                      placeholder="https://... o sube un archivo"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-[auto_auto] gap-2">
                     <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-sky-100">
                       {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                       Adjuntar
@@ -2259,6 +2194,9 @@ export default function LinkHubPage() {
                       Quitar
                     </button>
                   </div>
+                  <p className="text-[11px] font-semibold text-zinc-300">
+                    {profile.avatarUrl ? "Imagen lista" : "Sin imagen"}
+                  </p>
                   <p className="text-xs text-zinc-500">
                     Soporta JPG, PNG, WEBP. Se optimiza automaticamente para carga rapida.
                   </p>
@@ -2267,32 +2205,7 @@ export default function LinkHubPage() {
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">
                     Portadas (hasta {MAX_LINK_HUB_COVER_IMAGES})
                   </span>
-                  <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto_auto] gap-2">
-                    <input
-                      className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                      value={coverUrlInput}
-                      onChange={(event) => setCoverUrlInput(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          addCoverImageUrl();
-                        }
-                      }}
-                      placeholder="https://... (agregar portada por URL)"
-                    />
-                    <button
-                      type="button"
-                      onClick={addCoverImageUrl}
-                      disabled={
-                        isUploadingCover ||
-                        profile.coverImageUrls.length >= MAX_LINK_HUB_COVER_IMAGES ||
-                        coverUrlInput.trim().length === 0
-                      }
-                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-amber-100 disabled:opacity-50"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Agregar URL
-                    </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-[auto] gap-2">
                     <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-sky-100">
                       {isUploadingCover ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                       Subir
@@ -2661,6 +2574,9 @@ export default function LinkHubPage() {
                             Sin imagen
                           </div>
                         )}
+                        <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-300">
+                          {item.imageUrl ? "Imagen lista" : "Sube una foto"}
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
@@ -2693,15 +2609,6 @@ export default function LinkHubPage() {
                               disabled={!isProPlan || uploadingCatalogItemId === item.id}
                             />
                           </label>
-                          <button
-                            type="button"
-                            onClick={() => addCatalogGalleryUrl(item.id)}
-                            disabled={!isProPlan}
-                            className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
-                            title={isProPlan ? "Agregar URL a galeria PRO" : "Disponible en plan PRO"}
-                          >
-                            {isProPlan ? "URL galeria" : "PRO"}
-                          </button>
                           <button
                             type="button"
                             onClick={() =>
@@ -2748,16 +2655,6 @@ export default function LinkHubPage() {
                         value={item.title}
                         onChange={(event) => patchCatalogItem(item.id, { title: event.target.value })}
                         placeholder="Nombre del item"
-                      />
-                      <input
-                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={item.imageUrl}
-                        onChange={(event) => patchCatalogItem(item.id, { imageUrl: event.target.value })}
-                        onBlur={(event) => {
-                          if (!isProPlan) return;
-                          appendCatalogGalleryImage(item.id, event.target.value);
-                        }}
-                        placeholder="URL imagen"
                       />
                       <label className="space-y-2 rounded-xl border border-white/10 bg-zinc-900/50 px-3 py-2">
                         <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
@@ -3585,4 +3482,5 @@ export default function LinkHubPage() {
     </div>
   );
 }
+
 

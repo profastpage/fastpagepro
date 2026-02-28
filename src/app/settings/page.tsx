@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { ChangeEvent, useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,7 +70,7 @@ const SettingInput = ({ label, icon: Icon, value, onChange, placeholder, type = 
   </div>
 );
 
-  const SettingToggle = ({ label, icon: Icon, active, onToggle, desc }: any) => (
+const SettingToggle = ({ label, icon: Icon, active, onToggle, desc }: any) => (
   <div className="flex flex-col sm:flex-row items-center justify-between p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] bg-zinc-900/50 border border-white/5 hover:border-white/10 transition-all group">
     <div className="flex items-center gap-4 sm:gap-6 mb-4 sm:mb-0 w-full sm:w-auto">
       <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl flex items-center justify-center transition-transform group-hover:rotate-6 ${active ? "bg-amber-500/10" : "bg-zinc-800"}`}>
@@ -89,6 +89,15 @@ const SettingInput = ({ label, icon: Icon, value, onChange, placeholder, type = 
     </button>
   </div>
 );
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("No se pudo leer la imagen."));
+    reader.readAsDataURL(file);
+  });
+}
 
 // --- Main Page Component ---
 
@@ -181,6 +190,27 @@ export default function SettingsPage() {
       return false;
     }
     return true;
+  };
+
+  const handleAvatarFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Selecciona una imagen valida." });
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setMessage({ type: "error", text: "La imagen supera 8MB." });
+      return;
+    }
+    try {
+      const avatarDataUrl = await readFileAsDataUrl(file);
+      setFormData((prev) => ({ ...prev, avatar: avatarDataUrl }));
+      setMessage({ type: "success", text: "Foto de perfil cargada." });
+    } catch {
+      setMessage({ type: "error", text: "No se pudo procesar la imagen." });
+    }
   };
 
   const handleSave = async () => {
@@ -383,9 +413,10 @@ export default function SettingsPage() {
                       <label className="absolute -bottom-2 -right-2 p-4 bg-amber-500 text-black rounded-[1.5rem] shadow-2xl cursor-pointer hover:scale-110 active:scale-95 transition-all duration-300">
                         <Camera className="w-6 h-6" />
                         <input 
-                          type="text" 
+                          type="file"
+                          accept="image/*"
                           className="hidden" 
-                          onChange={(e) => setFormData({...formData, avatar: e.target.value})}
+                          onChange={handleAvatarFileChange}
                         />
                       </label>
                     </div>
@@ -394,16 +425,9 @@ export default function SettingsPage() {
                         <span className="text-amber-500 text-[10px] font-black uppercase tracking-widest">{t("settings.profile.visual")}</span>
                       </div>
                       <h2 className="text-3xl font-black text-white">{t("settings.tabs.profile")}</h2>
-                      <div className="relative max-w-md group">
-                        <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-amber-500 transition-colors" />
-                        <input 
-                          type="text" 
-                          placeholder="URL de tu foto de perfil"
-                          className="w-full bg-zinc-900/50 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-sm text-zinc-300 focus:border-amber-500/50 focus:ring-4 focus:ring-amber-500/5 outline-none transition-all"
-                          value={formData.avatar}
-                          onChange={(e) => setFormData({...formData, avatar: e.target.value})}
-                        />
-                      </div>
+                      <p className="max-w-md rounded-2xl border border-white/10 bg-zinc-900/50 px-4 py-4 text-sm text-zinc-300">
+                        Adjunta tu foto desde el boton de camara. Ya no necesitas pegar URLs.
+                      </p>
                     </div>
                   </div>
 
