@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/delete-expired-demos",
-      "schedule": "0 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
