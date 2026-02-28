@@ -1489,3 +1489,10 @@ o-scrollbar para evitar barra visible.
 - Ajuste en boton flotante de pedido:
   - se cambia a formato mas cuadrado/compacto.
   - icono de carrito arriba, y en la fila inferior "Mi pedido" con contador al costado.
+## Restaurant demo sticky parity on desktop (2026-02-28)
+
+- Ruta afectada: /demo/restaurant/*.
+- Ajuste aplicado:
+  - se elimina el recorte `md:overflow-hidden` del contenedor principal de RestaurantDemo.
+- Resultado:
+  - en desktop, el bloque sticky de buscador + categorias se conserva fijo arriba al deslizar, igual que en movil.
