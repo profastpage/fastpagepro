@@ -1454,3 +1454,10 @@ o-scrollbar para evitar barra visible.
   - al hacer scroll vertical, los chips se preseleccionan automaticamente segun la categoria visible.
   - click en chip hace scroll suave a la seccion correspondiente (incluye Todos para volver al inicio del listado).
 - Se conserva buscador y estructura visual existente sin cambios destructivos.
+## Demo floating controls reposition + order CTA square style (2026-02-28)
+
+- Ruta afectada: /demo/[vertical]/[slug] mobile.
+- Ajustes UI:
+  - FloatingControls: en rutas demo, el boton subir ahora se ubica en esquina inferior izquierda, encima del tab Contacto.
+  - RestaurantDemo: el CTA Mi pedido se ajusta a estilo mas cuadrado/visual, manteniendo icono de carrito y contador de seleccion.
+- Resultado: menor cruce visual entre flotantes y mejor legibilidad del boton de pedido.

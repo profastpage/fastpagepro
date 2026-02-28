@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Clock3,
   MapPin,
-  MessageCircle,
   Menu,
   Minus,
   Phone,
@@ -454,13 +453,15 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               location: "restaurant_floating",
             })
           }
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-[var(--fp-primary)] px-3 py-2.5 text-xs font-black text-white shadow-2xl md:bottom-20 md:px-4 md:py-3 md:text-sm"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex items-center gap-2 rounded-[1.05rem] border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,255,225,0.98),rgba(198,240,205,0.95))] px-3 py-2.5 text-[11px] font-black text-emerald-950 shadow-[0_12px_26px_-16px_rgba(16,185,129,0.75)] md:bottom-20 md:px-4 md:py-3 md:text-sm"
         >
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-black/20">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-[0.7rem] border border-emerald-300/60 bg-emerald-600/10">
             <ShoppingCart className="h-3.5 w-3.5" />
           </span>
-          <MessageCircle className="h-3.5 w-3.5" />
-          <span>Mi pedido ({cartCount})</span>
+          <span className="leading-none">Mi pedido</span>
+          <span className="inline-flex min-w-6 items-center justify-center rounded-full border border-emerald-300/70 bg-white/70 px-1.5 py-0.5 text-[10px] font-black">
+            {cartCount}
+          </span>
         </a>
       ) : null}
 

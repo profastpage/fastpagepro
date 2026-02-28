@@ -38,7 +38,7 @@ export default function FloatingControls() {
     ? "fixed bottom-3 right-3 z-[80] flex flex-col gap-2"
     : "fixed bottom-4 right-4 md:bottom-6 md:right-6 flex flex-col gap-2 md:gap-3 z-50";
   const scrollTopClass = isDemoRoute
-    ? "fixed right-3 top-20 md:right-5 md:top-24 z-[90] p-1.5 md:p-2 bg-zinc-900 border border-zinc-800 rounded-full shadow-xl hover:scale-110 transition-all group animate-fade-in"
+    ? "fixed left-4 bottom-[calc(env(safe-area-inset-bottom)+5.6rem)] md:left-6 md:bottom-6 z-[90] p-1.5 md:p-2 bg-zinc-900 border border-zinc-800 rounded-full shadow-xl hover:scale-110 transition-all group animate-fade-in"
     : "p-1.5 md:p-2 bg-zinc-900 border border-zinc-800 rounded-full shadow-xl hover:scale-110 transition-all group animate-fade-in";
 
   return (
