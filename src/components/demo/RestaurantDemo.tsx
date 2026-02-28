@@ -190,7 +190,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
   return (
     <section className="space-y-4">
-      <article className="mx-auto w-full max-w-md overflow-hidden rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl">
+      <article className="mx-auto w-full max-w-md overflow-visible rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl md:overflow-hidden">
         <div className="sticky top-0 z-30 border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3 backdrop-blur-sm">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">

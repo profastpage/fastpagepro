@@ -1461,3 +1461,14 @@ o-scrollbar para evitar barra visible.
   - FloatingControls: en rutas demo, el boton subir ahora se ubica en esquina inferior izquierda, encima del tab Contacto.
   - RestaurantDemo: el CTA Mi pedido se ajusta a estilo mas cuadrado/visual, manteniendo icono de carrito y contador de seleccion.
 - Resultado: menor cruce visual entre flotantes y mejor legibilidad del boton de pedido.
+
+## Demo Carta sticky menu fix on mobile (2026-02-28)
+
+- Route affected: /demo/[vertical]/[slug] in RestaurantDemo.
+- Root cause fixed:
+  - the main demo wrapper used overflow-hidden on mobile, which prevented the Carta sticky top block from staying pinned while scrolling.
+- Applied fix:
+  - mobile wrapper now uses overflow-visible.
+  - desktop keeps overflow-hidden to preserve the framed layout.
+- Result: in Carta tab, search + category chips stay fixed at the top on mobile scroll.
+
