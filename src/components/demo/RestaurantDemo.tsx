@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Clock3,
   MapPin,
@@ -48,6 +48,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const [searchDebounced, setSearchDebounced] = useState("");
   const [category, setCategory] = useState("Todos");
   const [cart, setCart] = useState<CartMap>({});
+  const menuStickyRef = useRef<HTMLDivElement | null>(null);
+  const menuStartRef = useRef<HTMLDivElement | null>(null);
+  const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchDebounced(search), 220);
@@ -68,28 +71,81 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const filteredItems = useMemo(() => {
     const term = searchDebounced.trim().toLowerCase();
     return demo.items.filter((item) => {
-      if (category !== "Todos" && item.category !== category) return false;
       if (!term) return true;
       return `${item.name} ${item.description} ${item.category}`.toLowerCase().includes(term);
     });
-  }, [category, demo.items, searchDebounced]);
+  }, [demo.items, searchDebounced]);
 
   const groupedItems = useMemo(() => {
-    if (category !== "Todos") {
-      return [
-        {
-          name: category,
-          items: filteredItems,
-        },
-      ];
-    }
     return demo.categories
       .map((currentCategory) => ({
         name: currentCategory,
         items: filteredItems.filter((item) => item.category === currentCategory),
       }))
       .filter((group) => group.items.length > 0);
-  }, [category, demo.categories, filteredItems]);
+  }, [demo.categories, filteredItems]);
+
+  useEffect(() => {
+    if (tab !== "menu") return;
+
+    const syncActiveCategory = () => {
+      const visibleCategories = groupedItems.map((group) => group.name);
+      if (visibleCategories.length === 0) {
+        setCategory((prev) => (prev === "Todos" ? prev : "Todos"));
+        return;
+      }
+
+      const stickyBottom = menuStickyRef.current?.getBoundingClientRect().bottom ?? 130;
+      const anchorY = stickyBottom + 8;
+      const firstSection = categorySectionRefs.current[visibleCategories[0]];
+      const firstTop = firstSection?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
+
+      if (firstTop > anchorY + 10) {
+        setCategory((prev) => (prev === "Todos" ? prev : "Todos"));
+        return;
+      }
+
+      let nextCategory = visibleCategories[0];
+      for (const categoryName of visibleCategories) {
+        const node = categorySectionRefs.current[categoryName];
+        if (!node) continue;
+        if (node.getBoundingClientRect().top <= anchorY) {
+          nextCategory = categoryName;
+        } else {
+          break;
+        }
+      }
+
+      setCategory((prev) => (prev === nextCategory ? prev : nextCategory));
+    };
+
+    syncActiveCategory();
+    window.addEventListener("scroll", syncActiveCategory, { passive: true });
+    window.addEventListener("resize", syncActiveCategory);
+    return () => {
+      window.removeEventListener("scroll", syncActiveCategory);
+      window.removeEventListener("resize", syncActiveCategory);
+    };
+  }, [groupedItems, tab]);
+
+  const scrollToCategory = (targetCategory: string) => {
+    if (targetCategory === "Todos") {
+      const startNode = menuStartRef.current;
+      if (startNode) {
+        const top = window.scrollY + startNode.getBoundingClientRect().top - 108;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+      }
+      setCategory("Todos");
+      return;
+    }
+
+    const targetNode = categorySectionRefs.current[targetCategory];
+    if (!targetNode) return;
+    const stickyBottom = menuStickyRef.current?.getBoundingClientRect().bottom ?? 130;
+    const top = window.scrollY + targetNode.getBoundingClientRect().top - (stickyBottom + 10);
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    setCategory(targetCategory);
+  };
 
   const cartItems = useMemo(
     () =>
@@ -258,7 +314,10 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
           {tab === "menu" ? (
             <section className="space-y-4">
-              <div className="sticky top-[5.5rem] z-20 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 backdrop-blur-sm md:top-[6.4rem]">
+              <div
+                ref={menuStickyRef}
+                className="sticky top-[5.5rem] z-30 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_10px_24px_-16px_rgba(0,0,0,0.35)] backdrop-blur-sm md:top-[6.4rem]"
+              >
                 <label className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3">
                   <Search className="h-4 w-4 text-[var(--fp-muted)]" />
                   <input
@@ -273,7 +332,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                     <button
                       key={itemCategory}
                       type="button"
-                      onClick={() => setCategory(itemCategory)}
+                      onClick={() => scrollToCategory(itemCategory)}
                       className="shrink-0 rounded-xl border px-3 py-2 text-xs font-bold md:px-4 md:text-sm"
                       style={
                         category === itemCategory
@@ -287,9 +346,15 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div ref={menuStartRef} className="space-y-6">
                 {groupedItems.map((group) => (
-                  <div key={group.name} className="space-y-3">
+                  <div
+                    key={group.name}
+                    ref={(node) => {
+                      categorySectionRefs.current[group.name] = node;
+                    }}
+                    className="space-y-3"
+                  >
                     <h3 className="text-4xl font-black md:text-5xl" style={{ color: "var(--fp-primary)" }}>{group.name}</h3>
                     {group.items.map((item) => (
                       <article key={item.id} className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3">

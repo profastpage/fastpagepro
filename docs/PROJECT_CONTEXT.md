@@ -1446,3 +1446,11 @@ o-scrollbar para evitar barra visible.
   - src/components/demo/RestaurantDemo.tsx:
     - el boton flotante Mi pedido pasa de pill redondeado a estilo mas cuadrado (ounded-2xl) con icono de carrito en bloque visual.
 - Resultado: se elimina el solapamiento entre controles flotantes y mejora legibilidad del CTA de pedido por WhatsApp.
+## Demo preview sticky category sync (2026-02-28)
+
+- Ruta ajustada: /demo/[vertical]/[slug] en RestaurantDemo.
+- Mejoras en tab Carta de demo preview:
+  - bloque de buscador + chips de categorias ahora permanece sticky con mayor prioridad visual.
+  - al hacer scroll vertical, los chips se preseleccionan automaticamente segun la categoria visible.
+  - click en chip hace scroll suave a la seccion correspondiente (incluye Todos para volver al inicio del listado).
+- Se conserva buscador y estructura visual existente sin cambios destructivos.
