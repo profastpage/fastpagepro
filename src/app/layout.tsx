@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider"
 import { LanguageProvider } from "@/context/LanguageContext"
 import FloatingControls from "@/components/FloatingControls"
 import ServiceWorkerCleanup from "@/components/ServiceWorkerCleanup"
+import LuxuryCursorEffect from "@/components/LuxuryCursorEffect"
 
 export const metadata = {
   title: "Fast Page",
@@ -29,6 +30,7 @@ export default function RootLayout({
             <Nav />
             {children}
             <FloatingControls />
+            <LuxuryCursorEffect />
           </LanguageProvider>
         </ThemeProvider>
       </body>

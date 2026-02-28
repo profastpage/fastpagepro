@@ -1337,3 +1337,13 @@ o-scrollbar para evitar barra visible.
   - `usePlanPermissions` y resumen de suscripcion cuentan todas las cartas publicadas del usuario para reflejar `n/max`.
 - Reglas Firestore:
   - `link_profiles` create/update reforzados por ownership en `request.resource.data.userId == auth.uid`, permitiendo crear nuevos proyectos con IDs distintos.
+
+## Global desktop luxury cursor effect (2026-02-28)
+
+- Alcance global de plataforma (layout raiz):
+  - se agrega un efecto visual de cursor premium en desktop con anillo dorado y punto central.
+  - el efecto de clic muestra burst tornasolado dorado/verde para reforzar feedback visual.
+- Guardas de compatibilidad/accesibilidad:
+  - solo se activa cuando hay pointer: fine y viewport desktop (min-width: 1024px).
+  - se desactiva automaticamente si el usuario tiene prefers-reduced-motion: reduce.
+  - no aplica en mobile/tablet tactil y no altera el flujo/layout de componentes existentes.
