@@ -8,6 +8,8 @@ import { useLanguage } from "@/context/LanguageContext";
 
 type SupportFaq = {
   id: string;
+  quickEs: string;
+  quickEn: string;
   questionEs: string;
   questionEn: string;
   answerEs: string;
@@ -20,6 +22,8 @@ const BUSINESS_WHATSAPP = "51919662011";
 const SUPPORT_FAQ: SupportFaq[] = [
   {
     id: "trial",
+    quickEs: "Prueba 14 dias",
+    quickEn: "14-day trial",
     questionEs: "Como funciona la prueba de 14 dias?",
     questionEn: "How does the 14-day trial work?",
     answerEs:
@@ -30,6 +34,8 @@ const SUPPORT_FAQ: SupportFaq[] = [
   },
   {
     id: "speed",
+    quickEs: "Lanzamiento rapido",
+    quickEn: "Quick launch",
     questionEs: "En cuanto tiempo puedo lanzar mi pagina?",
     questionEn: "How fast can I launch my page?",
     answerEs:
@@ -40,6 +46,8 @@ const SUPPORT_FAQ: SupportFaq[] = [
   },
   {
     id: "whatsapp",
+    quickEs: "Pedidos WhatsApp",
+    quickEn: "WhatsApp orders",
     questionEs: "Se integra con pedidos por WhatsApp?",
     questionEn: "Does it integrate with WhatsApp orders?",
     answerEs:
@@ -50,6 +58,8 @@ const SUPPORT_FAQ: SupportFaq[] = [
   },
   {
     id: "domain",
+    quickEs: "Dominio propio",
+    quickEn: "Custom domain",
     questionEs: "Puedo usar mi dominio propio?",
     questionEn: "Can I use my own domain?",
     answerEs:
@@ -181,15 +191,15 @@ export default function GuestSupportWidget() {
   return (
     <div
       ref={rootRef}
-      className={`relative w-full max-w-full ${demoOffsetClass}`}
+      className={`relative w-14 ${demoOffsetClass}`}
       data-guest-support-widget="true"
     >
       <div
-        className={`absolute bottom-[calc(100%+0.55rem)] right-0 w-[min(92vw,390px)] max-w-full transition-all duration-300 ${
+        className={`absolute bottom-[calc(100%+0.55rem)] right-0 w-[92vw] max-w-[380px] transition-all duration-300 ${
           open ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
         }`}
       >
-        <section className="overflow-hidden rounded-3xl border border-amber-300/30 bg-[linear-gradient(160deg,rgba(8,10,14,0.98),rgba(6,12,11,0.98))] shadow-[0_18px_45px_rgba(0,0,0,0.55)]">
+        <section className="overflow-hidden rounded-3xl border border-amber-300/30 bg-[linear-gradient(160deg,rgba(8,10,14,0.98),rgba(6,12,11,0.98))] shadow-[0_18px_45px_rgba(0,0,0,0.55)] max-h-[70vh] flex flex-col">
           <header className="border-b border-amber-300/20 bg-[linear-gradient(135deg,rgba(251,191,36,0.18),rgba(16,185,129,0.16))] px-4 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -208,8 +218,8 @@ export default function GuestSupportWidget() {
             </div>
           </header>
 
-          <div className="space-y-3 px-4 py-3">
-            <div className="flex flex-wrap gap-1.5">
+          <div className="space-y-3 px-4 py-3 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-1.5">
               {SUPPORT_FAQ.map((faq) => {
                 const active = activeFaqId === faq.id;
                 return (
@@ -217,13 +227,14 @@ export default function GuestSupportWidget() {
                     key={faq.id}
                     type="button"
                     onClick={() => onPickFaq(faq)}
-                    className={`rounded-full border px-2.5 py-1 text-[11px] font-bold transition ${
+                    className={`min-w-0 rounded-full border px-2.5 py-1 text-[11px] font-bold transition ${
                       active
                         ? "border-emerald-300/60 bg-emerald-400/15 text-emerald-100"
                         : "border-white/15 bg-white/5 text-zinc-200 hover:border-amber-300/50 hover:text-amber-100"
                     }`}
+                    title={isEnglish ? faq.questionEn : faq.questionEs}
                   >
-                    {isEnglish ? faq.questionEn : faq.questionEs}
+                    <span className="block truncate">{isEnglish ? faq.quickEn : faq.quickEs}</span>
                   </button>
                 );
               })}
