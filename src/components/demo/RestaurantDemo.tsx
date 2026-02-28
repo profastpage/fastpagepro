@@ -453,7 +453,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               location: "restaurant_floating",
             })
           }
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex w-[6.1rem] flex-col items-center justify-center gap-1.5 rounded-[1.15rem] border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,255,225,0.98),rgba(198,240,205,0.95))] px-2 py-2.5 text-emerald-950 shadow-[0_12px_26px_-16px_rgba(16,185,129,0.75)] md:bottom-20 md:w-[6.4rem]"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+12rem)] right-4 z-40 inline-flex w-[6.1rem] flex-col items-center justify-center gap-1.5 rounded-[1.15rem] border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(236,255,225,0.98),rgba(198,240,205,0.95))] px-2 py-2.5 text-emerald-950 shadow-[0_12px_26px_-16px_rgba(16,185,129,0.75)] md:bottom-6 md:w-[6.4rem]"
         >
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-[0.7rem] border border-emerald-300/60 bg-emerald-600/10">
             <ShoppingCart className="h-3.5 w-3.5" />

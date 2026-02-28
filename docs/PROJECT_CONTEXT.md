@@ -1508,3 +1508,10 @@ o-scrollbar para evitar barra visible.
   - icono de carrito arriba.
   - texto "Mi pedido" con contador al costado en la fila inferior.
   - posicion ajustada para no tapar el menu inferior en movil y quedar comodo en desktop.
+## Demo desktop floating buttons overlap fix (2026-02-28)
+
+- Ruta afectada: /demo/restaurant/* en desktop.
+- Ajuste aplicado:
+  - el boton flotante Mi pedido baja su posicion en desktop (md:bottom-6).
+- Resultado:
+  - se evita el cruce/solapamiento con el widget de ayuda al cliente en la esquina inferior derecha.
