@@ -1472,3 +1472,11 @@ o-scrollbar para evitar barra visible.
   - desktop keeps overflow-hidden to preserve the framed layout.
 - Result: in Carta tab, search + category chips stay fixed at the top on mobile scroll.
 
+## Restaurant demo no-signup sticky CTA removal (2026-02-28)
+
+- Ruta afectada: /demo/restaurant/*.
+- Cambio aplicado:
+  - se elimino el bloque StickyCTA "Demo lista..." en la experiencia de demo restaurante.
+- Alcance:
+  - para cualquier visitante sin registro (todas las cuentas), la demo de carta restaurante ya no muestra ese banner flotante.
+  - otras verticales de demo (tienda/servicios) mantienen su CTA actual.
