@@ -4,7 +4,6 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageCircle, Send, Sparkles, X } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/context/LanguageContext";
 
 type SupportFaq = {
@@ -78,7 +77,6 @@ function shouldRenderGuestSupport(pathname: string) {
 
 export default function GuestSupportWidget() {
   const pathname = usePathname();
-  const { user, loading } = useAuth(false);
   const { language } = useLanguage();
   const isEnglish = language === "en";
   const [open, setOpen] = useState(false);
@@ -88,7 +86,6 @@ export default function GuestSupportWidget() {
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const shouldRender = shouldRenderGuestSupport(pathname || "");
-  const isGuest = !user;
 
   useEffect(() => {
     setAnswer(isEnglish ? SUPPORT_FAQ[0].answerEn : SUPPORT_FAQ[0].answerEs);
@@ -169,7 +166,7 @@ export default function GuestSupportWidget() {
     setAnswer(isEnglish ? faq.answerEn : faq.answerEs);
   }
 
-  if (loading || !shouldRender || !isGuest) return null;
+  if (!shouldRender) return null;
 
   const demoOffsetClass = (() => {
     if (pathname === "/") {
