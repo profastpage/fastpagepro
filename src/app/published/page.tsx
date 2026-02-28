@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import {
+  buildRestaurantRecordingDemoProfile,
+  listLinkHubProfilesByUserId,
+  normalizeLinkHubProfile,
+  saveLinkHubProfileForUser,
+} from "@/lib/linkHubProfile";
 import { db } from "@/lib/firebase";
 import { collection, doc as firestoreDoc, getDoc, getDocs, query, where } from "firebase/firestore";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
@@ -33,6 +39,14 @@ type PublishedProject = {
   editPath: string;
   source?: string;
 };
+
+const RECORDING_DEMO_TARGET_EMAIL = "gozustrike@gmail.com";
+const RECORDING_DEMO_PROFILE_ID_SUFFIX = "demo-burger-lab-recording";
+const RECORDING_DEMO_BUSINESS_WHATSAPP = "51919662011";
+
+function normalizeDigits(value: string): string {
+  return String(value || "").replace(/\D/g, "");
+}
 
 function formatDate(value: number) {
   if (!value) return "Sin fecha";
@@ -78,6 +92,43 @@ function PublishedProjectsContent() {
       setError(null);
 
       try {
+        const normalizedEmail = String(user.email || "").trim().toLowerCase();
+        const shouldEnsureRecordingDemo = normalizedEmail === RECORDING_DEMO_TARGET_EMAIL;
+        if (shouldEnsureRecordingDemo) {
+          const recordingDemoProfileId = `${user.uid}-${RECORDING_DEMO_PROFILE_ID_SUFFIX}`;
+          const records = await listLinkHubProfilesByUserId(user.uid);
+          const existingRecordingDemo = records.find((item) => item.id === recordingDemoProfileId);
+
+          if (!existingRecordingDemo) {
+            const demoProfile = buildRestaurantRecordingDemoProfile(user);
+            await saveLinkHubProfileForUser(user.uid, demoProfile, recordingDemoProfileId);
+          } else {
+            const normalizedExisting = normalizeLinkHubProfile(existingRecordingDemo.profile, user);
+            const whatsappDigits = normalizeDigits(normalizedExisting.whatsappNumber);
+            const needsPublished = !normalizedExisting.published;
+            const needsPublishedAt = !Number(normalizedExisting.publishedAt || 0);
+            const needsBusinessWhatsapp = whatsappDigits !== RECORDING_DEMO_BUSINESS_WHATSAPP;
+
+            if (needsPublished || needsPublishedAt || needsBusinessWhatsapp) {
+              const now = Date.now();
+              const ensuredProfile = normalizeLinkHubProfile(
+                {
+                  ...normalizedExisting,
+                  phoneNumber: normalizeDigits(normalizedExisting.phoneNumber)
+                    ? normalizedExisting.phoneNumber
+                    : RECORDING_DEMO_BUSINESS_WHATSAPP,
+                  whatsappNumber: RECORDING_DEMO_BUSINESS_WHATSAPP,
+                  published: true,
+                  publishedAt: Number(normalizedExisting.publishedAt || 0) || now,
+                  updatedAt: now,
+                },
+                user,
+              );
+              await saveLinkHubProfileForUser(user.uid, ensuredProfile, recordingDemoProfileId);
+            }
+          }
+        }
+
         const sitesQuery = query(
           collection(db, "cloned_sites"),
           where("userId", "==", user.uid),
@@ -174,7 +225,7 @@ function PublishedProjectsContent() {
     return () => {
       active = false;
     };
-  }, [loading, user?.uid]);
+  }, [loading, user?.uid, user?.email]);
 
   const filteredItems = useMemo(() => {
     if (filter === "linkhub") return items.filter((item) => item.kind === "linkhub");

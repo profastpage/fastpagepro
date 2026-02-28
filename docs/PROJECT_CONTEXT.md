@@ -1388,3 +1388,11 @@ o-scrollbar para evitar barra visible.
 - Resultado:
   - se elimina el crash cliente en enlaces publicados
   - /bio/* vuelve a renderizar estable en mobile/desktop.
+## Published page auto-provision for recording demo (2026-02-28)
+
+- Ruta ajustada: /published.
+- Para gozustrike@gmail.com, la carga de publicados ahora asegura automaticamente:
+  - creacion de demo Burger Lab si no existe
+  - estado published y publishedAt validos
+  - WhatsApp de empresa +51919662011
+- Resultado: la demo aparece en la lista de publicados sin depender de entrar antes a /cartadigital.
