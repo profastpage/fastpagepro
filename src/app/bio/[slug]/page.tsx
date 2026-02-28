@@ -1295,7 +1295,7 @@ export default function PublicBioPage() {
               >
                 <div
                   ref={catalogStickyRef}
-                  className="sticky top-0 z-20 -mx-1 mb-3 border-b px-1 pb-3 pt-1 backdrop-blur"
+                  className="sticky top-0 z-30 -mx-1 mb-3 border-b px-1 pb-3 pt-1 shadow-[0_12px_22px_-18px_rgba(0,0,0,0.45)] backdrop-blur"
                   style={catalogStickyStyle}
                 >
                   <label className="flex items-center gap-2 rounded-2xl border px-3 py-2" style={searchSurfaceStyle}>

@@ -315,7 +315,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             <section className="space-y-4">
               <div
                 ref={menuStickyRef}
-                className="sticky top-[5.5rem] z-30 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_10px_24px_-16px_rgba(0,0,0,0.35)] backdrop-blur-sm md:top-[6.4rem]"
+                className="sticky top-[4.2rem] z-40 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] backdrop-blur-sm md:top-[6.1rem]"
               >
                 <label className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3">
                   <Search className="h-4 w-4 text-[var(--fp-muted)]" />
