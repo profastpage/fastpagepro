@@ -40,21 +40,27 @@ import EditorSidebar, { type EditorSidebarTab } from "@/components/editor/Editor
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
   ArrowLeft,
+  Bot,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  LayoutPanelTop,
   Lock,
   Loader2,
   MessageCircle,
   Monitor,
+  Palette,
   Plus,
   Rocket,
   Save,
+  Search,
+  Settings,
   Sparkles,
   Smartphone,
   Trash2,
   Upload,
   Wand2,
+  X,
 } from "lucide-react";
 
 const FIREBASE_PUBLIC_CONFIG = {
@@ -82,6 +88,7 @@ type AiSettings = NonNullable<StoreConfig["ai"]>;
 type CartSettings = NonNullable<StoreConfig["cart"]>;
 type WidgetSettings = NonNullable<StoreConfig["widget"]>;
 type StoreEditorSnapshot = { config: StoreConfig; products: StoreProduct[] };
+type StoreEditorSectionKey = EditorSidebarTab;
 
 const DEFAULT_ECOMMERCE_SETTINGS: EcommerceSettings = {
   deliveryEnabled: true,
@@ -538,9 +545,17 @@ function StoreEditorPage() {
 
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("mobile");
   const [activeSidebarTab, setActiveSidebarTab] = useState<EditorSidebarTab>("content");
+  const [storeMobileEditMenuOpen, setStoreMobileEditMenuOpen] = useState(false);
+  const [storeMobileEditMenuMode, setStoreMobileEditMenuMode] = useState<"sections" | "editor">("sections");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todos");
   const [sortBy, setSortBy] = useState<VisualSort>("featured");
+  const storeEditorAsideRef = useRef<HTMLElement | null>(null);
+  const contentSectionRef = useRef<HTMLElement | null>(null);
+  const designSectionRef = useRef<HTMLElement | null>(null);
+  const aiSectionRef = useRef<HTMLElement | null>(null);
+  const seoSectionRef = useRef<HTMLElement | null>(null);
+  const settingsSectionRef = useRef<HTMLElement | null>(null);
 
   const [loadingProject, setLoadingProject] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -644,6 +659,19 @@ function StoreEditorPage() {
   useEffect(() => {
     setProjectMeta(projectId || "store-draft", "store");
   }, [projectId, setProjectMeta]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncDesktopState = () => {
+      if (window.innerWidth >= 768) {
+        setStoreMobileEditMenuOpen(false);
+        setStoreMobileEditMenuMode("sections");
+      }
+    };
+    syncDesktopState();
+    window.addEventListener("resize", syncDesktopState);
+    return () => window.removeEventListener("resize", syncDesktopState);
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user?.uid || !projectId) return;
@@ -1122,6 +1150,74 @@ function StoreEditorPage() {
     intervalMs: 30000,
   });
 
+  const storeMobileSectionLabelMap: Record<StoreEditorSectionKey, string> = {
+    content: "Contenido",
+    design: "Diseno",
+    ai: "IA",
+    seo: "SEO",
+    settings: "Ajustes",
+  };
+
+  const isStoreMobileEditorModeActive =
+    storeMobileEditMenuOpen && storeMobileEditMenuMode === "editor";
+
+  const getStoreEditorSectionElement = (section: StoreEditorSectionKey) => {
+    if (section === "content") return contentSectionRef.current;
+    if (section === "design") return designSectionRef.current;
+    if (section === "ai") return aiSectionRef.current;
+    if (section === "seo") return seoSectionRef.current;
+    return settingsSectionRef.current;
+  };
+
+  const scrollStoreEditorSectionToStart = (section: StoreEditorSectionKey) => {
+    const target = getStoreEditorSectionElement(section);
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const openStoreMobileSectionMenu = () => {
+    setStoreMobileEditMenuOpen(true);
+    setStoreMobileEditMenuMode("sections");
+  };
+
+  const openStoreMobileEditorSection = (section: StoreEditorSectionKey) => {
+    setActiveSidebarTab(section);
+    setStoreMobileEditMenuOpen(true);
+    setStoreMobileEditMenuMode("editor");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollStoreEditorSectionToStart(section);
+      });
+    });
+  };
+
+  const handleStorePreviewTapCloseMenu = () => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth >= 768) return;
+    if (!storeMobileEditMenuOpen) return;
+    if (storeMobileEditMenuMode !== "sections") return;
+    setStoreMobileEditMenuOpen(false);
+  };
+
+  const renderStoreMobileSectionBack = (section: StoreEditorSectionKey) => {
+    if (activeSidebarTab !== section || !isStoreMobileEditorModeActive) return null;
+    return (
+      <div className="mb-4 flex items-center justify-between gap-2 md:hidden">
+        <button
+          type="button"
+          onClick={openStoreMobileSectionMenu}
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 text-[10px] font-black uppercase tracking-[0.11em] text-slate-800"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Volver al submenu
+        </button>
+        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+          {storeMobileSectionLabelMap[section]}
+        </span>
+      </div>
+    );
+  };
+
   const handlePublishClick = async () => {
     const mode = requestPublishTarget({
       hasExistingProject: Boolean(projectId),
@@ -1166,7 +1262,11 @@ function StoreEditorPage() {
         </header>
 
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <section className="order-1 min-w-0 rounded-3xl border bg-white p-3 text-slate-900 md:p-5 lg:order-2" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+          <section
+            onPointerDownCapture={handleStorePreviewTapCloseMenu}
+            className="order-1 min-w-0 rounded-3xl border bg-white p-3 text-slate-900 md:p-5 lg:order-2"
+            style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
+          >
             <div className="mb-4 rounded-2xl border bg-white px-4 py-3 text-xs font-semibold" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>
               Haz clic en cualquier campo para editar. Encontraras texto base de marketing listo para personalizar y fotos demo para reemplazar.
             </div>
@@ -1300,8 +1400,85 @@ function StoreEditorPage() {
             </div>
           </section>
 
-          <aside className="order-2 min-w-0 space-y-4 self-start lg:order-1 lg:sticky lg:top-[150px]">
+          <aside ref={storeEditorAsideRef} className="order-2 min-w-0 space-y-4 self-start lg:order-1 lg:sticky lg:top-[150px]">
+            <div className="md:hidden rounded-2xl border bg-white p-2.5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+              <div className="flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (storeMobileEditMenuOpen) {
+                      setStoreMobileEditMenuOpen(false);
+                      setStoreMobileEditMenuMode("sections");
+                      return;
+                    }
+                    setStoreMobileEditMenuOpen(true);
+                    setStoreMobileEditMenuMode("sections");
+                  }}
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-[11px] font-black uppercase tracking-[0.12em]"
+                  style={{ borderColor: "#34d399", background: "rgba(16,185,129,0.14)", color: "#065f46" }}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Edicion
+                </button>
+              </div>
+              {storeMobileEditMenuOpen ? (
+                <div className="mt-2 space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
+                  {storeMobileEditMenuMode === "sections" ? (
+                    <>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("content")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <LayoutPanelTop className="h-3.5 w-3.5" />
+                        Contenido
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("design")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <Palette className="h-3.5 w-3.5" />
+                        Diseno
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("ai")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800">
+                        <Bot className="h-3.5 w-3.5" />
+                        IA
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("seo")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <Search className="h-3.5 w-3.5" />
+                        SEO
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("settings")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <Settings className="h-3.5 w-3.5" />
+                        Ajustes
+                      </button>
+                    </>
+                  ) : (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={openStoreMobileSectionMenu}
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-800"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          Volver
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStoreMobileEditMenuOpen(false);
+                            setStoreMobileEditMenuMode("sections");
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700"
+                          aria-label="Cerrar menu edicion"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[11px] font-bold text-emerald-800">
+                        Editando: {storeMobileSectionLabelMap[activeSidebarTab]}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
             <EditorSidebar
+              className="hidden md:block"
               activeTab={activeSidebarTab}
               onTabChange={setActiveSidebarTab}
               contentTab={<p className="text-xs text-zinc-600">Contenido comercial y configuracion ecommerce sincronizados.</p>}
@@ -1310,7 +1487,12 @@ function StoreEditorPage() {
               seoTab={<p className="text-xs text-zinc-600">Slug y metadata comercial para publicar en /t/{'{slug}'}.</p>}
               settingsTab={<p className="text-xs text-zinc-600">Widget, carrito, testimonios y FAQ configurables con autosave.</p>}
             />
-            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "design" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section
+              ref={designSectionRef}
+              className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "design" ? "" : "hidden"} ${!isStoreMobileEditorModeActive ? "hidden md:block" : ""}`}
+              style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
+            >
+              {renderStoreMobileSectionBack("design")}
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinamico</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Selecciona rubro y aplica temas relacionados.</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
@@ -1362,7 +1544,12 @@ function StoreEditorPage() {
               </div>
               <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>{`/t/${publicStoreSlug}`}</b></div>
             </section>
-            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "content" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section
+              ref={contentSectionRef}
+              className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "content" ? "" : "hidden"} ${!isStoreMobileEditorModeActive ? "hidden md:block" : ""}`}
+              style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
+            >
+              {renderStoreMobileSectionBack("content")}
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Ecommerce real</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
                 Configura ventas reales: moneda, WhatsApp, envio, metodos de pago y terminos.
@@ -1542,7 +1729,12 @@ function StoreEditorPage() {
               </div>
             </section>
 
-            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "ai" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section
+              ref={aiSectionRef}
+              className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "ai" ? "" : "hidden"} ${!isStoreMobileEditorModeActive ? "hidden md:block" : ""}`}
+              style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
+            >
+              {renderStoreMobileSectionBack("ai")}
               <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.15em]">
                 <Sparkles className="h-4 w-4" />
                 Mini panel IA
@@ -1627,7 +1819,12 @@ function StoreEditorPage() {
                 </button>
               </div>
             </section>
-            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "seo" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section
+              ref={seoSectionRef}
+              className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "seo" ? "" : "hidden"} ${!isStoreMobileEditorModeActive ? "hidden md:block" : ""}`}
+              style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
+            >
+              {renderStoreMobileSectionBack("seo")}
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">SEO tienda online</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
                 Ajusta URL y textos clave para mejorar descubrimiento y conversion.
@@ -1674,7 +1871,12 @@ function StoreEditorPage() {
               </div>
             </section>
 
-            <section className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "settings" ? "" : "hidden"}`} style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+            <section
+              ref={settingsSectionRef}
+              className={`rounded-2xl border bg-white p-4 text-slate-900 ${activeSidebarTab === "settings" ? "" : "hidden"} ${!isStoreMobileEditorModeActive ? "hidden md:block" : ""}`}
+              style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
+            >
+              {renderStoreMobileSectionBack("settings")}
               <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.15em]">
                 <MessageCircle className="h-4 w-4" />
                 Ajustes PRO tienda
