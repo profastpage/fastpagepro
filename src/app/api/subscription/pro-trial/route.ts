@@ -4,9 +4,43 @@ import { requireFirebaseUserId } from "@/lib/server/requireFirebaseUser";
 
 export const runtime = "nodejs";
 
+function getBearerToken(request: NextRequest): string {
+  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+  return authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+}
+
+function decodeUidFromTokenUnsafe(token: string): string {
+  try {
+    const segments = token.split(".");
+    if (segments.length !== 3) return "";
+    const payload = JSON.parse(Buffer.from(segments[1], "base64url").toString("utf8")) as Record<string, unknown>;
+    const uid = String(payload.user_id || payload.uid || payload.sub || "").trim();
+    return uid;
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireFirebaseUserId(request);
+    const payload = (await request.json().catch(() => ({}))) as { userIdHint?: string };
+    let userId = "";
+    try {
+      userId = await requireFirebaseUserId(request);
+    } catch (authError: unknown) {
+      const message = String((authError as { message?: string })?.message || "");
+      if (!message.startsWith("SERVICE_UNAVAILABLE")) {
+        throw authError;
+      }
+      const fallbackUid = decodeUidFromTokenUnsafe(getBearerToken(request));
+      const userIdHint = String(payload?.userIdHint || "").trim();
+      if (fallbackUid && (!userIdHint || userIdHint === fallbackUid)) {
+        userId = fallbackUid;
+      } else {
+        throw authError;
+      }
+    }
+
     await startProTrial(userId);
     const summary = await buildSubscriptionSummary(userId);
     return NextResponse.json({
@@ -20,7 +54,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
     if (message.startsWith("SERVICE_UNAVAILABLE")) {
-      return NextResponse.json({ error: "Servicio de autenticacion no disponible" }, { status: 503 });
+      const isStorageIssue = message.toLowerCase().includes("subscription storage unavailable");
+      return NextResponse.json(
+        {
+          error: isStorageIssue
+            ? "Servicio de suscripción no disponible temporalmente. Intenta nuevamente en unos segundos."
+            : "Servicio de autenticación no disponible. Reintenta en unos segundos.",
+        },
+        { status: 503 },
+      );
     }
     if (message.startsWith("PRO_TRIAL_ALREADY_USED")) {
       return NextResponse.json(
@@ -39,4 +81,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -541,6 +541,7 @@ export default function LinkHubPage() {
   const reservationSectionRef = useRef<HTMLDivElement | null>(null);
   const themesSectionRef = useRef<HTMLDivElement | null>(null);
   const publishChecklistSectionRef = useRef<HTMLDivElement | null>(null);
+  const proTrialBannerRef = useRef<HTMLDivElement | null>(null);
   const mobileTopDockRef = useRef<HTMLDivElement | null>(null);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
@@ -1498,14 +1499,39 @@ export default function LinkHubPage() {
     });
   }
 
-  function showProFeatureLocked(featureLabel: string) {
+  function openProTrialModal(featureLabel: string) {
     setProTrialFeatureLabel(featureLabel);
     setProTrialError("");
     setIsProTrialModalOpen(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        proTrialBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
+  }
+
+  function showProFeatureLocked(featureLabel: string) {
+    openProTrialModal(featureLabel);
     setMessage({
       type: "error",
       text: `${featureLabel} está bloqueado. Activa plan PRO para usar esta función.`,
     });
+  }
+
+  function renderInlineProTrialButton(featureLabel: string) {
+    if (isProPlan) return null;
+    return (
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => openProTrialModal(featureLabel)}
+          className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-500/15 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-emerald-100"
+        >
+          <Sparkles className="h-4 w-4" />
+          Activar prueba PRO 7 dias
+        </button>
+      </div>
+    );
   }
 
   async function activateProTrial() {
@@ -1518,13 +1544,24 @@ export default function LinkHubPage() {
         setProTrialError("Debes iniciar sesion para activar la prueba PRO.");
         return;
       }
-      const idToken = await currentUser.getIdToken();
-      const response = await fetch("/api/subscription/pro-trial", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-      });
+      let idToken = await currentUser.getIdToken(true);
+      const executeActivation = async (token: string) =>
+        fetch("/api/subscription/pro-trial", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userIdHint: currentUser.uid,
+          }),
+        });
+
+      let response = await executeActivation(idToken);
+      if (response.status === 503) {
+        idToken = await currentUser.getIdToken(true);
+        response = await executeActivation(idToken);
+      }
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
         message?: string;
@@ -1542,6 +1579,9 @@ export default function LinkHubPage() {
 
       await reloadSubscription();
       setIsProTrialModalOpen(false);
+      setMobileEditMenuOpen(false);
+      setMobileEditMenuMode("sections");
+      scrollEditorSectionToStart("pro");
       setMessage({
         type: "success",
         text: payload?.message || "Prueba PRO activada por 7 dias. Ya puedes usar funciones PRO.",
@@ -3051,7 +3091,7 @@ export default function LinkHubPage() {
         )}
 
         {isProTrialModalOpen ? (
-          <div className="mb-6 rounded-2xl border border-emerald-300/35 bg-emerald-500/10 p-4">
+          <div ref={proTrialBannerRef} className="mb-6 rounded-2xl border border-emerald-300/35 bg-emerald-500/10 p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="text-sm font-black text-emerald-100">Prueba PRO 7 dias con 1 clic</p>
@@ -3084,7 +3124,7 @@ export default function LinkHubPage() {
                 className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-500/20 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-emerald-100 disabled:opacity-60"
               >
                 {isActivatingProTrial ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Activar prueba PRO
+                Activar prueba PRO 7 dias
               </button>
               <button
                 type="button"
@@ -3464,6 +3504,7 @@ export default function LinkHubPage() {
                     Copys para vender más
                   </span>
                 </div>
+                {renderInlineProTrialButton("Funciones PRO de carta digital")}
               </div>
 
               <div className="mb-4 rounded-2xl border border-white/10 bg-black/25 p-3">
@@ -3539,6 +3580,7 @@ export default function LinkHubPage() {
                     </button>
                   </div>
                 </div>
+                {renderInlineProTrialButton("Acciones rápidas PRO")}
               </div>
 
               <div className="mb-4 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3">
@@ -3917,22 +3959,7 @@ export default function LinkHubPage() {
                   Estas funciones se muestran como demo, pero solo se habilitan al subir a plan PRO.
                 </p>
               ) : null}
-              {!isProPlan ? (
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProTrialFeatureLabel("Funciones PRO");
-                      setProTrialError("");
-                      setIsProTrialModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-500/15 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-emerald-100"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Activar prueba PRO 7 dias
-                  </button>
-                </div>
-              ) : null}
+              {!isProPlan ? renderInlineProTrialButton("Funciones PRO") : null}
 
               <article className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
@@ -3976,6 +4003,7 @@ export default function LinkHubPage() {
                   </div>
                 </div>
               </article>
+              {renderInlineProTrialButton("ROI en tiempo real PRO")}
 
               <article className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
@@ -4073,6 +4101,7 @@ export default function LinkHubPage() {
                   </div>
                 </div>
               </article>
+              {renderInlineProTrialButton("Automatizaciones PRO")}
 
               <article className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
                 <div className="flex items-center justify-between gap-2">
@@ -4165,6 +4194,7 @@ export default function LinkHubPage() {
                   </div>
                 </div>
               </article>
+              {renderInlineProTrialButton("Métricas PRO")}
               <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
@@ -4233,6 +4263,7 @@ export default function LinkHubPage() {
                   </p>
                 </article>
               </div>
+              {renderInlineProTrialButton("Testimonios y despacho PRO")}
             </div>
 
             <div
