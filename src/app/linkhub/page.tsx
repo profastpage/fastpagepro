@@ -2496,7 +2496,7 @@ export default function LinkHubPage() {
           <section
             className={`min-w-0 space-y-6 md:pt-0 ${
               isMobileEditorOverlayActive ? "pt-[8.6rem]" : "pt-[31.5rem]"
-            }`}
+            } ${!isMobileEditorOverlayActive ? "hidden md:block" : ""}`}
           >
             <div
               ref={identitySectionRef}
