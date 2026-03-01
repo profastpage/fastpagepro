@@ -43,6 +43,7 @@ import {
   Bot,
   ChevronLeft,
   ChevronRight,
+  Copy,
   ExternalLink,
   LayoutPanelTop,
   Lock,
@@ -562,6 +563,7 @@ function StoreEditorPage() {
   const [publishing, setPublishing] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+  const [copiedToast, setCopiedToast] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncWarning, setSyncWarning] = useState<string | null>(null);
   const [demoThemeIntent, setDemoThemeIntent] = useState("");
@@ -1227,40 +1229,152 @@ function StoreEditorPage() {
     await saveProject(true, mode);
   };
 
+  const copyPublicUrl = async () => {
+    if (typeof window === "undefined") return;
+    const absoluteUrl = `${window.location.origin}/t/${publicStoreSlug}`;
+    try {
+      await navigator.clipboard.writeText(absoluteUrl);
+      setCopiedToast(true);
+      window.setTimeout(() => setCopiedToast(false), 1400);
+    } catch {
+      setError("No se pudo copiar el enlace publico.");
+    }
+  };
+
+  const toggleStoreEditionMenu = () => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      setActiveSidebarTab("content");
+      storeEditorAsideRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (storeMobileEditMenuOpen) {
+      setStoreMobileEditMenuOpen(false);
+      setStoreMobileEditMenuMode("sections");
+      return;
+    }
+    setStoreMobileEditMenuOpen(true);
+    setStoreMobileEditMenuMode("sections");
+  };
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#030712] pt-24 md:pt-28 pb-10 md:pb-12" style={{ ...themeVars }}>
-      <div className="mx-auto max-w-[1600px] px-3 md:px-6">
-        <MobilePlanStatusCard userId={user?.uid} className="mb-4" />
-        <header className="sticky top-[72px] md:top-20 z-40 rounded-2xl border bg-white/90 px-3 py-3 text-slate-900 backdrop-blur md:px-4" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <button onClick={() => (window.history.length > 1 ? router.back() : router.push("/hub"))} className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: "var(--vs-muted)" }}>Editor visual ecommerce</p>
-                <InlineEditable
-                  value={config.storeName}
-                  field="storeName"
-                  projectId={projectId || "store-draft"}
-                  onChange={(value: string) => setConfig((p) => ({ ...p, storeName: value }))}
-                  className="text-lg font-black"
-                />
+      <div className="fixed left-0 right-0 top-[72px] z-40 px-3 md:top-20 md:px-6">
+        <div className="mx-auto max-w-[1600px]">
+          <header
+            className="rounded-2xl border bg-white/90 px-3 py-3 text-slate-900 backdrop-blur md:px-4"
+            style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <button
+                  onClick={() => (window.history.length > 1 ? router.back() : router.push("/hub"))}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border bg-white"
+                  style={{ borderColor: "var(--vs-border)" }}
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: "var(--vs-muted)" }}>
+                    Editor visual ecommerce
+                  </p>
+                  <InlineEditable
+                    value={config.storeName}
+                    field="storeName"
+                    projectId={projectId || "store-draft"}
+                    onChange={(value: string) => setConfig((p) => ({ ...p, storeName: value }))}
+                    className="truncate text-lg font-black"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-xl border bg-white p-1" style={{ borderColor: "var(--vs-border)" }}>
-                <button onClick={() => setViewMode("desktop")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "desktop" ? "text-white" : "text-slate-700"}`} style={viewMode === "desktop" ? { background: "var(--vs-dark)" } : undefined}><Monitor className="h-4 w-4" />PC</button>
-                <button onClick={() => setViewMode("mobile")} className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "mobile" ? "text-white" : "text-slate-700"}`} style={viewMode === "mobile" ? { background: "var(--vs-dark)" } : undefined}><Smartphone className="h-4 w-4" />Movil</button>
+                <button
+                  onClick={() => setViewMode("desktop")}
+                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "desktop" ? "text-white" : "text-slate-700"}`}
+                  style={viewMode === "desktop" ? { background: "var(--vs-dark)" } : undefined}
+                >
+                  <Monitor className="h-4 w-4" />
+                  PC
+                </button>
+                <button
+                  onClick={() => setViewMode("mobile")}
+                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold ${viewMode === "mobile" ? "text-white" : "text-slate-700"}`}
+                  style={viewMode === "mobile" ? { background: "var(--vs-dark)" } : undefined}
+                >
+                  <Smartphone className="h-4 w-4" />
+                  Movil
+                </button>
               </div>
-              <button onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><ExternalLink className="h-4 w-4" />Ver tienda</button>
-              <button onClick={applyMarketingTemplate} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold" style={{ borderColor: "var(--vs-border)" }}><Wand2 className="h-4 w-4" />Plantilla marketing</button>
-              <button onClick={() => saveProject(false)} disabled={saving || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold disabled:opacity-60" style={{ borderColor: "var(--vs-border)" }}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}Guardar</button>
-              <button onClick={() => void handlePublishClick()} disabled={publishing || loadingProject} className="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-dark)" }}>{publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}Publicar</button>
             </div>
-          </div>
-        </header>
-
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-zinc-950/70 p-2.5 backdrop-blur-xl">
+              <div className="inline-flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={copyPublicUrl}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-300/40 bg-sky-400/10 text-sky-100"
+                  title="Copiar URL"
+                  aria-label="Copiar URL"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handlePublishClick()}
+                  disabled={publishing || loadingProject}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-emerald-100 disabled:opacity-60"
+                  title="Publicar tienda"
+                  aria-label="Publicar tienda"
+                >
+                  {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void saveProject(false)}
+                  disabled={saving || loadingProject}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white disabled:opacity-60"
+                  title="Guardar borrador"
+                  aria-label="Guardar borrador"
+                >
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={toggleStoreEditionMenu}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-[11px] font-black uppercase tracking-[0.12em]"
+                style={{ borderColor: "#34d399", background: "rgba(16,185,129,0.14)", color: "#d1fae5" }}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Edicion
+              </button>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")}
+                className="inline-flex h-9 items-center gap-2 rounded-xl border bg-white px-3 text-xs font-bold"
+                style={{ borderColor: "var(--vs-border)" }}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Ver tienda
+              </button>
+              <button
+                onClick={applyMarketingTemplate}
+                className="inline-flex h-9 items-center gap-2 rounded-xl border bg-white px-3 text-xs font-bold"
+                style={{ borderColor: "var(--vs-border)" }}
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                Plantilla marketing
+              </button>
+              {copiedToast ? (
+                <span className="inline-flex h-9 items-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-3 text-xs font-bold text-emerald-700">
+                  URL copiada
+                </span>
+              ) : null}
+            </div>
+          </header>
+        </div>
+      </div>
+      <div className="mx-auto max-w-[1600px] px-3 pt-[166px] md:px-6 md:pt-[178px]">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-4" />
         <div className="mt-6 grid grid-cols-1 items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
           <section
             onPointerDownCapture={handleStorePreviewTapCloseMenu}
@@ -1401,27 +1515,8 @@ function StoreEditorPage() {
           </section>
 
           <aside ref={storeEditorAsideRef} className="order-2 min-w-0 space-y-4 self-start lg:order-1 lg:sticky lg:top-[150px]">
-            <div className="md:hidden rounded-2xl border bg-white p-2.5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
-              <div className="flex items-center justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (storeMobileEditMenuOpen) {
-                      setStoreMobileEditMenuOpen(false);
-                      setStoreMobileEditMenuMode("sections");
-                      return;
-                    }
-                    setStoreMobileEditMenuOpen(true);
-                    setStoreMobileEditMenuMode("sections");
-                  }}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border px-3 text-[11px] font-black uppercase tracking-[0.12em]"
-                  style={{ borderColor: "#34d399", background: "rgba(16,185,129,0.14)", color: "#065f46" }}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Edicion
-                </button>
-              </div>
-              {storeMobileEditMenuOpen ? (
+            {storeMobileEditMenuOpen ? (
+              <div className="md:hidden rounded-2xl border bg-white p-2.5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
                 <div className="mt-2 space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
                   {storeMobileEditMenuMode === "sections" ? (
                     <>
@@ -1475,8 +1570,8 @@ function StoreEditorPage() {
                     </div>
                   )}
                 </div>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
             <EditorSidebar
               className="hidden md:block"
               activeTab={activeSidebarTab}
