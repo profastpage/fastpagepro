@@ -1042,6 +1042,9 @@ export default function LinkHubPage() {
     );
   }
 
+  const isMobileEditorOverlayActive =
+    mobileEditMenuOpen && mobileEditMenuMode === "editor";
+
   function applyTheme(theme: LinkHubTheme) {
     const preset = LINK_HUB_THEME_STYLES[theme];
     const mappedCartaThemeId = recommendCartaThemeIdByLinkTheme(theme);
@@ -2482,7 +2485,11 @@ export default function LinkHubPage() {
         )}
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,560px)]">
-          <section className="min-w-0 space-y-6 pt-[31.5rem] md:pt-0">
+          <section
+            className={`min-w-0 space-y-6 md:pt-0 ${
+              isMobileEditorOverlayActive ? "pt-[8.6rem]" : "pt-[31.5rem]"
+            }`}
+          >
             <div
               ref={identitySectionRef}
               className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
@@ -3795,7 +3802,11 @@ export default function LinkHubPage() {
 
           </section>
 
-          <aside className="fixed inset-x-0 top-[7.55rem] z-30 min-w-0 px-3 md:static md:px-0 xl:h-fit xl:sticky xl:top-28 xl:w-[560px] xl:justify-self-end">
+          <aside
+            className={`fixed inset-x-0 top-[7.55rem] z-30 min-w-0 px-3 md:static md:px-0 xl:h-fit xl:sticky xl:top-28 xl:w-[560px] xl:justify-self-end ${
+              isMobileEditorOverlayActive ? "hidden md:block" : ""
+            }`}
+          >
             <div className="md:flex md:items-start md:justify-end md:gap-3">
             <div className="mx-auto w-full max-w-[450px] rounded-[2rem] border p-3.5 xl:max-w-[560px] xl:p-3" style={previewShellStyle}>
               <div className="flex min-h-[31rem] flex-col overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
