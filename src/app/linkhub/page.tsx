@@ -60,6 +60,8 @@ import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
+  CheckCircle2,
+  Circle,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -68,6 +70,7 @@ import {
   Fish,
   Globe,
   ImagePlus,
+  Images,
   Instagram,
   Linkedin,
   Loader2,
@@ -78,6 +81,7 @@ import {
   Palette,
   Phone,
   Plus,
+  Percent,
   Save,
   Search,
   Sparkles,
@@ -241,6 +245,21 @@ function parseMultiline(input: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function parseEditorPrice(raw: string): number | null {
+  const normalized = String(raw || "")
+    .trim()
+    .replace(",", ".")
+    .replace(/[^\d.]/g, "");
+  if (!normalized) return null;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.max(0, parsed);
+}
+
+function formatEditorPrice(value: number): string {
+  return value.toFixed(2);
 }
 
 function mergeGalleryImages(images: string[]): string[] {
@@ -470,11 +489,15 @@ export default function LinkHubPage() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [isUploadingReservationImage, setIsUploadingReservationImage] = useState(false);
   const [uploadingCatalogItemId, setUploadingCatalogItemId] = useState<string | null>(null);
+  const [isBulkUploadingCatalog, setIsBulkUploadingCatalog] = useState(false);
   const [origin, setOrigin] = useState("");
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewCategoryId, setPreviewCategoryId] = useState("");
   const [previewTab, setPreviewTab] = useState<"contact" | "catalog" | "location" | "reservation">("catalog");
   const [editorItemSearch, setEditorItemSearch] = useState("");
+  const [bulkUploadCategoryId, setBulkUploadCategoryId] = useState("all");
+  const [priceAdjustCategoryId, setPriceAdjustCategoryId] = useState("all");
+  const [priceAdjustPercent, setPriceAdjustPercent] = useState("");
   const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
   const [mobileEditMenuMode, setMobileEditMenuMode] = useState<"sections" | "editor">("sections");
   const [mobileEditorSection, setMobileEditorSection] = useState<EditorSectionKey>("identity");
@@ -500,7 +523,8 @@ export default function LinkHubPage() {
     isUploadingAvatar ||
     isUploadingCover ||
     isUploadingReservationImage ||
-    Boolean(uploadingCatalogItemId);
+    Boolean(uploadingCatalogItemId) ||
+    isBulkUploadingCatalog;
   const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
   const canCustomizeColors = Boolean(subscriptionSummary?.features?.advancedColorCustomization);
   const publishedProjectsLabel =
@@ -976,6 +1000,59 @@ export default function LinkHubPage() {
     () => normalizeDigits(profile?.whatsappNumber || profile?.phoneNumber || ""),
     [profile?.phoneNumber, profile?.whatsappNumber],
   );
+  const publishChecklist = useMemo<Array<{ id: string; label: string; completed: boolean; section: EditorSectionKey }>>(() => {
+    if (!profile) return [];
+    const validItems = profile.catalogItems.filter((item) => {
+      return item.title.trim().length > 0 && parseEditorPrice(item.price) !== null;
+    });
+    const normalizedLocation = normalizeGoogleMapsLocationInput(
+      profile.location.mapEmbedUrl || "",
+      profile.location.mapsUrl || "",
+      profile.location.address || "",
+    );
+    const hasLocationCore = Boolean(
+      profile.location.address.trim() &&
+        (normalizedLocation.mapEmbedUrl || normalizedLocation.mapsUrl),
+    );
+    const hasCover = Boolean((profile.coverImageUrls?.[0] || profile.coverImageUrl || "").trim());
+    const hasContact = Boolean(normalizeDigits(profile.whatsappNumber || profile.phoneNumber));
+    return [
+      {
+        id: "identity",
+        label: "Identidad completa",
+        completed: profile.displayName.trim().length >= 2 && sanitizeSlug(profile.slug).length >= 3,
+        section: "identity",
+      },
+      {
+        id: "contact",
+        label: "Telefono o WhatsApp",
+        completed: hasContact,
+        section: "bioLinks",
+      },
+      {
+        id: "cover",
+        label: "Portada o foto de perfil",
+        completed: hasCover || Boolean(profile.avatarUrl.trim()),
+        section: "identity",
+      },
+      {
+        id: "catalog",
+        label: "Minimo 3 items con precio",
+        completed: validItems.length >= 3,
+        section: "catalog",
+      },
+      {
+        id: "location",
+        label: "Direccion + mapa",
+        completed: hasLocationCore,
+        section: "location",
+      },
+    ];
+  }, [profile]);
+  const checklistCompleted = publishChecklist.filter((item) => item.completed).length;
+  const checklistPercent = publishChecklist.length
+    ? Math.round((checklistCompleted / publishChecklist.length) * 100)
+    : 0;
 
   useEffect(() => {
     if (previewReservationEnabled) return;
@@ -983,6 +1060,17 @@ export default function LinkHubPage() {
       setPreviewTab("catalog");
     }
   }, [previewReservationEnabled, previewTab]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const validCategoryIds = new Set(profile.catalogCategories.map((category) => category.id));
+    if (bulkUploadCategoryId !== "all" && !validCategoryIds.has(bulkUploadCategoryId)) {
+      setBulkUploadCategoryId("all");
+    }
+    if (priceAdjustCategoryId !== "all" && !validCategoryIds.has(priceAdjustCategoryId)) {
+      setPriceAdjustCategoryId("all");
+    }
+  }, [bulkUploadCategoryId, priceAdjustCategoryId, profile]);
 
   function patchProfile<K extends keyof LinkHubProfile>(field: K, value: LinkHubProfile[K]) {
     setProfile((prev) => {
@@ -1615,6 +1703,106 @@ export default function LinkHubPage() {
     });
   }
 
+  function duplicateCategoryWithItems(categoryId: string) {
+    if (!profile) return;
+    if (profile.catalogCategories.length >= MAX_LINK_HUB_CATALOG_CATEGORIES) {
+      setMessage({
+        type: "error",
+        text: `Limite alcanzado. Solo puedes tener ${MAX_LINK_HUB_CATALOG_CATEGORIES} categorias.`,
+      });
+      return;
+    }
+    const sourceCategory = profile.catalogCategories.find((category) => category.id === categoryId);
+    if (!sourceCategory) return;
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const source = prev.catalogCategories.find((category) => category.id === categoryId);
+      if (!source) return prev;
+      const nextCategoryId = crypto.randomUUID();
+      const clonedCategory = {
+        ...source,
+        id: nextCategoryId,
+        name: source.name ? `${source.name} copia` : "Categoria copia",
+      };
+      const sourceItems = prev.catalogItems.filter((item) => item.categoryId === source.id);
+      const remainingSlots = Math.max(0, MAX_LINK_HUB_CATALOG_ITEMS - prev.catalogItems.length);
+      const clonedItems = sourceItems.slice(0, remainingSlots).map((item) => ({
+        ...item,
+        id: crypto.randomUUID(),
+        categoryId: nextCategoryId,
+        title: item.title ? `${item.title} copia` : "Item copia",
+      }));
+      return {
+        ...prev,
+        catalogCategories: [...prev.catalogCategories, clonedCategory],
+        catalogItems: [...prev.catalogItems, ...clonedItems],
+      };
+    });
+
+    setMessage({
+      type: "success",
+      text: `Categoria duplicada con items base desde ${sourceCategory.name || "categoria"} .`,
+    });
+  }
+
+  function applyCatalogPriceAdjustment() {
+    if (!profile) return;
+    if (!isProPlan) {
+      showProFeatureLocked("Ajuste masivo de precios PRO");
+      return;
+    }
+    const normalizedPercent = String(priceAdjustPercent || "")
+      .trim()
+      .replace(",", ".")
+      .replace(/[^\d.-]/g, "");
+    const percentage = Number(normalizedPercent);
+    if (!Number.isFinite(percentage) || percentage === 0) {
+      setMessage({ type: "error", text: "Ingresa un porcentaje valido. Ejemplo: 10 o -5." });
+      return;
+    }
+
+    const validCategoryIds = new Set(profile.catalogCategories.map((category) => category.id));
+    const targetCategory =
+      priceAdjustCategoryId !== "all" && validCategoryIds.has(priceAdjustCategoryId)
+        ? priceAdjustCategoryId
+        : "all";
+    let touched = 0;
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        catalogItems: prev.catalogItems.map((item) => {
+          if (targetCategory !== "all" && item.categoryId !== targetCategory) {
+            return item;
+          }
+          const currentPrice = parseEditorPrice(item.price);
+          if (currentPrice === null) return item;
+          touched += 1;
+          const adjusted = Math.max(0, currentPrice * (1 + percentage / 100));
+          return {
+            ...item,
+            price: formatEditorPrice(adjusted),
+          };
+        }),
+      };
+    });
+
+    if (touched <= 0) {
+      setMessage({ type: "error", text: "No hay precios validos para ajustar en ese alcance." });
+      return;
+    }
+    const scopeLabel =
+      targetCategory === "all"
+        ? "toda la carta"
+        : profile.catalogCategories.find((category) => category.id === targetCategory)?.name || "categoria";
+    setMessage({
+      type: "success",
+      text: `Precios ajustados (${percentage > 0 ? "+" : ""}${percentage}%) en ${scopeLabel}.`,
+    });
+  }
+
   function patchLink(linkId: string, patch: Partial<LinkHubLink>) {
     setProfile((prev) => {
       if (!prev) return prev;
@@ -1969,6 +2157,96 @@ export default function LinkHubPage() {
     }
   }
 
+  async function handleCatalogBulkImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (files.length === 0 || !profile) return;
+    if (!isProPlan) {
+      showProFeatureLocked("Carga masiva de imagenes PRO");
+      return;
+    }
+
+    const selectedCategoryId =
+      bulkUploadCategoryId !== "all" &&
+      profile.catalogCategories.some((category) => category.id === bulkUploadCategoryId)
+        ? bulkUploadCategoryId
+        : "all";
+    const scopedItems = profile.catalogItems.filter((item) =>
+      selectedCategoryId === "all" ? true : item.categoryId === selectedCategoryId,
+    );
+    if (scopedItems.length === 0) {
+      setMessage({ type: "error", text: "No hay items disponibles en la categoria seleccionada." });
+      return;
+    }
+
+    const validFiles = files.filter((file) => file.type.startsWith("image/"));
+    if (validFiles.length === 0) {
+      setMessage({ type: "error", text: "Selecciona archivos de imagen validos." });
+      return;
+    }
+    const oversized = validFiles.find((file) => file.size > 10 * 1024 * 1024);
+    if (oversized) {
+      setMessage({ type: "error", text: "Cada imagen debe pesar menos de 10MB." });
+      return;
+    }
+
+    const orderedTargetItems = [...scopedItems].sort((a, b) => {
+      const aScore = a.imageUrl.trim() ? 1 : 0;
+      const bScore = b.imageUrl.trim() ? 1 : 0;
+      return aScore - bScore;
+    });
+    const assignCount = Math.min(validFiles.length, orderedTargetItems.length);
+    const selectedFiles = validFiles.slice(0, assignCount);
+    const targetItems = orderedTargetItems.slice(0, assignCount);
+    if (assignCount <= 0) {
+      setMessage({ type: "error", text: "No hay items disponibles para la carga masiva." });
+      return;
+    }
+
+    setIsBulkUploadingCatalog(true);
+    try {
+      const optimizedBatch: Array<{ itemId: string; imageUrl: string }> = [];
+      for (let index = 0; index < assignCount; index += 1) {
+        const optimized = await optimizeImageFile(selectedFiles[index], {
+          maxSize: 960,
+          quality: 0.88,
+          heavyQuality: 0.72,
+          heavyThreshold: 980_000,
+        });
+        optimizedBatch.push({ itemId: targetItems[index].id, imageUrl: optimized });
+      }
+      const updates = new Map(optimizedBatch.map((entry) => [entry.itemId, entry.imageUrl]));
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          catalogItems: prev.catalogItems.map((item) => {
+            const nextImage = updates.get(item.id);
+            if (!nextImage) return item;
+            return {
+              ...item,
+              imageUrl: nextImage,
+              galleryImageUrls: mergeGalleryImages([...(item.galleryImageUrls || []), nextImage]),
+            };
+          }),
+        };
+      });
+      const droppedFiles = validFiles.length - assignCount;
+      setMessage({
+        type: "success",
+        text:
+          droppedFiles > 0
+            ? `Carga masiva lista: ${assignCount} item(s) actualizados. ${droppedFiles} imagen(es) quedaron sin asignar.`
+            : `Carga masiva lista: ${assignCount} item(s) actualizados.`,
+      });
+    } catch (error) {
+      console.error("[LinkHub] Catalog bulk image upload error:", error);
+      setMessage({ type: "error", text: "No se pudo completar la carga masiva de imagenes." });
+    } finally {
+      setIsBulkUploadingCatalog(false);
+    }
+  }
+
   async function saveProfile(mode: SaveMode) {
     if (!profile || !user?.uid) return;
     if (isProcessingImages) {
@@ -2080,6 +2358,11 @@ export default function LinkHubPage() {
       notePlaceholder:
         profile.reservation.notePlaceholder.trim() ||
         "Ejemplo: celebracion, terraza o alergias alimentarias.",
+      requiresDeposit: canUseReservations ? Boolean(profile.reservation.requiresDeposit) : false,
+      depositAmount: profile.reservation.depositAmount.trim(),
+      depositInstructions:
+        profile.reservation.depositInstructions.trim() ||
+        "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
     };
 
     if (profile.pricing.enabled && cleanedPlans.some((plan) => !plan.title || !plan.price)) {
@@ -2509,6 +2792,45 @@ export default function LinkHubPage() {
               {planDaysRemaining}
             </span>
           </div>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/65 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-black text-white">Publica en 10 minutos</p>
+                <p className="mt-1 text-xs text-zinc-300">
+                  Checklist rapido para dejar tu carta lista y convertir mejor.
+                </p>
+              </div>
+              <span className="inline-flex items-center rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-100">
+                {checklistCompleted}/{publishChecklist.length} listo ({checklistPercent}%)
+              </span>
+            </div>
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-amber-300 transition-all"
+                style={{ width: `${Math.max(0, Math.min(100, checklistPercent))}%` }}
+              />
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {publishChecklist.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => scrollToEditorSection(item.section)}
+                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-left text-xs font-semibold text-zinc-100"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    {item.completed ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-zinc-500" />
+                    )}
+                    {item.label}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Ir</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {message && (
@@ -2853,12 +3175,115 @@ export default function LinkHubPage() {
                   </button>
                 </div>
               </div>
-              {!isProPlan ? (
-                <p className="mb-4 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-100">
-                  <Lock className="mr-1 inline-flex h-3.5 w-3.5 align-[-2px]" />
-                  PRO desbloquea copys automáticos, galería de hasta 5 fotos por producto, testimonios y control de despacho.
+              <div
+                className={`mb-4 rounded-2xl border p-3 ${
+                  isProPlan
+                    ? "border-emerald-300/35 bg-emerald-500/10"
+                    : "border-amber-300/35 bg-amber-400/10"
+                }`}
+              >
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                  {isProPlan ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/40 bg-emerald-500/15 px-2.5 py-1 text-emerald-100">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      PRO activo
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/45 bg-amber-400/15 px-2.5 py-1 text-amber-100">
+                      <Lock className="h-3.5 w-3.5" />
+                      PRO recomendado
+                    </span>
+                  )}
+                  <span className={isProPlan ? "text-emerald-100" : "text-amber-100"}>
+                    Carga masiva + copys de venta + ajustes por porcentaje + galería extra.
+                  </span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-zinc-200">
+                    <Images className="h-3.5 w-3.5" />
+                    Fotos masivas
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-zinc-200">
+                    <Percent className="h-3.5 w-3.5" />
+                    Precios por categoría
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/25 px-2 py-1 text-zinc-200">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Copys para vender más
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-4 rounded-2xl border border-white/10 bg-black/25 p-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-zinc-300">
+                  Acciones rápidas
                 </p>
-              ) : null}
+                <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-[minmax(0,1fr)_auto]">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <select
+                      className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                      value={bulkUploadCategoryId}
+                      onChange={(event) => setBulkUploadCategoryId(event.target.value)}
+                    >
+                      <option value="all">Carga masiva: todos los items</option>
+                      {profile.catalogCategories.map((category) => (
+                        <option key={`bulk-${category.id}`} value={category.id}>
+                          {category.emoji || "•"} {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    <label
+                      className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] ${
+                        isProPlan
+                          ? "cursor-pointer border-sky-300/40 bg-sky-400/10 text-sky-100"
+                          : "cursor-not-allowed border-white/10 bg-white/5 text-zinc-400"
+                      }`}
+                      title={isProPlan ? "Subir varias fotos y asignarlas en lote." : "Disponible en plan PRO"}
+                    >
+                      {isBulkUploadingCatalog ? <Loader2 className="h-4 w-4 animate-spin" /> : <Images className="h-4 w-4" />}
+                      Carga masiva
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleCatalogBulkImageUpload}
+                        className="hidden"
+                        disabled={!isProPlan || isBulkUploadingCatalog}
+                      />
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_110px_auto]">
+                    <select
+                      className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                      value={priceAdjustCategoryId}
+                      onChange={(event) => setPriceAdjustCategoryId(event.target.value)}
+                    >
+                      <option value="all">Ajustar precio: toda la carta</option>
+                      {profile.catalogCategories.map((category) => (
+                        <option key={`price-${category.id}`} value={category.id}>
+                          {category.emoji || "•"} {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                      value={priceAdjustPercent}
+                      onChange={(event) => setPriceAdjustPercent(event.target.value)}
+                      placeholder="+10 o -5"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCatalogPriceAdjustment}
+                      disabled={!isProPlan}
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-100 disabled:opacity-50"
+                      title={isProPlan ? "Aplicar ajuste de precios por porcentaje" : "Disponible en plan PRO"}
+                    >
+                      <Percent className="h-3.5 w-3.5" />
+                      Aplicar
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               <div className="mb-4 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3">
                 <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-3 py-2">
@@ -2903,14 +3328,26 @@ export default function LinkHubPage() {
                         onChange={(event) => patchCategory(category.id, { name: event.target.value })}
                         placeholder="Nombre de categoria"
                       />
-                      <button
-                        type="button"
-                        onClick={() => removeCategory(category.id)}
-                        disabled={profile.catalogCategories.length <= 1}
-                        className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-2 text-red-100 disabled:opacity-40"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => duplicateCategoryWithItems(category.id)}
+                          disabled={profile.catalogCategories.length >= MAX_LINK_HUB_CATALOG_CATEGORIES}
+                          className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-3 py-2 text-sky-100 disabled:opacity-50"
+                          title="Duplicar categoría con sus items"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeCategory(category.id)}
+                          disabled={profile.catalogCategories.length <= 1}
+                          className="rounded-xl border border-red-300/30 bg-red-400/10 px-3 py-2 text-red-100 disabled:opacity-40"
+                          title="Eliminar categoría"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3479,6 +3916,47 @@ export default function LinkHubPage() {
                     disabled={!canUseReservations}
                   />
                 </label>
+
+                <div className="md:col-span-2 rounded-2xl border border-white/10 bg-black/25 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-zinc-300">
+                      Anticipo opcional (PRO)
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => patchReservation("requiresDeposit", !profile.reservation.requiresDeposit)}
+                      disabled={!canUseReservations}
+                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] disabled:opacity-50 ${
+                        profile.reservation.requiresDeposit
+                          ? "border-emerald-300/45 bg-emerald-500/10 text-emerald-100"
+                          : "border-white/15 bg-white/5 text-zinc-200"
+                      }`}
+                    >
+                      {profile.reservation.requiresDeposit ? (
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      ) : (
+                        <Circle className="h-3.5 w-3.5" />
+                      )}
+                      {profile.reservation.requiresDeposit ? "Anticipo activo" : "Solicitar anticipo"}
+                    </button>
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <input
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={profile.reservation.depositAmount}
+                      onChange={(event) => patchReservation("depositAmount", event.target.value)}
+                      placeholder="Ej: S/ 30 por mesa"
+                      disabled={!canUseReservations || !profile.reservation.requiresDeposit}
+                    />
+                    <input
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={profile.reservation.depositInstructions}
+                      onChange={(event) => patchReservation("depositInstructions", event.target.value)}
+                      placeholder="Yape o Plin para confirmar reserva."
+                      disabled={!canUseReservations || !profile.reservation.requiresDeposit}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -4190,6 +4668,11 @@ export default function LinkHubPage() {
                           <Users className="h-3 w-3" />
                           {profile.reservation.minPartySize}-{profile.reservation.maxPartySize} personas
                         </div>
+                        {profile.reservation.requiresDeposit ? (
+                          <div className="rounded-[0.8rem] border px-2 py-1 text-[10px] font-bold" style={previewChipBaseStyle}>
+                            Anticipo: {profile.reservation.depositAmount || "A coordinar"}
+                          </div>
+                        ) : null}
                       </div>
                     </article>
                   </div>

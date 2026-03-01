@@ -1585,3 +1585,25 @@ o-scrollbar para evitar barra visible.
   - Contacto tab now renders only contact content and supports inline editing (bio + quick image uploads + action buttons).
   - Carta tab keeps only menu content and now allows inline item edits (title, description, price, item photo).
   - Ubicacion tab now renders embedded Google Maps + inline editing for address, map link, schedules and CTA label.
+## Carta Digital PRO conversion pack (2026-03-01)
+
+- Routes updated:
+  - private editor: /linkhub
+  - public page: /bio/[slug]
+- Applied PRO-focused improvements (1 to 6) without changing existing base flow:
+  1) "Publica en 10 minutos" checklist with progress bar and quick jump buttons to each editor section.
+  2) Bulk photo upload for catalog items (category scope or all) with sequential assignment and processing guard.
+  3) Fast catalog actions:
+     - duplicate category with its items (respecting max limits)
+     - adjust prices by percentage for one category or full catalog.
+  4) WhatsApp order message upgraded with clearer structure and order reference.
+  5) Reservation advanced fields:
+     - optional deposit toggle
+     - deposit amount
+     - deposit instructions
+     - deposit details included in reservation WhatsApp request and public reservation UI.
+  6) Stronger PRO value visibility in catalog editor with explicit capability chips and lock state cues.
+- Persistence:
+  - reservation deposit fields are normalized/saved from editor to profile storage.
+- Guardrails:
+  - non-destructive, minimal-diff UI updates preserving existing responsive layout and navigation behavior.

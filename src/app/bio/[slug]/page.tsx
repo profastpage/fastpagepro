@@ -557,6 +557,11 @@ export default function PublicBioPage() {
     reservationMinParty,
     Math.round(Number(profile.reservation.maxPartySize) || reservationMinParty),
   );
+  const reservationRequiresDeposit = reservationEnabled && Boolean(profile.reservation.requiresDeposit);
+  const reservationDepositAmount = String(profile.reservation.depositAmount || "").trim();
+  const reservationDepositInstructions = String(profile.reservation.depositInstructions || "")
+    .trim()
+    || "Te compartimos Yape/Plin para confirmar tu mesa.";
   const visibleTabCount = reservationEnabled ? 4 : 3;
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
@@ -722,6 +727,9 @@ export default function PublicBioPage() {
 
   function buildWhatsappOrderMessage(): string {
     const date = new Date();
+    const orderRef = `FP-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(
+      date.getDate(),
+    ).padStart(2, "0")}-${String(date.getHours()).padStart(2, "0")}${String(date.getMinutes()).padStart(2, "0")}`;
     const availableDeliveryValues = new Set(availableDeliveryOptions.map((option) => option.value));
     const selectedDelivery =
       deliveryMethod && availableDeliveryValues.has(deliveryMethod) ? deliveryMethod : "";
@@ -758,8 +766,9 @@ export default function PublicBioPage() {
 
     return [
       `\u{1F9FE} *Solicitud de pedido para ${businessName}*`,
+      `\u{1F194} Ref: ${orderRef}`,
       "",
-      `\u{1F44B} Hola equipo ${businessName}, quisiera confirmar el siguiente pedido:`,
+      `\u{1F44B} Hola equipo ${businessName}, quiero confirmar este pedido:`,
       "",
       "\u{1F9FE} *Detalle del pedido*",
       itemLines,
@@ -776,6 +785,7 @@ export default function PublicBioPage() {
       discountLines || "- Descuentos: S/0.00 SOLES",
       `- Total: ${formatSoles(cartTotal)}`,
       "",
+      "\u{1F4F2} Canal: Carta Digital FastPage",
       `\u{1F552} Pedido generado: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
       "\u{1F64F} Muchas gracias. Quedo atento(a) a su confirmacion. \u{2728}",
@@ -829,6 +839,14 @@ export default function PublicBioPage() {
     const cleanContact = reservationContact.trim();
     const cleanNote = reservationNote.trim();
     const date = new Date();
+    const depositLines = reservationRequiresDeposit
+      ? [
+          "",
+          "\u{1F4B3} *Anticipo para confirmar*",
+          `- Monto sugerido: ${reservationDepositAmount || "A coordinar por WhatsApp"}`,
+          `- Instrucciones: ${reservationDepositInstructions}`,
+        ]
+      : [];
 
     const lines = [
       `\u{1F37D}\u{FE0F} *Solicitud de reserva para ${businessName}*`,
@@ -842,6 +860,7 @@ export default function PublicBioPage() {
       `- Horario: ${selectedSlot}`,
       cleanContact ? `- Contacto: ${cleanContact}` : "",
       cleanNote ? `- Nota: ${cleanNote}` : "",
+      ...depositLines,
       "",
       `\u{1F552} Solicitud enviada: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
@@ -1596,6 +1615,22 @@ export default function PublicBioPage() {
                 <p className="mt-1 text-sm md:text-base" style={{ color: textPalette.muted }}>
                   {profile.reservation.subtitle || "Agenda tu mesa y te confirmamos por WhatsApp."}
                 </p>
+                {reservationRequiresDeposit ? (
+                  <div
+                    className="mt-3 rounded-xl border px-3 py-2 text-xs font-semibold"
+                    style={{
+                      borderColor: "rgba(52,211,153,0.45)",
+                      background: "rgba(16,185,129,0.12)",
+                      color: textPalette.base,
+                    }}
+                  >
+                    <p>
+                      Anticipo sugerido:{" "}
+                      <span className="font-black">{reservationDepositAmount || "A coordinar"}</span>
+                    </p>
+                    <p className="mt-1">{reservationDepositInstructions}</p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">

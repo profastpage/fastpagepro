@@ -411,6 +411,9 @@ export interface LinkHubReservationConfig {
   maxPartySize: number;
   ctaLabel: string;
   notePlaceholder: string;
+  requiresDeposit: boolean;
+  depositAmount: string;
+  depositInstructions: string;
 }
 
 export interface LinkHubProfile {
@@ -636,6 +639,9 @@ function createDefaultReservationConfig(): LinkHubReservationConfig {
     maxPartySize: 12,
     ctaLabel: "Enviar reserva",
     notePlaceholder: "Ejemplo: celebracion, terraza o alergias alimentarias.",
+    requiresDeposit: false,
+    depositAmount: "",
+    depositInstructions: "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
   };
 }
 
@@ -1427,6 +1433,13 @@ export function normalizeLinkHubProfile(
     maxPartySize: Math.max(normalizedMinParty, normalizedMaxParty),
     ctaLabel: safeText(rawReservation["ctaLabel"]) || base.reservation.ctaLabel,
     notePlaceholder: safeText(rawReservation["notePlaceholder"]) || base.reservation.notePlaceholder,
+    requiresDeposit:
+      typeof rawReservation["requiresDeposit"] === "boolean"
+        ? (rawReservation["requiresDeposit"] as boolean)
+        : base.reservation.requiresDeposit,
+    depositAmount: safeText(rawReservation["depositAmount"]) || base.reservation.depositAmount,
+    depositInstructions:
+      safeText(rawReservation["depositInstructions"]) || base.reservation.depositInstructions,
   };
 
   const defaultPlans = createDefaultPricingPlans();
