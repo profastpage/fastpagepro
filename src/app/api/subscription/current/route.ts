@@ -54,10 +54,10 @@ export async function GET(request: NextRequest) {
 
     if (userId) {
       const now = new Date();
-      const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+      const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
       const features = ALL_FEATURES.reduce<Record<SubscriptionFeature, boolean>>(
         (acc, feature) => {
-          acc[feature] = canAccessFeature("FREE", feature);
+          acc[feature] = canAccessFeature("BUSINESS", feature);
           return acc;
         },
         {} as Record<SubscriptionFeature, boolean>,
@@ -68,17 +68,17 @@ export async function GET(request: NextRequest) {
           degraded: true,
           summary: {
             userId,
-            plan: "FREE",
+            plan: "BUSINESS",
             status: "ACTIVE",
             startDate: now.toISOString(),
             endDate: endDate.toISOString(),
             expiringSoon: false,
-            daysRemaining: 3650,
-            isBusinessTrial: false,
-            trialDaysRemaining: 0,
-            trialDaysTotal: 0,
+            daysRemaining: 14,
+            isBusinessTrial: true,
+            trialDaysRemaining: 14,
+            trialDaysTotal: 14,
             trialExpired: false,
-            limits: getPlanLimits("FREE"),
+            limits: getPlanLimits("BUSINESS"),
             usage: {
               publishedPages: 0,
             },
@@ -91,10 +91,10 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date();
-    const endDate = new Date(now.getTime() + 3650 * 24 * 60 * 60 * 1000);
+    const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
     const features = ALL_FEATURES.reduce<Record<SubscriptionFeature, boolean>>(
       (acc, feature) => {
-        acc[feature] = canAccessFeature("FREE", feature);
+        acc[feature] = canAccessFeature("BUSINESS", feature);
         return acc;
       },
       {} as Record<SubscriptionFeature, boolean>,
@@ -105,17 +105,17 @@ export async function GET(request: NextRequest) {
         degraded: true,
         summary: {
           userId: userId || "unknown",
-          plan: "FREE",
+          plan: "BUSINESS",
           status: "ACTIVE",
           startDate: now.toISOString(),
           endDate: endDate.toISOString(),
           expiringSoon: false,
-          daysRemaining: 3650,
-          isBusinessTrial: false,
-          trialDaysRemaining: 0,
-          trialDaysTotal: 0,
+          daysRemaining: 14,
+          isBusinessTrial: true,
+          trialDaysRemaining: 14,
+          trialDaysTotal: 14,
           trialExpired: false,
-          limits: getPlanLimits("FREE"),
+          limits: getPlanLimits("BUSINESS"),
           usage: {
             publishedPages: 0,
           },

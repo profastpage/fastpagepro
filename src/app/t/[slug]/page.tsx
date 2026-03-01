@@ -539,7 +539,7 @@ export default function PublicStorePage() {
   }
 
   if (notFound || !store) {
-    return <div className="grid min-h-screen place-items-center text-center"><div><h1 className="text-2xl font-black">Tienda no disponible</h1><p className="mt-2 text-slate-500">Esta tienda no existe o no esta publicada.</p></div></div>;
+    return <div className="grid min-h-screen place-items-center text-center"><div><h1 className="text-2xl font-black">Tienda no disponible</h1><p className="mt-2 text-slate-500">Esta tienda no existe, no esta publicada o fue pausada por plan vencido. Debe pagar para reactivarla.</p></div></div>;
   }
 
   return (

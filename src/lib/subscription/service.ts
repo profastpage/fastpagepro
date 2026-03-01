@@ -172,6 +172,36 @@ function getDaysRemaining(endDate: Date): number {
   return Math.ceil(diff / (24 * 60 * 60 * 1000));
 }
 
+function buildEphemeralBusinessTrialRecord(userId: string): SubscriptionRecord {
+  const now = getNow();
+  return buildSubscriptionRecord({
+    userId,
+    plan: "BUSINESS",
+    status: "ACTIVE",
+    paymentMethod: "TRANSFERENCIA",
+    startDate: now,
+    endDate: addDays(now, 14),
+    source: "memory",
+  });
+}
+
+async function resolveAutoTrialFallback(
+  userId: string,
+  context: string,
+  error: unknown,
+): Promise<SubscriptionRecord> {
+  const message = String((error as { message?: string })?.message || "");
+  const trialAlreadyUsed =
+    message.startsWith("BUSINESS_TRIAL_ALREADY_USED") || (await hasUsedBusinessTrial(userId));
+
+  if (trialAlreadyUsed) {
+    return moveTrialExpiredUserToFreeBlocked(userId);
+  }
+
+  console.error(`[Subscription Auto Trial] ${context}:`, error);
+  return buildEphemeralBusinessTrialRecord(userId);
+}
+
 function toPlanType(value: unknown): PlanType | null {
   const normalized = String(value || "").trim().toLowerCase();
   if (normalized === "free" || normalized === "starter") {
@@ -744,29 +774,38 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
     try {
       current = await startBusinessTrial(userId, { force: true });
       return current;
-    } catch (error: any) {
-      const message = String(error?.message || "");
-      if (!message.startsWith("BUSINESS_TRIAL_ALREADY_USED")) {
-        console.error("[Subscription Auto Trial] Could not activate trial for new account:", error);
-      }
-      current = await createDefaultFreeSubscription(userId);
+    } catch (error: unknown) {
+      return resolveAutoTrialFallback(userId, "Could not activate trial for new account", error);
+    }
+  }
+
+  if (!isRootAdmin && current.status === "PENDING") {
+    const trialAlreadyUsed = await hasUsedBusinessTrial(userId);
+    if (trialAlreadyUsed) {
+      current = await moveTrialExpiredUserToFreeBlocked(userId);
       return current;
+    }
+    try {
+      const trial = await startBusinessTrial(userId, { force: true });
+      return trial;
+    } catch (error: unknown) {
+      return resolveAutoTrialFallback(userId, "Could not activate trial from pending state", error);
     }
   }
 
   if (!isRootAdmin && current.plan === "FREE") {
     const trialAlreadyUsed = await hasUsedBusinessTrial(userId);
     if (trialAlreadyUsed) {
+      if (current.status !== "EXPIRED" || current.endDate.getTime() > Date.now()) {
+        current = await moveTrialExpiredUserToFreeBlocked(userId);
+      }
       return current;
     }
     try {
       const trial = await startBusinessTrial(userId, { force: true });
       return trial;
-    } catch (error: any) {
-      const message = String(error?.message || "");
-      if (!message.startsWith("BUSINESS_TRIAL_ALREADY_USED")) {
-        console.error("[Subscription Auto Trial] Could not activate trial for existing account:", error);
-      }
+    } catch (error: unknown) {
+      return resolveAutoTrialFallback(userId, "Could not activate trial for existing account", error);
     }
   }
 
@@ -813,6 +852,7 @@ export async function resolveUserSubscription(userId: string): Promise<Subscript
 
 export async function buildSubscriptionSummary(userId: string): Promise<SubscriptionSummary> {
   const subscription = await resolveUserSubscription(userId);
+  const hasConsumedBusinessTrial = await hasUsedBusinessTrial(userId);
   const publishedPages = await countPublishedPagesByUser(userId);
   const limits = getPlanLimits(subscription.plan);
   const daysRemaining = getDaysRemaining(subscription.endDate);
@@ -820,7 +860,13 @@ export async function buildSubscriptionSummary(userId: string): Promise<Subscrip
   const durationDays = getDurationDays(subscription.startDate, subscription.endDate);
   const isBusinessTrial = subscription.plan === "BUSINESS" && durationDays > 0 && durationDays <= 14;
   const trialDaysRemaining = isBusinessTrial && subscription.status === "ACTIVE" ? daysRemaining : 0;
-  const trialExpired = isBusinessTrial && subscription.status === "EXPIRED";
+  const trialExpiredFromBlockedFree =
+    !isBusinessTrial &&
+    subscription.plan === "FREE" &&
+    subscription.status === "EXPIRED" &&
+    hasConsumedBusinessTrial;
+  const trialExpired = (isBusinessTrial && subscription.status === "EXPIRED") || trialExpiredFromBlockedFree;
+  const trialDaysTotal = isBusinessTrial ? durationDays : trialExpiredFromBlockedFree ? 14 : 0;
   const allFeatures: SubscriptionFeature[] = [
     "premiumThemes",
     "categoryThemes",
@@ -855,7 +901,7 @@ export async function buildSubscriptionSummary(userId: string): Promise<Subscrip
     daysRemaining,
     isBusinessTrial,
     trialDaysRemaining,
-    trialDaysTotal: isBusinessTrial ? durationDays : 0,
+    trialDaysTotal,
     trialExpired,
     limits,
     usage: {

@@ -503,7 +503,10 @@ export default function PublicBioPage() {
         <div className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-[0_20px_45px_-35px_rgba(15,23,42,0.35)]">
           <p className="text-xs uppercase tracking-[0.25em] text-slate-500 font-bold">Carta Digital</p>
           <h1 className="mt-3 text-3xl font-black">Perfil no disponible</h1>
-          <p className="mt-3 text-slate-600">Este enlace no existe o aun no fue publicado.</p>
+          <p className="mt-3 text-slate-600">
+            Este enlace no existe, no fue publicado o fue pausado por plan vencido. El negocio debe pagar para
+            reactivarlo.
+          </p>
         </div>
       </div>
     );

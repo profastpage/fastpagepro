@@ -1560,3 +1560,14 @@ o-scrollbar para evitar barra visible.
 - Backward compatibility:
   - legacy profiles auto-normalize with reservation disabled by default.
   - Contacto/Carta/Ubicacion flow is preserved.
+## Business trial-by-default + hard block after expiry (2026-03-01)
+
+- Policy hardened for all non-admin accounts without approved paid plan:
+  - auto-assign 14-day BUSINESS trial on first login/register path.
+  - keep BUSINESS capabilities during trial with real countdown.
+  - when trial expires, force account to blocked state (FREE EXPIRED).
+- Publish visibility lock:
+  - expired/trial-ended users now remain blocked for public profiles/stores through synced subscription flags.
+  - public pages show clearer paused-by-plan-expired messaging.
+- Fallback consistency:
+  - degraded /api/subscription/current response now returns BUSINESS trial shape (not FREE), avoiding accidental downgrade UX during transient errors.
