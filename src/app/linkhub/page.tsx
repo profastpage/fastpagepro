@@ -2442,9 +2442,6 @@ export default function LinkHubPage() {
                     <p className="mt-2 text-[11px] font-bold text-emerald-100">
                       Editando: {mobileSectionLabelMap[mobileEditorSection]}
                     </p>
-                    <p className="mt-1 text-[10px] text-emerald-200/80">
-                      El formulario se abre debajo, sin redireccionar.
-                    </p>
                   </div>
                 )}
               </div>
