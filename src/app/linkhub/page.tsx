@@ -540,6 +540,7 @@ export default function LinkHubPage() {
   const locationSectionRef = useRef<HTMLDivElement | null>(null);
   const reservationSectionRef = useRef<HTMLDivElement | null>(null);
   const themesSectionRef = useRef<HTMLDivElement | null>(null);
+  const publishChecklistSectionRef = useRef<HTMLDivElement | null>(null);
   const mobileTopDockRef = useRef<HTMLDivElement | null>(null);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
@@ -1210,6 +1211,23 @@ export default function LinkHubPage() {
       scrollEditorSectionToStart(section);
       setMobileEditMenuOpen(false);
     }
+  }
+
+  function scrollToPublishChecklist() {
+    const checklistSection = publishChecklistSectionRef.current;
+    if (!checklistSection || typeof window === "undefined") return;
+    setMobileEditMenuMode("sections");
+    setMobileEditMenuOpen(false);
+
+    if (window.innerWidth < 768) {
+      const dockBottom = mobileTopDockRef.current?.getBoundingClientRect().bottom ?? 0;
+      const targetTop = checklistSection.getBoundingClientRect().top;
+      const absoluteTop = window.scrollY + targetTop - (dockBottom + 12);
+      window.scrollTo({ top: Math.max(0, absoluteTop), behavior: "smooth" });
+      return;
+    }
+
+    checklistSection.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   const mobileSectionLabelMap: Record<EditorSectionKey, string> = {
@@ -2890,6 +2908,10 @@ export default function LinkHubPage() {
               <div className="mt-2 space-y-1.5 rounded-2xl border border-white/15 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur-xl">
                 {mobileEditMenuMode === "sections" ? (
                   <>
+                    <button type="button" onClick={scrollToPublishChecklist} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-400/15 px-3 py-2 text-[11px] font-bold text-emerald-100">
+                      <Rocket className="h-3.5 w-3.5" />
+                      Publica en 10 minutos
+                    </button>
                     <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <Store className="h-3.5 w-3.5" />
                       Identidad de negocio
@@ -2975,7 +2997,7 @@ export default function LinkHubPage() {
               {planDaysRemaining}
             </span>
           </div>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/65 p-4">
+          <div ref={publishChecklistSectionRef} className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/65 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-black text-white">Publica en 10 minutos</p>
