@@ -1515,3 +1515,12 @@ o-scrollbar para evitar barra visible.
   - el boton flotante Mi pedido baja su posicion en desktop (md:bottom-6).
 - Resultado:
   - se evita el cruce/solapamiento con el widget de ayuda al cliente en la esquina inferior derecha.
+## Carta Digital save/publish without social links (2026-03-01)
+
+- Ruta afectada: /linkhub (seccion Carta Digital del usuario).
+- Cambio aplicado:
+  - la validacion de enlaces ya no bloquea guardar/publicar cuando los enlaces estan vacios o incompletos.
+  - al guardar/publicar, solo se persisten enlaces con URL externa valida.
+- Resultado:
+  - si no hay enlaces sociales configurados, se puede guardar y publicar normalmente.
+  - en la pagina publicada no se muestran enlaces vacios/sin URL.

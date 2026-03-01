@@ -1690,24 +1690,14 @@ export default function LinkHubPage() {
       return;
     }
 
-    const preparedLinks = profile.links
+    const normalizedLinks = profile.links
       .map((link) => ({
         ...link,
         title: link.title.trim(),
         url: normalizeLinkUrl(link.url),
       }))
       .filter((link) => link.title || link.url);
-
-    const invalidLink = preparedLinks.find(
-      (link) => !link.title || !link.url || !isValidExternalUrl(link.url),
-    );
-    if (invalidLink) {
-      setMessage({
-        type: "error",
-        text: "Cada enlace necesita titulo y URL valida (ej. https://...).",
-      });
-      return;
-    }
+    const preparedLinks = normalizedLinks.filter((link) => isValidExternalUrl(link.url));
 
     const cleanedCategories = profile.catalogCategories
       .map((category) => ({
