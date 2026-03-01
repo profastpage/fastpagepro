@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import { auth } from "@/lib/firebase";
 import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import { requestPublishTarget } from "@/lib/subscription/publishClient";
 import {
@@ -108,6 +109,21 @@ type EditorSectionKey =
   | "location"
   | "reservation"
   | "themes";
+
+type LinkHubMetricsSummary = {
+  whatsappClicks: number;
+  totalOrders: number;
+  totalReservations: number;
+  topDishes: Array<{ name: string; quantity: number }>;
+  peakHours: Array<{ hour: string; clicks: number }>;
+  categories: Array<{
+    categoryId: string;
+    categoryName: string;
+    views: number;
+    orders: number;
+    conversionRate: number;
+  }>;
+};
 
 const LINK_TYPE_OPTIONS: Array<{ value: LinkHubLinkType; label: string }> = [
   { value: "website", label: "Website" },
@@ -478,7 +494,7 @@ function buildCatalogDescriptionSuggestion(
 
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
-  const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
+  const { summary: subscriptionSummary, reload: reloadSubscription } = useSubscription(Boolean(user?.uid));
   const planPermissions = usePlanPermissions(Boolean(user?.uid));
   const router = useRouter();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
@@ -498,6 +514,16 @@ export default function LinkHubPage() {
   const [bulkUploadCategoryId, setBulkUploadCategoryId] = useState("all");
   const [priceAdjustCategoryId, setPriceAdjustCategoryId] = useState("all");
   const [priceAdjustPercent, setPriceAdjustPercent] = useState("");
+  const [roiVisits, setRoiVisits] = useState("1200");
+  const [roiConversionRate, setRoiConversionRate] = useState("4");
+  const [roiTicketAverage, setRoiTicketAverage] = useState("45");
+  const [isProTrialModalOpen, setIsProTrialModalOpen] = useState(false);
+  const [proTrialFeatureLabel, setProTrialFeatureLabel] = useState("");
+  const [isActivatingProTrial, setIsActivatingProTrial] = useState(false);
+  const [proTrialError, setProTrialError] = useState("");
+  const [metricsLoading, setMetricsLoading] = useState(false);
+  const [metricsSummary, setMetricsSummary] = useState<LinkHubMetricsSummary | null>(null);
+  const [metricsError, setMetricsError] = useState("");
   const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
   const [mobileEditMenuMode, setMobileEditMenuMode] = useState<"sections" | "editor">("sections");
   const [mobileEditorSection, setMobileEditorSection] = useState<EditorSectionKey>("identity");
@@ -534,6 +560,14 @@ export default function LinkHubPage() {
   const planDaysRemaining = subscriptionSummary?.isBusinessTrial
     ? Math.max(0, Number(subscriptionSummary?.trialDaysRemaining || 0))
     : Math.max(0, Number(subscriptionSummary?.daysRemaining || 0));
+  const roiSafeVisits = Math.max(0, Math.round(Number(roiVisits) || 0));
+  const roiSafeConversionRate = Math.max(0.1, Math.min(100, Number(roiConversionRate) || 0.1));
+  const roiSafeAverageTicket = Math.max(1, Number(roiTicketAverage) || 1);
+  const roiExpectedOrders = Math.round((roiSafeVisits * roiSafeConversionRate) / 100);
+  const roiExpectedRevenue = roiExpectedOrders * roiSafeAverageTicket;
+  const roiPlanMonthlyCost = activePlan === "PRO" ? 99 : activePlan === "BUSINESS" ? 59 : 29;
+  const roiOrdersToRecover = Math.max(1, Math.ceil(roiPlanMonthlyCost / roiSafeAverageTicket));
+  const roiVisitsToRecover = Math.max(1, Math.ceil((roiOrdersToRecover * 100) / roiSafeConversionRate));
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -1062,6 +1096,61 @@ export default function LinkHubPage() {
   }, [previewReservationEnabled, previewTab]);
 
   useEffect(() => {
+    let active = true;
+
+    async function loadMetricsSummary() {
+      if (!user?.uid || !profile?.slug) return;
+      setMetricsLoading(true);
+      setMetricsError("");
+      try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          if (active) {
+            setMetricsSummary(null);
+            setMetricsError("Inicia sesion para ver metricas.");
+          }
+          return;
+        }
+        const idToken = await currentUser.getIdToken();
+        const response = await fetch(
+          `/api/linkhub/metrics/summary?profileId=${encodeURIComponent(activeProfileId || currentUser.uid)}&slug=${encodeURIComponent(profile.slug)}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          },
+        );
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          summary?: LinkHubMetricsSummary;
+        };
+        if (!response.ok) {
+          throw new Error(payload?.error || "No se pudieron cargar metricas.");
+        }
+        if (active) {
+          setMetricsSummary(payload.summary || null);
+        }
+      } catch (error) {
+        console.error("[LinkHub] Metrics summary error:", error);
+        if (active) {
+          setMetricsSummary(null);
+          setMetricsError("No se pudieron cargar metricas por ahora.");
+        }
+      } finally {
+        if (active) {
+          setMetricsLoading(false);
+        }
+      }
+    }
+
+    loadMetricsSummary();
+    return () => {
+      active = false;
+    };
+  }, [activeProfileId, profile?.slug, user?.uid]);
+
+  useEffect(() => {
     if (!profile) return;
     const validCategoryIds = new Set(profile.catalogCategories.map((category) => category.id));
     if (bulkUploadCategoryId !== "all" && !validCategoryIds.has(bulkUploadCategoryId)) {
@@ -1392,10 +1481,59 @@ export default function LinkHubPage() {
   }
 
   function showProFeatureLocked(featureLabel: string) {
+    setProTrialFeatureLabel(featureLabel);
+    setProTrialError("");
+    setIsProTrialModalOpen(true);
     setMessage({
       type: "error",
       text: `${featureLabel} está bloqueado. Activa plan PRO para usar esta función.`,
     });
+  }
+
+  async function activateProTrial() {
+    if (isActivatingProTrial) return;
+    setIsActivatingProTrial(true);
+    setProTrialError("");
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setProTrialError("Debes iniciar sesion para activar la prueba PRO.");
+        return;
+      }
+      const idToken = await currentUser.getIdToken();
+      const response = await fetch("/api/subscription/pro-trial", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+      };
+      if (!response.ok) {
+        throw new Error(payload?.error || "No se pudo activar la prueba PRO.");
+      }
+
+      await fetch("/api/subscription/session", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      }).catch(() => undefined);
+
+      await reloadSubscription();
+      setIsProTrialModalOpen(false);
+      setMessage({
+        type: "success",
+        text: payload?.message || "Prueba PRO activada por 7 dias. Ya puedes usar funciones PRO.",
+      });
+    } catch (error) {
+      const message = String((error as { message?: string })?.message || "");
+      setProTrialError(message || "No se pudo activar la prueba PRO.");
+    } finally {
+      setIsActivatingProTrial(false);
+    }
   }
 
   function patchProTestimonial(index: number, patch: Partial<LinkHubProTestimonial>) {
@@ -1510,6 +1648,26 @@ export default function LinkHubPage() {
         ...prev,
         reservation: {
           ...prev.reservation,
+          [field]: value,
+        },
+      };
+    });
+  }
+
+  function patchAutomation<K extends keyof LinkHubProfile["automation"]>(
+    field: K,
+    value: LinkHubProfile["automation"][K],
+  ) {
+    if (!isProPlan) {
+      showProFeatureLocked("Automatizaciones PRO");
+      return;
+    }
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        automation: {
+          ...prev.automation,
           [field]: value,
         },
       };
@@ -2305,6 +2463,7 @@ export default function LinkHubPage() {
         compareAtPrice: (item.compareAtPrice || "").trim(),
         badge: (item.badge || "").trim(),
         emoji: (item.emoji || "").trim(),
+        outOfStock: Boolean(item.outOfStock),
       }))
       .filter((item) => item.title || item.description || item.price || item.imageUrl)
       .slice(0, MAX_LINK_HUB_CATALOG_ITEMS);
@@ -2363,6 +2522,19 @@ export default function LinkHubPage() {
       depositInstructions:
         profile.reservation.depositInstructions.trim() ||
         "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
+    };
+    const promoDiscount = Math.max(0, Math.min(90, Math.round(Number(profile.automation.promoDiscountPercent) || 0)));
+    const cleanedAutomation = {
+      ...profile.automation,
+      autoScheduleEnabled: isProPlan ? Boolean(profile.automation.autoScheduleEnabled) : false,
+      openTime: (profile.automation.openTime || "11:00").trim() || "11:00",
+      closeTime: (profile.automation.closeTime || "23:00").trim() || "23:00",
+      hideOutOfStock: isProPlan ? Boolean(profile.automation.hideOutOfStock) : false,
+      promoEnabled: isProPlan ? Boolean(profile.automation.promoEnabled) : false,
+      promoStart: (profile.automation.promoStart || "12:00").trim() || "12:00",
+      promoEnd: (profile.automation.promoEnd || "14:00").trim() || "14:00",
+      promoDiscountPercent: promoDiscount,
+      promoLabel: (profile.automation.promoLabel || "Promo del dia").trim() || "Promo del dia",
     };
 
     if (profile.pricing.enabled && cleanedPlans.some((plan) => !plan.title || !plan.price)) {
@@ -2533,6 +2705,7 @@ export default function LinkHubPage() {
             scheduleLines: profile.location.scheduleLines.map((line) => line.trim()).filter(Boolean),
           },
           reservation: cleanedReservation,
+          automation: cleanedAutomation,
           pricing: {
             ...profile.pricing,
             title: profile.pricing.title.trim() || "Carta Digital",
@@ -2844,6 +3017,53 @@ export default function LinkHubPage() {
             {message.text}
           </div>
         )}
+
+        {isProTrialModalOpen ? (
+          <div className="mb-6 rounded-2xl border border-emerald-300/35 bg-emerald-500/10 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="text-sm font-black text-emerald-100">Prueba PRO 7 dias con 1 clic</p>
+                <p className="mt-1 text-xs text-emerald-50/90">
+                  {proTrialFeatureLabel
+                    ? `${proTrialFeatureLabel} requiere PRO.`
+                    : "Esta función requiere PRO."}{" "}
+                  Activa la prueba ahora mismo desde el editor.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProTrialModalOpen(false)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-emerald-100"
+                aria-label="Cerrar prueba PRO"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {proTrialError ? (
+              <p className="mt-3 rounded-xl border border-red-300/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200">
+                {proTrialError}
+              </p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={activateProTrial}
+                disabled={isActivatingProTrial}
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-500/20 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-emerald-100 disabled:opacity-60"
+              >
+                {isActivatingProTrial ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                Activar prueba PRO
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsProTrialModalOpen(false)}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-200"
+              >
+                Continuar sin PRO
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,560px)]">
           <section
@@ -3157,7 +3377,7 @@ export default function LinkHubPage() {
                   <button
                     type="button"
                     onClick={suggestSalesCopyForAllItems}
-                    disabled={profile.catalogItems.length === 0 || !isProPlan}
+                    disabled={profile.catalogItems.length === 0}
                     className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-emerald-100 disabled:opacity-50"
                     title={isProPlan ? "Generar copys de venta PRO" : "Bloqueado para Starter y Business"}
                   >
@@ -3233,6 +3453,11 @@ export default function LinkHubPage() {
                       ))}
                     </select>
                     <label
+                      onClick={(event) => {
+                        if (isProPlan) return;
+                        event.preventDefault();
+                        showProFeatureLocked("Carga masiva de imagenes PRO");
+                      }}
                       className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] ${
                         isProPlan
                           ? "cursor-pointer border-sky-300/40 bg-sky-400/10 text-sky-100"
@@ -3274,8 +3499,7 @@ export default function LinkHubPage() {
                     <button
                       type="button"
                       onClick={applyCatalogPriceAdjustment}
-                      disabled={!isProPlan}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-100 disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-300/35 bg-emerald-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] text-emerald-100"
                       title={isProPlan ? "Aplicar ajuste de precios por porcentaje" : "Disponible en plan PRO"}
                     >
                       <Percent className="h-3.5 w-3.5" />
@@ -3413,11 +3637,22 @@ export default function LinkHubPage() {
                         <button
                           type="button"
                           onClick={() => suggestCatalogItemSalesCopy(item.id)}
-                          disabled={!isProPlan}
-                          className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-100 sm:px-3 sm:text-[11px] disabled:opacity-50"
+                          className="rounded-xl border border-emerald-300/30 bg-emerald-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-100 sm:px-3 sm:text-[11px]"
                           title={isProPlan ? "Generar copy PRO de venta" : "Disponible en plan PRO"}
                         >
                           {isProPlan ? "Copy PRO" : "Copy 🔒"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => patchCatalogItem(item.id, { outOfStock: !item.outOfStock })}
+                          className={`rounded-xl border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] sm:px-3 sm:text-[11px] ${
+                            item.outOfStock
+                              ? "border-rose-300/35 bg-rose-500/15 text-rose-100"
+                              : "border-emerald-300/30 bg-emerald-500/10 text-emerald-100"
+                          }`}
+                          title="Control de stock para ocultar en carta publicada"
+                        >
+                          {item.outOfStock ? "Sin stock" : "Con stock"}
                         </button>
                         <button
                           type="button"
@@ -3440,6 +3675,13 @@ export default function LinkHubPage() {
                         <p className="mt-2 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-300">
                           {item.imageUrl ? "Imagen lista" : "Sube una foto"}
                         </p>
+                        <p
+                          className={`mt-1 text-center text-[10px] font-bold uppercase tracking-[0.12em] ${
+                            item.outOfStock ? "text-rose-300" : "text-emerald-300"
+                          }`}
+                        >
+                          {item.outOfStock ? "Sin stock" : "Stock disponible"}
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
@@ -3455,6 +3697,11 @@ export default function LinkHubPage() {
                             />
                           </label>
                           <label
+                            onClick={(event) => {
+                              if (isProPlan) return;
+                              event.preventDefault();
+                              showProFeatureLocked("Galería de fotos PRO");
+                            }}
                             className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] ${
                               isProPlan
                                 ? "cursor-pointer border-emerald-300/40 bg-emerald-400/10 text-emerald-100"
@@ -3638,6 +3885,254 @@ export default function LinkHubPage() {
                   Estas funciones se muestran como demo, pero solo se habilitan al subir a plan PRO.
                 </p>
               ) : null}
+              {!isProPlan ? (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProTrialFeatureLabel("Funciones PRO");
+                      setProTrialError("");
+                      setIsProTrialModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-500/15 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-emerald-100"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Activar prueba PRO 7 dias
+                  </button>
+                </div>
+              ) : null}
+
+              <article className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
+                  ROI en tiempo real
+                </p>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Si conviertes {roiSafeVisits.toLocaleString()} visitas, recuperas el plan con {roiOrdersToRecover} pedidos.
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-3">
+                  <input
+                    className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                    value={roiVisits}
+                    onChange={(event) => setRoiVisits(event.target.value)}
+                    placeholder="Visitas/mes"
+                  />
+                  <input
+                    className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                    value={roiConversionRate}
+                    onChange={(event) => setRoiConversionRate(event.target.value)}
+                    placeholder="Conversion %"
+                  />
+                  <input
+                    className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
+                    value={roiTicketAverage}
+                    onChange={(event) => setRoiTicketAverage(event.target.value)}
+                    placeholder="Ticket promedio"
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Pedidos estimados</p>
+                    <p className="mt-1 text-sm font-black text-white">{roiExpectedOrders}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Facturación estimada</p>
+                    <p className="mt-1 text-sm font-black text-emerald-200">S/ {roiExpectedRevenue.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Visitas para recuperar plan</p>
+                    <p className="mt-1 text-sm font-black text-amber-200">{roiVisitsToRecover}</p>
+                  </div>
+                </div>
+              </article>
+
+              <article className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
+                  Automatizaciones PRO
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => patchAutomation("autoScheduleEnabled", !profile.automation.autoScheduleEnabled)}
+                    className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold ${
+                      profile.automation.autoScheduleEnabled
+                        ? "border-emerald-300/45 bg-emerald-500/10 text-emerald-100"
+                        : "border-white/15 bg-white/5 text-zinc-200"
+                    }`}
+                  >
+                    {profile.automation.autoScheduleEnabled ? "✓" : "○"} Horarios automáticos abrir/cerrar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => patchAutomation("hideOutOfStock", !profile.automation.hideOutOfStock)}
+                    className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold ${
+                      profile.automation.hideOutOfStock
+                        ? "border-emerald-300/45 bg-emerald-500/10 text-emerald-100"
+                        : "border-white/15 bg-white/5 text-zinc-200"
+                    }`}
+                  >
+                    {profile.automation.hideOutOfStock ? "✓" : "○"} Ocultar productos sin stock
+                  </button>
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Apertura</span>
+                    <input
+                      type="time"
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={profile.automation.openTime}
+                      onChange={(event) => patchAutomation("openTime", event.target.value)}
+                      disabled={!profile.automation.autoScheduleEnabled}
+                    />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Cierre</span>
+                    <input
+                      type="time"
+                      className="w-full rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={profile.automation.closeTime}
+                      onChange={(event) => patchAutomation("closeTime", event.target.value)}
+                      disabled={!profile.automation.autoScheduleEnabled}
+                    />
+                  </label>
+                </div>
+                <div className="mt-3 rounded-xl border border-white/10 bg-zinc-900/40 p-3">
+                  <button
+                    type="button"
+                    onClick={() => patchAutomation("promoEnabled", !profile.automation.promoEnabled)}
+                    className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold ${
+                      profile.automation.promoEnabled
+                        ? "border-emerald-300/45 bg-emerald-500/10 text-emerald-100"
+                        : "border-white/15 bg-white/5 text-zinc-200"
+                    }`}
+                  >
+                    {profile.automation.promoEnabled ? "✓" : "○"} Promociones por franja horaria
+                  </button>
+                  <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-4">
+                    <input
+                      type="time"
+                      className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={profile.automation.promoStart}
+                      onChange={(event) => patchAutomation("promoStart", event.target.value)}
+                      disabled={!profile.automation.promoEnabled}
+                    />
+                    <input
+                      type="time"
+                      className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={profile.automation.promoEnd}
+                      onChange={(event) => patchAutomation("promoEnd", event.target.value)}
+                      disabled={!profile.automation.promoEnabled}
+                    />
+                    <input
+                      className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={String(profile.automation.promoDiscountPercent)}
+                      onChange={(event) =>
+                        patchAutomation("promoDiscountPercent", Math.max(0, Math.min(90, Number(event.target.value) || 0)))
+                      }
+                      placeholder="%"
+                      disabled={!profile.automation.promoEnabled}
+                    />
+                    <input
+                      className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white disabled:opacity-60"
+                      value={profile.automation.promoLabel}
+                      onChange={(event) => patchAutomation("promoLabel", event.target.value)}
+                      placeholder="Promo del dia"
+                      disabled={!profile.automation.promoEnabled}
+                    />
+                  </div>
+                </div>
+              </article>
+
+              <article className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">
+                    Métricas clave del dueño
+                  </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setMetricsLoading(true);
+                      setMetricsError("");
+                      try {
+                        const currentUser = auth.currentUser;
+                        if (!currentUser) throw new Error("Inicia sesion para ver metricas.");
+                        const idToken = await currentUser.getIdToken();
+                        const response = await fetch(
+                          `/api/linkhub/metrics/summary?profileId=${encodeURIComponent(activeProfileId || currentUser.uid)}&slug=${encodeURIComponent(profile.slug)}`,
+                          { headers: { Authorization: `Bearer ${idToken}` } },
+                        );
+                        const payload = (await response.json().catch(() => ({}))) as { error?: string; summary?: LinkHubMetricsSummary };
+                        if (!response.ok) throw new Error(payload?.error || "No se pudo refrescar.");
+                        setMetricsSummary(payload.summary || null);
+                      } catch (error) {
+                        setMetricsError(String((error as { message?: string })?.message || "No se pudo refrescar."));
+                      } finally {
+                        setMetricsLoading(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-200"
+                  >
+                    {metricsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+                    Refrescar
+                  </button>
+                </div>
+                {metricsError ? (
+                  <p className="mt-2 rounded-xl border border-red-300/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200">
+                    {metricsError}
+                  </p>
+                ) : null}
+                <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Clicks WhatsApp</p>
+                    <p className="mt-1 text-sm font-black text-emerald-200">{metricsSummary?.whatsappClicks || 0}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Pedidos enviados</p>
+                    <p className="mt-1 text-sm font-black text-white">{metricsSummary?.totalOrders || 0}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Hora pico</p>
+                    <p className="mt-1 text-sm font-black text-amber-200">
+                      {metricsSummary?.peakHours?.[0]?.hour || "--:--"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/60 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Top categoría %</p>
+                    <p className="mt-1 text-sm font-black text-sky-200">
+                      {metricsSummary?.categories?.[0]?.conversionRate?.toFixed(1) || "0.0"}%
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-400">Platos más pedidos</p>
+                    <div className="mt-2 space-y-1 text-xs">
+                      {(metricsSummary?.topDishes || []).slice(0, 4).map((dish) => (
+                        <p key={dish.name} className="flex items-center justify-between gap-2 text-zinc-200">
+                          <span className="truncate">{dish.name}</span>
+                          <span className="font-black text-emerald-200">{dish.quantity}</span>
+                        </p>
+                      ))}
+                      {(metricsSummary?.topDishes || []).length === 0 ? (
+                        <p className="text-zinc-500">Aún sin datos.</p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-zinc-900/50 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-400">Conversión por categoría</p>
+                    <div className="mt-2 space-y-1 text-xs">
+                      {(metricsSummary?.categories || []).slice(0, 4).map((category) => (
+                        <p key={category.categoryId} className="flex items-center justify-between gap-2 text-zinc-200">
+                          <span className="truncate">{category.categoryName}</span>
+                          <span className="font-black text-sky-200">{category.conversionRate.toFixed(1)}%</span>
+                        </p>
+                      ))}
+                      {(metricsSummary?.categories || []).length === 0 ? (
+                        <p className="text-zinc-500">Aún sin datos.</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </article>
               <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-300">

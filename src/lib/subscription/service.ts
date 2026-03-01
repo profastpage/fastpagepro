@@ -98,6 +98,33 @@ async function hasUsedBusinessTrial(userId: string): Promise<boolean> {
   }
 }
 
+async function hasUsedProTrial(userId: string): Promise<boolean> {
+  try {
+    const previousPro = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        plan: "PRO",
+        status: { in: ["ACTIVE", "EXPIRED"] },
+      },
+      select: { id: true },
+    });
+    if (previousPro) return true;
+  } catch (error) {
+    console.error("[Subscription Pro Trial] Prisma usage check warning:", error);
+  }
+
+  if (!adminDb) return false;
+
+  try {
+    const snapshot = await adminDb.collection("users").doc(userId).get();
+    const payload = snapshot.data() as Record<string, unknown> | undefined;
+    return payload?.proTrialUsed === true;
+  } catch (error) {
+    console.error("[Subscription Pro Trial] Firestore usage check warning:", error);
+    return false;
+  }
+}
+
 async function moveTrialExpiredUserToFreeBlocked(userId: string): Promise<SubscriptionRecord> {
   const now = getNow();
   let next: SubscriptionRecord | null = null;
@@ -687,6 +714,51 @@ export async function startBusinessTrial(
       )
       .catch((error) => {
         console.error("[Subscription Trial] Firestore flag write warning:", error);
+      });
+  }
+
+  return assigned;
+}
+
+export async function startProTrial(
+  userId: string,
+  options?: {
+    force?: boolean;
+  },
+): Promise<SubscriptionRecord> {
+  const safeUserId = String(userId || "").trim();
+  if (!safeUserId) {
+    throw new Error("USER_ID_REQUIRED");
+  }
+
+  const force = options?.force === true;
+  if (!force) {
+    const used = await hasUsedProTrial(safeUserId);
+    if (used) {
+      throw new Error("PRO_TRIAL_ALREADY_USED");
+    }
+  }
+
+  const assigned = await assignSubscriptionPlanByAdmin({
+    userId: safeUserId,
+    plan: "PRO",
+    durationDays: 7,
+    paymentMethod: "TRANSFERENCIA",
+  });
+
+  if (adminDb) {
+    await adminDb
+      .collection("users")
+      .doc(safeUserId)
+      .set(
+        {
+          proTrialUsed: true,
+          proTrialUsedAt: Date.now(),
+        },
+        { merge: true },
+      )
+      .catch((error) => {
+        console.error("[Subscription Pro Trial] Firestore flag write warning:", error);
       });
   }
 

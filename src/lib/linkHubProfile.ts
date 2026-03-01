@@ -358,6 +358,7 @@ export interface LinkHubCatalogItem {
   compareAtPrice?: string;
   badge?: string;
   emoji?: string;
+  outOfStock?: boolean;
 }
 
 export interface LinkHubProTestimonial {
@@ -416,6 +417,18 @@ export interface LinkHubReservationConfig {
   depositInstructions: string;
 }
 
+export interface LinkHubAutomationConfig {
+  autoScheduleEnabled: boolean;
+  openTime: string;
+  closeTime: string;
+  hideOutOfStock: boolean;
+  promoEnabled: boolean;
+  promoStart: string;
+  promoEnd: string;
+  promoDiscountPercent: number;
+  promoLabel: string;
+}
+
 export interface LinkHubProfile {
   userId: string;
   slug: string;
@@ -449,6 +462,7 @@ export interface LinkHubProfile {
   proFeaturesUnlocked: boolean;
   location: LinkHubLocation;
   reservation: LinkHubReservationConfig;
+  automation: LinkHubAutomationConfig;
   pricing: LinkHubPricingConfig;
   createdAt: number;
   updatedAt: number;
@@ -551,6 +565,7 @@ export function createLinkHubCatalogItem(categoryId = ""): LinkHubCatalogItem {
     compareAtPrice: "",
     badge: "",
     emoji: "",
+    outOfStock: false,
   };
 }
 
@@ -642,6 +657,20 @@ function createDefaultReservationConfig(): LinkHubReservationConfig {
     requiresDeposit: false,
     depositAmount: "",
     depositInstructions: "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
+  };
+}
+
+function createDefaultAutomationConfig(): LinkHubAutomationConfig {
+  return {
+    autoScheduleEnabled: false,
+    openTime: "11:00",
+    closeTime: "23:00",
+    hideOutOfStock: false,
+    promoEnabled: false,
+    promoStart: "12:00",
+    promoEnd: "14:00",
+    promoDiscountPercent: 10,
+    promoLabel: "Promo del dia",
   };
 }
 
@@ -1248,6 +1277,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
       ctaLabel: "Ir ahora",
     },
     reservation: createDefaultReservationConfig(),
+    automation: createDefaultAutomationConfig(),
     pricing: {
       enabled: true,
       title: "Catalogo digital online",
@@ -1331,6 +1361,7 @@ export function normalizeLinkHubProfile(
         compareAtPrice: safeText(item?.compareAtPrice),
         badge: safeText(item?.badge),
         emoji: safeText(item?.emoji),
+        outOfStock: Boolean(item?.outOfStock),
       } as LinkHubCatalogItem;
     })
     .filter((item) => item.title.length > 0)
@@ -1442,6 +1473,33 @@ export function normalizeLinkHubProfile(
       safeText(rawReservation["depositInstructions"]) || base.reservation.depositInstructions,
   };
 
+  const rawAutomation = isRecord((input as Record<string, unknown>)["automation"])
+    ? ((input as Record<string, unknown>)["automation"] as Record<string, unknown>)
+    : {};
+  const rawPromoDiscount = Number(rawAutomation["promoDiscountPercent"]);
+  const automation: LinkHubAutomationConfig = {
+    autoScheduleEnabled:
+      typeof rawAutomation["autoScheduleEnabled"] === "boolean"
+        ? (rawAutomation["autoScheduleEnabled"] as boolean)
+        : base.automation.autoScheduleEnabled,
+    openTime: safeText(rawAutomation["openTime"]) || base.automation.openTime,
+    closeTime: safeText(rawAutomation["closeTime"]) || base.automation.closeTime,
+    hideOutOfStock:
+      typeof rawAutomation["hideOutOfStock"] === "boolean"
+        ? (rawAutomation["hideOutOfStock"] as boolean)
+        : base.automation.hideOutOfStock,
+    promoEnabled:
+      typeof rawAutomation["promoEnabled"] === "boolean"
+        ? (rawAutomation["promoEnabled"] as boolean)
+        : base.automation.promoEnabled,
+    promoStart: safeText(rawAutomation["promoStart"]) || base.automation.promoStart,
+    promoEnd: safeText(rawAutomation["promoEnd"]) || base.automation.promoEnd,
+    promoDiscountPercent: Number.isFinite(rawPromoDiscount)
+      ? Math.max(0, Math.min(90, Math.round(rawPromoDiscount)))
+      : base.automation.promoDiscountPercent,
+    promoLabel: safeText(rawAutomation["promoLabel"]) || base.automation.promoLabel,
+  };
+
   const defaultPlans = createDefaultPricingPlans();
   const rawPricing: Record<string, unknown> = isRecord(input.pricing) ? input.pricing : {};
   const rawPlans = Array.isArray(rawPricing["plans"]) ? rawPricing["plans"] : [];
@@ -1546,6 +1604,7 @@ export function normalizeLinkHubProfile(
     proFeaturesUnlocked: Boolean((input as Record<string, unknown>)["proFeaturesUnlocked"]),
     location,
     reservation,
+    automation,
     pricing: {
       enabled: typeof rawPricing["enabled"] === "boolean" ? (rawPricing["enabled"] as boolean) : base.pricing.enabled,
       title: safeText(rawPricing["title"]) || base.pricing.title,

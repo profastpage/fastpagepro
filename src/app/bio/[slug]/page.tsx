@@ -289,6 +289,51 @@ function resolveEtaMinutes(scheduleLines: string[]): number {
   return Number.isFinite(value) ? value : 25;
 }
 
+function parseClockToMinutes(value: string): number | null {
+  const text = String(value || "").trim();
+  const match = text.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return hour * 60 + minute;
+}
+
+function isNowInsideTimeRange(startTime: string, endTime: string, now = new Date()): boolean {
+  const start = parseClockToMinutes(startTime);
+  const end = parseClockToMinutes(endTime);
+  if (start == null || end == null) return false;
+  const current = now.getHours() * 60 + now.getMinutes();
+  if (start === end) return true;
+  if (start < end) {
+    return current >= start && current <= end;
+  }
+  return current >= start || current <= end;
+}
+
+function postLinkHubMetric(payload: Record<string, unknown>) {
+  try {
+    const body = JSON.stringify({
+      ...payload,
+      ts: Date.now(),
+    });
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon("/api/linkhub/metrics/event", blob);
+      return;
+    }
+    fetch("/api/linkhub/metrics/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    // no-op for analytics
+  }
+}
+
 export default function PublicBioPage() {
   const params = useParams<{ slug: string }>();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
@@ -366,7 +411,19 @@ export default function PublicBioPage() {
   }, [slug]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  const catalogItems = profile?.catalogItems ?? [];
+  const automationConfig = profile?.automation;
+  const hideOutOfStockEnabled = Boolean(profile?.proFeaturesUnlocked && automationConfig?.hideOutOfStock);
+  const promoActive = Boolean(
+    profile?.proFeaturesUnlocked &&
+      automationConfig?.promoEnabled &&
+      isNowInsideTimeRange(automationConfig?.promoStart || "", automationConfig?.promoEnd || ""),
+  );
+  const promoDiscountRate = promoActive
+    ? Math.max(0, Math.min(0.9, Number(automationConfig?.promoDiscountPercent || 0) / 100))
+    : 0;
+  const catalogItems = (profile?.catalogItems ?? []).filter((item) =>
+    hideOutOfStockEnabled ? !item.outOfStock : true,
+  );
   const categorySections = (profile?.catalogCategories ?? [])
     .map((category) => {
       const items = catalogItems.filter((item) => {
@@ -453,6 +510,15 @@ export default function PublicBioPage() {
       setActiveTab("contact");
     }
   }, [activeTab, profile?.reservation?.enabled]);
+
+  useEffect(() => {
+    if (!profile?.slug) return;
+    postLinkHubMetric({
+      eventType: "page_view",
+      ownerUserId: profile.userId,
+      slug: profile.slug,
+    });
+  }, [profile?.slug, profile?.userId]);
 
   useEffect(() => {
     if (!profile?.reservation?.enabled) {
@@ -579,7 +645,15 @@ export default function PublicBioPage() {
   const cartTotal = Math.max(0, cartSubtotal - autoDiscount - couponDiscount);
   const amountToAutoDiscount = Math.max(0, AUTO_DISCOUNT_THRESHOLD - cartSubtotal);
   const whatsappTargetDigits = (profile.whatsappNumber || profile.phoneNumber).replace(/\D/g, "");
-  const isRestaurantOpen = resolveRestaurantOpen(profile.location.scheduleLines);
+  const autoScheduleOpen = Boolean(
+    profile.proFeaturesUnlocked &&
+      profile.automation?.autoScheduleEnabled &&
+      isNowInsideTimeRange(profile.automation.openTime, profile.automation.closeTime),
+  );
+  const isRestaurantOpen =
+    profile.proFeaturesUnlocked && profile.automation?.autoScheduleEnabled
+      ? autoScheduleOpen
+      : resolveRestaurantOpen(profile.location.scheduleLines);
   const etaMinutes = resolveEtaMinutes(profile.location.scheduleLines);
 
   const deliveryLabelMap: Record<DeliveryMethod, string> = {
@@ -640,6 +714,11 @@ export default function PublicBioPage() {
       return;
     }
     if (whatsappHref) {
+      postLinkHubMetric({
+        eventType: "contact_whatsapp_click",
+        ownerUserId: profile?.userId || "",
+        slug: profile?.slug || slug,
+      });
       window.open(whatsappHref, "_blank", "noopener,noreferrer");
     } else {
       setActiveTab("contact");
@@ -671,7 +750,11 @@ export default function PublicBioPage() {
     item: LinkHubProfile["catalogItems"][number],
     categoryName: string,
   ) {
-    const unitPrice = parsePriceToNumber(item.price || "0");
+    const basePrice = parsePriceToNumber(item.price || "0");
+    const unitPrice = promoDiscountRate > 0
+      ? Math.max(0, basePrice * (1 - promoDiscountRate))
+      : basePrice;
+    const normalizedPriceLabel = unitPrice > 0 ? unitPrice.toFixed(2) : item.price || "0.00";
     const selectedImage =
       (proFeaturesEnabled
         ? (item.galleryImageUrls || []).find((url) => String(url || "").trim().length > 0)
@@ -682,10 +765,20 @@ export default function PublicBioPage() {
         title: item.title || "Producto",
         imageUrl: selectedImage,
         categoryName,
-        priceLabel: item.price || "0.00",
+        priceLabel: normalizedPriceLabel,
         unitPrice,
       }),
     );
+    postLinkHubMetric({
+      eventType: "cart_add",
+      ownerUserId: profile?.userId || "",
+      slug: profile?.slug || slug,
+      itemId: item.id,
+      itemTitle: item.title || "Producto",
+      categoryId: item.categoryId,
+      categoryName,
+      quantity: 1,
+    });
     setCartFeedback(`"${item.title || "Producto"}" agregado al pedido.`);
     setCartError("");
     window.setTimeout(() => setCartFeedback(""), 1400);
@@ -809,6 +902,19 @@ export default function PublicBioPage() {
     }
 
     const text = buildWhatsappOrderMessage();
+    postLinkHubMetric({
+      eventType: "order_whatsapp",
+      ownerUserId: profile?.userId || "",
+      slug: profile?.slug || slug,
+      totalAmount: cartTotal,
+      items: cartItems.map((item) => ({
+        categoryId: (profile?.catalogItems || []).find((entry) => entry.id === item.id)?.categoryId || "",
+        itemId: item.id,
+        itemTitle: item.title,
+        categoryName: item.categoryName,
+        quantity: item.quantity,
+      })),
+    });
     const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank", "noopener,noreferrer");
     setCartError("");
@@ -869,6 +975,12 @@ export default function PublicBioPage() {
       .filter(Boolean)
       .join("\n");
 
+    postLinkHubMetric({
+      eventType: "reservation_whatsapp",
+      ownerUserId: profile?.userId || "",
+      slug: profile?.slug || slug,
+      quantity: guests,
+    });
     const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(lines)}`;
     window.open(url, "_blank", "noopener,noreferrer");
     setReservationError("");
@@ -898,6 +1010,14 @@ export default function PublicBioPage() {
 
   function scrollToCategory(categoryId: string) {
     setSelectedCategoryId(categoryId);
+    const categoryMeta = categorySections.find((entry) => entry.id === categoryId);
+    postLinkHubMetric({
+      eventType: "category_view",
+      ownerUserId: profile?.userId || "",
+      slug: profile?.slug || slug,
+      categoryId,
+      categoryName: categoryMeta?.name || "Categoria",
+    });
     const container = catalogScrollRef.current;
     const target = categorySectionRefs.current[categoryId];
     if (!container || !target) return;
@@ -1291,6 +1411,11 @@ export default function PublicBioPage() {
               {profile.businessType === "restaurant" ? (
                 <RestaurantStatusChip isOpen={isRestaurantOpen} etaMinutes={etaMinutes} className="mt-3" />
               ) : null}
+              {promoDiscountRate > 0 ? (
+                <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
+                  {profile.automation?.promoLabel || "Promo activa"}: -{Math.round(promoDiscountRate * 100)}% en franja horaria
+                </p>
+              ) : null}
               {profile.bio && (
                 <p className="mt-3 text-sm md:text-base" style={{ color: textPalette.muted }}>
                   {renderBioWithGoldKeywords(profile.bio)}
@@ -1354,6 +1479,13 @@ export default function PublicBioPage() {
                     href={whatsappHref}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={() => {
+                      postLinkHubMetric({
+                        eventType: "contact_whatsapp_click",
+                        ownerUserId: profile.userId,
+                        slug: profile.slug,
+                      });
+                    }}
                     className={`flex w-full min-h-12 items-center justify-center gap-2 border px-4 py-3 text-center font-bold transition hover:-translate-y-0.5 active:scale-[0.98] md:min-h-[3.25rem] ${!callHref ? "md:col-span-2" : ""} ${buttonRadiusClass}`}
                     style={contactActionStyle}
                   >
@@ -1479,33 +1611,45 @@ export default function PublicBioPage() {
                         {section.name}
                       </h3>
                       <div className="mt-3 space-y-3">
-                        {section.items.map((item) => (
-                          <ProductCard
-                            key={item.id}
-                            className={cardClass}
-                            title={item.title}
-                            description={item.description}
-                            salesCopy={proFeaturesEnabled ? item.salesCopy : undefined}
-                            imageUrl={item.imageUrl}
-                            galleryImageUrls={proFeaturesEnabled ? item.galleryImageUrls : []}
-                            oldPrice={
-                              item.compareAtPrice ||
-                              (() => {
-                                const numericPrice = parsePriceToNumber(item.price || "0");
-                                if (!numericPrice) return undefined;
-                                return (numericPrice * 1.2).toFixed(2);
-                              })()
-                            }
-                            price={item.price || "0.00"}
-                            badge={item.badge || undefined}
-                            priorityBadge={resolvePriorityBadge(item.badge)}
-                            emojiFallback={item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
-                            onAdd={() => addItemToCart(item, section.name)}
-                            quantity={cartQtyById.get(item.id) || 0}
-                            onIncrement={() => addItemToCart(item, section.name)}
-                            onDecrement={() => patchCartItemQuantity(item.id, (cartQtyById.get(item.id) || 0) - 1)}
-                          />
-                        ))}
+                        {section.items.map((item) => {
+                          const basePrice = parsePriceToNumber(item.price || "0");
+                          const discountedPrice = promoDiscountRate > 0
+                            ? Math.max(0, basePrice * (1 - promoDiscountRate))
+                            : basePrice;
+                          const displayPrice = discountedPrice > 0 ? discountedPrice.toFixed(2) : item.price || "0.00";
+                          const displayOldPrice =
+                            promoDiscountRate > 0 && basePrice > 0
+                              ? basePrice.toFixed(2)
+                              : item.compareAtPrice ||
+                                (() => {
+                                  if (!basePrice) return undefined;
+                                  return (basePrice * 1.2).toFixed(2);
+                                })();
+                          const promoBadge =
+                            promoDiscountRate > 0
+                              ? `${profile.automation?.promoLabel || "Promo"} -${Math.round(promoDiscountRate * 100)}%`
+                              : "";
+                          return (
+                            <ProductCard
+                              key={item.id}
+                              className={cardClass}
+                              title={item.title}
+                              description={item.description}
+                              salesCopy={proFeaturesEnabled ? item.salesCopy : undefined}
+                              imageUrl={item.imageUrl}
+                              galleryImageUrls={proFeaturesEnabled ? item.galleryImageUrls : []}
+                              oldPrice={displayOldPrice}
+                              price={displayPrice}
+                              badge={(promoBadge || item.badge || "").trim() || undefined}
+                              priorityBadge={resolvePriorityBadge((promoBadge || item.badge || "").trim())}
+                              emojiFallback={item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
+                              onAdd={() => addItemToCart(item, section.name)}
+                              quantity={cartQtyById.get(item.id) || 0}
+                              onIncrement={() => addItemToCart(item, section.name)}
+                              onDecrement={() => patchCartItemQuantity(item.id, (cartQtyById.get(item.id) || 0) - 1)}
+                            />
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
