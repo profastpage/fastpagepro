@@ -96,6 +96,14 @@ import {
 } from "lucide-react";
 
 type SaveMode = "draft" | "publish";
+type EditorSectionKey =
+  | "identity"
+  | "bioLinks"
+  | "catalog"
+  | "pro"
+  | "location"
+  | "reservation"
+  | "themes";
 
 const LINK_TYPE_OPTIONS: Array<{ value: LinkHubLinkType; label: string }> = [
   { value: "website", label: "Website" },
@@ -468,6 +476,7 @@ export default function LinkHubPage() {
   const [previewTab, setPreviewTab] = useState<"contact" | "catalog" | "location" | "reservation">("catalog");
   const [editorItemSearch, setEditorItemSearch] = useState("");
   const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
+  const [mobileEditorSection, setMobileEditorSection] = useState<EditorSectionKey>("identity");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const descriptionSeedRef = useRef<number>(Date.now());
   const [demoSlugIntent, setDemoSlugIntent] = useState("");
@@ -946,6 +955,20 @@ export default function LinkHubPage() {
     [profile?.catalogCategories],
   );
   const previewVisibleItems = useMemo(() => previewItems.slice(0, 4), [previewItems]);
+  const previewNormalizedLocation = useMemo(
+    () =>
+      normalizeGoogleMapsLocationInput(
+        profile?.location.mapEmbedUrl || "",
+        profile?.location.mapsUrl || "",
+        profile?.location.address || "",
+      ),
+    [profile?.location.address, profile?.location.mapEmbedUrl, profile?.location.mapsUrl],
+  );
+  const previewContactPhone = useMemo(() => normalizePhone(profile?.phoneNumber || ""), [profile?.phoneNumber]);
+  const previewContactWhatsappDigits = useMemo(
+    () => normalizeDigits(profile?.whatsappNumber || profile?.phoneNumber || ""),
+    [profile?.phoneNumber, profile?.whatsappNumber],
+  );
 
   useEffect(() => {
     if (previewReservationEnabled) return;
@@ -961,9 +984,7 @@ export default function LinkHubPage() {
     });
   }
 
-  function scrollToEditorSection(
-    section: "identity" | "bioLinks" | "catalog" | "pro" | "location" | "reservation" | "themes",
-  ) {
+  function scrollToEditorSection(section: EditorSectionKey) {
     const refs = {
       identity: identitySectionRef.current,
       bioLinks: bioLinksSectionRef.current,
@@ -973,7 +994,14 @@ export default function LinkHubPage() {
       reservation: reservationSectionRef.current,
       themes: themesSectionRef.current,
     };
-    refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobileEditorSection(section);
+      requestAnimationFrame(() => {
+        refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } else {
+      refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
     setMobileEditMenuOpen(false);
   }
 
@@ -2264,35 +2292,77 @@ export default function LinkHubPage() {
       <div className="fixed inset-x-0 top-16 z-40 px-4 md:hidden">
         <div className="mx-auto w-full max-w-md">
           <div className="rounded-3xl border border-white/10 bg-zinc-950/90 p-3 backdrop-blur-xl">
-            <div className="flex flex-row-reverse items-center justify-end gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-row-reverse items-center gap-2">
+                <button
+                  onClick={() => saveProfile("draft")}
+                  disabled={isSaving}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-sm font-bold text-white"
+                  title="Guardar borrador"
+                  aria-label="Guardar borrador"
+                >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={() => saveProfile("publish")}
+                  disabled={isSaving}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-sm font-bold text-emerald-100"
+                  title="Publicar Carta Digital"
+                  aria-label="Publicar Carta Digital"
+                >
+                  {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
+                </button>
+                <button
+                  onClick={copyPublicUrl}
+                  disabled={!publicUrl}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-300/40 bg-sky-400/10 text-sm font-bold text-sky-100 disabled:opacity-50"
+                  title="Copiar URL"
+                  aria-label="Copiar URL"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
               <button
-                onClick={() => saveProfile("draft")}
-                disabled={isSaving}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-sm font-bold text-white"
-                title="Guardar borrador"
-                aria-label="Guardar borrador"
+                type="button"
+                onClick={() => setMobileEditMenuOpen((current) => !current)}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-400/15 px-3 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100"
               >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={() => saveProfile("publish")}
-                disabled={isSaving}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-sm font-bold text-emerald-100"
-                title="Publicar Carta Digital"
-                aria-label="Publicar Carta Digital"
-              >
-                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
-              </button>
-              <button
-                onClick={copyPublicUrl}
-                disabled={!publicUrl}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-300/40 bg-sky-400/10 text-sm font-bold text-sky-100 disabled:opacity-50"
-                title="Copiar URL"
-                aria-label="Copiar URL"
-              >
-                <Copy className="w-4 h-4" />
+                <Sparkles className="h-3.5 w-3.5" />
+                Edicion
               </button>
             </div>
+            {mobileEditMenuOpen ? (
+              <div className="mt-2 space-y-1.5 rounded-2xl border border-white/15 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur-xl">
+                <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                  <Store className="h-3.5 w-3.5" />
+                  Identidad de negocio
+                </button>
+                <button type="button" onClick={() => scrollToEditorSection("bioLinks")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  BIO y enlaces
+                </button>
+                <button type="button" onClick={() => scrollToEditorSection("catalog")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                  <Fish className="h-3.5 w-3.5" />
+                  Carta digital
+                </button>
+                <button type="button" onClick={() => scrollToEditorSection("pro")} className="flex w-full items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold text-amber-100">
+                  <Lock className="h-3.5 w-3.5" />
+                  Funciones PRO
+                </button>
+                <button type="button" onClick={() => scrollToEditorSection("location")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Ubicacion
+                </button>
+                <button type="button" onClick={() => scrollToEditorSection("reservation")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-3 py-2 text-[11px] font-bold text-emerald-100">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  Reserva
+                </button>
+                <button type="button" onClick={() => scrollToEditorSection("themes")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                  <Palette className="h-3.5 w-3.5" />
+                  Temas
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
@@ -2338,7 +2408,12 @@ export default function LinkHubPage() {
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,560px)]">
           <section className="min-w-0 space-y-6 pt-[31.5rem] md:pt-0">
-            <div ref={identitySectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div
+              ref={identitySectionRef}
+              className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
+                mobileEditorSection !== "identity" ? "hidden md:block" : ""
+              }`}
+            >
               <h2 className="text-xl font-bold text-white mb-5">Identidad del Negocio</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-2">
@@ -2509,7 +2584,12 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div ref={bioLinksSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div
+              ref={bioLinksSectionRef}
+              className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
+                mobileEditorSection !== "bioLinks" ? "hidden md:block" : ""
+              }`}
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Telefono</span>
@@ -2607,7 +2687,12 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div ref={catalogSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div
+              ref={catalogSectionRef}
+              className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
+                mobileEditorSection !== "catalog" ? "hidden md:block" : ""
+              }`}
+            >
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold text-white">
                   {profile.businessType === "restaurant" ? "Carta" : "Catalogo"} digital
@@ -2963,7 +3048,12 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div ref={proSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div
+              ref={proSectionRef}
+              className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
+                mobileEditorSection !== "pro" ? "hidden md:block" : ""
+              }`}
+            >
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xl font-bold text-white">Funciones PRO para vender mas</h2>
                 <span
@@ -3056,7 +3146,12 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div ref={locationSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div
+              ref={locationSectionRef}
+              className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
+                mobileEditorSection !== "location" ? "hidden md:block" : ""
+              }`}
+            >
               <h2 className="text-xl font-bold text-white mb-5">Ubicacion</h2>
               <div className="grid grid-cols-1 gap-4">
                 <label className="space-y-2">
@@ -3109,7 +3204,12 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div ref={reservationSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div
+              ref={reservationSectionRef}
+              className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
+                mobileEditorSection !== "reservation" ? "hidden md:block" : ""
+              }`}
+            >
               <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold text-white">Reservas (Business/Pro)</h2>
@@ -3255,7 +3355,12 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div ref={themesSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div
+              ref={themesSectionRef}
+              className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
+                mobileEditorSection !== "themes" ? "hidden md:block" : ""
+              }`}
+            >
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-white">
                   {isRestaurantProfile ? "Temas oficiales · Carta Digital" : "Tema visual deluxe"}
@@ -3609,53 +3714,9 @@ export default function LinkHubPage() {
           </section>
 
           <aside className="fixed inset-x-0 top-[7.55rem] z-30 min-w-0 px-3 md:static md:px-0 xl:h-fit xl:sticky xl:top-28 xl:w-[560px] xl:justify-self-end">
-            <div className="pointer-events-none absolute right-5 top-2 z-50 md:hidden">
-              <div className="pointer-events-auto flex flex-col items-end gap-2">
-                {mobileEditMenuOpen ? (
-                  <div className="space-y-1.5 rounded-2xl border border-white/15 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur-xl">
-                    <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                      <Store className="h-3.5 w-3.5" />
-                      Identidad de negocio
-                    </button>
-                    <button type="button" onClick={() => scrollToEditorSection("bioLinks")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      BIO y enlaces
-                    </button>
-                    <button type="button" onClick={() => scrollToEditorSection("catalog")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                      <Fish className="h-3.5 w-3.5" />
-                      Carta digital
-                    </button>
-                    <button type="button" onClick={() => scrollToEditorSection("pro")} className="flex w-full items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold text-amber-100">
-                      <Lock className="h-3.5 w-3.5" />
-                      Funciones PRO
-                    </button>
-                    <button type="button" onClick={() => scrollToEditorSection("location")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                      <MapPin className="h-3.5 w-3.5" />
-                      Ubicacion
-                    </button>
-                    <button type="button" onClick={() => scrollToEditorSection("reservation")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-3 py-2 text-[11px] font-bold text-emerald-100">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      Reserva
-                    </button>
-                    <button type="button" onClick={() => scrollToEditorSection("themes")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                      <Palette className="h-3.5 w-3.5" />
-                      Temas
-                    </button>
-                  </div>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => setMobileEditMenuOpen((current) => !current)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/15 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Edicion
-                </button>
-              </div>
-            </div>
             <div className="md:flex md:items-start md:justify-end md:gap-3">
-            <div className="mx-auto w-full max-w-[420px] rounded-[2rem] border p-3.5 xl:p-3" style={previewShellStyle}>
-              <div className="overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
+            <div className="mx-auto w-full max-w-[450px] rounded-[2rem] border p-3.5 xl:max-w-[560px] xl:p-3" style={previewShellStyle}>
+              <div className="flex min-h-[31rem] flex-col overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
                 <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: previewTextMuted }}>
                   Preview Mobile
                 </p>
@@ -3789,15 +3850,30 @@ export default function LinkHubPage() {
                               </div>
                             )}
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-[13px] font-extrabold" style={{ color: previewTextBase }}>
-                                {item.title || "Producto"}
-                              </p>
-                              <p className="line-clamp-1 text-[11px]" style={{ color: previewTextMuted }}>
-                                {item.salesCopy || item.description || "Descripcion comercial"}
-                              </p>
-                              <p className="mt-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
-                                S/{item.price || "0.00"}
-                              </p>
+                              <input
+                                value={item.title}
+                                onChange={(event) => patchCatalogItem(item.id, { title: event.target.value })}
+                                placeholder="Nombre del item"
+                                className="w-full truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[13px] font-extrabold focus:border-[var(--carta-input-border)] focus:outline-none"
+                                style={{ color: previewTextBase }}
+                              />
+                              <input
+                                value={item.description}
+                                onChange={(event) => patchCatalogItem(item.id, { description: event.target.value })}
+                                placeholder="Descripcion comercial"
+                                className="mt-0.5 w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[11px] focus:border-[var(--carta-input-border)] focus:outline-none"
+                                style={{ color: previewTextMuted }}
+                              />
+                              <div className="mt-1 flex items-center gap-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
+                                <span>S/</span>
+                                <input
+                                  value={item.price}
+                                  onChange={(event) => patchCatalogItem(item.id, { price: event.target.value })}
+                                  placeholder="0.00"
+                                  className="w-20 rounded-md border border-transparent bg-transparent px-1 py-0.5 focus:border-[var(--carta-input-border)] focus:outline-none"
+                                  style={{ color: activeCartaTheme.tokens.primary }}
+                                />
+                              </div>
                               <label className="mt-1 inline-flex cursor-pointer items-center gap-1 rounded-md border border-sky-300/40 bg-sky-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-sky-100">
                                 <Upload className="h-3 w-3" />
                                 Foto
@@ -3825,29 +3901,134 @@ export default function LinkHubPage() {
                     )}
                   </div>
                 ) : previewTab === "contact" ? (
-                  <div className="px-4 pb-3">
+                  <div className="space-y-3 px-4 pb-3">
                     <article className="rounded-[0.95rem] border p-3" style={previewItemCardStyle}>
                       <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
-                        Contacto
+                        {profile.sectionLabels.contact}
                       </p>
-                      <p className="mt-2 text-[11px]" style={{ color: previewTextMuted }}>
-                        {profile.bio || "Atiende clientes directo desde tu canal favorito."}
-                      </p>
+                      <textarea
+                        rows={3}
+                        value={profile.bio}
+                        onChange={(event) => patchProfile("bio", event.target.value)}
+                        placeholder="Describe brevemente lo que ofreces."
+                        className="mt-2 w-full resize-none rounded-lg border border-transparent bg-transparent px-1 py-1 text-[11px] focus:border-[var(--carta-input-border)] focus:outline-none"
+                        style={{ color: previewTextMuted }}
+                      />
                     </article>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-[0.8rem] border px-2 py-2 text-[10px] font-bold uppercase" style={previewChipBaseStyle}>
+                        <Upload className="h-3.5 w-3.5" />
+                        Portada
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleCoverUpload}
+                          className="hidden"
+                          disabled={isUploadingCover}
+                        />
+                      </label>
+                      <label className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-[0.8rem] border px-2 py-2 text-[10px] font-bold uppercase" style={previewChipBaseStyle}>
+                        <Upload className="h-3.5 w-3.5" />
+                        Perfil
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                          disabled={isUploadingAvatar}
+                        />
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <a
+                        href={previewContactPhone ? `tel:${previewContactPhone}` : "#"}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-[0.85rem] border text-[11px] font-bold"
+                        style={previewChipActiveStyle}
+                        onClick={(event) => {
+                          if (!previewContactPhone) event.preventDefault();
+                        }}
+                      >
+                        <Phone className="h-3.5 w-3.5" />
+                        Llamar ahora
+                      </a>
+                      <a
+                        href={previewContactWhatsappDigits ? `https://wa.me/${previewContactWhatsappDigits}` : "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-[0.85rem] border text-[11px] font-bold"
+                        style={previewChipActiveStyle}
+                        onClick={(event) => {
+                          if (!previewContactWhatsappDigits) event.preventDefault();
+                        }}
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Escribir ahora
+                      </a>
+                    </div>
                   </div>
                 ) : previewTab === "location" ? (
-                  <div className="px-4 pb-3">
-                    <article className="rounded-[0.95rem] border p-3" style={previewItemCardStyle}>
-                      <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
-                        Ubicacion
-                      </p>
-                      <p className="mt-2 text-[11px] font-semibold" style={{ color: previewTextBase }}>
-                        {profile.location.address || "Agrega direccion del negocio"}
-                      </p>
-                      <p className="mt-1 text-[11px]" style={{ color: previewTextMuted }}>
-                        {formatMultiline(profile.location.scheduleLines).split("\n")[0] || "Sin horario"}
-                      </p>
-                    </article>
+                  <div className="space-y-2 px-4 pb-3">
+                    <div className="overflow-hidden rounded-[0.95rem] border" style={previewItemCardStyle}>
+                      {previewNormalizedLocation.mapEmbedUrl ? (
+                        <iframe
+                          title={`Mapa de ${profile.displayName}`}
+                          src={previewNormalizedLocation.mapEmbedUrl}
+                          className="h-40 w-full"
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                        />
+                      ) : (
+                        <div className="flex h-40 w-full items-center justify-center px-4 text-center text-[11px]" style={{ color: previewTextMuted }}>
+                          Agrega enlace de Google Maps para mostrar el mapa.
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      value={profile.location.address}
+                      onChange={(event) => patchLocation("address", event.target.value)}
+                      placeholder="Direccion del negocio"
+                      className="w-full rounded-[0.85rem] border px-3 py-2 text-[12px] font-semibold focus:outline-none"
+                      style={previewSearchStyle}
+                    />
+                    <input
+                      value={profile.location.mapEmbedUrl}
+                      onChange={(event) => patchLocation("mapEmbedUrl", event.target.value)}
+                      placeholder="Google Maps embed o link"
+                      className="w-full rounded-[0.85rem] border px-3 py-2 text-[11px] focus:outline-none"
+                      style={previewSearchStyle}
+                    />
+                    <textarea
+                      rows={2}
+                      value={formatMultiline(profile.location.scheduleLines)}
+                      onChange={(event) => patchLocation("scheduleLines", parseMultiline(event.target.value))}
+                      placeholder="Horarios por linea"
+                      className="w-full resize-none rounded-[0.85rem] border px-3 py-2 text-[11px] focus:outline-none"
+                      style={previewSearchStyle}
+                    />
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                      <input
+                        value={profile.location.ctaLabel}
+                        onChange={(event) => patchLocation("ctaLabel", event.target.value)}
+                        placeholder="Texto boton"
+                        className="w-full rounded-[0.85rem] border px-3 py-2 text-[11px] focus:outline-none"
+                        style={previewSearchStyle}
+                      />
+                      <a
+                        href={previewNormalizedLocation.mapsUrl && isValidExternalUrl(previewNormalizedLocation.mapsUrl) ? previewNormalizedLocation.mapsUrl : "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center rounded-[0.85rem] border px-3 py-2 text-[11px] font-bold"
+                        style={previewChipActiveStyle}
+                        onClick={(event) => {
+                          if (!previewNormalizedLocation.mapsUrl || !isValidExternalUrl(previewNormalizedLocation.mapsUrl)) {
+                            event.preventDefault();
+                          }
+                        }}
+                      >
+                        {profile.location.ctaLabel || "Ir ahora"}
+                      </a>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2 px-4 pb-3">

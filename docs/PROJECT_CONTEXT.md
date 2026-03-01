@@ -1571,3 +1571,17 @@ o-scrollbar para evitar barra visible.
   - public pages show clearer paused-by-plan-expired messaging.
 - Fallback consistency:
   - degraded /api/subscription/current response now returns BUSINESS trial shape (not FREE), avoiding accidental downgrade UX during transient errors.
+## Carta Digital mobile editor dock + real tab preview editing (2026-03-01)
+
+- Route updated: /linkhub
+- Mobile toolbar:
+  - moved green "Edicion" button to top action bar (right side), aligned with copy/publish/save controls.
+  - submenu actions open editor sections inline in the same page flow (no route redirection).
+- Mobile section workflow:
+  - only one editor block is shown at a time on mobile (Identidad, BIO y enlaces, Carta, PRO, Ubicacion, Reserva, Temas).
+  - desktop keeps full multi-section layout.
+- Preview improvements:
+  - preview card enlarged and stabilized with a taller real-phone frame.
+  - Contacto tab now renders only contact content and supports inline editing (bio + quick image uploads + action buttons).
+  - Carta tab keeps only menu content and now allows inline item edits (title, description, price, item photo).
+  - Ubicacion tab now renders embedded Google Maps + inline editing for address, map link, schedules and CTA label.
