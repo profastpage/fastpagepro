@@ -102,6 +102,7 @@ import {
 
 type SaveMode = "draft" | "publish";
 type EditorSectionKey =
+  | "checklist"
   | "identity"
   | "bioLinks"
   | "catalog"
@@ -541,6 +542,7 @@ export default function LinkHubPage() {
   const reservationSectionRef = useRef<HTMLDivElement | null>(null);
   const themesSectionRef = useRef<HTMLDivElement | null>(null);
   const publishChecklistSectionRef = useRef<HTMLDivElement | null>(null);
+  const publishChecklistEditorSectionRef = useRef<HTMLDivElement | null>(null);
   const proTrialBannerRef = useRef<HTMLDivElement | null>(null);
   const mobileTopDockRef = useRef<HTMLDivElement | null>(null);
 
@@ -1171,7 +1173,12 @@ export default function LinkHubPage() {
   }
 
   function getEditorSectionElement(section: EditorSectionKey) {
+    const checklistTarget =
+      typeof window !== "undefined" && window.innerWidth < 768
+        ? publishChecklistEditorSectionRef.current || publishChecklistSectionRef.current
+        : publishChecklistSectionRef.current;
     const refs = {
+      checklist: checklistTarget,
       identity: identitySectionRef.current,
       bioLinks: bioLinksSectionRef.current,
       catalog: catalogSectionRef.current,
@@ -1215,23 +1222,11 @@ export default function LinkHubPage() {
   }
 
   function scrollToPublishChecklist() {
-    const checklistSection = publishChecklistSectionRef.current;
-    if (!checklistSection || typeof window === "undefined") return;
-    setMobileEditMenuMode("sections");
-    setMobileEditMenuOpen(false);
-
-    if (window.innerWidth < 768) {
-      const dockBottom = mobileTopDockRef.current?.getBoundingClientRect().bottom ?? 0;
-      const targetTop = checklistSection.getBoundingClientRect().top;
-      const absoluteTop = window.scrollY + targetTop - (dockBottom + 12);
-      window.scrollTo({ top: Math.max(0, absoluteTop), behavior: "smooth" });
-      return;
-    }
-
-    checklistSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollToEditorSection("checklist");
   }
 
   const mobileSectionLabelMap: Record<EditorSectionKey, string> = {
+    checklist: "Publica en 10 minutos",
     identity: "Identidad de negocio",
     bioLinks: "BIO y enlaces",
     catalog: "Carta digital",
@@ -2872,6 +2867,50 @@ export default function LinkHubPage() {
     }
   }
 
+  function renderPublishChecklistCard(containerClassName = "") {
+    return (
+      <div className={`${containerClassName} rounded-2xl border border-white/10 bg-zinc-950/65 p-4`}>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-black text-white">Publica en 10 minutos</p>
+            <p className="mt-1 text-xs text-zinc-300">
+              Checklist rapido para dejar tu carta lista y convertir mejor.
+            </p>
+          </div>
+          <span className="inline-flex items-center rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-100">
+            {checklistCompleted}/{publishChecklist.length} listo ({checklistPercent}%)
+          </span>
+        </div>
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-amber-300 transition-all"
+            style={{ width: `${Math.max(0, Math.min(100, checklistPercent))}%` }}
+          />
+        </div>
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {publishChecklist.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => scrollToEditorSection(item.section)}
+              className="inline-flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-left text-xs font-semibold text-zinc-100"
+            >
+              <span className="inline-flex items-center gap-2">
+                {item.completed ? (
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+                ) : (
+                  <Circle className="h-4 w-4 text-zinc-500" />
+                )}
+                {item.label}
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Ir</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (loading || isLoadingProfile) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -3037,44 +3076,8 @@ export default function LinkHubPage() {
               {planDaysRemaining}
             </span>
           </div>
-          <div ref={publishChecklistSectionRef} className="mt-4 rounded-2xl border border-white/10 bg-zinc-950/65 p-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-black text-white">Publica en 10 minutos</p>
-                <p className="mt-1 text-xs text-zinc-300">
-                  Checklist rapido para dejar tu carta lista y convertir mejor.
-                </p>
-              </div>
-              <span className="inline-flex items-center rounded-full border border-emerald-300/35 bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-100">
-                {checklistCompleted}/{publishChecklist.length} listo ({checklistPercent}%)
-              </span>
-            </div>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-amber-300 transition-all"
-                style={{ width: `${Math.max(0, Math.min(100, checklistPercent))}%` }}
-              />
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {publishChecklist.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => scrollToEditorSection(item.section)}
-                  className="inline-flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-left text-xs font-semibold text-zinc-100"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    {item.completed ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                    ) : (
-                      <Circle className="h-4 w-4 text-zinc-500" />
-                    )}
-                    {item.label}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-[0.12em] text-zinc-400">Ir</span>
-                </button>
-              ))}
-            </div>
+          <div ref={publishChecklistSectionRef}>
+            {renderPublishChecklistCard("mt-4")}
           </div>
         </div>
 
@@ -3143,6 +3146,13 @@ export default function LinkHubPage() {
               isMobileEditorOverlayActive ? "pt-[8.6rem]" : "pt-[31.5rem]"
             } ${!isMobileEditorOverlayActive ? "hidden md:block" : ""}`}
           >
+            <div
+              ref={publishChecklistEditorSectionRef}
+              className={`md:hidden ${mobileEditorSection !== "checklist" ? "hidden" : ""}`}
+            >
+              {renderMobileSectionBack("checklist")}
+              {renderPublishChecklistCard()}
+            </div>
             <div
               ref={identitySectionRef}
               className={`rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7 ${
