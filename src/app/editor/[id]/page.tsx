@@ -14,8 +14,9 @@ import {
   requestPublishTarget,
   type PublishTargetMode,
 } from "@/lib/subscription/publishClient";
-import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
+import { doc as firestoreDoc, getDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
+import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import PublishSuccessModal from "@/components/PublishSuccessModal";
 import {
   EditorProvider,
@@ -356,13 +357,33 @@ function EditorPageContent() {
         throw new Error("Debes iniciar sesion para guardar.");
       }
 
+      const now = Date.now();
       const savePayload: Record<string, any> = {
         id,
         html: updatedHtml,
         userId: session.uid,
-        updatedAt: Date.now()
+        updatedAt: now,
       };
-      await setDoc(firestoreDoc(db, "cloned_sites", id), savePayload, { merge: true });
+      await setDocWithVerification(
+        firestoreDoc(db, "cloned_sites", id),
+        savePayload,
+        { merge: true },
+        {
+          expectedUpdatedAt: now,
+          requiredFields: ["id", "userId"],
+          errorMessage: "No se pudo confirmar el guardado del proyecto en Firestore.",
+        },
+      );
+      try {
+        await saveEditorDraft({
+          projectId: id,
+          userId: session.uid,
+          projectType: "clone",
+          data: { html: updatedHtml },
+        });
+      } catch (syncError) {
+        console.warn("[Editor] Secondary draft sync failed:", syncError);
+      }
 
       setHtml(updatedHtml);
       setShowSaved(true);
@@ -427,17 +448,30 @@ function EditorPageContent() {
         ...(publishMode === "new" ? { createdAt: now } : {}),
       };
 
-      await setDoc(firestoreDoc(db, "cloned_sites", targetId), publishPayload, { merge: true });
+      await setDocWithVerification(
+        firestoreDoc(db, "cloned_sites", targetId),
+        publishPayload,
+        { merge: true },
+        {
+          expectedUpdatedAt: now,
+          requiredFields: ["id", "userId"],
+          errorMessage: "No se pudo confirmar la publicacion en Firestore.",
+        },
+      );
       setSiteAlreadyPublished(true);
 
-      await publishEditorDraft({
-        projectId: targetId,
-        userId: session.uid,
-        projectType: "clone",
-        data: { html: cleanHtml },
-        publishedUrl: `/preview/${targetId}`,
-      });
-      await ensureAnalyticsDocument(targetId);
+      try {
+        await publishEditorDraft({
+          projectId: targetId,
+          userId: session.uid,
+          projectType: "clone",
+          data: { html: cleanHtml },
+          publishedUrl: `/preview/${targetId}`,
+        });
+        await ensureAnalyticsDocument(targetId);
+      } catch (syncError) {
+        console.warn("[Editor] Secondary publish sync failed:", syncError);
+      }
 
       router.push(`/published?highlight=${targetId}&kind=site`);
     } catch (error: any) {

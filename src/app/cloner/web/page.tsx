@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, query, where } from "firebase/firestore";
+import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import { Globe, ArrowRight, AlertCircle, ExternalLink, Clock, Trash2, Edit3, Rocket, HelpCircle, BookOpen, ShieldCheck, Zap } from "lucide-react";
 import MobilePageBar from "@/components/MobilePageBar";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
@@ -108,7 +109,16 @@ export default function WebClonerPage() {
         status: "draft",
       };
 
-      await setDoc(doc(db, "cloned_sites", siteId), sitePayload);
+      await setDocWithVerification(
+        doc(db, "cloned_sites", siteId),
+        sitePayload,
+        { merge: true },
+        {
+          expectedUpdatedAt: Number(sitePayload.updatedAt || Date.now()),
+          requiredFields: ["id", "userId"],
+          errorMessage: "No se pudo confirmar el guardado del proyecto en Firestore.",
+        },
+      );
       router.push(`/editor/${siteId}`);
     } catch (e: any) {
       const msg = String(e?.message || "");

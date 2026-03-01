@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebase";
-import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
+import { doc as firestoreDoc, getDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
+import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import {
   assertCanPublishWithMode,
   confirmPublishSlot,
@@ -273,6 +274,8 @@ function BuilderEditorPage() {
   // Load from local storage
   useEffect(() => {
     if (!isClient) return;
+    const pinnedProjectId = localStorage.getItem("fastpage_builder_project_id");
+    if (pinnedProjectId) return;
     const saved = localStorage.getItem("fastpage_builder_draft");
     if (saved) {
       try {
@@ -476,36 +479,62 @@ function BuilderEditorPage() {
     };
     if (publishNow) payload.publishedAt = now;
 
-    await setDoc(firestoreDoc(db, "cloned_sites", projectId), payload, { merge: true });
+    await setDocWithVerification(
+      firestoreDoc(db, "cloned_sites", projectId),
+      payload,
+      { merge: true },
+      {
+        expectedUpdatedAt: now,
+        requiredFields: ["id", "userId"],
+        errorMessage: "No se pudo confirmar el guardado del proyecto en Firestore.",
+      },
+    );
     const snapshot: BuilderEditorSnapshot = {
       blocks,
       primaryColor,
       secondaryColor,
     };
+    let syncWarning: string | null = null;
 
     if (publishNow) {
-      await publishEditorDraft({
-        projectId,
-        userId: user.uid,
-        projectType: "builder",
-        data: snapshot,
-      });
-      await ensureAnalyticsDocument(projectId);
+      try {
+        await publishEditorDraft({
+          projectId,
+          userId: user.uid,
+          projectType: "builder",
+          data: snapshot,
+        });
+        await ensureAnalyticsDocument(projectId);
+      } catch (syncError) {
+        console.warn("[Builder] Secondary publish sync failed:", syncError);
+        syncWarning =
+          "Publicacion confirmada. No se pudo sincronizar metadata interna del editor, pero la landing si quedo publicada.";
+      }
     } else {
-      await saveEditorDraft({
-        projectId,
-        userId: user.uid,
-        projectType: "builder",
-        data: snapshot,
-      });
+      try {
+        await saveEditorDraft({
+          projectId,
+          userId: user.uid,
+          projectType: "builder",
+          data: snapshot,
+        });
+      } catch (syncError) {
+        console.warn("[Builder] Secondary draft sync failed:", syncError);
+        syncWarning =
+          "Guardado confirmado. No se pudo sincronizar metadata interna del editor, pero la landing si quedo guardada.";
+      }
     }
 
     if (builderProjectId !== projectId) {
       setBuilderProjectId(projectId);
       localStorage.setItem("fastpage_builder_project_id", projectId);
     }
+    localStorage.setItem("fastpage_builder_draft", JSON.stringify(blocks));
     setBuilderProjectPublished(persistedPublished);
     setProjectStatus("saved");
+    if (syncWarning) {
+      setProjectError(syncWarning);
+    }
     editor.markSaved(persistedPublished ? "published" : "draft");
     return projectId;
   };

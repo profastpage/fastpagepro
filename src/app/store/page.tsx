@@ -11,8 +11,9 @@ import {
   requestPublishTarget,
   type PublishTargetMode,
 } from "@/lib/subscription/publishClient";
-import { doc as firestoreDoc, getDoc, setDoc } from "firebase/firestore";
+import { doc as firestoreDoc, getDoc } from "firebase/firestore";
 import { injectMetricsTracking } from "@/lib/metricsTracking";
+import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import { resolveStoreSlug, sanitizeStoreSlug } from "@/lib/publicStorefront";
 import { getVisualStoreTheme, getVisualStoreVars } from "@/lib/storeVisualTheme";
 import { getThemesByVertical } from "@/lib/themes";
@@ -950,8 +951,8 @@ function StoreEditorPage() {
   const saveProject = async (
     publishNow: boolean,
     publishMode: PublishTargetMode = "existing",
-  ) => {
-    if (saving || publishing) return;
+  ): Promise<boolean> => {
+    if (saving || publishing) return false;
     publishNow ? setPublishing(true) : setSaving(true);
     setError(null);
     if (publishNow) setSyncWarning(null);
@@ -978,7 +979,7 @@ function StoreEditorPage() {
           mode: targetMode,
           alreadyPublished: targetMode === "existing" ? existingWasPublished : false,
         });
-        if (!confirmPublishSlot(quota)) return;
+        if (!confirmPublishSlot(quota)) return false;
       }
 
       const keepPublished = !publishNow && Boolean(existingId) && existingWasPublished;
@@ -1008,7 +1009,16 @@ function StoreEditorPage() {
       if (publishNow) payload.publishedAt = now;
 
       try {
-        await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
+        await setDocWithVerification(
+          firestoreDoc(db, "cloned_sites", id),
+          payload,
+          { merge: true },
+          {
+            expectedUpdatedAt: now,
+            requiredFields: ["id", "userId"],
+            errorMessage: "No se pudo confirmar el guardado de la tienda en Firestore.",
+          },
+        );
       } catch (writeError: any) {
         if (!(existingId && isPermissionDeniedError(writeError))) throw writeError;
         id = newId();
@@ -1025,25 +1035,47 @@ function StoreEditorPage() {
           createdAt: now,
           updatedAt: now,
         };
-        await setDoc(firestoreDoc(db, "cloned_sites", id), payload, { merge: true });
+        await setDocWithVerification(
+          firestoreDoc(db, "cloned_sites", id),
+          payload,
+          { merge: true },
+          {
+            expectedUpdatedAt: now,
+            requiredFields: ["id", "userId"],
+            errorMessage: "No se pudo confirmar el guardado de la tienda en Firestore.",
+          },
+        );
       }
       const snapshot: StoreEditorSnapshot = { config: nextConfig, products: nextProducts };
+      let editorSyncWarning: string | null = null;
       if (publishNow) {
-        await publishEditorDraft({
-          projectId: id,
-          userId: user.uid,
-          projectType: "store",
-          data: snapshot,
-          publishedUrl: `/t/${storeSlug}`,
-        });
-        await ensureAnalyticsDocument(id);
+        try {
+          await publishEditorDraft({
+            projectId: id,
+            userId: user.uid,
+            projectType: "store",
+            data: snapshot,
+            publishedUrl: `/t/${storeSlug}`,
+          });
+          await ensureAnalyticsDocument(id);
+        } catch (syncError) {
+          console.warn("[Store] Secondary publish sync failed:", syncError);
+          editorSyncWarning =
+            "Publicacion confirmada. No se pudo sincronizar metadata interna del editor; la tienda sigue publicada.";
+        }
       } else {
-        await saveEditorDraft({
-          projectId: id,
-          userId: user.uid,
-          projectType: "store",
-          data: snapshot,
-        });
+        try {
+          await saveEditorDraft({
+            projectId: id,
+            userId: user.uid,
+            projectType: "store",
+            data: snapshot,
+          });
+        } catch (syncError) {
+          console.warn("[Store] Secondary draft sync failed:", syncError);
+          editorSyncWarning =
+            "Guardado confirmado. No se pudo sincronizar metadata interna del editor, pero tu tienda si quedo guardada.";
+        }
       }
 
       if (projectId !== id) {
@@ -1053,6 +1085,8 @@ function StoreEditorPage() {
       }
       setProjectPublished(persistedPublished);
       if (config.storeSlug !== storeSlug) setConfig((prev) => ({ ...prev, storeSlug }));
+      if (editorSyncWarning) setSyncWarning(editorSyncWarning);
+      else setSyncWarning(null);
 
       setIsDirty(false);
       markSaved(persistedPublished ? "published" : "draft");
@@ -1061,6 +1095,7 @@ function StoreEditorPage() {
         setSavedToast(true);
         setTimeout(() => setSavedToast(false), 1300);
       }
+      return true;
     } catch (e: any) {
       if (!publishNow && isPermissionDeniedError(e)) {
         setSyncWarning(
@@ -1068,10 +1103,11 @@ function StoreEditorPage() {
         );
         setError(null);
         setEditorError(null);
-        return;
+        return false;
       }
       setError(e?.message || "No se pudo guardar.");
       setEditorError(e?.message || "No se pudo guardar.");
+      return false;
     } finally {
       setSaving(false);
       setPublishing(false);
@@ -1081,7 +1117,7 @@ function StoreEditorPage() {
   useAutosave<StoreEditorSnapshot>({
     enabled: Boolean(user?.uid) && !loadingProject && !syncWarning,
     onSave: async () => {
-      await saveProject(false);
+      return saveProject(false);
     },
     intervalMs: 30000,
   });

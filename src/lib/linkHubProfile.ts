@@ -6,9 +6,9 @@ import {
   getDocs,
   limit,
   query,
-  setDoc,
   where,
 } from "firebase/firestore";
+import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import {
   CartaThemeId,
   getSafeCartaThemeId,
@@ -1617,7 +1617,16 @@ export async function saveLinkHubProfileForUser(
     { uid: userId },
   );
 
-  await setDoc(profileRef, normalized, { merge: true });
+  await setDocWithVerification(
+    profileRef,
+    normalized,
+    { merge: true },
+    {
+      expectedUpdatedAt: Number(normalized.updatedAt || Date.now()),
+      requiredFields: ["userId", "slug"],
+      errorMessage: "No se pudo confirmar el guardado del perfil en Firestore.",
+    },
+  );
   return targetId;
 }
 

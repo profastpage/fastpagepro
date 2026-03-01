@@ -5,7 +5,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { doc } from "firebase/firestore";
+import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import { TemplateGenerator } from "@/lib/templateGenerator";
 import MobilePageBar from "@/components/MobilePageBar";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
@@ -418,19 +419,29 @@ export default function ClonerPage() {
         businessName: sub.title,
       });
 
-      await setDoc(doc(db, "cloned_sites", siteId), {
-        id: siteId,
-        html,
-        userId: user.uid,
-        category: selectedModel,
-        specialty: sub.id,
-        templateName: sub.title,
-        source: "template-model",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        published: false,
-        status: "draft",
-      });
+      const now = Date.now();
+      await setDocWithVerification(
+        doc(db, "cloned_sites", siteId),
+        {
+          id: siteId,
+          html,
+          userId: user.uid,
+          category: selectedModel,
+          specialty: sub.id,
+          templateName: sub.title,
+          source: "template-model",
+          createdAt: now,
+          updatedAt: now,
+          published: false,
+          status: "draft",
+        },
+        { merge: true },
+        {
+          expectedUpdatedAt: now,
+          requiredFields: ["id", "userId"],
+          errorMessage: "No se pudo confirmar la creacion de la plantilla en Firestore.",
+        },
+      );
 
       router.push(`/editor/${siteId}`);
     } catch (error: any) {

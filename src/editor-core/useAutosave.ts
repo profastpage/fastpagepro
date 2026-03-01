@@ -6,7 +6,9 @@ import type { EditorChangeKind, EditorState } from "@/editor-core/types";
 
 interface UseAutosaveOptions<TData = any> {
   enabled?: boolean;
-  onSave: (params: { state: EditorState<TData>; reason: "manual" | "debounced" }) => Promise<void>;
+  onSave: (
+    params: { state: EditorState<TData>; reason: "manual" | "debounced" },
+  ) => Promise<void | boolean>;
   debounceTextMs?: number;
   debounceImageMs?: number;
   debounceBulkMs?: number;
@@ -41,7 +43,11 @@ export function useAutosave<TData = any>(options: UseAutosaveOptions<TData>) {
       setStatus("saving");
       setError(null);
       try {
-        await options.onSave({ state: current, reason });
+        const saveResult = await options.onSave({ state: current, reason });
+        if (saveResult === false) {
+          setStatus("dirty");
+          return false;
+        }
         markSaved("draft");
         return true;
       } catch (error: any) {
