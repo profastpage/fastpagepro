@@ -491,6 +491,7 @@ export default function LinkHubPage() {
   const locationSectionRef = useRef<HTMLDivElement | null>(null);
   const reservationSectionRef = useRef<HTMLDivElement | null>(null);
   const themesSectionRef = useRef<HTMLDivElement | null>(null);
+  const mobileTopDockRef = useRef<HTMLDivElement | null>(null);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
   const isProPlan = activePlan === "PRO";
@@ -985,7 +986,7 @@ export default function LinkHubPage() {
     });
   }
 
-  function scrollToEditorSection(section: EditorSectionKey) {
+  function getEditorSectionElement(section: EditorSectionKey) {
     const refs = {
       identity: identitySectionRef.current,
       bioLinks: bioLinksSectionRef.current,
@@ -995,15 +996,36 @@ export default function LinkHubPage() {
       reservation: reservationSectionRef.current,
       themes: themesSectionRef.current,
     };
+    return refs[section];
+  }
+
+  function scrollEditorSectionToStart(section: EditorSectionKey) {
+    const targetSection = getEditorSectionElement(section);
+    if (!targetSection || typeof window === "undefined") return;
+
+    if (window.innerWidth < 768) {
+      const dockBottom = mobileTopDockRef.current?.getBoundingClientRect().bottom ?? 0;
+      const targetTop = targetSection.getBoundingClientRect().top;
+      const absoluteTop = window.scrollY + targetTop - (dockBottom + 12);
+      window.scrollTo({ top: Math.max(0, absoluteTop), behavior: "smooth" });
+      return;
+    }
+
+    targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function scrollToEditorSection(section: EditorSectionKey) {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       setMobileEditorSection(section);
       setMobileEditMenuOpen(true);
       setMobileEditMenuMode("editor");
       requestAnimationFrame(() => {
-        refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
+        requestAnimationFrame(() => {
+          scrollEditorSectionToStart(section);
+        });
       });
     } else {
-      refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      scrollEditorSectionToStart(section);
       setMobileEditMenuOpen(false);
     }
   }
@@ -2337,7 +2359,7 @@ export default function LinkHubPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground px-3 md:px-8 pt-40 md:pt-24 pb-16">
-      <div className="fixed inset-x-0 top-16 z-40 px-4 md:hidden">
+      <div ref={mobileTopDockRef} className="fixed inset-x-0 top-16 z-40 px-4 md:hidden">
         <div className="mx-auto w-full max-w-md">
           <div className="rounded-3xl border border-white/10 bg-zinc-950/90 p-3 backdrop-blur-xl">
             <div className="flex items-center justify-between gap-2">
