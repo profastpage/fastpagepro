@@ -1545,3 +1545,18 @@ o-scrollbar para evitar barra visible.
   - Foto extra ahora acepta carga multiple en una sola accion.
   - se agregan controles de reordenamiento izquierda/derecha para galeria de item.
   - se mantiene limite por item y validaciones de peso/tipo.
+## Carta Digital Reservations tab (2026-03-01)
+
+- Routes updated:
+  - private editor: /linkhub
+  - public page: /bio/[slug]
+- Optional submenu "Reserva" is now available from BUSINESS/PRO:
+  - editor config includes toggle, labels, hero image, slots and party size range.
+  - reservation tab label is editable.
+- Public page changes:
+  - desktop/mobile nav adds Reserva when enabled.
+  - reservation form captures name, people, date, slot, contact and note.
+  - submit opens WhatsApp of the business configured in Carta Digital.
+- Backward compatibility:
+  - legacy profiles auto-normalize with reservation disabled by default.
+  - Contacto/Carta/Ubicacion flow is preserved.

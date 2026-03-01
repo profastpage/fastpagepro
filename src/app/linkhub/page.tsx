@@ -60,6 +60,7 @@ import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -81,6 +82,7 @@ import {
   Search,
   Sparkles,
   Store,
+  Users,
   BadgeDollarSign,
   Trash2,
   Upload,
@@ -458,11 +460,12 @@ export default function LinkHubPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingReservationImage, setIsUploadingReservationImage] = useState(false);
   const [uploadingCatalogItemId, setUploadingCatalogItemId] = useState<string | null>(null);
   const [origin, setOrigin] = useState("");
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewCategoryId, setPreviewCategoryId] = useState("");
-  const [previewTab, setPreviewTab] = useState<"contact" | "catalog" | "location">("catalog");
+  const [previewTab, setPreviewTab] = useState<"contact" | "catalog" | "location" | "reservation">("catalog");
   const [editorItemSearch, setEditorItemSearch] = useState("");
   const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -476,10 +479,12 @@ export default function LinkHubPage() {
   const catalogSectionRef = useRef<HTMLDivElement | null>(null);
   const proSectionRef = useRef<HTMLDivElement | null>(null);
   const locationSectionRef = useRef<HTMLDivElement | null>(null);
+  const reservationSectionRef = useRef<HTMLDivElement | null>(null);
   const themesSectionRef = useRef<HTMLDivElement | null>(null);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
   const isProPlan = activePlan === "PRO";
+  const canUseReservations = activePlan === "BUSINESS" || activePlan === "PRO";
   const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
   const canCustomizeColors = Boolean(subscriptionSummary?.features?.advancedColorCustomization);
   const publishedProjectsLabel =
@@ -790,6 +795,8 @@ export default function LinkHubPage() {
   }, [activeThemeCategory]);
 
   const catalogLabel = profile?.sectionLabels.menu;
+  const reservationLabel = profile?.sectionLabels.reservation || "Reserva";
+  const previewReservationEnabled = Boolean(profile?.reservation?.enabled);
 
   const resolvedCartaThemeId = useMemo(() => {
     const rubroHint = profile?.categoryLabel || "Restaurante / Cafeteria";
@@ -940,6 +947,13 @@ export default function LinkHubPage() {
   );
   const previewVisibleItems = useMemo(() => previewItems.slice(0, 4), [previewItems]);
 
+  useEffect(() => {
+    if (previewReservationEnabled) return;
+    if (previewTab === "reservation") {
+      setPreviewTab("catalog");
+    }
+  }, [previewReservationEnabled, previewTab]);
+
   function patchProfile<K extends keyof LinkHubProfile>(field: K, value: LinkHubProfile[K]) {
     setProfile((prev) => {
       if (!prev) return prev;
@@ -948,7 +962,7 @@ export default function LinkHubPage() {
   }
 
   function scrollToEditorSection(
-    section: "identity" | "bioLinks" | "catalog" | "pro" | "location" | "themes",
+    section: "identity" | "bioLinks" | "catalog" | "pro" | "location" | "reservation" | "themes",
   ) {
     const refs = {
       identity: identitySectionRef.current,
@@ -956,6 +970,7 @@ export default function LinkHubPage() {
       catalog: catalogSectionRef.current,
       pro: proSectionRef.current,
       location: locationSectionRef.current,
+      reservation: reservationSectionRef.current,
       themes: themesSectionRef.current,
     };
     refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1290,6 +1305,22 @@ export default function LinkHubPage() {
             imageUrl: item.imageUrl || reordered[0] || "",
           };
         }),
+      };
+    });
+  }
+
+  function patchReservation<K extends keyof LinkHubProfile["reservation"]>(
+    field: K,
+    value: LinkHubProfile["reservation"][K],
+  ) {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        reservation: {
+          ...prev.reservation,
+          [field]: value,
+        },
       };
     });
   }
@@ -1731,6 +1762,39 @@ export default function LinkHubPage() {
     }
   }
 
+  async function handleReservationImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Selecciona una imagen valida para reservas." });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setMessage({ type: "error", text: "La imagen de reservas es muy pesada (max 10MB)." });
+      return;
+    }
+
+    setIsUploadingReservationImage(true);
+    try {
+      const optimized = await optimizeImageFile(file, {
+        maxSize: 1400,
+        quality: 0.88,
+        heavyQuality: 0.72,
+        heavyThreshold: 1_100_000,
+      });
+      patchReservation("heroImageUrl", optimized);
+      setMessage({ type: "success", text: "Imagen de reservas cargada correctamente." });
+    } catch (error) {
+      console.error("[LinkHub] Reservation image upload error:", error);
+      setMessage({ type: "error", text: "No se pudo procesar la imagen de reservas." });
+    } finally {
+      setIsUploadingReservationImage(false);
+    }
+  }
+
   async function handleCatalogItemGalleryUploadBatch(itemId: string, event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
@@ -1882,6 +1946,31 @@ export default function LinkHubPage() {
         quote: testimonial.quote.trim(),
         rating: Math.max(1, Math.min(5, Number(testimonial.rating) || 5)),
       }));
+    const cleanedReservationSlots = profile.reservation.slotOptions
+      .map((slot) => slot.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    const reservationMinParty = Math.max(1, Math.min(60, Math.round(Number(profile.reservation.minPartySize) || 1)));
+    const reservationMaxParty = Math.max(1, Math.min(60, Math.round(Number(profile.reservation.maxPartySize) || 12)));
+    const cleanedReservation = {
+      ...profile.reservation,
+      enabled: canUseReservations ? Boolean(profile.reservation.enabled) : false,
+      title: profile.reservation.title.trim() || "Reserva premium",
+      subtitle:
+        profile.reservation.subtitle.trim() ||
+        "Agenda tu mesa en segundos y recibe confirmacion por WhatsApp.",
+      heroImageUrl: profile.reservation.heroImageUrl.trim(),
+      slotOptions:
+        cleanedReservationSlots.length > 0
+          ? cleanedReservationSlots
+          : ["12:00 pm", "1:00 pm", "7:00 pm", "8:00 pm"],
+      minPartySize: Math.min(reservationMinParty, reservationMaxParty),
+      maxPartySize: Math.max(reservationMinParty, reservationMaxParty),
+      ctaLabel: profile.reservation.ctaLabel.trim() || "Enviar reserva",
+      notePlaceholder:
+        profile.reservation.notePlaceholder.trim() ||
+        "Ejemplo: celebracion, terraza o alergias alimentarias.",
+    };
 
     if (profile.pricing.enabled && cleanedPlans.some((plan) => !plan.title || !plan.price)) {
       setMessage({ type: "error", text: "Cada plan debe tener titulo y precio." });
@@ -2050,6 +2139,7 @@ export default function LinkHubPage() {
             ctaLabel: profile.location.ctaLabel.trim() || "Ir ahora",
             scheduleLines: profile.location.scheduleLines.map((line) => line.trim()).filter(Boolean),
           },
+          reservation: cleanedReservation,
           pricing: {
             ...profile.pricing,
             title: profile.pricing.title.trim() || "Carta Digital",
@@ -2214,7 +2304,7 @@ export default function LinkHubPage() {
             <PlanBadge plan={activePlan} />
           </div>
           <p className="mt-2 text-zinc-400 max-w-3xl">
-            Crea una landing mobile-first con 3 secciones: contacto, {catalogLabel?.toLowerCase()} y ubicacion.
+            Crea una landing mobile-first con contacto, {catalogLabel?.toLowerCase()}, ubicacion y reserva opcional (Business/Pro).
             Diseñada para mostrar tu carta con experiencia premium.
           </p>
           <div className="mt-4">
@@ -2402,6 +2492,18 @@ export default function LinkHubPage() {
                     value={profile.sectionLabels.location}
                     onChange={(event) => patchSectionLabel("location", event.target.value)}
                     placeholder="Ubicacion"
+                  />
+                </label>
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">
+                    Tab reserva (Business/Pro)
+                  </span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40 disabled:opacity-60"
+                    value={profile.sectionLabels.reservation}
+                    onChange={(event) => patchSectionLabel("reservation", event.target.value)}
+                    placeholder="Reserva"
+                    disabled={!canUseReservations}
                   />
                 </label>
               </div>
@@ -3007,6 +3109,152 @@ export default function LinkHubPage() {
               </div>
             </div>
 
+            <div ref={reservationSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Reservas (Business/Pro)</h2>
+                  <p className="mt-1 text-xs text-zinc-300">
+                    Agrega un cuarto submenu opcional para que el cliente reserve por WhatsApp.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => patchReservation("enabled", !profile.reservation.enabled)}
+                  disabled={!canUseReservations}
+                  className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold uppercase tracking-[0.12em] transition disabled:opacity-55 ${
+                    profile.reservation.enabled
+                      ? "border-emerald-300/45 bg-emerald-500/10 text-emerald-100"
+                      : "border-white/15 bg-white/5 text-zinc-200"
+                  }`}
+                >
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {profile.reservation.enabled ? "Reserva activa" : "Activar reserva"}
+                </button>
+              </div>
+
+              {!canUseReservations ? (
+                <p className="mb-4 rounded-xl border border-amber-300/35 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-100">
+                  Esta funcion se habilita desde el plan BUSINESS.
+                </p>
+              ) : null}
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Titulo reserva</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white disabled:opacity-60"
+                    value={profile.reservation.title}
+                    onChange={(event) => patchReservation("title", event.target.value)}
+                    placeholder="Reserva tu mesa"
+                    disabled={!canUseReservations}
+                  />
+                </label>
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Subtitulo</span>
+                  <textarea
+                    rows={2}
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white resize-none disabled:opacity-60"
+                    value={profile.reservation.subtitle}
+                    onChange={(event) => patchReservation("subtitle", event.target.value)}
+                    placeholder="Agenda tu reserva en segundos y te confirmamos por WhatsApp."
+                    disabled={!canUseReservations}
+                  />
+                </label>
+
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Imagen de portada reservas</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-sky-300/40 bg-sky-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-sky-100 disabled:opacity-60">
+                      {isUploadingReservationImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      Adjuntar
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleReservationImageUpload}
+                        className="hidden"
+                        disabled={!canUseReservations || isUploadingReservationImage}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => patchReservation("heroImageUrl", "")}
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-300/40 bg-red-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-red-100 disabled:opacity-60"
+                      disabled={!canUseReservations || !profile.reservation.heroImageUrl}
+                    >
+                      <X className="h-4 w-4" />
+                      Quitar
+                    </button>
+                  </div>
+                  {profile.reservation.heroImageUrl ? (
+                    <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                      <img src={profile.reservation.heroImageUrl} alt="Reserva" className="h-28 w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-white/20 px-4 py-4 text-xs text-zinc-400">
+                      Sin imagen. Puedes subir una foto tematica para potenciar conversion.
+                    </div>
+                  )}
+                </label>
+
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Min personas</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white disabled:opacity-60"
+                    value={profile.reservation.minPartySize}
+                    onChange={(event) => patchReservation("minPartySize", Number(event.target.value) || 1)}
+                    disabled={!canUseReservations}
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Max personas</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white disabled:opacity-60"
+                    value={profile.reservation.maxPartySize}
+                    onChange={(event) => patchReservation("maxPartySize", Number(event.target.value) || 12)}
+                    disabled={!canUseReservations}
+                  />
+                </label>
+
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Horarios disponibles (uno por linea)</span>
+                  <textarea
+                    rows={4}
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white resize-none disabled:opacity-60"
+                    value={formatMultiline(profile.reservation.slotOptions)}
+                    onChange={(event) => patchReservation("slotOptions", parseMultiline(event.target.value))}
+                    placeholder={"12:30 pm\n1:30 pm\n7:00 pm\n8:00 pm"}
+                    disabled={!canUseReservations}
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Texto boton</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white disabled:opacity-60"
+                    value={profile.reservation.ctaLabel}
+                    onChange={(event) => patchReservation("ctaLabel", event.target.value)}
+                    placeholder="Enviar reserva"
+                    disabled={!canUseReservations}
+                  />
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Hint de nota</span>
+                  <input
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white disabled:opacity-60"
+                    value={profile.reservation.notePlaceholder}
+                    onChange={(event) => patchReservation("notePlaceholder", event.target.value)}
+                    placeholder="Celebracion, terraza, alergias..."
+                    disabled={!canUseReservations}
+                  />
+                </label>
+              </div>
+            </div>
+
             <div ref={themesSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-white">
@@ -3385,6 +3633,10 @@ export default function LinkHubPage() {
                       <MapPin className="h-3.5 w-3.5" />
                       Ubicacion
                     </button>
+                    <button type="button" onClick={() => scrollToEditorSection("reservation")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-3 py-2 text-[11px] font-bold text-emerald-100">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Reserva
+                    </button>
                     <button type="button" onClick={() => scrollToEditorSection("themes")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <Palette className="h-3.5 w-3.5" />
                       Temas
@@ -3483,7 +3735,13 @@ export default function LinkHubPage() {
 
                 <div className="px-4 pb-2">
                   <p className="text-center text-xs font-black uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
-                    {previewTab === "catalog" ? (catalogLabel || "Carta") : previewTab === "contact" ? profile.sectionLabels.contact : profile.sectionLabels.location}
+                    {previewTab === "catalog"
+                      ? catalogLabel || "Carta"
+                      : previewTab === "contact"
+                        ? profile.sectionLabels.contact
+                        : previewTab === "location"
+                          ? profile.sectionLabels.location
+                          : reservationLabel}
                   </p>
                   {previewTab === "catalog" ? (
                     <>
@@ -3577,7 +3835,7 @@ export default function LinkHubPage() {
                       </p>
                     </article>
                   </div>
-                ) : (
+                ) : previewTab === "location" ? (
                   <div className="px-4 pb-3">
                     <article className="rounded-[0.95rem] border p-3" style={previewItemCardStyle}>
                       <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
@@ -3591,10 +3849,43 @@ export default function LinkHubPage() {
                       </p>
                     </article>
                   </div>
+                ) : (
+                  <div className="space-y-2 px-4 pb-3">
+                    <article className="overflow-hidden rounded-[0.95rem] border" style={previewItemCardStyle}>
+                      {profile.reservation.heroImageUrl ? (
+                        <img
+                          src={profile.reservation.heroImageUrl}
+                          alt="Reservas"
+                          className="h-24 w-full object-cover"
+                        />
+                      ) : null}
+                      <div className="space-y-2 p-3">
+                        <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
+                          {profile.reservation.title || "Reserva premium"}
+                        </p>
+                        <p className="text-[11px]" style={{ color: previewTextMuted }}>
+                          {profile.reservation.subtitle || "Agenda tu mesa por WhatsApp."}
+                        </p>
+                        <div className="rounded-[0.8rem] border px-2 py-1 text-[10px] font-bold" style={previewChipBaseStyle}>
+                          {profile.reservation.slotOptions[0] || "Sin horario"}
+                        </div>
+                        <div className="inline-flex items-center gap-1 rounded-[0.8rem] border px-2 py-1 text-[10px] font-bold" style={previewChipBaseStyle}>
+                          <Users className="h-3 w-3" />
+                          {profile.reservation.minPartySize}-{profile.reservation.maxPartySize} personas
+                        </div>
+                      </div>
+                    </article>
+                  </div>
                 )}
 
                 <div className="px-3 pb-3">
-                  <div className="grid grid-cols-3 gap-1 rounded-[1rem] border p-1" style={previewBottomNavStyle}>
+                  <div
+                    className="grid gap-1 rounded-[1rem] border p-1"
+                    style={{
+                      ...previewBottomNavStyle,
+                      gridTemplateColumns: `repeat(${previewReservationEnabled ? 4 : 3}, minmax(0, 1fr))`,
+                    }}
+                  >
                     <button
                       type="button"
                       onClick={() => setPreviewTab("contact")}
@@ -3619,6 +3910,16 @@ export default function LinkHubPage() {
                     >
                       {profile.sectionLabels.location}
                     </button>
+                    {previewReservationEnabled ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab("reservation")}
+                        className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
+                        style={previewTab === "reservation" ? previewChipActiveStyle : { color: previewNavText }}
+                      >
+                        {reservationLabel}
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -3706,5 +4007,4 @@ export default function LinkHubPage() {
     </div>
   );
 }
-
 

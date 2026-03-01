@@ -31,6 +31,7 @@ import {
   type CartaCartItem,
 } from "@/lib/cartaCartStore";
 import {
+  CalendarDays,
   AtSign,
   Facebook,
   Fish,
@@ -52,11 +53,11 @@ import {
   Share2,
 } from "lucide-react";
 
-type PublicTab = "contact" | "catalog" | "location";
+type PublicTab = "contact" | "catalog" | "location" | "reservation";
 type CheckoutStep = "cart" | "checkout";
 type DeliveryMethod = "delivery" | "pickup" | "dinein";
 type PaymentMethod = "cash" | "transfer" | "yape" | "plin";
-type GoldKeywordAction = "contact" | "catalog" | "location" | "call" | "whatsapp";
+type GoldKeywordAction = "contact" | "catalog" | "location" | "reservation" | "call" | "whatsapp";
 
 type CartItem = CartaCartItem;
 
@@ -142,9 +143,10 @@ function resolveGoldKeywordAction(token: string): GoldKeywordAction | null {
   if (!token) return null;
   if (["carta", "menu", "catalogo", "productos", "platos"].includes(token)) return "catalog";
   if (["ubicacion", "mapa", "direccion", "local"].includes(token)) return "location";
+  if (["reserva", "reservas", "mesa", "booking"].includes(token)) return "reservation";
   if (["contacto", "atencion", "clientes"].includes(token)) return "contact";
   if (["llamar", "telefono", "celular"].includes(token)) return "call";
-  if (["whatsapp", "pedido", "pedidos", "reservas"].includes(token)) return "whatsapp";
+  if (["whatsapp", "pedido", "pedidos"].includes(token)) return "whatsapp";
   return null;
 }
 
@@ -310,6 +312,14 @@ export default function PublicBioPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [cartError, setCartError] = useState("");
   const [cartFeedback, setCartFeedback] = useState("");
+  const [reservationName, setReservationName] = useState("");
+  const [reservationGuests, setReservationGuests] = useState("2");
+  const [reservationDate, setReservationDate] = useState("");
+  const [reservationSlot, setReservationSlot] = useState("");
+  const [reservationContact, setReservationContact] = useState("");
+  const [reservationNote, setReservationNote] = useState("");
+  const [reservationError, setReservationError] = useState("");
+  const [reservationFeedback, setReservationFeedback] = useState("");
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
   const catalogScrollRef = useRef<HTMLDivElement | null>(null);
   const catalogStickyRef = useRef<HTMLDivElement | null>(null);
@@ -439,6 +449,30 @@ export default function PublicBioPage() {
   }, [activeTab, proTestimonials.length]);
 
   useEffect(() => {
+    if (!profile?.reservation?.enabled && activeTab === "reservation") {
+      setActiveTab("contact");
+    }
+  }, [activeTab, profile?.reservation?.enabled]);
+
+  useEffect(() => {
+    if (!profile?.reservation?.enabled) {
+      if (reservationSlot) setReservationSlot("");
+      return;
+    }
+    const slots = (profile.reservation.slotOptions || [])
+      .map((slot) => String(slot || "").trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    if (!slots.length) {
+      if (reservationSlot) setReservationSlot("");
+      return;
+    }
+    if (!slots.includes(reservationSlot)) {
+      setReservationSlot(slots[0]);
+    }
+  }, [profile?.reservation?.enabled, profile?.reservation?.slotOptions, reservationSlot]);
+
+  useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
     const prevHtmlOverflow = html.style.overflow;
@@ -509,6 +543,18 @@ export default function PublicBioPage() {
   const whatsappHref = toWhatsappUrl(profile.whatsappNumber);
   const catalogLabel =
     profile.businessType === "restaurant" ? profile.sectionLabels.menu : profile.sectionLabels.catalog;
+  const reservationLabel = profile.sectionLabels.reservation || "Reserva";
+  const reservationEnabled = Boolean(profile.reservation.enabled);
+  const reservationSlots = profile.reservation.slotOptions
+    .map((slot) => String(slot || "").trim())
+    .filter(Boolean)
+    .slice(0, 12);
+  const reservationMinParty = Math.max(1, Math.round(Number(profile.reservation.minPartySize) || 1));
+  const reservationMaxParty = Math.max(
+    reservationMinParty,
+    Math.round(Number(profile.reservation.maxPartySize) || reservationMinParty),
+  );
+  const visibleTabCount = reservationEnabled ? 4 : 3;
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
     .slice(0, 8);
@@ -567,6 +613,14 @@ export default function PublicBioPage() {
     }
     if (action === "contact") {
       setActiveTab("contact");
+      return;
+    }
+    if (action === "reservation") {
+      if (reservationEnabled) {
+        setActiveTab("reservation");
+      } else {
+        setActiveTab("contact");
+      }
       return;
     }
     if (action === "call") {
@@ -747,6 +801,59 @@ export default function PublicBioPage() {
     setCartError("");
     setCartFeedback("Pedido listo. Te estamos redirigiendo a WhatsApp.");
   }
+
+  function submitReservationWhatsapp() {
+    if (!reservationEnabled) {
+      setActiveTab("contact");
+      return;
+    }
+    if (!whatsappTargetDigits) {
+      setReservationError("Este negocio no tiene WhatsApp configurado para reservas.");
+      return;
+    }
+    const cleanName = reservationName.trim();
+    if (!cleanName) {
+      setReservationError("Ingresa tu nombre para enviar la reserva.");
+      return;
+    }
+    if (!reservationDate) {
+      setReservationError("Selecciona una fecha para la reserva.");
+      return;
+    }
+    const requestedGuests = Math.round(Number(reservationGuests) || reservationMinParty);
+    const guests = Math.max(reservationMinParty, Math.min(reservationMaxParty, requestedGuests));
+    const selectedSlot = reservationSlot || reservationSlots[0] || "Por coordinar";
+    const cleanContact = reservationContact.trim();
+    const cleanNote = reservationNote.trim();
+    const date = new Date();
+
+    const lines = [
+      `\u{1F37D}\u{FE0F} *Solicitud de reserva para ${businessName}*`,
+      "",
+      `\u{1F44B} Hola equipo ${businessName}, quiero agendar una reserva:`,
+      "",
+      "\u{1F4CB} *Datos de reserva*",
+      `- Nombre: ${cleanName}`,
+      `- Personas: ${guests}`,
+      `- Fecha: ${reservationDate}`,
+      `- Horario: ${selectedSlot}`,
+      cleanContact ? `- Contacto: ${cleanContact}` : "",
+      cleanNote ? `- Nota: ${cleanNote}` : "",
+      "",
+      `\u{1F552} Solicitud enviada: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+      "",
+      "\u{1F64F} Gracias. Quedo atento(a) a su confirmacion por WhatsApp.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(lines)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    setReservationError("");
+    setReservationFeedback("Reserva lista. Te estamos redirigiendo a WhatsApp.");
+    window.setTimeout(() => setReservationFeedback(""), 2200);
+  }
+
   async function handleShare() {
     if (!profile) return;
     const url = window.location.href;
@@ -1001,7 +1108,9 @@ export default function PublicBioPage() {
                 ? catalogLabel
                 : activeTab === "location"
                 ? profile.sectionLabels.location
-                : profile.sectionLabels.contact}
+                : activeTab === "reservation"
+                  ? reservationLabel
+                  : profile.sectionLabels.contact}
             </p>
           </div>
           {shareFeedback && (
@@ -1014,7 +1123,10 @@ export default function PublicBioPage() {
           )}
         </div>
 
-        <div className="hidden md:grid grid-cols-3 gap-3 px-8 pb-6 pt-1">
+        <div
+          className="hidden md:grid gap-3 px-8 pb-6 pt-1"
+          style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}
+        >
           <button
             type="button"
             onClick={() => setActiveTab("contact")}
@@ -1060,6 +1172,23 @@ export default function PublicBioPage() {
           >
             {profile.sectionLabels.location}
           </button>
+          {reservationEnabled ? (
+            <button
+              type="button"
+              onClick={() => setActiveTab("reservation")}
+              className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+              style={
+                activeTab === "reservation"
+                  ? navActiveStyle
+                  : {
+                      borderColor: "var(--carta-chip-border)",
+                      color: "var(--carta-nav-text)",
+                    }
+              }
+            >
+              {reservationLabel}
+            </button>
+          ) : null}
         </div>
 
         {activeTab === "contact" ? (
@@ -1418,6 +1547,155 @@ export default function PublicBioPage() {
               )}
             </section>
           )}
+
+          {activeTab === "reservation" && reservationEnabled && (
+            <section
+              className={`h-full overflow-y-auto rounded-[1.9rem] border p-4 no-scrollbar ${cardClass}`}
+              style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}
+            >
+              <div className="overflow-hidden rounded-2xl border" style={{ borderColor: "var(--carta-border)" }}>
+                {profile.reservation.heroImageUrl ? (
+                  <img
+                    src={profile.reservation.heroImageUrl}
+                    alt="Reservas"
+                    className="h-40 w-full object-cover md:h-56"
+                  />
+                ) : (
+                  <div
+                    className="flex h-40 w-full items-center justify-center text-sm font-semibold md:h-56"
+                    style={{
+                      background:
+                        "linear-gradient(130deg, rgba(245,158,11,0.2) 0%, rgba(16,185,129,0.18) 52%, rgba(249,115,22,0.18) 100%)",
+                      color: textPalette.muted,
+                    }}
+                  >
+                    Imagen de reservas premium
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <h2 className="text-2xl font-black md:text-3xl" style={{ color: accentWordColor }}>
+                  {profile.reservation.title || "Reserva premium"}
+                </h2>
+                <p className="mt-1 text-sm md:text-base" style={{ color: textPalette.muted }}>
+                  {profile.reservation.subtitle || "Agenda tu mesa y te confirmamos por WhatsApp."}
+                </p>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                <label className="space-y-1.5 md:col-span-2">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
+                    Nombre completo
+                  </span>
+                  <input
+                    value={reservationName}
+                    onChange={(event) => setReservationName(event.target.value)}
+                    placeholder="Ej. Maria Gomez"
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
+                    style={checkoutInputStyle}
+                  />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
+                    Personas
+                  </span>
+                  <input
+                    type="number"
+                    min={reservationMinParty}
+                    max={reservationMaxParty}
+                    value={reservationGuests}
+                    onChange={(event) => setReservationGuests(event.target.value)}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
+                    style={checkoutInputStyle}
+                  />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
+                    Fecha
+                  </span>
+                  <input
+                    type="date"
+                    value={reservationDate}
+                    onChange={(event) => setReservationDate(event.target.value)}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
+                    style={checkoutInputStyle}
+                  />
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
+                    Horario
+                  </span>
+                  <select
+                    value={reservationSlot}
+                    onChange={(event) => setReservationSlot(event.target.value)}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
+                    style={checkoutInputStyle}
+                  >
+                    {(reservationSlots.length > 0 ? reservationSlots : ["Por coordinar"]).map((slot) => (
+                      <option key={slot} value={slot}>
+                        {slot}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="space-y-1.5">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
+                    Celular (opcional)
+                  </span>
+                  <input
+                    value={reservationContact}
+                    onChange={(event) => setReservationContact(event.target.value)}
+                    placeholder="+51 999 999 999"
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
+                    style={checkoutInputStyle}
+                  />
+                </label>
+
+                <label className="space-y-1.5 md:col-span-2">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
+                    Nota adicional
+                  </span>
+                  <textarea
+                    rows={3}
+                    value={reservationNote}
+                    onChange={(event) => setReservationNote(event.target.value)}
+                    placeholder={profile.reservation.notePlaceholder || "Celebracion, alergias o zona preferida."}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm resize-none ${buttonRadiusClass}`}
+                    style={checkoutInputStyle}
+                  />
+                </label>
+              </div>
+
+              {reservationError ? (
+                <p className="mt-3 rounded-xl border px-3 py-2 text-xs font-semibold text-red-300" style={{ borderColor: "rgba(248,113,113,0.45)" }}>
+                  {reservationError}
+                </p>
+              ) : null}
+              {reservationFeedback ? (
+                <p className="mt-3 rounded-xl border px-3 py-2 text-xs font-semibold text-emerald-200" style={{ borderColor: "rgba(52,211,153,0.45)" }}>
+                  {reservationFeedback}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={submitReservationWhatsapp}
+                className={`mt-4 inline-flex w-full items-center justify-center gap-2 border px-4 py-3 text-sm font-black uppercase tracking-[0.1em] ${buttonRadiusClass}`}
+                style={interactiveStyle}
+              >
+                <CalendarDays className="h-4 w-4" />
+                {profile.reservation.ctaLabel || "Enviar reserva"}
+              </button>
+              <p className="mt-2 text-[11px]" style={{ color: textPalette.soft }}>
+                Confirmamos por WhatsApp segun disponibilidad real del restaurante.
+              </p>
+            </section>
+          )}
         </div>
 
       </div>
@@ -1433,7 +1711,7 @@ export default function PublicBioPage() {
 
       <div className="md:hidden fixed inset-x-0 bottom-0 z-40 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
         <div className="mx-auto w-full max-w-md rounded-[1.5rem] border p-1 backdrop-blur-xl" style={navSurfaceStyle}>
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}>
             <button
               type="button"
               onClick={() => setActiveTab("contact")}
@@ -1481,6 +1759,19 @@ export default function PublicBioPage() {
               </div>
               <span className="block truncate">{profile.sectionLabels.location}</span>
             </button>
+            {reservationEnabled ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab("reservation")}
+                className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+                style={activeTab === "reservation" ? navActiveStyle : { color: "var(--carta-nav-text)" }}
+              >
+                <div className="mx-auto mb-1 h-4 w-4">
+                  <CalendarDays className="h-4 w-4" />
+                </div>
+                <span className="block truncate">{reservationLabel}</span>
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

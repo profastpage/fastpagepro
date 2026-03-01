@@ -336,6 +336,7 @@ export interface LinkHubSectionLabels {
   menu: string;
   catalog: string;
   location: string;
+  reservation: string;
   pricing: string;
 }
 
@@ -400,6 +401,18 @@ export interface LinkHubPricingConfig {
   plans: LinkHubPricingPlan[];
 }
 
+export interface LinkHubReservationConfig {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  heroImageUrl: string;
+  slotOptions: string[];
+  minPartySize: number;
+  maxPartySize: number;
+  ctaLabel: string;
+  notePlaceholder: string;
+}
+
 export interface LinkHubProfile {
   userId: string;
   slug: string;
@@ -432,6 +445,7 @@ export interface LinkHubProfile {
   proDeliveryModes: LinkHubDeliveryModes;
   proFeaturesUnlocked: boolean;
   location: LinkHubLocation;
+  reservation: LinkHubReservationConfig;
   pricing: LinkHubPricingConfig;
   createdAt: number;
   updatedAt: number;
@@ -599,7 +613,29 @@ export function getDefaultLinkHubSectionLabels(): LinkHubSectionLabels {
     menu: "Carta",
     catalog: "Catalogo",
     location: "Ubicacion",
+    reservation: "Reserva",
     pricing: "Catalogo digital online",
+  };
+}
+
+function createDefaultReservationConfig(): LinkHubReservationConfig {
+  return {
+    enabled: false,
+    title: "Reserva premium",
+    subtitle: "Agenda tu mesa en segundos y recibe confirmacion por WhatsApp.",
+    heroImageUrl: "",
+    slotOptions: [
+      "12:00 pm",
+      "12:30 pm",
+      "1:00 pm",
+      "7:00 pm",
+      "8:00 pm",
+      "9:00 pm",
+    ],
+    minPartySize: 1,
+    maxPartySize: 12,
+    ctaLabel: "Enviar reserva",
+    notePlaceholder: "Ejemplo: celebracion, terraza o alergias alimentarias.",
   };
 }
 
@@ -938,6 +974,15 @@ export function buildRestaurantRecordingDemoProfile(user: LinkHubUserSeed): Link
         scheduleLines: ["12:00 pm - 11:00 pm", "Pedidos por WhatsApp todo el dia"],
         ctaLabel: "Ir ahora",
       },
+      reservation: {
+        ...createDefaultReservationConfig(),
+        enabled: true,
+        title: "Reserva tu mesa",
+        subtitle: "Completa tus datos y te confirmamos por WhatsApp en minutos.",
+        slotOptions: ["12:30 pm", "1:30 pm", "7:00 pm", "8:00 pm", "9:00 pm", "10:00 pm"],
+        maxPartySize: 16,
+        notePlaceholder: "Ejemplo: cumpleanos, zona interior o preferencia de mesa.",
+      },
       pricing: {
         enabled: true,
         title: "Catalogo digital online",
@@ -1196,6 +1241,7 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
       scheduleLines: ["Lunes a Sabado: 11:30 am - 9:00 pm", "Domingos: 12:00 pm - 6:00 pm"],
       ctaLabel: "Ir ahora",
     },
+    reservation: createDefaultReservationConfig(),
     pricing: {
       enabled: true,
       title: "Catalogo digital online",
@@ -1235,6 +1281,7 @@ export function normalizeLinkHubProfile(
     menu: safeText(rawLabels["menu"]) || base.sectionLabels.menu,
     catalog: safeText(rawLabels["catalog"]) || base.sectionLabels.catalog,
     location: safeText(rawLabels["location"]) || base.sectionLabels.location,
+    reservation: safeText(rawLabels["reservation"]) || base.sectionLabels.reservation,
     pricing: safeText(rawLabels["pricing"]) || base.sectionLabels.pricing,
   };
 
@@ -1349,6 +1396,39 @@ export function normalizeLinkHubProfile(
     ctaLabel: safeText(rawLocation["ctaLabel"]) || base.location.ctaLabel,
   };
 
+  const rawReservation = isRecord((input as Record<string, unknown>)["reservation"])
+    ? ((input as Record<string, unknown>)["reservation"] as Record<string, unknown>)
+    : {};
+  const rawReservationSlots = Array.isArray(rawReservation["slotOptions"])
+    ? (rawReservation["slotOptions"] as unknown[])
+    : [];
+  const slotOptions = rawReservationSlots
+    .map((slot) => safeText(slot))
+    .filter(Boolean)
+    .slice(0, 12);
+  const rawMinPartySize = Number(rawReservation["minPartySize"]);
+  const rawMaxPartySize = Number(rawReservation["maxPartySize"]);
+  const normalizedMinParty = Number.isFinite(rawMinPartySize)
+    ? Math.max(1, Math.min(60, Math.round(rawMinPartySize)))
+    : base.reservation.minPartySize;
+  const normalizedMaxParty = Number.isFinite(rawMaxPartySize)
+    ? Math.max(1, Math.min(60, Math.round(rawMaxPartySize)))
+    : base.reservation.maxPartySize;
+  const reservation: LinkHubReservationConfig = {
+    enabled:
+      typeof rawReservation["enabled"] === "boolean"
+        ? (rawReservation["enabled"] as boolean)
+        : base.reservation.enabled,
+    title: safeText(rawReservation["title"]) || base.reservation.title,
+    subtitle: safeText(rawReservation["subtitle"]) || base.reservation.subtitle,
+    heroImageUrl: safeText(rawReservation["heroImageUrl"]) || "",
+    slotOptions: slotOptions.length > 0 ? slotOptions : base.reservation.slotOptions,
+    minPartySize: Math.min(normalizedMinParty, normalizedMaxParty),
+    maxPartySize: Math.max(normalizedMinParty, normalizedMaxParty),
+    ctaLabel: safeText(rawReservation["ctaLabel"]) || base.reservation.ctaLabel,
+    notePlaceholder: safeText(rawReservation["notePlaceholder"]) || base.reservation.notePlaceholder,
+  };
+
   const defaultPlans = createDefaultPricingPlans();
   const rawPricing: Record<string, unknown> = isRecord(input.pricing) ? input.pricing : {};
   const rawPlans = Array.isArray(rawPricing["plans"]) ? rawPricing["plans"] : [];
@@ -1452,6 +1532,7 @@ export function normalizeLinkHubProfile(
     proDeliveryModes: deliveryModes,
     proFeaturesUnlocked: Boolean((input as Record<string, unknown>)["proFeaturesUnlocked"]),
     location,
+    reservation,
     pricing: {
       enabled: typeof rawPricing["enabled"] === "boolean" ? (rawPricing["enabled"] as boolean) : base.pricing.enabled,
       title: safeText(rawPricing["title"]) || base.pricing.title,
