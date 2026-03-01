@@ -1524,3 +1524,24 @@ o-scrollbar para evitar barra visible.
 - Resultado:
   - si no hay enlaces sociales configurados, se puede guardar y publicar normalmente.
   - en la pagina publicada no se muestran enlaces vacios/sin URL.
+## Mobile editor UX upgrade for Carta Digital (2026-03-01)
+
+- Ruta afectada: /linkhub (editor de Carta Digital).
+- Mejoras en modo celular:
+  - preview mobile pasa a bloque fijo superior para edicion guiada.
+  - se agrega boton principal "Edicion" desplegable con 6 accesos rapidos:
+    1) Identidad de negocio
+    2) BIO y enlaces
+    3) Carta digital
+    4) Funciones PRO (estilo dorado)
+    5) Ubicacion
+    6) Temas
+  - cada subboton hace scroll directo a su seccion del editor.
+- Mejoras de preview:
+  - barra inferior del preview ahora permite cambiar entre Contacto/Carta/Ubicacion en tiempo real.
+  - en tab Carta del preview se mantiene busqueda y categorias.
+  - se anade carga rapida de foto por item desde el propio preview.
+- Mejoras de imagenes en productos:
+  - Foto extra ahora acepta carga multiple en una sola accion.
+  - se agregan controles de reordenamiento izquierda/derecha para galeria de item.
+  - se mantiene limite por item y validaciones de peso/tipo.

@@ -60,6 +60,8 @@ import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
 import {
+  ChevronLeft,
+  ChevronRight,
   Copy,
   ExternalLink,
   Fish,
@@ -460,13 +462,21 @@ export default function LinkHubPage() {
   const [origin, setOrigin] = useState("");
   const [previewSearch, setPreviewSearch] = useState("");
   const [previewCategoryId, setPreviewCategoryId] = useState("");
+  const [previewTab, setPreviewTab] = useState<"contact" | "catalog" | "location">("catalog");
   const [editorItemSearch, setEditorItemSearch] = useState("");
+  const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const descriptionSeedRef = useRef<number>(Date.now());
   const [demoSlugIntent, setDemoSlugIntent] = useState("");
   const [demoThemeIntent, setDemoThemeIntent] = useState("");
   const [requestedProfileId, setRequestedProfileId] = useState("");
   const hasAppliedIncomingDemoTheme = useRef(false);
+  const identitySectionRef = useRef<HTMLDivElement | null>(null);
+  const bioLinksSectionRef = useRef<HTMLDivElement | null>(null);
+  const catalogSectionRef = useRef<HTMLDivElement | null>(null);
+  const proSectionRef = useRef<HTMLDivElement | null>(null);
+  const locationSectionRef = useRef<HTMLDivElement | null>(null);
+  const themesSectionRef = useRef<HTMLDivElement | null>(null);
 
   const activePlan = subscriptionSummary?.plan || "FREE";
   const isProPlan = activePlan === "PRO";
@@ -937,6 +947,21 @@ export default function LinkHubPage() {
     });
   }
 
+  function scrollToEditorSection(
+    section: "identity" | "bioLinks" | "catalog" | "pro" | "location" | "themes",
+  ) {
+    const refs = {
+      identity: identitySectionRef.current,
+      bioLinks: bioLinksSectionRef.current,
+      catalog: catalogSectionRef.current,
+      pro: proSectionRef.current,
+      location: locationSectionRef.current,
+      themes: themesSectionRef.current,
+    };
+    refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setMobileEditMenuOpen(false);
+  }
+
   function applyTheme(theme: LinkHubTheme) {
     const preset = LINK_HUB_THEME_STYLES[theme];
     const mappedCartaThemeId = recommendCartaThemeIdByLinkTheme(theme);
@@ -1234,6 +1259,35 @@ export default function LinkHubPage() {
             ...item,
             imageUrl: item.imageUrl === imageUrl ? nextGallery[0] || "" : item.imageUrl,
             galleryImageUrls: nextGallery,
+          };
+        }),
+      };
+    });
+  }
+
+  function moveCatalogGalleryImage(itemId: string, imageUrl: string, direction: "left" | "right") {
+    if (!isProPlan) {
+      showProFeatureLocked("Galería de fotos PRO");
+      return;
+    }
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        catalogItems: prev.catalogItems.map((item) => {
+          if (item.id !== itemId) return item;
+          const gallery = mergeGalleryImages(item.galleryImageUrls || []);
+          const index = gallery.indexOf(imageUrl);
+          if (index < 0) return item;
+          const target = direction === "left" ? index - 1 : index + 1;
+          if (target < 0 || target >= gallery.length) return item;
+          const reordered = [...gallery];
+          const [movedImage] = reordered.splice(index, 1);
+          reordered.splice(target, 0, movedImage);
+          return {
+            ...item,
+            galleryImageUrls: reordered,
+            imageUrl: item.imageUrl || reordered[0] || "",
           };
         }),
       };
@@ -1669,6 +1723,77 @@ export default function LinkHubPage() {
       const optimized = await optimizeImageFile(file, { maxSize: 960, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 980_000 });
       appendCatalogGalleryImage(itemId, optimized);
       setMessage({ type: "success", text: "Foto agregada a la galeria PRO." });
+    } catch (error) {
+      console.error("[LinkHub] Catalog gallery image upload error:", error);
+      setMessage({ type: "error", text: "No se pudo procesar la imagen para galeria." });
+    } finally {
+      setUploadingCatalogItemId(null);
+    }
+  }
+
+  async function handleCatalogItemGalleryUploadBatch(itemId: string, event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (files.length === 0) return;
+    if (!isProPlan) {
+      showProFeatureLocked("Galería de fotos PRO");
+      return;
+    }
+
+    const selectedItem = profile?.catalogItems.find((entry) => entry.id === itemId);
+    const currentGalleryCount = mergeGalleryImages(selectedItem?.galleryImageUrls || []).length;
+    const remainingSlots = Math.max(0, MAX_LINK_HUB_ITEM_GALLERY_IMAGES - currentGalleryCount);
+    if (remainingSlots <= 0) {
+      setMessage({ type: "error", text: `Maximo ${MAX_LINK_HUB_ITEM_GALLERY_IMAGES} fotos extra por item.` });
+      return;
+    }
+
+    const selectedFiles = files.slice(0, remainingSlots);
+    if (selectedFiles.length < files.length) {
+      setMessage({
+        type: "error",
+        text: `Solo se cargaron ${selectedFiles.length} foto(s). Limite de galeria: ${MAX_LINK_HUB_ITEM_GALLERY_IMAGES}.`,
+      });
+    }
+
+    if (selectedFiles.some((file) => !file.type.startsWith("image/"))) {
+      setMessage({ type: "error", text: "Selecciona una imagen valida para la galeria." });
+      return;
+    }
+
+    if (selectedFiles.some((file) => file.size > 10 * 1024 * 1024)) {
+      setMessage({ type: "error", text: "La imagen es muy pesada (max 10MB)." });
+      return;
+    }
+
+    setUploadingCatalogItemId(itemId);
+    try {
+      const optimizedBatch: string[] = [];
+      for (const file of selectedFiles) {
+        const optimized = await optimizeImageFile(file, {
+          maxSize: 960,
+          quality: 0.88,
+          heavyQuality: 0.72,
+          heavyThreshold: 980_000,
+        });
+        optimizedBatch.push(optimized);
+      }
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          catalogItems: prev.catalogItems.map((item) => {
+            if (item.id !== itemId) return item;
+            const nextGallery = mergeGalleryImages([...(item.galleryImageUrls || []), ...optimizedBatch]);
+            return {
+              ...item,
+              imageUrl: item.imageUrl || optimizedBatch[0] || "",
+              galleryImageUrls: nextGallery,
+            };
+          }),
+        };
+      });
+      setMessage({ type: "success", text: `${optimizedBatch.length} foto(s) agregadas a la galeria PRO.` });
     } catch (error) {
       console.error("[LinkHub] Catalog gallery image upload error:", error);
       setMessage({ type: "error", text: "No se pudo procesar la imagen para galeria." });
@@ -2122,8 +2247,8 @@ export default function LinkHubPage() {
         )}
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(360px,560px)]">
-          <section className="min-w-0 space-y-6">
-            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+          <section className="min-w-0 space-y-6 pt-[31.5rem] md:pt-0">
+            <div ref={identitySectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <h2 className="text-xl font-bold text-white mb-5">Identidad del Negocio</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-2">
@@ -2282,7 +2407,7 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div ref={bioLinksSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Telefono</span>
@@ -2380,7 +2505,7 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div ref={catalogSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold text-white">
                   {profile.businessType === "restaurant" ? "Carta" : "Catalogo"} digital
@@ -2594,7 +2719,8 @@ export default function LinkHubPage() {
                             <input
                               type="file"
                               accept="image/*"
-                              onChange={(event) => handleCatalogItemGalleryUpload(item.id, event)}
+                              multiple
+                              onChange={(event) => handleCatalogItemGalleryUploadBatch(item.id, event)}
                               className="hidden"
                               disabled={!isProPlan || uploadingCatalogItemId === item.id}
                             />
@@ -2613,13 +2739,33 @@ export default function LinkHubPage() {
                           </button>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {mergeGalleryImages([...(item.galleryImageUrls || []), item.imageUrl]).map((galleryImage) => (
+                          {mergeGalleryImages(item.galleryImageUrls || []).map((galleryImage, galleryIndex, galleryList) => (
                             <div key={`${item.id}-${galleryImage}`} className="relative">
                               <img
                                 src={galleryImage}
                                 alt="Galeria"
                                 className="h-10 w-10 rounded-lg border border-white/15 object-cover"
                               />
+                              <div className="absolute -bottom-1 left-1/2 inline-flex -translate-x-1/2 items-center gap-0.5 rounded-md border border-white/20 bg-black/75 p-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => moveCatalogGalleryImage(item.id, galleryImage, "left")}
+                                  className="inline-flex h-4 w-4 items-center justify-center rounded bg-white/10 text-white disabled:opacity-35"
+                                  disabled={!isProPlan || galleryIndex === 0}
+                                  title="Mover izquierda"
+                                >
+                                  <ChevronLeft className="h-3 w-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => moveCatalogGalleryImage(item.id, galleryImage, "right")}
+                                  className="inline-flex h-4 w-4 items-center justify-center rounded bg-white/10 text-white disabled:opacity-35"
+                                  disabled={!isProPlan || galleryIndex === galleryList.length - 1}
+                                  title="Mover derecha"
+                                >
+                                  <ChevronRight className="h-3 w-3" />
+                                </button>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => removeCatalogGalleryImage(item.id, galleryImage)}
@@ -2715,7 +2861,7 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div ref={proSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xl font-bold text-white">Funciones PRO para vender mas</h2>
                 <span
@@ -2808,7 +2954,7 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div ref={locationSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <h2 className="text-xl font-bold text-white mb-5">Ubicacion</h2>
               <div className="grid grid-cols-1 gap-4">
                 <label className="space-y-2">
@@ -2861,7 +3007,7 @@ export default function LinkHubPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
+            <div ref={themesSectionRef} className="rounded-3xl border border-white/10 bg-zinc-950/70 p-6 md:p-7">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-white">
                   {isRestaurantProfile ? "Temas oficiales · Carta Digital" : "Tema visual deluxe"}
@@ -3214,9 +3360,49 @@ export default function LinkHubPage() {
 
           </section>
 
-          <aside className="min-w-0 h-fit xl:sticky xl:top-28 xl:w-[560px] xl:justify-self-end">
+          <aside className="fixed inset-x-0 top-[7.55rem] z-30 min-w-0 px-3 md:static md:px-0 xl:h-fit xl:sticky xl:top-28 xl:w-[560px] xl:justify-self-end">
+            <div className="pointer-events-none absolute right-5 top-2 z-50 md:hidden">
+              <div className="pointer-events-auto flex flex-col items-end gap-2">
+                {mobileEditMenuOpen ? (
+                  <div className="space-y-1.5 rounded-2xl border border-white/15 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur-xl">
+                    <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <Store className="h-3.5 w-3.5" />
+                      Identidad de negocio
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("bioLinks")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      BIO y enlaces
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("catalog")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <Fish className="h-3.5 w-3.5" />
+                      Carta digital
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("pro")} className="flex w-full items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold text-amber-100">
+                      <Lock className="h-3.5 w-3.5" />
+                      Funciones PRO
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("location")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Ubicacion
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("themes")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <Palette className="h-3.5 w-3.5" />
+                      Temas
+                    </button>
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setMobileEditMenuOpen((current) => !current)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/15 px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Edicion
+                </button>
+              </div>
+            </div>
             <div className="md:flex md:items-start md:justify-end md:gap-3">
-            <div className="w-full max-w-[420px] rounded-[2rem] border p-3.5 xl:p-3" style={previewShellStyle}>
+            <div className="mx-auto w-full max-w-[420px] rounded-[2rem] border p-3.5 xl:p-3" style={previewShellStyle}>
               <div className="overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
                 <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: previewTextMuted }}>
                   Preview Mobile
@@ -3297,91 +3483,139 @@ export default function LinkHubPage() {
 
                 <div className="px-4 pb-2">
                   <p className="text-center text-xs font-black uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
-                    {catalogLabel || "Carta"}
+                    {previewTab === "catalog" ? (catalogLabel || "Carta") : previewTab === "contact" ? profile.sectionLabels.contact : profile.sectionLabels.location}
                   </p>
-                  <label className="mt-2 flex items-center gap-2 rounded-[0.95rem] border px-3 py-2" style={previewSearchStyle}>
-                    <Search className="h-3.5 w-3.5" style={{ color: previewPlaceholderText }} />
-                    <input
-                      value={previewSearch}
-                      onChange={(event) => setPreviewSearch(event.target.value)}
-                      placeholder="Buscar en la carta..."
-                      className="w-full bg-transparent text-xs focus:outline-none"
-                      style={{ color: previewInputText }}
-                    />
-                  </label>
-                  <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
-                    {previewCategoryTabs.map((category) => (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => setPreviewCategoryId(category.id)}
-                        className="shrink-0 rounded-[0.85rem] border px-2.5 py-1.5 text-[10px] font-bold"
-                        style={previewCategoryId === category.id ? previewChipActiveStyle : previewChipBaseStyle}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
+                  {previewTab === "catalog" ? (
+                    <>
+                      <label className="mt-2 flex items-center gap-2 rounded-[0.95rem] border px-3 py-2" style={previewSearchStyle}>
+                        <Search className="h-3.5 w-3.5" style={{ color: previewPlaceholderText }} />
+                        <input
+                          value={previewSearch}
+                          onChange={(event) => setPreviewSearch(event.target.value)}
+                          placeholder="Buscar en la carta..."
+                          className="w-full bg-transparent text-xs focus:outline-none"
+                          style={{ color: previewInputText }}
+                        />
+                      </label>
+                      <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
+                        {previewCategoryTabs.map((category) => (
+                          <button
+                            key={category.id}
+                            type="button"
+                            onClick={() => setPreviewCategoryId(category.id)}
+                            className="shrink-0 rounded-[0.85rem] border px-2.5 py-1.5 text-[10px] font-bold"
+                            style={previewCategoryId === category.id ? previewChipActiveStyle : previewChipBaseStyle}
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
                 </div>
 
-                <div className="space-y-2 px-4 pb-3">
-                  {previewVisibleItems.length > 0 ? (
-                    previewVisibleItems.map((item) => (
-                      <article key={item.id} className="rounded-[0.95rem] border p-2" style={previewItemCardStyle}>
-                        <div className="flex gap-2">
-                          {item.imageUrl ? (
-                            <img src={item.imageUrl} alt={item.title} className="h-14 w-14 rounded-[0.75rem] object-cover" />
-                          ) : (
-                            <div
-                              className="h-14 w-14 rounded-[0.75rem] border flex items-center justify-center text-[9px] font-black"
-                              style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
-                            >
-                              ITEM
+                {previewTab === "catalog" ? (
+                  <div className="space-y-2 px-4 pb-3">
+                    {previewVisibleItems.length > 0 ? (
+                      previewVisibleItems.map((item) => (
+                        <article key={item.id} className="rounded-[0.95rem] border p-2" style={previewItemCardStyle}>
+                          <div className="flex gap-2">
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} alt={item.title} className="h-14 w-14 rounded-[0.75rem] object-cover" />
+                            ) : (
+                              <div
+                                className="h-14 w-14 rounded-[0.75rem] border flex items-center justify-center text-[9px] font-black"
+                                style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
+                              >
+                                ITEM
+                              </div>
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-[13px] font-extrabold" style={{ color: previewTextBase }}>
+                                {item.title || "Producto"}
+                              </p>
+                              <p className="line-clamp-1 text-[11px]" style={{ color: previewTextMuted }}>
+                                {item.salesCopy || item.description || "Descripcion comercial"}
+                              </p>
+                              <p className="mt-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
+                                S/{item.price || "0.00"}
+                              </p>
+                              <label className="mt-1 inline-flex cursor-pointer items-center gap-1 rounded-md border border-sky-300/40 bg-sky-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-sky-100">
+                                <Upload className="h-3 w-3" />
+                                Foto
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
+                                  className="hidden"
+                                />
+                              </label>
                             </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13px] font-extrabold" style={{ color: previewTextBase }}>
-                              {item.title || "Producto"}
-                            </p>
-                            <p className="line-clamp-1 text-[11px]" style={{ color: previewTextMuted }}>
-                              {item.salesCopy || item.description || "Descripcion comercial"}
-                            </p>
-                            <p className="mt-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
-                              S/{item.price || "0.00"}
-                            </p>
                           </div>
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <div
-                      className="rounded-[0.95rem] border border-dashed px-3 py-4 text-center text-[11px]"
-                      style={{
-                        borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.border,
-                        color: previewTextMuted,
-                      }}
-                    >
-                      No hay items para el filtro actual.
-                    </div>
-                  )}
-                </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div
+                        className="rounded-[0.95rem] border border-dashed px-3 py-4 text-center text-[11px]"
+                        style={{
+                          borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.border,
+                          color: previewTextMuted,
+                        }}
+                      >
+                        No hay items para el filtro actual.
+                      </div>
+                    )}
+                  </div>
+                ) : previewTab === "contact" ? (
+                  <div className="px-4 pb-3">
+                    <article className="rounded-[0.95rem] border p-3" style={previewItemCardStyle}>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
+                        Contacto
+                      </p>
+                      <p className="mt-2 text-[11px]" style={{ color: previewTextMuted }}>
+                        {profile.bio || "Atiende clientes directo desde tu canal favorito."}
+                      </p>
+                    </article>
+                  </div>
+                ) : (
+                  <div className="px-4 pb-3">
+                    <article className="rounded-[0.95rem] border p-3" style={previewItemCardStyle}>
+                      <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: activeCartaTheme.tokens.primary }}>
+                        Ubicacion
+                      </p>
+                      <p className="mt-2 text-[11px] font-semibold" style={{ color: previewTextBase }}>
+                        {profile.location.address || "Agrega direccion del negocio"}
+                      </p>
+                      <p className="mt-1 text-[11px]" style={{ color: previewTextMuted }}>
+                        {formatMultiline(profile.location.scheduleLines).split("\n")[0] || "Sin horario"}
+                      </p>
+                    </article>
+                  </div>
+                )}
 
                 <div className="px-3 pb-3">
                   <div className="grid grid-cols-3 gap-1 rounded-[1rem] border p-1" style={previewBottomNavStyle}>
                     <button
                       type="button"
+                      onClick={() => setPreviewTab("contact")}
                       className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
-                      style={{ color: previewNavText }}
+                      style={previewTab === "contact" ? previewChipActiveStyle : { color: previewNavText }}
                     >
                       {profile.sectionLabels.contact}
                     </button>
-                    <button type="button" className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase" style={previewChipActiveStyle}>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewTab("catalog")}
+                      className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
+                      style={previewTab === "catalog" ? previewChipActiveStyle : { color: previewNavText }}
+                    >
                       {catalogLabel}
                     </button>
                     <button
                       type="button"
+                      onClick={() => setPreviewTab("location")}
                       className="h-11 rounded-[0.8rem] text-[10px] font-black uppercase"
-                      style={{ color: previewNavText }}
+                      style={previewTab === "location" ? previewChipActiveStyle : { color: previewNavText }}
                     >
                       {profile.sectionLabels.location}
                     </button>
@@ -3390,7 +3624,7 @@ export default function LinkHubPage() {
               </div>
               {publicUrl && (
                 <div
-                  className="mt-3 rounded-xl border p-3 text-xs"
+                  className="mt-3 hidden rounded-xl border p-3 text-xs md:block"
                   style={{
                     borderColor: activeCartaTheme.tokens.border,
                     background: activeCartaTheme.tokens.surface2,
@@ -3414,7 +3648,7 @@ export default function LinkHubPage() {
                 </div>
               )}
               <div
-                className="mt-3 rounded-xl border p-3"
+                className="mt-3 hidden rounded-xl border p-3 md:block"
                 style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.surface2 }}
               >
                 <p className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: activeCartaTheme.tokens.mutedText }}>
