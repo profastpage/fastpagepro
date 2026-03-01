@@ -2798,7 +2798,17 @@ export default function LinkHubPage() {
       }
     } catch (error) {
       console.error("[LinkHub] Save error:", error);
-      setMessage({ type: "error", text: "No se pudo guardar. Revisa permisos de Firestore." });
+      const rawMessage = String((error as { message?: string })?.message || "").toLowerCase();
+      if (rawMessage.includes("unsupported field value: undefined")) {
+        setMessage({
+          type: "error",
+          text: "No se pudo guardar por un dato invalido en el perfil. Actualiza e intenta nuevamente.",
+        });
+      } else if (isFirestorePermissionDenied(error)) {
+        setMessage({ type: "error", text: "No se pudo guardar por permisos de Firestore." });
+      } else {
+        setMessage({ type: "error", text: "No se pudo guardar. Intenta nuevamente." });
+      }
     } finally {
       setIsSaving(false);
     }

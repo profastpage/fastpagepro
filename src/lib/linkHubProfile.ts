@@ -1595,7 +1595,7 @@ export function normalizeLinkHubProfile(
     themePrimaryColor: colors.primary,
     themeSecondaryColor: colors.secondary,
     published: Boolean(input.published),
-    publishedAt: Number(input.publishedAt) || undefined,
+    ...(Number(input.publishedAt) > 0 ? { publishedAt: Number(input.publishedAt) } : {}),
     links: links.length > 0 ? links : base.links,
     catalogCategories: finalCategories,
     catalogItems: finalItems,
