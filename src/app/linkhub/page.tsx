@@ -496,6 +496,11 @@ export default function LinkHubPage() {
   const activePlan = subscriptionSummary?.plan || "FREE";
   const isProPlan = activePlan === "PRO";
   const canUseReservations = activePlan === "BUSINESS" || activePlan === "PRO";
+  const isProcessingImages =
+    isUploadingAvatar ||
+    isUploadingCover ||
+    isUploadingReservationImage ||
+    Boolean(uploadingCatalogItemId);
   const aiEnabled = Boolean(subscriptionSummary?.features?.aiOptimization);
   const canCustomizeColors = Boolean(subscriptionSummary?.features?.advancedColorCustomization);
   const publishedProjectsLabel =
@@ -1966,6 +1971,13 @@ export default function LinkHubPage() {
 
   async function saveProfile(mode: SaveMode) {
     if (!profile || !user?.uid) return;
+    if (isProcessingImages) {
+      setMessage({
+        type: "error",
+        text: "Espera a que terminen de procesarse las imagenes antes de guardar o publicar.",
+      });
+      return;
+    }
 
     const sanitizedSlug = sanitizeSlug(profile.slug);
     if (profile.displayName.trim().length < 2) {
@@ -2366,7 +2378,7 @@ export default function LinkHubPage() {
               <div className="flex flex-row-reverse items-center gap-2">
                 <button
                   onClick={() => saveProfile("draft")}
-                  disabled={isSaving}
+                  disabled={isSaving || isProcessingImages}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-sm font-bold text-white"
                   title="Guardar borrador"
                   aria-label="Guardar borrador"
@@ -2375,7 +2387,7 @@ export default function LinkHubPage() {
                 </button>
                 <button
                   onClick={() => saveProfile("publish")}
-                  disabled={isSaving}
+                  disabled={isSaving || isProcessingImages}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-sm font-bold text-emerald-100"
                   title="Publicar Carta Digital"
                   aria-label="Publicar Carta Digital"
@@ -4276,7 +4288,7 @@ export default function LinkHubPage() {
             <div className="hidden md:flex md:w-[122px] md:flex-col md:items-stretch md:gap-2 rounded-2xl border border-white/10 bg-zinc-950/70 p-2.5 backdrop-blur-xl">
               <button
                 onClick={() => saveProfile("draft")}
-                disabled={isSaving}
+                disabled={isSaving || isProcessingImages}
                 className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 text-[11px] font-bold text-white"
                 title="Guardar borrador"
                 aria-label="Guardar borrador"
@@ -4286,7 +4298,7 @@ export default function LinkHubPage() {
               </button>
               <button
                 onClick={() => saveProfile("publish")}
-                disabled={isSaving}
+                disabled={isSaving || isProcessingImages}
                 className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-300/40 bg-emerald-400/10 px-3 text-[11px] font-bold text-emerald-100"
                 title="Publicar Carta Digital"
                 aria-label="Publicar Carta Digital"
