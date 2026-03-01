@@ -718,6 +718,16 @@ export default function PublicStorePage() {
             </div>
           ))}
           <p className="mt-5 text-center text-sm text-white/75">{content.footerLeft || "(c) 2026 Fast Page"}</p>
+          <p className="mt-2 text-center text-sm text-white/80">
+            <a
+              href="https://www.fastpagepro.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2"
+            >
+              Creado por FastPage
+            </a>
+          </p>
         </div>
       </footer>
 

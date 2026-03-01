@@ -1548,6 +1548,18 @@ export default function PublicBioPage() {
                   {profile.location.ctaLabel || "Ir ahora"}
                 </a>
               )}
+
+              <p className="mt-5 text-xs font-semibold" style={{ color: textPalette.muted }}>
+                <a
+                  href="https://www.fastpagepro.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2"
+                  style={{ color: accentWordColor }}
+                >
+                  Creado por FastPage
+                </a>
+              </p>
             </section>
           )}
 

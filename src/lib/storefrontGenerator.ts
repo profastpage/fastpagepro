@@ -781,7 +781,7 @@ export function generateStorefrontHtml(args: {
         </div>
         <div class="grid" id="productsGrid" aria-live="polite"></div>
       </section>
-      <div class="footer"><span>${footerLeft}</span><span class="muted">? ${new Date().getFullYear()} ${safeName}</span></div>
+      <div class="footer"><span>${footerLeft}</span><span class="muted">? ${new Date().getFullYear()} ${safeName}</span><a href="https://www.fastpagepro.com" target="_blank" rel="noopener noreferrer" class="muted">Creado por FastPage</a></div>
     </div>
 
     <div class="drawer" id="cartDrawer" aria-hidden="true"><div class="backdrop" id="drawerBackdrop"></div><aside class="panel" role="dialog" aria-modal="true" aria-label="${cartLabel}"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;"><h4>${cartLabel}</h4><button class="x" id="btnCloseCart" type="button" aria-label="Cerrar">?</button></div><div class="cart-items" id="cartItems"></div><div class="totals"><div class="totals-row"><span class="muted">Total</span><span id="cartTotal">0</span></div><div class="checkout"><button class="btn primary" id="btnCheckout" type="button">${checkoutButton}</button><button class="btn" id="btnContinue" type="button">${continueButton}</button></div></div></aside></div>
