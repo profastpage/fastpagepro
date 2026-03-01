@@ -1023,6 +1023,14 @@ export default function LinkHubPage() {
     setMobileEditMenuMode("sections");
   }
 
+  function handleMobilePreviewTapCloseMenu() {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth >= 768) return;
+    if (!mobileEditMenuOpen) return;
+    if (mobileEditMenuMode !== "sections") return;
+    setMobileEditMenuOpen(false);
+  }
+
   function renderMobileSectionBack(section: EditorSectionKey) {
     if (mobileEditorSection !== section) return null;
     return (
@@ -3808,7 +3816,11 @@ export default function LinkHubPage() {
             }`}
           >
             <div className="md:flex md:items-start md:justify-end md:gap-3">
-            <div className="mx-auto w-full max-w-[450px] rounded-[2rem] border p-3.5 xl:max-w-[560px] xl:p-3" style={previewShellStyle}>
+            <div
+              className="mx-auto w-full max-w-[450px] rounded-[2rem] border p-3.5 xl:max-w-[560px] xl:p-3"
+              style={previewShellStyle}
+              onClick={handleMobilePreviewTapCloseMenu}
+            >
               <div className="flex min-h-[31rem] flex-col overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
                 <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: previewTextMuted }}>
                   Preview Mobile

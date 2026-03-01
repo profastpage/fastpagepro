@@ -132,13 +132,22 @@ export function getSubscriptionDiscountPercent(input: {
   }
 
   const safeMonths = Math.max(1, Math.floor(input.months || 1));
-  if (safeMonths === 3) return 5;
-  if (safeMonths === 6) {
-    if (input.plan === "PRO") return 15;
-    if (input.plan === "BUSINESS") return 10;
+  if (safeMonths < 3) return 0;
+
+  if (input.plan === "BUSINESS") {
+    if (safeMonths >= 9) return 15;
+    if (safeMonths >= 6) return 10;
     return 5;
   }
-  return 0;
+
+  if (input.plan === "PRO") {
+    if (safeMonths >= 6) return 15;
+    return 10;
+  }
+
+  // STARTER (legacy id FREE)
+  if (safeMonths >= 6) return 10;
+  return 5;
 }
 
 export function calculateSubscriptionAmountSoles(input: {

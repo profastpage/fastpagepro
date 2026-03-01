@@ -182,6 +182,8 @@ export default function BillingPage() {
             billingCycle: "Billing cycle",
             cycleMonthly: "Monthly",
             cycleAnnual: "Annual (12 months)",
+            cycleMonthlyMaxDiscount: "Up to 15% discount",
+            cycleAnnualMaxDiscount: "Up to 30% discount",
             monthsLabel: "Months",
             annualDiscount: "Annual discount",
             paymentSummary: "Payment summary",
@@ -247,6 +249,8 @@ export default function BillingPage() {
             billingCycle: "Ciclo de cobro",
             cycleMonthly: "Mensual",
             cycleAnnual: "Anual (12 meses)",
+            cycleMonthlyMaxDiscount: "Hasta 15% descuento",
+            cycleAnnualMaxDiscount: "Hasta 30% descuento",
             monthsLabel: "Meses",
             annualDiscount: "Descuento anual",
             paymentSummary: "Resumen de pago",
@@ -615,7 +619,10 @@ export default function BillingPage() {
                         : "border-white/15 bg-white/5 text-zinc-200"
                     }`}
                   >
-                    {i18n.cycleMonthly}
+                    <span className="block">{i18n.cycleMonthly}</span>
+                    <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.09em] text-amber-200/90">
+                      {i18n.cycleMonthlyMaxDiscount}
+                    </span>
                   </button>
                   <button
                     type="button"
@@ -626,7 +633,10 @@ export default function BillingPage() {
                         : "border-white/15 bg-white/5 text-zinc-200"
                     }`}
                   >
-                    {i18n.cycleAnnual}
+                    <span className="block">{i18n.cycleAnnual}</span>
+                    <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.09em] text-emerald-200/90">
+                      {i18n.cycleAnnualMaxDiscount}
+                    </span>
                   </button>
                 </div>
                 {billingCycle === "MONTHLY" ? (
