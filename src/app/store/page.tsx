@@ -1347,6 +1347,63 @@ function StoreEditorPage() {
                 Edicion
               </button>
             </div>
+            {storeMobileEditMenuOpen ? (
+              <div className="mt-2 md:hidden rounded-2xl border bg-white p-2.5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
+                <div className="space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
+                  {storeMobileEditMenuMode === "sections" ? (
+                    <>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("content")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <LayoutPanelTop className="h-3.5 w-3.5" />
+                        Contenido
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("design")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <Palette className="h-3.5 w-3.5" />
+                        Diseno
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("ai")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800">
+                        <Bot className="h-3.5 w-3.5" />
+                        IA
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("seo")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <Search className="h-3.5 w-3.5" />
+                        SEO
+                      </button>
+                      <button type="button" onClick={() => openStoreMobileEditorSection("settings")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
+                        <Settings className="h-3.5 w-3.5" />
+                        Ajustes
+                      </button>
+                    </>
+                  ) : (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={openStoreMobileSectionMenu}
+                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-800"
+                        >
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          Volver
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStoreMobileEditMenuOpen(false);
+                            setStoreMobileEditMenuMode("sections");
+                          }}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700"
+                          aria-label="Cerrar menu edicion"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <p className="mt-2 text-[11px] font-bold text-emerald-800">
+                        Editando: {storeMobileSectionLabelMap[activeSidebarTab]}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <button
                 onClick={() => window.open(`/t/${publicStoreSlug}`, "_blank", "noopener,noreferrer")}
@@ -1515,63 +1572,6 @@ function StoreEditorPage() {
           </section>
 
           <aside ref={storeEditorAsideRef} className="order-2 min-w-0 space-y-4 self-start lg:order-1 lg:sticky lg:top-[150px]">
-            {storeMobileEditMenuOpen ? (
-              <div className="md:hidden rounded-2xl border bg-white p-2.5" style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}>
-                <div className="mt-2 space-y-1.5 rounded-xl border border-slate-200 bg-white p-2">
-                  {storeMobileEditMenuMode === "sections" ? (
-                    <>
-                      <button type="button" onClick={() => openStoreMobileEditorSection("content")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
-                        <LayoutPanelTop className="h-3.5 w-3.5" />
-                        Contenido
-                      </button>
-                      <button type="button" onClick={() => openStoreMobileEditorSection("design")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
-                        <Palette className="h-3.5 w-3.5" />
-                        Diseno
-                      </button>
-                      <button type="button" onClick={() => openStoreMobileEditorSection("ai")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-800">
-                        <Bot className="h-3.5 w-3.5" />
-                        IA
-                      </button>
-                      <button type="button" onClick={() => openStoreMobileEditorSection("seo")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
-                        <Search className="h-3.5 w-3.5" />
-                        SEO
-                      </button>
-                      <button type="button" onClick={() => openStoreMobileEditorSection("settings")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
-                        <Settings className="h-3.5 w-3.5" />
-                        Ajustes
-                      </button>
-                    </>
-                  ) : (
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={openStoreMobileSectionMenu}
-                          className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-800"
-                        >
-                          <ChevronLeft className="h-3.5 w-3.5" />
-                          Volver
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setStoreMobileEditMenuOpen(false);
-                            setStoreMobileEditMenuMode("sections");
-                          }}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700"
-                          aria-label="Cerrar menu edicion"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <p className="mt-2 text-[11px] font-bold text-emerald-800">
-                        Editando: {storeMobileSectionLabelMap[activeSidebarTab]}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
             <EditorSidebar
               className="hidden md:block"
               activeTab={activeSidebarTab}
