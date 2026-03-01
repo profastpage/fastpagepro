@@ -476,6 +476,7 @@ export default function LinkHubPage() {
   const [previewTab, setPreviewTab] = useState<"contact" | "catalog" | "location" | "reservation">("catalog");
   const [editorItemSearch, setEditorItemSearch] = useState("");
   const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
+  const [mobileEditMenuMode, setMobileEditMenuMode] = useState<"sections" | "editor">("sections");
   const [mobileEditorSection, setMobileEditorSection] = useState<EditorSectionKey>("identity");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const descriptionSeedRef = useRef<number>(Date.now());
@@ -996,13 +997,49 @@ export default function LinkHubPage() {
     };
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       setMobileEditorSection(section);
+      setMobileEditMenuOpen(true);
+      setMobileEditMenuMode("editor");
       requestAnimationFrame(() => {
         refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     } else {
       refs[section]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setMobileEditMenuOpen(false);
     }
-    setMobileEditMenuOpen(false);
+  }
+
+  const mobileSectionLabelMap: Record<EditorSectionKey, string> = {
+    identity: "Identidad de negocio",
+    bioLinks: "BIO y enlaces",
+    catalog: "Carta digital",
+    pro: "Funciones PRO",
+    location: "Ubicacion",
+    reservation: "Reserva",
+    themes: "Temas",
+  };
+
+  function openMobileSectionMenu() {
+    setMobileEditMenuOpen(true);
+    setMobileEditMenuMode("sections");
+  }
+
+  function renderMobileSectionBack(section: EditorSectionKey) {
+    if (mobileEditorSection !== section) return null;
+    return (
+      <div className="mb-4 flex items-center justify-between gap-2 md:hidden">
+        <button
+          type="button"
+          onClick={openMobileSectionMenu}
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-3 text-[10px] font-black uppercase tracking-[0.11em] text-zinc-100"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Volver al submenu
+        </button>
+        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-zinc-400">
+          {mobileSectionLabelMap[section]}
+        </span>
+      </div>
+    );
   }
 
   function applyTheme(theme: LinkHubTheme) {
@@ -2324,7 +2361,14 @@ export default function LinkHubPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setMobileEditMenuOpen((current) => !current)}
+                onClick={() => {
+                  if (mobileEditMenuOpen) {
+                    setMobileEditMenuOpen(false);
+                    return;
+                  }
+                  setMobileEditMenuOpen(true);
+                  setMobileEditMenuMode("sections");
+                }}
                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-400/15 px-3 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100"
               >
                 <Sparkles className="h-3.5 w-3.5" />
@@ -2333,34 +2377,65 @@ export default function LinkHubPage() {
             </div>
             {mobileEditMenuOpen ? (
               <div className="mt-2 space-y-1.5 rounded-2xl border border-white/15 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur-xl">
-                <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                  <Store className="h-3.5 w-3.5" />
-                  Identidad de negocio
-                </button>
-                <button type="button" onClick={() => scrollToEditorSection("bioLinks")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                  <MessageCircle className="h-3.5 w-3.5" />
-                  BIO y enlaces
-                </button>
-                <button type="button" onClick={() => scrollToEditorSection("catalog")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                  <Fish className="h-3.5 w-3.5" />
-                  Carta digital
-                </button>
-                <button type="button" onClick={() => scrollToEditorSection("pro")} className="flex w-full items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold text-amber-100">
-                  <Lock className="h-3.5 w-3.5" />
-                  Funciones PRO
-                </button>
-                <button type="button" onClick={() => scrollToEditorSection("location")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                  <MapPin className="h-3.5 w-3.5" />
-                  Ubicacion
-                </button>
-                <button type="button" onClick={() => scrollToEditorSection("reservation")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-3 py-2 text-[11px] font-bold text-emerald-100">
-                  <CalendarDays className="h-3.5 w-3.5" />
-                  Reserva
-                </button>
-                <button type="button" onClick={() => scrollToEditorSection("themes")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
-                  <Palette className="h-3.5 w-3.5" />
-                  Temas
-                </button>
+                {mobileEditMenuMode === "sections" ? (
+                  <>
+                    <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <Store className="h-3.5 w-3.5" />
+                      Identidad de negocio
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("bioLinks")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      BIO y enlaces
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("catalog")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <Fish className="h-3.5 w-3.5" />
+                      Carta digital
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("pro")} className="flex w-full items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold text-amber-100">
+                      <Lock className="h-3.5 w-3.5" />
+                      Funciones PRO
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("location")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <MapPin className="h-3.5 w-3.5" />
+                      Ubicacion
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("reservation")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-3 py-2 text-[11px] font-bold text-emerald-100">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Reserva
+                    </button>
+                    <button type="button" onClick={() => scrollToEditorSection("themes")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
+                      <Palette className="h-3.5 w-3.5" />
+                      Temas
+                    </button>
+                  </>
+                ) : (
+                  <div className="rounded-xl border border-emerald-300/35 bg-emerald-400/10 p-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={openMobileSectionMenu}
+                        className="inline-flex h-8 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-100"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        Volver
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMobileEditMenuOpen(false)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-zinc-200"
+                        aria-label="Cerrar menu edicion"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <p className="mt-2 text-[11px] font-bold text-emerald-100">
+                      Editando: {mobileSectionLabelMap[mobileEditorSection]}
+                    </p>
+                    <p className="mt-1 text-[10px] text-emerald-200/80">
+                      El formulario se abre debajo, sin redireccionar.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
@@ -2414,6 +2489,7 @@ export default function LinkHubPage() {
                 mobileEditorSection !== "identity" ? "hidden md:block" : ""
               }`}
             >
+              {renderMobileSectionBack("identity")}
               <h2 className="text-xl font-bold text-white mb-5">Identidad del Negocio</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <label className="space-y-2">
@@ -2590,6 +2666,7 @@ export default function LinkHubPage() {
                 mobileEditorSection !== "bioLinks" ? "hidden md:block" : ""
               }`}
             >
+              {renderMobileSectionBack("bioLinks")}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
                 <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Telefono</span>
@@ -2693,6 +2770,7 @@ export default function LinkHubPage() {
                 mobileEditorSection !== "catalog" ? "hidden md:block" : ""
               }`}
             >
+              {renderMobileSectionBack("catalog")}
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold text-white">
                   {profile.businessType === "restaurant" ? "Carta" : "Catalogo"} digital
@@ -3054,6 +3132,7 @@ export default function LinkHubPage() {
                 mobileEditorSection !== "pro" ? "hidden md:block" : ""
               }`}
             >
+              {renderMobileSectionBack("pro")}
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-xl font-bold text-white">Funciones PRO para vender mas</h2>
                 <span
@@ -3152,6 +3231,7 @@ export default function LinkHubPage() {
                 mobileEditorSection !== "location" ? "hidden md:block" : ""
               }`}
             >
+              {renderMobileSectionBack("location")}
               <h2 className="text-xl font-bold text-white mb-5">Ubicacion</h2>
               <div className="grid grid-cols-1 gap-4">
                 <label className="space-y-2">
@@ -3210,6 +3290,7 @@ export default function LinkHubPage() {
                 mobileEditorSection !== "reservation" ? "hidden md:block" : ""
               }`}
             >
+              {renderMobileSectionBack("reservation")}
               <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold text-white">Reservas (Business/Pro)</h2>
@@ -3361,6 +3442,7 @@ export default function LinkHubPage() {
                 mobileEditorSection !== "themes" ? "hidden md:block" : ""
               }`}
             >
+              {renderMobileSectionBack("themes")}
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-white">
                   {isRestaurantProfile ? "Temas oficiales · Carta Digital" : "Tema visual deluxe"}
