@@ -1,5 +1,6 @@
 import { normalizeVertical } from "@/lib/vertical";
 import type { DemoData, DemoMode, DemoVertical } from "@/lib/demoTypes";
+import { OFFICIAL_DEMO_WHATSAPP } from "@/lib/demoWhatsapp";
 import burgerLab from "../../data/demos/restaurant/burger-lab.json";
 import brasaPower from "../../data/demos/restaurant/brasa-power.json";
 import cevicheHouse from "../../data/demos/restaurant/ceviche-house.json";
@@ -74,5 +75,5 @@ export async function getDemoData(args: {
 
   const mock = MOCK_DEMOS[vertical]?.[slug] || null;
   if (!mock) return null;
-  return { ...mock, mode: "demo" };
+  return { ...mock, mode: "demo", whatsappNumber: OFFICIAL_DEMO_WHATSAPP };
 }

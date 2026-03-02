@@ -90,8 +90,8 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
       })),
       total: formatMoney(total),
     });
-    return buildOfficialDemoWhatsappUrl(lines, demo.whatsappNumber);
-  }, [cartProducts, deliveryMode, demo.title, demo.whatsappNumber, total]);
+    return buildOfficialDemoWhatsappUrl(lines);
+  }, [cartProducts, deliveryMode, demo.title, total]);
 
   return (
     <section className="min-w-0 w-full space-y-6">

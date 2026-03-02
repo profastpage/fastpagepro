@@ -12,7 +12,6 @@ import {
 export default function ServicesDemo({ demo }: { demo: LandingData }) {
   const whatsappHref = buildOfficialDemoWhatsappUrl(
     buildServicesDemoMessage({ title: demo.title }),
-    demo.whatsappNumber,
   );
 
   return (

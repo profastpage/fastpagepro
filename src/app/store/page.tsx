@@ -186,7 +186,7 @@ const DEFAULT_CONFIG: StoreConfig = {
   currency: "PEN",
   themeId: "cleanStore",
   primaryCta: "Comprar ahora",
-  supportWhatsapp: "51999999999",
+  supportWhatsapp: "51919662011",
   customRgb: {
     accent: { r: 220, g: 38, b: 38 },
     accent2: { r: 248, g: 113, b: 113 },
@@ -214,8 +214,8 @@ const DEFAULT_CONFIG: StoreConfig = {
     facebookUrl: "https://facebook.com/",
     instagramUrl: "https://instagram.com/",
     tiktokUrl: "https://tiktok.com/",
-    whatsappUrl: "https://wa.me/51999999999",
-    phoneUrl: "tel:+51999999999",
+    whatsappUrl: "https://wa.me/51919662011",
+    phoneUrl: "tel:+51919662011",
     footerLeft: "Edita aqui: mensaje final, politicas o copyright.",
     checkoutTitle: "Finaliza tu pedido",
     checkoutButton: "Confirmar pedido",
@@ -1735,7 +1735,7 @@ function StoreEditorPage() {
                     onChange={(e) => setConfig((prev) => ({ ...prev, supportWhatsapp: e.target.value.replace(/\D/g, "") }))}
                     className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                     style={{ borderColor: "var(--vs-border)" }}
-                    placeholder="51999999999"
+                    placeholder="51919662011"
                   />
                 </label>
                 <div className="grid grid-cols-2 gap-2">

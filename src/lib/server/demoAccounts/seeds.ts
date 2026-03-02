@@ -79,7 +79,7 @@ async function seedRestaurant(input: SeedContext) {
   batch.set(db.doc(settingsDocPath(demoGroupId)), {
     template: "restaurant",
     currency: "PEN",
-    whatsapp: "51999999999",
+    whatsapp: "51919662011",
     primaryColor: "#f59e0b",
     updatedAt: now,
   });
@@ -146,7 +146,7 @@ async function seedStore(input: SeedContext) {
   batch.set(db.doc(settingsDocPath(demoGroupId)), {
     template: "store",
     currency: "PEN",
-    whatsapp: "51999999999",
+    whatsapp: "51919662011",
     deliveryEnabled: true,
     updatedAt: now,
   });
@@ -180,7 +180,7 @@ async function seedServices(input: SeedContext) {
   batch.set(db.doc(settingsDocPath(demoGroupId)), {
     template: "services",
     pipelineStages: pipeline,
-    whatsapp: "51999999999",
+    whatsapp: "51919662011",
     updatedAt: now,
   });
   batch.set(db.doc(metaDocPath(demoGroupId)), {

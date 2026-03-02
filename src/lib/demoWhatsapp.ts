@@ -1,14 +1,12 @@
 export const OFFICIAL_DEMO_WHATSAPP = "51919662011";
 
-function normalizePhone(value: string): string {
-  const digits = String(value || "").replace(/\D/g, "");
-  return digits || OFFICIAL_DEMO_WHATSAPP;
+export function buildOfficialDemoCallHref(): string {
+  return `tel:+${OFFICIAL_DEMO_WHATSAPP}`;
 }
 
-export function buildOfficialDemoWhatsappUrl(lines: string[], targetPhone?: string): string {
-  const normalized = normalizePhone(targetPhone || OFFICIAL_DEMO_WHATSAPP);
+export function buildOfficialDemoWhatsappUrl(lines: string[]): string {
   const text = encodeURIComponent(lines.join("\n"));
-  return `https://wa.me/${normalized}?text=${text}`;
+  return `https://wa.me/${OFFICIAL_DEMO_WHATSAPP}?text=${text}`;
 }
 
 type RestaurantItem = {

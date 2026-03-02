@@ -33,7 +33,7 @@ type SeasonalCampaign = {
   ctaLabel: string;
 };
 
-const PHONE_PLACEHOLDER = "51999999999";
+const PHONE_PLACEHOLDER = "51919662011";
 
 const seasonalCampaigns: SeasonalCampaign[] = [
   {
