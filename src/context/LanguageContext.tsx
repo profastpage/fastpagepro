@@ -14,7 +14,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined,
 );
 
-const MOJIBAKE_PATTERN = /Ã|Â|ð|ï¿½|�/;
+const MOJIBAKE_PATTERN = /Ã|Â|â|ð|ï¿½|�/;
 
 function fixMojibake(value: string): string {
   let result = value;
