@@ -13,3 +13,7 @@
   - se agrego helper compartido `src/lib/whatsapp.ts` para generar links con `https://api.whatsapp.com/send` y `URLSearchParams`.
   - las cartas digitales publicadas (`/bio/[slug]`) usan el helper en contacto, pedido de carrito y reserva.
   - el preview del editor LinkHub (`/linkhub`) tambien usa el mismo helper.
+- Carta digital mas visual (demo + cuentas registradas):
+  - se aumentaron dimensiones de tarjetas de productos en la seccion carta para mobile-first.
+  - imagenes, tipografia, precio y controles de cantidad ahora tienen mayor presencia visual.
+  - aplica en demo sin registro (`RestaurantDemo`) y en carta publicada de cuentas registradas (`ProductCard` en `/bio/[slug]`).

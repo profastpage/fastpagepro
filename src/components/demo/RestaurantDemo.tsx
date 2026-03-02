@@ -356,48 +356,52 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   >
                     <h3 className="text-4xl font-black md:text-5xl" style={{ color: "var(--fp-primary)" }}>{group.name}</h3>
                     {group.items.map((item) => (
-                      <article key={item.id} className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3">
-                        <div className="flex gap-3">
-                          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--fp-border)] md:h-28 md:w-28">
+                      <article
+                        key={item.id}
+                        className="rounded-[1.2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3.5 md:p-4"
+                        style={{ boxShadow: "0 14px 24px -20px rgba(15,23,42,0.45)" }}
+                      >
+                        <div className="flex gap-3.5 md:gap-4">
+                          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-[0.9rem] border border-[var(--fp-border)] md:h-32 md:w-32">
                             <DemoImage
                               src={item.image}
                               alt={item.name}
                               fallbackLabel={item.name}
                               fill
                               unoptimized
-                              sizes="120px"
+                              sizes="(max-width: 768px) 112px, 128px"
                               className="object-cover"
                             />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <h4 className="line-clamp-2 text-xl font-black leading-tight md:text-3xl">{item.name}</h4>
+                              <h4 className="line-clamp-2 text-[1.28rem] font-black leading-tight md:text-3xl">{item.name}</h4>
                               {item.badge ? (
-                                <span className="rounded-full bg-[var(--fp-primary)] px-2 py-1 text-[10px] font-black text-white">
+                                <span className="rounded-full bg-[var(--fp-primary)] px-2.5 py-1 text-[10px] font-black text-white">
                                   {normalizeBadge(item.badge)}
                                 </span>
                               ) : null}
                             </div>
-                            <p className="mt-1 line-clamp-2 text-sm text-[var(--fp-muted)] md:text-base">{item.description}</p>
+                            <p className="mt-1 line-clamp-2 text-[13px] text-[var(--fp-muted)] md:text-base">{item.description}</p>
                             <div className="mt-2 flex items-end gap-2">
                               {item.compareAtPrice ? (
                                 <p className="text-[11px] line-through text-[var(--fp-muted)] md:text-xs">{formatMoney(item.compareAtPrice)}</p>
                               ) : null}
-                              <p className="text-2xl font-black text-[var(--fp-primary)] md:text-3xl">{formatMoney(item.price)}</p>
+                              <p className="text-[2rem] font-black text-[var(--fp-primary)] md:text-[2.15rem]">{formatMoney(item.price)}</p>
                             </div>
-                            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-2 py-1">
+                            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-2.5 py-1">
                               <button
                                 type="button"
                                 onClick={() => updateQty(item, -1)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
-                              <span className="min-w-6 text-center text-xl font-black">{cart[item.id] || 0}</span>
+                              <span className="min-w-7 text-center text-2xl font-black">{cart[item.id] || 0}</span>
                               <button
                                 type="button"
                                 onClick={() => updateQty(item, 1)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
                               >
                                 <Plus className="h-4 w-4" />
                               </button>
