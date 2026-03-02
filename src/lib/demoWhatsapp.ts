@@ -5,8 +5,8 @@ function normalizePhone(value: string): string {
   return digits || OFFICIAL_DEMO_WHATSAPP;
 }
 
-export function buildOfficialDemoWhatsappUrl(lines: string[]): string {
-  const normalized = normalizePhone(OFFICIAL_DEMO_WHATSAPP);
+export function buildOfficialDemoWhatsappUrl(lines: string[], targetPhone?: string): string {
+  const normalized = normalizePhone(targetPhone || OFFICIAL_DEMO_WHATSAPP);
   const text = encodeURIComponent(lines.join("\n"));
   return `https://wa.me/${normalized}?text=${text}`;
 }

@@ -27,7 +27,7 @@ const FloatingCartButton = memo(function FloatingCartButton({
       <button
         type="button"
         onClick={onOpen}
-        className={`inline-flex w-[6.15rem] flex-col items-center justify-center gap-1.5 border px-2 py-2.5 text-xs font-black uppercase tracking-[0.08em] shadow-xl transition active:scale-[0.97] ${buttonShapeClass}`}
+        className={`inline-flex w-[6.15rem] touch-manipulation cursor-pointer flex-col items-center justify-center gap-1.5 border px-2 py-2.5 text-xs font-black uppercase tracking-[0.08em] shadow-xl transition active:scale-[0.97] ${buttonShapeClass}`}
         style={{
           borderColor: "var(--carta-chip-border)",
           background: "var(--carta-nav-active-bg)",

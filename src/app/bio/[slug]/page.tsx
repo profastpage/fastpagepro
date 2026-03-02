@@ -932,6 +932,54 @@ export default function PublicBioPage() {
     setCartFeedback("Pedido listo. Te estamos redirigiendo a WhatsApp.");
   }
 
+  function submitQuickOrderWhatsapp() {
+    if (!whatsappTargetDigits) {
+      setCartError("Este negocio no tiene WhatsApp configurado aun.");
+      return;
+    }
+
+    const date = new Date();
+    const quickLines =
+      cartItems.length > 0
+        ? cartItems.map(
+            (item, index) =>
+              `${index + 1}. ${item.title} x${item.quantity} - ${formatSoles(item.unitPrice * item.quantity)}`,
+          )
+        : ["1. Quiero realizar un pedido y necesito asesoria."];
+
+    const text = [
+      `\u{1F44B} Hola equipo ${businessName}, les escribo desde su Carta Digital FastPage.`,
+      "",
+      "\u{1F9FE} *Resumen rapido de mi pedido:*",
+      ...quickLines,
+      "",
+      `\u{1F4B0} Total estimado: ${formatSoles(cartTotal)}`,
+      `\u{1F552} ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+      "",
+      "Quedo atento(a) para confirmar mi pedido. Gracias.",
+    ].join("\n");
+
+    postLinkHubMetric({
+      eventType: "order_whatsapp",
+      ownerUserId: profile?.userId || "",
+      slug: profile?.slug || slug,
+      totalAmount: cartTotal,
+      source: "floating_button",
+      items: cartItems.map((item) => ({
+        categoryId: (profile?.catalogItems || []).find((entry) => entry.id === item.id)?.categoryId || "",
+        itemId: item.id,
+        itemTitle: item.title,
+        categoryName: item.categoryName,
+        quantity: item.quantity,
+      })),
+    });
+
+    const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(text)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    setCartError("");
+    setCartFeedback("Te estamos redirigiendo a WhatsApp.");
+  }
+
   function submitReservationWhatsapp() {
     if (!reservationEnabled) {
       setActiveTab("contact");
@@ -1910,7 +1958,7 @@ export default function PublicBioPage() {
           cartCount={cartItemsCount}
           buttonShapeClass="rounded-[1.15rem]"
           visible={activeTab === "catalog"}
-          onOpen={submitOrderWhatsapp}
+          onOpen={submitQuickOrderWhatsapp}
         />
       )}
 

@@ -16,7 +16,6 @@ import type { RestaurantMenuData, RestaurantMenuItem } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
 import DemoImage from "@/components/demo/DemoImage";
 import {
-  OFFICIAL_DEMO_WHATSAPP,
   buildOfficialDemoWhatsappUrl,
   buildRestaurantDemoMessage,
 } from "@/lib/demoWhatsapp";
@@ -63,7 +62,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const profileImage = demo.profileImage || mainImage || demo.coverImage;
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(demo.address)}&output=embed`;
   const mapsOpen = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`;
-  const callHref = `tel:${OFFICIAL_DEMO_WHATSAPP}`;
+  const callHref = `tel:${demo.whatsappNumber.replace(/\D/g, "")}`;
 
   const categories = useMemo(() => ["Todos", ...demo.categories], [demo.categories]);
 
@@ -182,8 +181,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
       })),
       total: formatMoney(total),
     });
-    return buildOfficialDemoWhatsappUrl(lines);
-  }, [cartItems, demo.address, demo.title, total]);
+    return buildOfficialDemoWhatsappUrl(lines, demo.whatsappNumber);
+  }, [cartItems, demo.address, demo.title, demo.whatsappNumber, total]);
 
   const navButton =
     "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition md:h-12 md:text-sm";
