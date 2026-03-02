@@ -2,7 +2,7 @@
 
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +70,18 @@ export default function Nav() {
   const toggleLanguage = () => {
     setLanguage(language === "es" ? "en" : "es");
   };
+
+  const prefetchRoute = useCallback(
+    (href: string) => {
+      if (!href) return;
+      try {
+        router.prefetch(href);
+      } catch {
+        // no-op: prefetch best-effort
+      }
+    },
+    [router],
+  );
 
   // Close menu when route changes
   useEffect(() => {
@@ -201,6 +213,30 @@ export default function Nav() {
     ];
   }, [isEnglish, permissions.canonicalPlan, session, summary?.status, t]);
 
+  useEffect(() => {
+    if (!session) return;
+    if (typeof window === "undefined") return;
+
+    const routes = Array.from(
+      new Set([
+        "/hub",
+        "/cartadigital",
+        "/published",
+        "/dashboard/billing",
+        "/settings",
+        ...navLinks.map((entry) => entry.href),
+      ]),
+    );
+
+    const timers = routes.map((href, index) =>
+      window.setTimeout(() => prefetchRoute(href), 80 + index * 55),
+    );
+
+    return () => {
+      timers.forEach((timerId) => window.clearTimeout(timerId));
+    };
+  }, [navLinks, prefetchRoute, session]);
+
   if (
     pathname === "/auth" ||
     pathname === "/signup" ||
@@ -257,7 +293,18 @@ export default function Nav() {
             <div
               key={link.href}
               className="relative"
-              onMouseEnter={() => link.locked && setDesktopLockedOpen(link.href)}
+              onMouseEnter={() => {
+                if (link.locked) {
+                  const requiredFeature = String(link.requiredFeature || "");
+                  const target = requiredFeature
+                    ? `/dashboard/billing?requiredFeature=${requiredFeature}`
+                    : "/dashboard/billing";
+                  prefetchRoute(target);
+                  setDesktopLockedOpen(link.href);
+                  return;
+                }
+                prefetchRoute(link.href);
+              }}
               onMouseLeave={() => link.locked && setDesktopLockedOpen((current) => (current === link.href ? null : current))}
             >
               {link.locked ? (
@@ -289,6 +336,9 @@ export default function Nav() {
               ) : (
                 <Link
                   href={link.href}
+                  prefetch
+                  onMouseEnter={() => prefetchRoute(link.href)}
+                  onFocus={() => prefetchRoute(link.href)}
                   className={`nav-link-glow text-[11px] uppercase tracking-[0.2em] font-bold transition-all ${
                     pathname === link.href
                       ? "text-amber-400 drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]"
@@ -503,6 +553,13 @@ export default function Nav() {
                         <>
                           <button
                             type="button"
+                            onTouchStart={() => {
+                              const requiredFeature = String(link.requiredFeature || "");
+                              const target = requiredFeature
+                                ? `/dashboard/billing?requiredFeature=${requiredFeature}`
+                                : "/dashboard/billing";
+                              prefetchRoute(target);
+                            }}
                             onClick={() => {
                               setMobileLockedOpen((current) => (current === link.href ? null : link.href));
                               const requiredFeature = String(link.requiredFeature || "");
@@ -525,6 +582,8 @@ export default function Nav() {
                       ) : (
                         <Link
                           href={link.href}
+                          prefetch
+                          onTouchStart={() => prefetchRoute(link.href)}
                           className="flex w-full items-center rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-lg font-semibold leading-tight text-white transition-all hover:border-amber-300/40 hover:bg-amber-300/10 hover:text-amber-100"
                         >
                           {link.name}
