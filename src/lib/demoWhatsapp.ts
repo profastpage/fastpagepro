@@ -5,8 +5,11 @@ export function buildOfficialDemoCallHref(): string {
 }
 
 export function buildOfficialDemoWhatsappUrl(lines: string[]): string {
-  const text = encodeURIComponent(lines.join("\n"));
-  return `https://wa.me/${OFFICIAL_DEMO_WHATSAPP}?text=${text}`;
+  const query = new URLSearchParams({
+    phone: OFFICIAL_DEMO_WHATSAPP,
+    text: lines.join("\n"),
+  });
+  return `https://api.whatsapp.com/send?${query.toString()}`;
 }
 
 type RestaurantItem = {
@@ -28,14 +31,14 @@ export function buildRestaurantDemoMessage(input: {
   total: string;
 }): string[] {
   const e = {
-    wave: "\u{1F44B}",
-    plate: "\u{1F37D}\u{FE0F}",
-    store: "\u{1F3EA}",
-    pin: "\u{1F4CD}",
-    receipt: "\u{1F9FE}",
-    money: "\u{1F4B0}",
-    thanks: "\u{1F64F}",
-    sparkles: "\u{2728}",
+    wave: "👋",
+    plate: "🍽️",
+    store: "🏢",
+    pin: "📍",
+    receipt: "🧾",
+    money: "💰",
+    thanks: "🙏",
+    sparkles: "✨",
   };
 
   const detailLines =
@@ -68,16 +71,16 @@ export function buildEcommerceDemoMessage(input: {
   total: string;
 }): string[] {
   const e = {
-    wave: "\u{1F44B}",
-    bag: "\u{1F6CD}\u{FE0F}",
-    tag: "\u{1F3F7}\u{FE0F}",
-    box: "\u{1F4E6}",
-    truck: "\u{1F69A}",
-    store: "\u{1F3EC}",
-    receipt: "\u{1F9FE}",
-    money: "\u{1F4B0}",
-    thanks: "\u{1F64F}",
-    sparkles: "\u{2728}",
+    wave: "👋",
+    bag: "🛍️",
+    tag: "🏷️",
+    box: "📦",
+    truck: "🚚",
+    store: "🏬",
+    receipt: "🧾",
+    money: "💰",
+    thanks: "🙏",
+    sparkles: "✨",
   };
 
   const detailLines =
@@ -112,12 +115,12 @@ export function buildServicesDemoMessage(input: {
   title: string;
 }): string[] {
   const e = {
-    wave: "\u{1F44B}",
-    puzzle: "\u{1F9E9}",
-    building: "\u{1F3E2}",
-    target: "\u{1F3AF}",
-    thanks: "\u{1F64F}",
-    sparkles: "\u{2728}",
+    wave: "👋",
+    puzzle: "🧩",
+    building: "🏢",
+    target: "🎯",
+    thanks: "🙏",
+    sparkles: "✨",
   };
 
   return [
