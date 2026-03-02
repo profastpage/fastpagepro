@@ -361,15 +361,15 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                         className="rounded-[1.2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3.5 md:p-4"
                         style={{ boxShadow: "0 14px 24px -20px rgba(15,23,42,0.45)" }}
                       >
-                        <div className="flex gap-3.5 md:gap-4">
-                          <div className="relative h-[116px] w-[116px] shrink-0 overflow-hidden rounded-[0.9rem] border border-[var(--fp-border)] md:h-[128px] md:w-[128px]">
+                        <div className="flex gap-3.5 md:gap-4.5">
+                          <div className="relative h-[124px] w-[124px] shrink-0 overflow-hidden rounded-[0.9rem] border border-[var(--fp-border)] md:h-[168px] md:w-[168px]">
                             <DemoImage
                               src={item.image}
                               alt={item.name}
                               fallbackLabel={item.name}
                               fill
                               unoptimized
-                              sizes="(max-width: 768px) 116px, 128px"
+                              sizes="(max-width: 768px) 124px, 168px"
                               className="object-cover"
                             />
                           </div>
@@ -387,7 +387,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                               {item.compareAtPrice ? (
                                 <p className="text-[11px] line-through text-[var(--fp-muted)] md:text-xs">{formatMoney(item.compareAtPrice)}</p>
                               ) : null}
-                              <p className="text-[1.86rem] font-black text-[var(--fp-primary)] md:text-[2.02rem]">{formatMoney(item.price)}</p>
+                              <p className="text-[1.46rem] font-black text-[var(--fp-primary)] md:text-[1.62rem]">{formatMoney(item.price)}</p>
                             </div>
                             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-1.5 py-1">
                               <button

@@ -20,3 +20,4 @@
   - se reforzo tambien el preview de carta en `/linkhub` para que el tamano visible de items se acerque al render final mobile.
   - ajuste fino adicional: badge mas compacto y stepper tipo pildora mas corto para acercar la UI al layout de referencia (imagen 2).
   - ajuste adicional: precios reducidos en tarjetas de carta para demo sin registro y carta publicada con registro.
+  - ajuste extra: precios aun mas pequenos y imagenes de producto significativamente mas grandes en desktop (tambien ajustadas en mobile).

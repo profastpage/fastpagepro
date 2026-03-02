@@ -59,15 +59,15 @@ const ProductCard = memo(function ProductCard({
         boxShadow: "0 16px 28px -22px rgba(15,23,42,0.38)",
       }}
     >
-      <div className="flex gap-3.5 md:gap-4">
-        <div className="relative h-[122px] w-[122px] shrink-0 overflow-hidden rounded-[0.9rem] border border-[color:var(--carta-chip-border)] md:h-[132px] md:w-[132px]">
+      <div className="flex gap-3.5 md:gap-4.5">
+        <div className="relative h-[128px] w-[128px] shrink-0 overflow-hidden rounded-[0.9rem] border border-[color:var(--carta-chip-border)] md:h-[170px] md:w-[170px]">
           {primaryImage ? (
             <Image
               src={primaryImage}
               alt={title}
               fill
               loading="lazy"
-              sizes="(max-width: 768px) 122px, 132px"
+              sizes="(max-width: 768px) 128px, 170px"
               className="object-cover"
             />
           ) : (
@@ -129,7 +129,7 @@ const ProductCard = memo(function ProductCard({
                   S/{oldPrice}
                 </span>
               ) : null}
-              <span className="text-[1.86rem] font-black leading-none md:text-[2.02rem]" style={{ color: "var(--carta-price-color, var(--carta-accent))" }}>
+              <span className="text-[1.46rem] font-black leading-none md:text-[1.62rem]" style={{ color: "var(--carta-price-color, var(--carta-accent))" }}>
                 S/{price}
               </span>
             </div>
