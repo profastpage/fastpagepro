@@ -1607,3 +1607,51 @@ o-scrollbar para evitar barra visible.
   - reservation deposit fields are normalized/saved from editor to profile storage.
 - Guardrails:
   - non-destructive, minimal-diff UI updates preserving existing responsive layout and navigation behavior.
+## PWA install banner + app entry auth/hub flow (2026-03-01)
+
+- Ruta de inicio publica (`/`) ahora muestra en mobile un banner superior de instalacion de app con estilo premium dorado suave.
+- Se habilita base PWA:
+  - `src/app/manifest.ts` con `start_url=/app?source=pwa`, `display=standalone` e iconos.
+  - `public/sw.js` con app shell cache y fallback de navegacion.
+  - registro global de service worker en layout.
+- Entrada de app instalada:
+  - `/app` ahora redirige a `/auth` si no hay sesion y a `/hub` si el usuario ya esta autenticado.
+- Persistencia de sesion en autenticacion:
+  - `setPersistence(auth, browserLocalPersistence)` para mantener sesion local.
+  - inputs de auth con `autoComplete` para facilitar guardado seguro de credenciales por el navegador.
+## Billing: monthly 12 months uses max annual discount by plan (2026-03-01)
+
+- Ruta ajustada: `/dashboard/billing`.
+- Reglas de descuento actualizadas:
+  - en ciclo `MONTHLY`, cuando `meses=12`, se aplica el mismo descuento maximo anual del plan seleccionado (`FREE 10%`, `BUSINESS 20%`, `PRO 30%`).
+  - en ciclo `ANNUAL`, se mantiene descuento anual del plan.
+- UX copy en formulario de pago:
+  - etiquetas de ciclo mensual/anual ahora muestran descuento dinamico segun plan.
+  - en mensual con 12 meses se muestra mensaje explicito con `% aplicado` y `total final`.
+- Se mantiene compatibilidad del backend porque el calculo central sigue en `src/lib/subscription/plans.ts` y es consumido por API de solicitud de suscripcion.
+## Carta Digital checklist label update with tutorial + book emoji (2026-03-01)
+
+- Ruta ajustada: `/linkhub`.
+- Se unifica el label de checklist en mobile y tarjeta superior:
+  - `Publica en 10 minutos (tutorial) ??`
+- Aplicado en todos los lugares donde aparecia `Publica en 10 minutos` dentro del editor.
+## Carta + Store theme premium expansion and white/theme preview parity (2026-03-01)
+
+- Rutas/modulos ajustados:
+  - `/linkhub` (editor Carta Digital)
+  - `/bio/[slug]` (publicacion Carta)
+  - `/store` (editor Tienda Online)
+- Fondo blanco vs fondo del tema:
+  - se corrige paridad visual para que al elegir `Fondo blanco` el preview refleje fondo/menu realmente blancos.
+  - se mantiene opcion `Fondo del tema` y el cambio se aplica en preview en tiempo real al hacer click en temas.
+  - `Sugerir por rubro` ya no fuerza automaticamente `Fondo blanco`.
+- Temas adicionales premium:
+  - se agregan 10 temas nuevos en total:
+    - Carta Digital: +5 temas premium.
+    - Tienda Online: +5 temas premium.
+- Plan gating (Business/Pro):
+  - los nuevos temas premium quedan bloqueados en FREE con feedback UX.
+  - en Store, personalizacion RGB queda condicionada a feature premium (`advancedColorCustomization`).
+  - si un usuario FREE abre Store con tema premium, se aplica fallback automatico a un tema permitido.
+- Compatibilidad:
+  - no se rompen contratos/API; persistencia sigue usando estructuras actuales de perfil/storeConfig.

@@ -167,9 +167,19 @@ const LINK_TYPE_ICON: Record<LinkHubLinkType, ComponentType<{ className?: string
   x: AtSign,
 };
 
+function createClientUuid(): string {
+  if (typeof globalThis !== "undefined") {
+    const maybeCrypto = (globalThis as { crypto?: Crypto }).crypto;
+    if (maybeCrypto && typeof maybeCrypto.randomUUID === "function") {
+      return maybeCrypto.randomUUID();
+    }
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function createEmptyLink(): LinkHubLink {
   return {
-    id: crypto.randomUUID(),
+    id: createClientUuid(),
     title: "",
     url: "",
     type: "website",
@@ -249,6 +259,13 @@ function sanitizeDemoParam(value: string | null) {
 
 function normalizeDigits(value: string): string {
   return String(value || "").replace(/\D/g, "");
+}
+
+function shouldConfirmExtraProjectSlot(): boolean {
+  if (typeof window === "undefined") return false;
+  const isCoarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+  const isNarrowViewport = window.matchMedia?.("(max-width: 1023px)")?.matches;
+  return !isCoarsePointer && !isNarrowViewport;
 }
 
 function isFirestorePermissionDenied(error: unknown): boolean {
@@ -548,6 +565,7 @@ export default function LinkHubPage() {
 
   const activePlan = subscriptionSummary?.plan || "FREE";
   const isProPlan = activePlan === "PRO";
+  const canUsePremiumThemes = activePlan === "BUSINESS" || activePlan === "PRO";
   const canUseReservations = activePlan === "BUSINESS" || activePlan === "PRO";
   const isProcessingImages =
     isUploadingAvatar ||
@@ -922,7 +940,7 @@ export default function LinkHubPage() {
   const previewMenuGradientSoft = useMemo(
     () =>
       useWhiteCartaBackground
-        ? `linear-gradient(135deg, ${hexToRgba(activeCartaTheme.tokens.primary, 0.16)} 0%, ${hexToRgba(activeCartaTheme.tokens.accent, 0.14)} 100%)`
+        ? "#ffffff"
         : activeCartaTheme.tokens.surface2,
     [activeCartaTheme.tokens.accent, activeCartaTheme.tokens.primary, activeCartaTheme.tokens.surface2, useWhiteCartaBackground],
   );
@@ -930,7 +948,7 @@ export default function LinkHubPage() {
     () => ({
       borderColor: previewMenuBorder,
       background: useWhiteCartaBackground
-        ? "radial-gradient(110% 110% at 10% 0%, rgba(148,163,184,0.22) 0%, transparent 56%), linear-gradient(180deg, #e2e8f0 0%, #dbe4ee 100%)"
+        ? "#ffffff"
         : activeCartaTheme.tokens.background,
     }),
     [activeCartaTheme.tokens.background, previewMenuBorder, useWhiteCartaBackground],
@@ -1226,7 +1244,7 @@ export default function LinkHubPage() {
   }
 
   const mobileSectionLabelMap: Record<EditorSectionKey, string> = {
-    checklist: "Publica en 10 minutos",
+    checklist: "Publica en 10 minutos (tutorial) 📘",
     identity: "Identidad de negocio",
     bioLinks: "BIO y enlaces",
     catalog: "Carta digital",
@@ -1882,7 +1900,7 @@ export default function LinkHubPage() {
 
       const duplicated = {
         ...source,
-        id: crypto.randomUUID(),
+        id: createClientUuid(),
         title: source.title ? `${source.title} copia` : "",
       };
       const index = prev.catalogItems.findIndex((item) => item.id === itemId);
@@ -1930,7 +1948,7 @@ export default function LinkHubPage() {
       if (!prev) return prev;
       const source = prev.catalogCategories.find((category) => category.id === categoryId);
       if (!source) return prev;
-      const nextCategoryId = crypto.randomUUID();
+      const nextCategoryId = createClientUuid();
       const clonedCategory = {
         ...source,
         id: nextCategoryId,
@@ -1940,7 +1958,7 @@ export default function LinkHubPage() {
       const remainingSlots = Math.max(0, MAX_LINK_HUB_CATALOG_ITEMS - prev.catalogItems.length);
       const clonedItems = sourceItems.slice(0, remainingSlots).map((item) => ({
         ...item,
-        id: crypto.randomUUID(),
+        id: createClientUuid(),
         categoryId: nextCategoryId,
         title: item.title ? `${item.title} copia` : "Item copia",
       }));
@@ -2607,6 +2625,16 @@ export default function LinkHubPage() {
     let publishTargetMode: "existing" | "new" = "existing";
 
     if (mode === "publish") {
+      const alreadyPublished = Boolean(profile.published);
+      const publishTarget = requestPublishTarget({
+        hasExistingProject: alreadyPublished,
+        entityLabel: "carta digital",
+      });
+      if (publishTarget === "cancelled") {
+        return;
+      }
+      publishTargetMode = publishTarget;
+
       let latestSummary = subscriptionSummary;
       try {
         latestSummary = await fetchCurrentSubscriptionSummary();
@@ -2617,17 +2645,8 @@ export default function LinkHubPage() {
       const planStatus = String(latestSummary?.status || "").toUpperCase();
       const maxProjects = latestSummary?.limits?.maxProjects ?? latestSummary?.limits?.maxPublishedPages ?? null;
       const usedProjects = Number(latestSummary?.usage?.publishedPages || 0);
-      const alreadyPublished = Boolean(profile.published);
-      const publishTarget = requestPublishTarget({
-        hasExistingProject: alreadyPublished,
-        entityLabel: "carta digital",
-      });
-      if (publishTarget === "cancelled") {
-        return;
-      }
-      publishTargetMode = publishTarget;
       const nextProjects =
-        publishTarget === "new"
+        publishTargetMode === "new"
           ? usedProjects + 1
           : alreadyPublished
             ? usedProjects
@@ -2651,7 +2670,12 @@ export default function LinkHubPage() {
         return;
       }
 
-      if (publishTargetMode === "new" && maxProjects != null && nextProjects >= 2) {
+      if (
+        publishTargetMode === "new" &&
+        maxProjects != null &&
+        nextProjects >= 2 &&
+        shouldConfirmExtraProjectSlot()
+      ) {
         const confirmed = window.confirm(
           `Se publicara como proyecto ${nextProjects}/${maxProjects}. Deseas continuar?`,
         );
@@ -2667,7 +2691,7 @@ export default function LinkHubPage() {
     try {
       const isNewPublishedProject = mode === "publish" && publishTargetMode === "new";
       const targetProfileId = isNewPublishedProject
-        ? `${user.uid}-${crypto.randomUUID()}`
+        ? `${user.uid}-${createClientUuid()}`
         : currentProfileId;
 
       let finalSlug = sanitizedSlug;
@@ -2872,7 +2896,7 @@ export default function LinkHubPage() {
       <div className={`${containerClassName} rounded-2xl border border-white/10 bg-zinc-950/65 p-4`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-black text-white">Publica en 10 minutos</p>
+            <p className="text-sm font-black text-white">Publica en 10 minutos (tutorial) 📘</p>
             <p className="mt-1 text-xs text-zinc-300">
               Checklist rapido para dejar tu carta lista y convertir mejor.
             </p>
@@ -2989,7 +3013,7 @@ export default function LinkHubPage() {
                   <>
                     <button type="button" onClick={scrollToPublishChecklist} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-400/15 px-3 py-2 text-[11px] font-bold text-emerald-100">
                       <Rocket className="h-3.5 w-3.5" />
-                      Publica en 10 minutos
+                      Publica en 10 minutos (tutorial) 📘
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <Store className="h-3.5 w-3.5" />
@@ -4573,7 +4597,6 @@ export default function LinkHubPage() {
                           return {
                             ...prev,
                             cartaThemeId: suggestedThemeId,
-                            cartaBackgroundMode: "white",
                           };
                         });
                       }}
@@ -4609,17 +4632,35 @@ export default function LinkHubPage() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {CARTA_THEME_OPTIONS.map((themeOption) => {
                       const isActive = resolvedCartaThemeId === themeOption.id;
+                      const isPremiumTheme = Boolean(themeOption.premium);
+                      const canUseTheme = !isPremiumTheme || canUsePremiumThemes;
                       return (
                         <button
                           key={themeOption.id}
                           type="button"
-                          onClick={() => patchProfile("cartaThemeId", themeOption.id)}
+                          onClick={() => {
+                            if (!canUseTheme) {
+                              setMessage({
+                                type: "error",
+                                text: "Este tema premium se desbloquea en BUSINESS/PRO.",
+                              });
+                              return;
+                            }
+                            patchProfile("cartaThemeId", themeOption.id);
+                          }}
+                          disabled={!canUseTheme}
                           className={`overflow-hidden rounded-2xl border text-left transition-all ${
                             isActive
                               ? "border-amber-300/80 bg-amber-400/10 shadow-[0_14px_36px_-22px_rgba(250,204,21,0.6)]"
-                              : "border-white/10 bg-black/40 hover:-translate-y-0.5 hover:border-white/25"
+                              : canUseTheme
+                                ? "border-white/10 bg-black/40 hover:-translate-y-0.5 hover:border-white/25"
+                                : "border-amber-300/35 bg-amber-300/5 opacity-75"
                           }`}
-                          title={`${themeOption.name} (${themeOption.rubro})`}
+                          title={
+                            canUseTheme
+                              ? `${themeOption.name} (${themeOption.rubro})`
+                              : `${themeOption.name} - Premium BUSINESS/PRO`
+                          }
                         >
                           <div className="h-28 w-full overflow-hidden border-b border-white/10">
                             <img
@@ -4632,7 +4673,7 @@ export default function LinkHubPage() {
                           <div className="space-y-2 p-3">
                             <div className="inline-flex items-center gap-2">
                               <span className="rounded-full border border-amber-300/35 bg-amber-300/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-amber-200">
-                                {themeOption.official ? "Oficial" : "Extra"}
+                                {themeOption.premium ? "Premium" : themeOption.official ? "Oficial" : "Extra"}
                               </span>
                               <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
                                 {themeOption.rubro}
@@ -4641,7 +4682,7 @@ export default function LinkHubPage() {
                             <p className="text-lg font-black text-white">{themeOption.name}</p>
                             <p className="line-clamp-2 text-xs text-zinc-300">{themeOption.previewDescription}</p>
                             <div className="inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm font-bold text-zinc-100">
-                              ✨ Aplicar tema
+                              {canUseTheme ? "Aplicar tema" : "Premium BUSINESS/PRO"}
                             </div>
                           </div>
                         </button>
@@ -4649,32 +4690,84 @@ export default function LinkHubPage() {
                     })}
                   </div>
 
-                  <div className="rounded-2xl border p-3" style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.surface }}>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: activeCartaTheme.tokens.mutedText }}>
+                  <div
+                    className="rounded-2xl border p-3"
+                    style={{
+                      borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.14)" : activeCartaTheme.tokens.border,
+                      background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.surface,
+                    }}
+                  >
+                    <p
+                      className="text-[10px] font-black uppercase tracking-[0.18em]"
+                      style={{ color: useWhiteCartaBackground ? "#64748b" : activeCartaTheme.tokens.mutedText }}
+                    >
                       Preview tema carta
                     </p>
-                    <div className="mt-2 rounded-xl border px-3 py-2 text-sm font-semibold" style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.gradientHero, color: activeCartaTheme.tokens.text }}>
+                    <div
+                      className="mt-2 rounded-xl border px-3 py-2 text-sm font-semibold"
+                      style={{
+                        borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.border,
+                        background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.gradientHero,
+                        color: useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.text,
+                      }}
+                    >
                       {activeCartaTheme.name}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="rounded-full border px-3 py-1 text-[11px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipBg, color: activeCartaTheme.tokens.chipText }}>
+                      <span
+                        className="rounded-full border px-3 py-1 text-[11px] font-bold"
+                        style={{
+                          borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.chipBorder,
+                          background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.chipBg,
+                          color: useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.chipText,
+                        }}
+                      >
                         Ceviches
                       </span>
-                      <span className="rounded-full border px-3 py-1 text-[11px] font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.chipActiveBg, color: activeCartaTheme.tokens.chipActiveText }}>
+                      <span
+                        className="rounded-full border px-3 py-1 text-[11px] font-bold"
+                        style={{
+                          borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.chipBorder,
+                          background: activeCartaTheme.tokens.chipActiveBg,
+                          color: activeCartaTheme.tokens.chipActiveText,
+                        }}
+                      >
                         Sudados
                       </span>
                     </div>
-                    <div className="mt-2 rounded-xl border px-3 py-2 text-sm font-bold" style={{ borderColor: activeCartaTheme.tokens.chipBorder, background: activeCartaTheme.tokens.buttonBg, color: activeCartaTheme.tokens.buttonText }}>
+                    <div
+                      className="mt-2 rounded-xl border px-3 py-2 text-sm font-bold"
+                      style={{
+                        borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.chipBorder,
+                        background: activeCartaTheme.tokens.buttonBg,
+                        color: activeCartaTheme.tokens.buttonText,
+                      }}
+                    >
                       Agregar al carrito
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-1 rounded-xl border p-1" style={{ borderColor: activeCartaTheme.tokens.border, background: activeCartaTheme.tokens.navBg }}>
-                      <span className="rounded-lg px-2 py-1 text-center text-[10px] font-bold" style={{ background: activeCartaTheme.tokens.navActiveBg, color: activeCartaTheme.tokens.navActiveText }}>
+                    <div
+                      className="mt-2 grid grid-cols-3 gap-1 rounded-xl border p-1"
+                      style={{
+                        borderColor: useWhiteCartaBackground ? "rgba(15,23,42,0.16)" : activeCartaTheme.tokens.border,
+                        background: useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.navBg,
+                      }}
+                    >
+                      <span
+                        className="rounded-lg px-2 py-1 text-center text-[10px] font-bold"
+                        style={{ background: activeCartaTheme.tokens.navActiveBg, color: activeCartaTheme.tokens.navActiveText }}
+                      >
                         Contacto
                       </span>
-                      <span className="rounded-lg px-2 py-1 text-center text-[10px] font-bold" style={{ color: activeCartaTheme.tokens.navText }}>
+                      <span
+                        className="rounded-lg px-2 py-1 text-center text-[10px] font-bold"
+                        style={{ color: useWhiteCartaBackground ? "#334155" : activeCartaTheme.tokens.navText }}
+                      >
                         Carta
                       </span>
-                      <span className="rounded-lg px-2 py-1 text-center text-[10px] font-bold" style={{ color: activeCartaTheme.tokens.navText }}>
+                      <span
+                        className="rounded-lg px-2 py-1 text-center text-[10px] font-bold"
+                        style={{ color: useWhiteCartaBackground ? "#334155" : activeCartaTheme.tokens.navText }}
+                      >
                         Ubicacion
                       </span>
                     </div>

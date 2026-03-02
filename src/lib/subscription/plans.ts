@@ -127,11 +127,17 @@ export function getSubscriptionDiscountPercent(input: {
   annualBilling: boolean;
 }) {
   const definition = getPlanDefinition(input.plan);
+  const safeMonths = Math.max(1, Math.floor(input.months || 1));
+
+  // If the user prepays 12 months in monthly cycle, apply the same max annual discount.
+  if (!input.annualBilling && safeMonths >= 12) {
+    return definition.annualDiscountPercent;
+  }
+
   if (input.annualBilling) {
     return definition.annualDiscountPercent;
   }
 
-  const safeMonths = Math.max(1, Math.floor(input.months || 1));
   if (safeMonths < 3) return 0;
 
   if (input.plan === "BUSINESS") {

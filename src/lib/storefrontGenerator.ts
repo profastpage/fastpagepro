@@ -12,6 +12,11 @@ export type StoreThemeId =
   | "premiumShop"
   | "flashSale"
   | "minimalCommerce"
+  | "luxeGraphite"
+  | "velvetRose"
+  | "oceanicTech"
+  | "forestMarket"
+  | "sunsetStudio"
   | "leadDark"
   | "corporateLight"
   | "agencyBold";
@@ -316,6 +321,66 @@ export const STORE_THEMES: StoreTheme[] = [
     text: "#f8fafc",
     muted: "#cbd5e1",
     radius: 16,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "luxeGraphite",
+    name: "Luxe Graphite",
+    accent: "#111827",
+    accent2: "#d4a017",
+    surface: "#07090e",
+    surface2: "#10141d",
+    text: "#f8fafc",
+    muted: "#cbd5e1",
+    radius: 20,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "velvetRose",
+    name: "Velvet Rose",
+    accent: "#be185d",
+    accent2: "#fb7185",
+    surface: "#140a12",
+    surface2: "#251126",
+    text: "#fff1f2",
+    muted: "#fecdd3",
+    radius: 22,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "oceanicTech",
+    name: "Oceanic Tech",
+    accent: "#0e7490",
+    accent2: "#2563eb",
+    surface: "#04111b",
+    surface2: "#0b1f33",
+    text: "#ecfeff",
+    muted: "#bae6fd",
+    radius: 18,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "forestMarket",
+    name: "Forest Market",
+    accent: "#15803d",
+    accent2: "#65a30d",
+    surface: "#06150f",
+    surface2: "#0f241c",
+    text: "#f0fdf4",
+    muted: "#bbf7d0",
+    radius: 19,
+    font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
+  },
+  {
+    id: "sunsetStudio",
+    name: "Sunset Studio",
+    accent: "#ea580c",
+    accent2: "#f59e0b",
+    surface: "#1a0f0b",
+    surface2: "#2a1810",
+    text: "#fff7ed",
+    muted: "#fdba74",
+    radius: 21,
     font: "'Plus Jakarta Sans', system-ui, -apple-system, Segoe UI, Roboto, Arial",
   },
   {

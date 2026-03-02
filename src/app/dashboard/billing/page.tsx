@@ -182,10 +182,14 @@ export default function BillingPage() {
             billingCycle: "Billing cycle",
             cycleMonthly: "Monthly",
             cycleAnnual: "Annual (12 months)",
-            cycleMonthlyMaxDiscount: "Up to 15% discount",
-            cycleAnnualMaxDiscount: "Up to 30% discount",
+            cycleMonthlyMaxDiscount: (discountPercent: number) =>
+              `12 months applies up to ${discountPercent}% discount`,
+            cycleAnnualMaxDiscount: (discountPercent: number) =>
+              `${discountPercent}% discount included`,
             monthsLabel: "Months",
             annualDiscount: "Annual discount",
+            monthly12DiscountApplied: (discountPercent: number, totalSoles: number) =>
+              `12 months active: max plan discount ${discountPercent}% applied. Final total: S/ ${totalSoles.toFixed(2)}.`,
             paymentSummary: "Payment summary",
             subtotal: "Subtotal",
             discount: "Discount",
@@ -249,10 +253,14 @@ export default function BillingPage() {
             billingCycle: "Ciclo de cobro",
             cycleMonthly: "Mensual",
             cycleAnnual: "Anual (12 meses)",
-            cycleMonthlyMaxDiscount: "Hasta 15% descuento",
-            cycleAnnualMaxDiscount: "Hasta 30% descuento",
+            cycleMonthlyMaxDiscount: (discountPercent: number) =>
+              `12 meses aplica hasta ${discountPercent}% descuento`,
+            cycleAnnualMaxDiscount: (discountPercent: number) =>
+              `${discountPercent}% descuento incluido`,
             monthsLabel: "Meses",
             annualDiscount: "Descuento anual",
+            monthly12DiscountApplied: (discountPercent: number, totalSoles: number) =>
+              `12 meses activo: descuento maximo del plan ${discountPercent}% aplicado. Total final: S/ ${totalSoles.toFixed(2)}.`,
             paymentSummary: "Resumen de pago",
             subtotal: "Subtotal",
             discount: "Descuento",
@@ -289,6 +297,12 @@ export default function BillingPage() {
       }),
     [billingCycle, effectiveDurationMonths, selectedPlan],
   );
+  const selectedPlanDefinition = useMemo(
+    () =>
+      requestedPlanOptions.find((plan) => plan.id === selectedPlan) || requestedPlanOptions[0],
+    [requestedPlanOptions, selectedPlan],
+  );
+  const selectedPlanMaxAnnualDiscount = selectedPlanDefinition.annualDiscountPercent;
   const daysRemaining = Math.max(0, Number(summary?.daysRemaining || 0));
   const showRenewalAlert =
     summary?.status === "ACTIVE" && !summary?.isBusinessTrial && daysRemaining > 0 && daysRemaining <= 5;
@@ -621,7 +635,7 @@ export default function BillingPage() {
                   >
                     <span className="block">{i18n.cycleMonthly}</span>
                     <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.09em] text-amber-200/90">
-                      {i18n.cycleMonthlyMaxDiscount}
+                      {i18n.cycleMonthlyMaxDiscount(selectedPlanMaxAnnualDiscount)}
                     </span>
                   </button>
                   <button
@@ -635,25 +649,32 @@ export default function BillingPage() {
                   >
                     <span className="block">{i18n.cycleAnnual}</span>
                     <span className="mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.09em] text-emerald-200/90">
-                      {i18n.cycleAnnualMaxDiscount}
+                      {i18n.cycleAnnualMaxDiscount(selectedPlanMaxAnnualDiscount)}
                     </span>
                   </button>
                 </div>
                 {billingCycle === "MONTHLY" ? (
-                  <label className="block space-y-2">
-                    <span className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-400">{i18n.monthsLabel}</span>
-                    <select
-                      className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm"
-                      value={durationMonths}
-                      onChange={(event) => setDurationMonths(Math.max(1, Math.min(12, Number(event.target.value) || 1)))}
-                    >
-                      {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
-                        <option key={month} value={month}>
-                          {month}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="space-y-2">
+                    <label className="block space-y-2">
+                      <span className="text-xs font-bold uppercase tracking-[0.12em] text-zinc-400">{i18n.monthsLabel}</span>
+                      <select
+                        className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-2 text-sm"
+                        value={durationMonths}
+                        onChange={(event) => setDurationMonths(Math.max(1, Math.min(12, Number(event.target.value) || 1)))}
+                      >
+                        {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                          <option key={month} value={month}>
+                            {month}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {durationMonths === 12 ? (
+                      <p className="text-xs font-semibold text-amber-100/95">
+                        {i18n.monthly12DiscountApplied(pricingPreview.discountPercent, pricingPreview.total)}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : (
                   <p className="text-xs font-semibold text-emerald-100/95">
                     {i18n.annualDiscount}: {pricingPreview.discountPercent}%

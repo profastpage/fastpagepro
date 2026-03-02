@@ -17,6 +17,7 @@ import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import { resolveStoreSlug, sanitizeStoreSlug } from "@/lib/publicStorefront";
 import { getVisualStoreTheme, getVisualStoreVars } from "@/lib/storeVisualTheme";
 import { getThemesByVertical } from "@/lib/themes";
+import { canAccessFeature } from "@/lib/permissions";
 import { normalizeVertical, type BusinessVertical } from "@/lib/vertical";
 import {
   generateStorefrontHtml,
@@ -83,6 +84,13 @@ const FIREBASE_PUBLIC_CONFIG = {
 };
 
 type VisualSort = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
+const PREMIUM_STORE_THEME_IDS = new Set<StoreThemeId>([
+  "luxeGraphite",
+  "velvetRose",
+  "oceanicTech",
+  "forestMarket",
+  "sunsetStudio",
+]);
 type VisualContent = NonNullable<StoreConfig["content"]>;
 type EcommerceSettings = NonNullable<StoreConfig["ecommerce"]>;
 type AiSettings = NonNullable<StoreConfig["ai"]>;
@@ -594,6 +602,11 @@ function StoreEditorPage() {
   const canUseBusinessAi =
     subscriptionSummary?.plan === "BUSINESS" || subscriptionSummary?.plan === "PRO";
   const isProPlan = subscriptionSummary?.plan === "PRO";
+  const canUsePremiumStoreThemes = canAccessFeature(subscriptionSummary?.plan, "premiumThemes");
+  const canUseAdvancedStoreColor = canAccessFeature(
+    subscriptionSummary?.plan,
+    "advancedColorCustomization",
+  );
   const themeVars = getVisualStoreVars(liveConfig);
   const visualTheme = getVisualStoreTheme(liveConfig);
   const currentVertical = normalizeVertical(liveConfig.vertical || "ecommerce");
@@ -922,6 +935,17 @@ function StoreEditorPage() {
     if (verticalThemeOptions.some((theme) => theme.id === liveConfig.themeId)) return;
     applyThemePreset(verticalThemeOptions[0].id as StoreThemeId);
   }, [liveConfig.themeId, verticalThemeOptions]);
+
+  useEffect(() => {
+    if (canUsePremiumStoreThemes) return;
+    const currentThemeId = liveConfig.themeId as StoreThemeId;
+    if (!PREMIUM_STORE_THEME_IDS.has(currentThemeId)) return;
+    const fallback = verticalThemeOptions.find(
+      (theme) => !PREMIUM_STORE_THEME_IDS.has(theme.id as StoreThemeId),
+    );
+    if (!fallback) return;
+    applyThemePreset(fallback.id as StoreThemeId);
+  }, [canUsePremiumStoreThemes, liveConfig.themeId, verticalThemeOptions]);
 
   const updateProduct = (id: string, patch: Partial<StoreProduct>) => {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -1615,28 +1639,82 @@ function StoreEditorPage() {
                 ))}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {verticalThemeOptions.map((themeOption) => (
-                  <button
-                    key={themeOption.id}
-                    onClick={() => applyThemePreset(themeOption.id as StoreThemeId)}
-                    className="rounded-xl border px-3 py-2 text-left text-xs font-bold"
-                    style={
-                      config.themeId === themeOption.id
-                        ? {
-                            borderColor: "var(--vs-accent)",
-                            background: "color-mix(in srgb,var(--vs-accent) 12%,white)",
-                          }
-                        : { borderColor: "var(--vs-border)" }
-                    }
-                  >
-                    {themeOption.name}
-                  </button>
-                ))}
+                {verticalThemeOptions.map((themeOption) => {
+                  const themeId = themeOption.id as StoreThemeId;
+                  const isPremiumTheme = PREMIUM_STORE_THEME_IDS.has(themeId);
+                  const canUseTheme = !isPremiumTheme || canUsePremiumStoreThemes;
+                  return (
+                    <button
+                      key={themeOption.id}
+                      onClick={() => {
+                        if (!canUseTheme) {
+                          setError("Este tema premium se desbloquea en plan BUSINESS o PRO.");
+                          return;
+                        }
+                        applyThemePreset(themeId);
+                      }}
+                      disabled={!canUseTheme}
+                      className="rounded-xl border px-3 py-2 text-left text-xs font-bold"
+                      style={
+                        config.themeId === themeOption.id
+                          ? {
+                              borderColor: "var(--vs-accent)",
+                              background: "color-mix(in srgb,var(--vs-accent) 12%,white)",
+                            }
+                          : !canUseTheme
+                            ? { borderColor: "#fdba74", background: "#fff7ed", color: "#7c2d12" }
+                            : { borderColor: "var(--vs-border)" }
+                      }
+                    >
+                      <span className="block">{themeOption.name}</span>
+                      {isPremiumTheme ? (
+                        <span className="mt-1 block text-[10px] uppercase tracking-[0.11em]">
+                          Premium BUSINESS/PRO
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <label className="text-xs font-semibold">Primario<input type="color" value={rgbToHex(config.customRgb?.accent)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
-                <label className="text-xs font-semibold">Secundario<input type="color" value={rgbToHex(config.customRgb?.accent2)} onChange={(e) => setConfig((p) => ({ ...p, customRgb: { ...(p.customRgb || {}), accent2: hexToRgb(e.target.value) } }))} className="mt-1 h-10 w-full rounded-lg border p-1" style={{ borderColor: "var(--vs-border)" }} /></label>
+                <label className="text-xs font-semibold">
+                  Primario (RGB)
+                  <input
+                    type="color"
+                    value={rgbToHex(config.customRgb?.accent)}
+                    disabled={!canUseAdvancedStoreColor}
+                    onChange={(e) =>
+                      setConfig((p) => ({
+                        ...p,
+                        customRgb: { ...(p.customRgb || {}), accent: hexToRgb(e.target.value) },
+                      }))
+                    }
+                    className="mt-1 h-10 w-full rounded-lg border p-1"
+                    style={{ borderColor: "var(--vs-border)" }}
+                  />
+                </label>
+                <label className="text-xs font-semibold">
+                  Secundario (RGB)
+                  <input
+                    type="color"
+                    value={rgbToHex(config.customRgb?.accent2)}
+                    disabled={!canUseAdvancedStoreColor}
+                    onChange={(e) =>
+                      setConfig((p) => ({
+                        ...p,
+                        customRgb: { ...(p.customRgb || {}), accent2: hexToRgb(e.target.value) },
+                      }))
+                    }
+                    className="mt-1 h-10 w-full rounded-lg border p-1"
+                    style={{ borderColor: "var(--vs-border)" }}
+                  />
+                </label>
               </div>
+              {!canUseAdvancedStoreColor ? (
+                <p className="mt-2 rounded-xl border border-amber-300/45 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                  RGB personalizable disponible en BUSINESS/PRO.
+                </p>
+              ) : null}
               <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>{`/t/${publicStoreSlug}`}</b></div>
             </section>
             <section

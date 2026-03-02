@@ -27,6 +27,7 @@ import {
 import Footer from "@/components/Footer";
 import DemoCard from "@/components/demo/DemoCard";
 import VerticalSelector from "@/components/demo/VerticalSelector";
+import PwaInstallTopBanner from "@/components/pwa/PwaInstallTopBanner";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { getDemoCatalog } from "@/lib/demoCatalog";
@@ -652,6 +653,9 @@ export default function LandingHome() {
   return (
     <main className="relative overflow-x-hidden pb-24 md:pb-0">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.16),transparent_56%)]" />
+      <section className="relative z-30 mx-auto w-full max-w-7xl px-3 pt-20 md:hidden">
+        <PwaInstallTopBanner />
+      </section>
 
       <section className="relative z-10 mx-auto min-h-[calc(100svh-84px)] w-full max-w-7xl px-4 pb-12 pt-24 sm:px-6 md:pt-28 lg:px-8 lg:pt-32">
         <div className="grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">

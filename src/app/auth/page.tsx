@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Zap } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import {
+  browserLocalPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -16,6 +17,7 @@ import {
   updateProfile,
   onAuthStateChanged,
   fetchSignInMethodsForEmail,
+  setPersistence,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { useLanguage } from "@/context/LanguageContext";
@@ -233,6 +235,12 @@ function AuthContent() {
       });
     }
   }, [preferredVertical, searchParams]);
+
+  useEffect(() => {
+    void setPersistence(auth, browserLocalPersistence).catch((error) => {
+      console.warn("[Auth] No se pudo fijar persistencia local:", error);
+    });
+  }, []);
 
   useEffect(() => {
     if (!isCanonicalRedirectNeeded()) return;
@@ -680,6 +688,7 @@ function AuthContent() {
                   <input
                     name="email"
                     type="email"
+                    autoComplete="email"
                     placeholder={i18n.placeholderEmail}
                     required
                     value={loginEmail}
@@ -705,6 +714,7 @@ function AuthContent() {
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
                       placeholder="********"
                       required
                       className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none pr-12"
@@ -772,6 +782,7 @@ function AuthContent() {
                   <input
                     name="name"
                     type="text"
+                    autoComplete="name"
                     placeholder={i18n.placeholderName}
                     required
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none"
@@ -784,6 +795,7 @@ function AuthContent() {
                   <input
                     name="email"
                     type="email"
+                    autoComplete="email"
                     placeholder={i18n.placeholderEmail}
                     required
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none"
@@ -797,6 +809,7 @@ function AuthContent() {
                     <input
                       name="password"
                       type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
                       placeholder="********"
                       required
                       className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none pr-12"

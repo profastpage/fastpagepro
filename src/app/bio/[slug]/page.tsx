@@ -1055,13 +1055,13 @@ export default function PublicBioPage() {
   }
 
   const menuGradientSoft = useWhiteCartaBackground
-    ? `linear-gradient(135deg, ${hexToRgba(activeCartaTheme.tokens.primary, 0.18)} 0%, ${hexToRgba(activeCartaTheme.tokens.accent, 0.14)} 100%)`
+    ? "#ffffff"
     : activeCartaTheme.tokens.navBg;
   const menuGradientActive = activeCartaTheme.tokens.navActiveBg;
   const menuBorder = activeCartaTheme.tokens.chipBorder;
 
   const pageStyle: CSSProperties = {
-    "--carta-bg": useWhiteCartaBackground ? "#e7ebf0" : activeCartaTheme.tokens.background,
+    "--carta-bg": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.background,
     "--carta-surface": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.surface,
     "--carta-surface-2": useWhiteCartaBackground ? "#ffffff" : activeCartaTheme.tokens.surface2,
     "--carta-text": useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.text,

@@ -22,6 +22,29 @@ export interface PublishQuotaCheckResult {
   consumesSlot: boolean;
 }
 
+function requestPublishTargetWithConfirm(entityLabel: string): PublishTargetSelection {
+  if (typeof window === "undefined") return "existing";
+
+  const wantsNewProject = window.confirm(
+    `Publicar ${entityLabel}:\nAceptar = Publicar como proyecto nuevo\nCancelar = Actualizar proyecto existente`,
+  );
+  if (wantsNewProject) return "new";
+
+  const wantsExistingProject = window.confirm(
+    `Confirmar accion:\nAceptar = Actualizar proyecto existente\nCancelar = No publicar ahora`,
+  );
+  return wantsExistingProject ? "existing" : "cancelled";
+}
+
+function shouldUseConfirmFallback(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia?.("(pointer: coarse)")?.matches ||
+    window.matchMedia?.("(max-width: 1023px)")?.matches ||
+    "ontouchstart" in window
+  );
+}
+
 export function requestPublishTarget(options: PublishTargetPromptOptions): PublishTargetSelection {
   if (typeof window === "undefined") {
     return options.hasExistingProject ? "existing" : "new";
@@ -30,6 +53,10 @@ export function requestPublishTarget(options: PublishTargetPromptOptions): Publi
   if (!options.hasExistingProject) return "new";
 
   const label = options.entityLabel || "proyecto";
+  if (shouldUseConfirmFallback()) {
+    return requestPublishTargetWithConfirm(label);
+  }
+
   const answer = window.prompt(
     `Publicar ${label}:\n1 = Actualizar proyecto existente\n2 = Publicar como proyecto nuevo\n\nEscribe 1 o 2.`,
     "1",
@@ -46,7 +73,7 @@ export function requestPublishTarget(options: PublishTargetPromptOptions): Publi
   ) {
     return "existing";
   }
-  return "cancelled";
+  return requestPublishTargetWithConfirm(label);
 }
 
 export async function assertCanPublishWithMode(
@@ -85,4 +112,3 @@ export function confirmPublishSlot(check: PublishQuotaCheckResult) {
     `Se publicara como proyecto ${check.next}/${check.limit}. Deseas continuar?`,
   );
 }
-

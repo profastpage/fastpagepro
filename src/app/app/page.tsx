@@ -14,7 +14,7 @@ export default function AppEntryPage() {
     if (!user) {
       const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
       const vertical = normalizeVertical(params?.get("vertical"));
-      router.replace(`/signup?vertical=${vertical}`);
+      router.replace(`/auth?vertical=${vertical}`);
       return;
     }
     router.replace("/hub");
