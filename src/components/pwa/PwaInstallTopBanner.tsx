@@ -2,6 +2,7 @@
 
 import { Download, Smartphone, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import IosInstallGuideModal from "@/components/pwa/IosInstallGuideModal";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -33,6 +34,7 @@ export default function PwaInstallTopBanner() {
   const [isVisible, setIsVisible] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [showIosGuide, setShowIosGuide] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -76,10 +78,14 @@ export default function PwaInstallTopBanner() {
   };
 
   const handleInstall = async () => {
+    if (isIos && !deferredPrompt) {
+      setShowIosGuide(true);
+      return;
+    }
+
     if (!deferredPrompt) {
-      const fallbackMessage = isIos
-        ? "En iPhone: Safari > Compartir > Anadir a pantalla de inicio."
-        : "Si no ves el boton de instalacion, abre el menu del navegador y elige Instalar app.";
+      const fallbackMessage =
+        "Si no ves el boton de instalacion, abre el menu del navegador y elige Instalar app.";
       window.alert(fallbackMessage);
       return;
     }
@@ -102,39 +108,42 @@ export default function PwaInstallTopBanner() {
   if (!isVisible) return null;
 
   return (
-    <aside className="w-full rounded-2xl border border-amber-300/45 bg-[linear-gradient(160deg,rgba(251,191,36,0.2),rgba(23,17,8,0.9)_38%,rgba(8,8,10,0.97))] px-3 py-2.5 shadow-[0_16px_42px_-24px_rgba(251,191,36,0.72)] backdrop-blur-md">
-      <div className="flex items-center gap-2.5">
-        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-300/40 bg-black/65 text-amber-200">
-          <Smartphone className="h-4 w-4" />
+    <>
+      <aside className="w-full rounded-2xl border border-amber-300/45 bg-[linear-gradient(160deg,rgba(251,191,36,0.2),rgba(23,17,8,0.9)_38%,rgba(8,8,10,0.97))] px-3 py-2.5 shadow-[0_16px_42px_-24px_rgba(251,191,36,0.72)] backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-300/40 bg-black/65 text-amber-200">
+            <Smartphone className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">
+              Aplicacion movil
+            </p>
+            <h2 className="text-sm font-black leading-tight text-amber-50">
+              Descargar aplicacion Fast Page
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={hideForNow}
+            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/5 text-zinc-200 transition hover:border-amber-300/45 hover:text-amber-200"
+            aria-label="Cerrar aviso de instalacion"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">
-            Aplicacion movil
-          </p>
-          <h2 className="text-sm font-black leading-tight text-amber-50">
-            Descargar aplicacion Fast Page
-          </h2>
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={handleInstall}
+            disabled={isInstalling}
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-200 px-3 py-1.5 text-[11px] font-black text-zinc-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-65"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {isInstalling ? "Instalando..." : "Instalar app"}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={hideForNow}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/5 text-zinc-200 transition hover:border-amber-300/45 hover:text-amber-200"
-          aria-label="Cerrar aviso de instalacion"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
-      <div className="mt-2">
-        <button
-          type="button"
-          onClick={handleInstall}
-          disabled={isInstalling}
-          className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-200 px-3 py-1.5 text-[11px] font-black text-zinc-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-65"
-        >
-          <Download className="h-3.5 w-3.5" />
-          {isInstalling ? "Instalando..." : "Instalar app"}
-        </button>
-      </div>
-    </aside>
+      </aside>
+      <IosInstallGuideModal open={showIosGuide} onClose={() => setShowIosGuide(false)} />
+    </>
   );
 }

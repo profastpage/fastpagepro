@@ -10,6 +10,7 @@ import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { useSubscription } from "@/hooks/useSubscription";
 import PlanBadge from "@/components/subscription/PlanBadge";
 import { ChevronLeft, ChevronRight, Zap, LogOut, Lock, Download } from "lucide-react";
+import IosInstallGuideModal from "@/components/pwa/IosInstallGuideModal";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -38,6 +39,7 @@ export default function Nav() {
   const [isInstallingApp, setIsInstallingApp] = useState(false);
   const [isStandalonePwa, setIsStandalonePwa] = useState(false);
   const [isIosDevice, setIsIosDevice] = useState(false);
+  const [showIosInstallGuide, setShowIosInstallGuide] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
@@ -116,9 +118,13 @@ export default function Nav() {
   const handleInstallFromMenu = async () => {
     if (isStandalonePwa) return;
     if (!deferredInstallPrompt) {
-      const message = isIosDevice
-        ? "En iPhone: Safari > Compartir > Anadir a pantalla de inicio."
-        : "Si no ves el boton de instalacion, abre el menu del navegador y elige Instalar app.";
+      if (isIosDevice) {
+        setShowIosInstallGuide(true);
+        setIsOpen(false);
+        return;
+      }
+      const message =
+        "Si no ves el boton de instalacion, abre el menu del navegador y elige Instalar app.";
       window.alert(message);
       return;
     }
@@ -573,6 +579,7 @@ export default function Nav() {
             document.body,
           )}
       </div>
+      <IosInstallGuideModal open={showIosInstallGuide} onClose={() => setShowIosInstallGuide(false)} />
     </>
   );
 }
