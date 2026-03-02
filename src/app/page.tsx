@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import LandingHome from "@/components/landing/LandingHome";
+import LandingHomeEntry from "@/components/landing/LandingHomeEntry";
 
 export const metadata: Metadata = {
   title: "FastPage | Crea paginas que convierten clientes por WhatsApp",
@@ -25,5 +25,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <LandingHome />;
+  return <LandingHomeEntry />;
 }

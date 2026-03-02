@@ -48,6 +48,14 @@ const RECOMMENDED_FIREBASE_AUTH_DOMAINS = Array.from(
 
 type LandingPlanIntent = "FREE" | "BUSINESS" | "PRO";
 
+function isStandaloneMode() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
 function normalizePlanIntent(rawValue: string | null): LandingPlanIntent | null {
   const normalized = String(rawValue || "")
     .trim()
@@ -193,6 +201,7 @@ function AuthContent() {
   }, [errorParam, i18n.disabled, i18n.suspended]);
   const [tab, setTab] = useState<"login" | "register">("login");
   const [toast, setToast] = useState<string>("");
+  const [isStandalonePwa, setIsStandalonePwa] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleError, setIsGoogleError] = useState(false);
@@ -240,6 +249,10 @@ function AuthContent() {
     void setPersistence(auth, browserLocalPersistence).catch((error) => {
       console.warn("[Auth] No se pudo fijar persistencia local:", error);
     });
+  }, []);
+
+  useEffect(() => {
+    setIsStandalonePwa(isStandaloneMode());
   }, []);
 
   useEffect(() => {
@@ -614,12 +627,21 @@ function AuthContent() {
               {language === "es" ? "EN" : "ES"}
             </button>
           </div>
-          <Link href="/" className="inline-flex items-center gap-3 group">
-            <Zap className="w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(255,215,0,0.6)] group-hover:scale-110 transition-transform duration-300" />
-            <span className="text-3xl font-bold text-tornasolado tracking-tight transition-all">
-              Fast Page
-            </span>
-          </Link>
+          {isStandalonePwa ? (
+            <div className="inline-flex items-center gap-3">
+              <Zap className="w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(255,215,0,0.6)]" />
+              <span className="text-3xl font-bold text-tornasolado tracking-tight transition-all">
+                Fast Page
+              </span>
+            </div>
+          ) : (
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <Zap className="w-12 h-12 text-amber-400 drop-shadow-[0_0_15px_rgba(255,215,0,0.6)] group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-3xl font-bold text-tornasolado tracking-tight transition-all">
+                Fast Page
+              </span>
+            </Link>
+          )}
           <p className="mt-3 min-h-[24px] text-zinc-400 dark:text-white">
             {tab === "login" ? (
               <>

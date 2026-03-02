@@ -111,6 +111,7 @@ export default function Nav() {
   }, []);
 
   const installLabel = isEnglish ? "Install app" : "Instalar app";
+  const homeHref = isStandalonePwa ? "/auth" : "/";
 
   const handleInstallFromMenu = async () => {
     if (isStandalonePwa) return;
@@ -237,7 +238,7 @@ export default function Nav() {
               <span className="text-lg font-black tracking-tighter text-gold-gradient drop-shadow-sm">FAST PAGE</span>
             </div>
           ) : (
-            <Link href="/" className="flex items-center gap-2 group transition-all" aria-label="Fast Page Home">
+            <Link href={homeHref} className="flex items-center gap-2 group transition-all" aria-label="Fast Page Home">
               <Zap className="w-8 h-8 text-amber-400 drop-shadow-[0_0_8px_rgba(255,215,0,0.7)] group-hover:scale-110 transition-transform duration-300" />
               <span className="text-lg font-black tracking-tighter text-gold-gradient drop-shadow-sm group-hover:brightness-110 transition-all">FAST PAGE</span>
             </Link>
@@ -377,27 +378,31 @@ export default function Nav() {
               <span>Fast Page</span>
             </div>
           ) : (
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg" aria-label="Fast Page Home">
+            <Link href={homeHref} className="flex items-center gap-2 font-bold text-lg" aria-label="Fast Page Home">
               <Zap className="w-6 h-6 text-amber-400" />
               <span>Fast Page</span>
             </Link>
           )}
 
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => router.back()}
-              className="p-2 text-white/70 hover:text-white transition-colors active:scale-95"
-              aria-label="Go back"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              onClick={() => window.history.forward()}
-              className="p-2 text-white/70 hover:text-white transition-colors active:scale-95"
-              aria-label="Go forward"
-            >
-              <ChevronRight size={24} />
-            </button>
+            {!isStandalonePwa ? (
+              <>
+                <button
+                  onClick={() => router.back()}
+                  className="p-2 text-white/70 hover:text-white transition-colors active:scale-95"
+                  aria-label="Go back"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={() => window.history.forward()}
+                  className="p-2 text-white/70 hover:text-white transition-colors active:scale-95"
+                  aria-label="Go forward"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               onClick={toggleLanguage}
