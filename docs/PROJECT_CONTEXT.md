@@ -1655,3 +1655,62 @@ o-scrollbar para evitar barra visible.
   - si un usuario FREE abre Store con tema premium, se aplica fallback automatico a un tema permitido.
 - Compatibilidad:
   - no se rompen contratos/API; persistencia sigue usando estructuras actuales de perfil/storeConfig.
+## Izipay auto-payment activation + billing confirmation (2026-03-01)
+
+- Rutas nuevas:
+  - `POST /api/payments/izipay/checkout`
+  - `POST /api/payments/izipay/confirm`
+- Billing (`/dashboard/billing`):
+  - nuevo metodo `IZIPAY` en selector de pago.
+  - flujo automatico: checkout -> retorno a billing -> confirmacion de pago -> activacion de plan.
+- Persistencia:
+  - nueva coleccion `subscription_izipay_payments` para rastreo de intentos/estado (`PENDING/PAID/FAILED/CANCELLED`).
+- Activacion:
+  - al confirmar pago, se asigna plan via servicio de suscripcion y se sincroniza estado del usuario.
+- Fallback:
+  - si `IZIPAY_MODE` no esta en `live` o faltan credenciales, el modulo opera en `mock` para no romper UX.
+
+## Referral program v1 (2026-03-01)
+
+- Rutas nuevas:
+  - `GET /api/referrals/summary`
+  - `POST /api/referrals/apply`
+- Registro/auth:
+  - formulario de alta ahora incluye campo opcional de codigo de referido.
+  - soporta `?ref=CODE` en URL y aplica el codigo al crear cuenta.
+- Persistencia Firestore:
+  - `referral_profiles`
+  - `referral_codes`
+  - `referral_events`
+- Conversion:
+  - al aprobar pagos/admin o confirmar pagos Izipay, el referido se liquida automaticamente con comision configurable (`REFERRAL_COMMISSION_PERCENT`).
+
+## Theme Marketplace premium (2026-03-01)
+
+- Rutas nuevas:
+  - `GET /api/theme-marketplace/packs`
+  - `POST /api/theme-marketplace/purchase`
+  - `PUT /api/theme-marketplace/purchase` (confirmacion)
+- Billing (`/dashboard/billing`):
+  - panel marketplace con packs premium por rubro.
+  - compra manual o compra directa con Izipay.
+- Persistencia Firestore:
+  - `theme_marketplace_orders` (`PENDING/PAID/CANCELLED`).
+
+## Seasonal templates in Cloner (2026-03-01)
+
+- Ruta ajustada: `/templates` (alias de cloner).
+- Se agrega bloque `Plantillas de temporada` con creacion directa de proyecto editable.
+- Generador de plantillas (`TemplateGenerator`) ahora soporta `seasonalCampaignKey` para inyectar copy/campana estacional en el HTML.
+
+## AI weekly promotions for Carta Digital PRO (2026-03-01)
+
+- Ruta nueva:
+  - `POST /api/ai/weekly-promos`
+- Editor Carta Digital (`/linkhub`):
+  - nuevo bloque `IA de promociones semanales` en automatizaciones PRO.
+  - genera plan semanal de 7 dias y actualiza automaticamente parametros de promo activa.
+- Persistencia:
+  - `automation.weeklyPromoObjective`
+  - `automation.weeklyPromoPlan`
+  - `automation.weeklyPromoUpdatedAt`

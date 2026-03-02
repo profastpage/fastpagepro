@@ -52,6 +52,7 @@ import {
   School,
   Monitor,
   Loader2,
+  Sun,
 } from "lucide-react";
 
 export default function ClonerPage() {
@@ -384,6 +385,45 @@ export default function ClonerPage() {
     ],
   };
 
+  const seasonalTemplates = [
+    {
+      id: "season-summer-restaurant",
+      title: "Verano Delivery",
+      seasonLabel: "Verano",
+      category: "restaurant",
+      specialty: "pizzeria",
+      seasonalCampaignKey: "summer",
+      icon: <Sun className="w-6 h-6 text-amber-300" />,
+    },
+    {
+      id: "season-fiestas-patrias",
+      title: "Fiestas Patrias Premium",
+      seasonLabel: "Julio",
+      category: "restaurant",
+      specialty: "criolla",
+      seasonalCampaignKey: "fiestas-patrias",
+      icon: <PartyPopper className="w-6 h-6 text-red-300" />,
+    },
+    {
+      id: "season-black-ecommerce",
+      title: "Black Friday Store",
+      seasonLabel: "Black Friday",
+      category: "ecommerce",
+      specialty: "fashion",
+      seasonalCampaignKey: "black-friday",
+      icon: <Rocket className="w-6 h-6 text-fuchsia-300" />,
+    },
+    {
+      id: "season-navidad-services",
+      title: "Navidad Pro Services",
+      seasonLabel: "Navidad",
+      category: "services",
+      specialty: "cleaning",
+      seasonalCampaignKey: "navidad",
+      icon: <Sparkles className="w-6 h-6 text-emerald-300" />,
+    },
+  ];
+
   const handleSelect = (id: string) => {
     setSelectedModel(id);
   };
@@ -452,6 +492,69 @@ export default function ClonerPage() {
     }
   };
 
+  const handleCreateSeasonalTemplate = async (template: {
+    id: string;
+    title: string;
+    category: string;
+    specialty: string;
+    seasonalCampaignKey: string;
+  }) => {
+    if (loading) return;
+    if (!user?.uid) {
+      setTemplateError("Debes iniciar sesion para crear una plantilla editable.");
+      return;
+    }
+
+    const createKey = `seasonal:${template.id}`;
+    setCreatingTemplate(createKey);
+    setTemplateError(null);
+    try {
+      const siteId =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID().slice(0, 8)
+          : Math.random().toString(36).slice(2, 10);
+
+      const html = TemplateGenerator.generate({
+        category: template.category,
+        specialty: template.specialty,
+        businessName: template.title,
+        seasonalCampaignKey: template.seasonalCampaignKey,
+      });
+
+      const now = Date.now();
+      await setDocWithVerification(
+        doc(db, "cloned_sites", siteId),
+        {
+          id: siteId,
+          html,
+          userId: user.uid,
+          category: template.category,
+          specialty: template.specialty,
+          templateName: template.title,
+          source: "template-seasonal",
+          seasonalCampaignKey: template.seasonalCampaignKey,
+          createdAt: now,
+          updatedAt: now,
+          published: false,
+          status: "draft",
+        },
+        { merge: true },
+        {
+          expectedUpdatedAt: now,
+          requiredFields: ["id", "userId"],
+          errorMessage: "No se pudo confirmar la creacion de la plantilla estacional.",
+        },
+      );
+
+      router.push(`/editor/${siteId}`);
+    } catch (error: any) {
+      console.error("Error creating seasonal template project:", error);
+      setTemplateError("No se pudo crear la plantilla estacional. Intenta nuevamente.");
+    } finally {
+      setCreatingTemplate(null);
+    }
+  };
+
   const currentSubcategories = selectedModel
     ? subcategories[selectedModel]
     : [];
@@ -500,65 +603,114 @@ export default function ClonerPage() {
 
           {!selectedModel ? (
             // Main Models Grid
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {models.map((model) => (
-                <div
-                  key={model.id}
-                  onClick={() => handleSelect(model.id)}
-                  className={`
+            <>
+              <section className="mb-8 rounded-3xl border border-amber-300/20 bg-amber-500/5 p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-black text-amber-100">Plantillas de temporada</h2>
+                    <p className="text-xs text-amber-100/80">
+                      #10 listo: campanas estacionales para subir conversion rapido.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {seasonalTemplates.map((template) => (
+                    <article
+                      key={template.id}
+                      className="rounded-2xl border border-amber-200/25 bg-black/35 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="inline-flex items-center gap-2">
+                          {template.icon}
+                          <div>
+                            <p className="text-sm font-black text-white">{template.title}</p>
+                            <p className="text-xs text-zinc-400">{template.seasonLabel}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCreateSeasonalTemplate(template)}
+                        disabled={creatingTemplate === `seasonal:${template.id}`}
+                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/35 bg-amber-400/12 px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-amber-100 disabled:opacity-50"
+                      >
+                        {creatingTemplate === `seasonal:${template.id}` ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            Creando...
+                          </>
+                        ) : (
+                          <>
+                            Crear plantilla
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </>
+                        )}
+                      </button>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {models.map((model) => (
+                  <div
+                    key={model.id}
+                    onClick={() => handleSelect(model.id)}
+                    className={`
                     group relative p-6 rounded-[2rem] border border-white/5 
                     bg-zinc-900/50 backdrop-blur-sm cursor-pointer 
                     transition-all duration-500 ease-out
                     ${model.border} ${model.animation}
                   `}
-                >
-                  {/* Inner Gradient */}
-                  <div
-                    className={`absolute inset-0 rounded-[2rem] bg-gradient-to-br ${model.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
-                  />
+                  >
+                    {/* Inner Gradient */}
+                    <div
+                      className={`absolute inset-0 rounded-[2rem] bg-gradient-to-br ${model.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                    />
 
-                  <div className="relative z-10 flex flex-col h-full items-center text-center">
-                    {/* Floating Emoji */}
-                    <div className="absolute -top-10 text-5xl animate-bounce-slow opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
-                      {model.emoji}
+                    <div className="relative z-10 flex flex-col h-full items-center text-center">
+                      {/* Floating Emoji */}
+                      <div className="absolute -top-10 text-5xl animate-bounce-slow opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                        {model.emoji}
+                      </div>
+
+                      {/* Icon Container */}
+                      <div className="mb-4 p-5 rounded-full bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500 shadow-lg">
+                        {model.icon}
+                      </div>
+
+                      <h3
+                        className={`text-xl font-bold mb-3 transition-colors duration-300 ${model.textGradient}`}
+                      >
+                        {model.title}
+                      </h3>
+
+                      <p className="text-sm text-zinc-400 mb-6 leading-relaxed line-clamp-2">
+                        {model.description}
+                      </p>
+
+                      {/* Features List - Limit to 2 for compact view */}
+                      <div className="mt-auto w-full space-y-2 mb-6 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                        {model.features.slice(0, 2).map((feature, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-center gap-2 text-xs font-medium text-zinc-300"
+                          >
+                            <CheckCircle2 className="w-3 h-3 text-gold-500" />
+                            {feature}
+                          </div>
+                        ))}
+                      </div>
+
+                      <button className="w-full py-2.5 rounded-full border border-white/10 bg-white/5 group-hover:bg-gold-500 group-hover:text-black group-hover:border-gold-500 transition-all duration-300 font-bold text-sm flex items-center justify-center gap-2">
+                        {t("cloner.select")}
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
                     </div>
-
-                    {/* Icon Container */}
-                    <div className="mb-4 p-5 rounded-full bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500 shadow-lg">
-                      {model.icon}
-                    </div>
-
-                    <h3
-                      className={`text-xl font-bold mb-3 transition-colors duration-300 ${model.textGradient}`}
-                    >
-                      {model.title}
-                    </h3>
-
-                    <p className="text-sm text-zinc-400 mb-6 leading-relaxed line-clamp-2">
-                      {model.description}
-                    </p>
-
-                    {/* Features List - Limit to 2 for compact view */}
-                    <div className="mt-auto w-full space-y-2 mb-6 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                      {model.features.slice(0, 2).map((feature, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-center gap-2 text-xs font-medium text-zinc-300"
-                        >
-                          <CheckCircle2 className="w-3 h-3 text-gold-500" />
-                          {feature}
-                        </div>
-                      ))}
-                    </div>
-
-                    <button className="w-full py-2.5 rounded-full border border-white/10 bg-white/5 group-hover:bg-gold-500 group-hover:text-black group-hover:border-gold-500 transition-all duration-300 font-bold text-sm flex items-center justify-center gap-2">
-                      {t("cloner.select")}
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           ) : (
             // Subcategories Grid
             <div className="animate-fade-in-up">

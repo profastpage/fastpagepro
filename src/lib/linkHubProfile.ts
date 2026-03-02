@@ -430,6 +430,9 @@ export interface LinkHubAutomationConfig {
   promoEnd: string;
   promoDiscountPercent: number;
   promoLabel: string;
+  weeklyPromoObjective: string;
+  weeklyPromoPlan: string[];
+  weeklyPromoUpdatedAt: number;
 }
 
 export interface LinkHubProfile {
@@ -678,6 +681,9 @@ function createDefaultAutomationConfig(): LinkHubAutomationConfig {
     promoEnd: "14:00",
     promoDiscountPercent: 10,
     promoLabel: "Promo del dia",
+    weeklyPromoObjective: "incrementar pedidos por WhatsApp",
+    weeklyPromoPlan: [],
+    weeklyPromoUpdatedAt: 0,
   };
 }
 
@@ -1492,6 +1498,9 @@ export function normalizeLinkHubProfile(
     ? ((input as Record<string, unknown>)["automation"] as Record<string, unknown>)
     : {};
   const rawPromoDiscount = Number(rawAutomation["promoDiscountPercent"]);
+  const rawWeeklyPromoPlan = Array.isArray(rawAutomation["weeklyPromoPlan"])
+    ? (rawAutomation["weeklyPromoPlan"] as unknown[])
+    : [];
   const automation: LinkHubAutomationConfig = {
     autoScheduleEnabled:
       typeof rawAutomation["autoScheduleEnabled"] === "boolean"
@@ -1513,6 +1522,16 @@ export function normalizeLinkHubProfile(
       ? Math.max(0, Math.min(90, Math.round(rawPromoDiscount)))
       : base.automation.promoDiscountPercent,
     promoLabel: safeText(rawAutomation["promoLabel"]) || base.automation.promoLabel,
+    weeklyPromoObjective:
+      safeText(rawAutomation["weeklyPromoObjective"]) || base.automation.weeklyPromoObjective,
+    weeklyPromoPlan:
+      rawWeeklyPromoPlan
+        .map((entry) => safeText(entry).slice(0, 260))
+        .filter(Boolean)
+        .slice(0, 7),
+    weeklyPromoUpdatedAt: Number.isFinite(Number(rawAutomation["weeklyPromoUpdatedAt"]))
+      ? Math.max(0, Math.floor(Number(rawAutomation["weeklyPromoUpdatedAt"])))
+      : base.automation.weeklyPromoUpdatedAt,
   };
 
   const defaultPlans = createDefaultPricingPlans();

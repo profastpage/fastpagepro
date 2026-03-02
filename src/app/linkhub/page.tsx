@@ -129,6 +129,16 @@ type LinkHubMetricsSummary = {
   }>;
 };
 
+type WeeklyPromoSuggestion = {
+  day: string;
+  headline: string;
+  description: string;
+  discountPercent: number;
+  startTime: string;
+  endTime: string;
+  focusCategory: string;
+};
+
 const LINK_TYPE_OPTIONS: Array<{ value: LinkHubLinkType; label: string }> = [
   { value: "website", label: "Website" },
   { value: "instagram", label: "Instagram" },
@@ -566,6 +576,7 @@ export default function LinkHubPage() {
   const [proTrialFeatureLabel, setProTrialFeatureLabel] = useState("");
   const [isActivatingProTrial, setIsActivatingProTrial] = useState(false);
   const [proTrialError, setProTrialError] = useState("");
+  const [isGeneratingWeeklyPromos, setIsGeneratingWeeklyPromos] = useState(false);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsSummary, setMetricsSummary] = useState<LinkHubMetricsSummary | null>(null);
   const [metricsError, setMetricsError] = useState("");
@@ -1843,6 +1854,88 @@ export default function LinkHubPage() {
     });
   }
 
+  async function generateWeeklyPromotionsWithAI() {
+    if (!isProPlan) {
+      showProFeatureLocked("IA de promociones semanales");
+      return;
+    }
+    if (!profile) return;
+
+    setIsGeneratingWeeklyPromos(true);
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Inicia sesion para usar IA semanal.");
+      const idToken = await currentUser.getIdToken();
+
+      const categoriesById = new Map(
+        profile.catalogCategories.map((category) => [category.id, category.name.trim() || "Carta"]),
+      );
+      const response = await fetch("/api/ai/weekly-promos", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          objective: profile.automation.weeklyPromoObjective,
+          categories: profile.catalogCategories.map((category) => category.name.trim()).filter(Boolean),
+          items: profile.catalogItems.map((item) => ({
+            title: item.title,
+            price: Number(item.price || 0),
+            categoryName: categoriesById.get(item.categoryId) || "Carta",
+          })),
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        promotions?: WeeklyPromoSuggestion[];
+      };
+      if (!response.ok) {
+        throw new Error(payload?.error || "No se pudo generar plan semanal.");
+      }
+
+      const promotions = Array.isArray(payload.promotions) ? payload.promotions : [];
+      const weeklyPromoPlan = promotions
+        .map((entry) =>
+          `${entry.day}: ${entry.startTime}-${entry.endTime} | ${entry.discountPercent}% | ${entry.headline}`,
+        )
+        .slice(0, 7);
+
+      const firstPromo = promotions[0];
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          automation: {
+            ...prev.automation,
+            weeklyPromoPlan,
+            weeklyPromoUpdatedAt: Date.now(),
+            promoEnabled: weeklyPromoPlan.length > 0 ? true : prev.automation.promoEnabled,
+            promoStart: firstPromo?.startTime || prev.automation.promoStart,
+            promoEnd: firstPromo?.endTime || prev.automation.promoEnd,
+            promoDiscountPercent:
+              typeof firstPromo?.discountPercent === "number"
+                ? Math.max(0, Math.min(90, Math.round(firstPromo.discountPercent)))
+                : prev.automation.promoDiscountPercent,
+            promoLabel: firstPromo?.headline || prev.automation.promoLabel,
+          },
+        };
+      });
+
+      setMessage({
+        type: "success",
+        text: "Plan semanal IA generado. Revisa y publica para aplicarlo.",
+      });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: String((error as { message?: string })?.message || "No se pudo generar IA semanal."),
+      });
+    } finally {
+      setIsGeneratingWeeklyPromos(false);
+    }
+  }
+
   async function suggestCatalogItemSalesCopy(itemId: string) {
     if (!isProPlan) {
       showProFeatureLocked("Copy de venta PRO");
@@ -2693,6 +2786,12 @@ export default function LinkHubPage() {
         "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
     };
     const promoDiscount = Math.max(0, Math.min(90, Math.round(Number(profile.automation.promoDiscountPercent) || 0)));
+    const cleanedWeeklyPromoPlan = Array.isArray(profile.automation.weeklyPromoPlan)
+      ? profile.automation.weeklyPromoPlan
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean)
+          .slice(0, 7)
+      : [];
     const cleanedAutomation = {
       ...profile.automation,
       autoScheduleEnabled: isProPlan ? Boolean(profile.automation.autoScheduleEnabled) : false,
@@ -2704,6 +2803,11 @@ export default function LinkHubPage() {
       promoEnd: (profile.automation.promoEnd || "14:00").trim() || "14:00",
       promoDiscountPercent: promoDiscount,
       promoLabel: (profile.automation.promoLabel || "Promo del dia").trim() || "Promo del dia",
+      weeklyPromoObjective:
+        (profile.automation.weeklyPromoObjective || "incrementar pedidos por WhatsApp").trim() ||
+        "incrementar pedidos por WhatsApp",
+      weeklyPromoPlan: isProPlan ? cleanedWeeklyPromoPlan : [],
+      weeklyPromoUpdatedAt: isProPlan ? Number(profile.automation.weeklyPromoUpdatedAt || 0) || 0 : 0,
     };
 
     if (profile.pricing.enabled && cleanedPlans.some((plan) => !plan.title || !plan.price)) {
@@ -4231,6 +4335,39 @@ export default function LinkHubPage() {
                       disabled={!profile.automation.promoEnabled}
                     />
                   </div>
+                </div>
+                <div className="mt-3 rounded-xl border border-violet-300/20 bg-violet-500/5 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-200">
+                    IA de promociones semanales
+                  </p>
+                  <textarea
+                    rows={2}
+                    value={profile.automation.weeklyPromoObjective}
+                    onChange={(event) => patchAutomation("weeklyPromoObjective", event.target.value)}
+                    className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-xs text-white"
+                    placeholder="Objetivo semanal: subir pedidos, ticket promedio, etc."
+                  />
+                  <button
+                    type="button"
+                    onClick={generateWeeklyPromotionsWithAI}
+                    disabled={isGeneratingWeeklyPromos}
+                    className="mt-2 inline-flex items-center gap-2 rounded-xl border border-violet-300/35 bg-violet-400/12 px-3 py-2 text-xs font-bold uppercase tracking-[0.09em] text-violet-100 disabled:opacity-60"
+                  >
+                    {isGeneratingWeeklyPromos ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                    Generar plan semanal IA
+                  </button>
+                  {profile.automation.weeklyPromoPlan.length > 0 ? (
+                    <ul className="mt-3 space-y-1 text-xs text-zinc-200">
+                      {profile.automation.weeklyPromoPlan.map((entry, index) => (
+                        <li
+                          key={`${entry}-${index}`}
+                          className="rounded-lg border border-white/10 bg-black/25 px-2 py-1.5"
+                        >
+                          {entry}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
               </article>
               {renderInlineProTrialButton("Automatizaciones PRO")}

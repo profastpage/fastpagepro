@@ -17,20 +17,58 @@ import {
   type PlanType,
 } from "@/lib/subscription/plans";
 
-type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA";
+type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA" | "IZIPAY";
 type CopiedAccountKey = "bcp_soles" | "bcp_cci";
 type BillingCycle = "MONTHLY" | "ANNUAL";
+type ThemeMarketplacePaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA" | "IZIPAY";
+
+type ReferralSummaryResponse = {
+  profile: {
+    referralCode: string;
+  };
+  referralLink: string;
+  stats: {
+    invited: number;
+    converted: number;
+    pending: number;
+    totalCommissionSoles: number;
+  };
+};
+
+type ThemePack = {
+  id: string;
+  name: string;
+  vertical: "restaurant" | "ecommerce" | "services";
+  description: string;
+  includedThemes: string[];
+  priceSoles: number;
+  badge: string;
+};
+
+type ThemeMarketplaceCatalog = {
+  packs: ThemePack[];
+  ownedPackIds: string[];
+  pendingOrders: Array<{
+    id: string;
+    packId: string;
+    packName: string;
+    status: "PENDING" | "PAID" | "CANCELLED";
+    paymentMethod: ThemeMarketplacePaymentMethod;
+  }>;
+};
 
 const PAYMENT_INSTRUCTIONS_ES: Record<PaymentMethod, string> = {
   YAPE: "Yape al 906431630. En el motivo coloca tu correo de Fast Page.",
   PLIN: "Plin al 906431630. En el detalle incluye el plan que deseas activar.",
   TRANSFERENCIA: "Transferencia a BCP en soles y adjunta comprobante para validacion.",
+  IZIPAY: "Paga con tarjeta o billetera en Izipay y activamos el plan automaticamente.",
 };
 
 const PAYMENT_INSTRUCTIONS_EN: Record<PaymentMethod, string> = {
   YAPE: "Yape to 906431630. Include your Fast Page email in the note.",
   PLIN: "Plin to 906431630. Add the target plan in the detail.",
   TRANSFERENCIA: "Transfer in soles to BCP and attach payment proof for validation.",
+  IZIPAY: "Pay with card or wallet on Izipay and we activate your plan automatically.",
 };
 
 const BANK_ACCOUNTS_ES = [
@@ -107,11 +145,19 @@ export default function BillingPage() {
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [confirmingIzipay, setConfirmingIzipay] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [referralSummary, setReferralSummary] = useState<ReferralSummaryResponse | null>(null);
+  const [loadingReferralSummary, setLoadingReferralSummary] = useState(false);
+  const [marketplaceCatalog, setMarketplaceCatalog] = useState<ThemeMarketplaceCatalog | null>(null);
+  const [loadingMarketplace, setLoadingMarketplace] = useState(false);
+  const [buyingPackId, setBuyingPackId] = useState("");
   const [copiedAccount, setCopiedAccount] = useState<CopiedAccountKey | null>(null);
   const pricingPlansRef = useRef<HTMLElement | null>(null);
   const paymentFormRef = useRef<HTMLFormElement | null>(null);
   const hasAppliedQueryPlanRef = useRef(false);
+  const hasProcessedIzipayQueryRef = useRef(false);
+  const hasProcessedMarketplaceQueryRef = useRef(false);
   const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim() || DEFAULT_YAPE_QR_URL;
 
   const activePlan = summary?.plan || "FREE";
@@ -159,6 +205,7 @@ export default function BillingPage() {
             notesPlaceholder: "Add any extra details for the admin team.",
             submitBusiness: "Activate 14-day trial",
             submitPaid: "Submit payment request",
+            submitIzipay: "Pay with Izipay",
             usageTitle: "Current usage and limits",
             projects: "Published projects",
             products: "Products in largest project",
@@ -194,6 +241,25 @@ export default function BillingPage() {
             subtotal: "Subtotal",
             discount: "Discount",
             total: "Total",
+            izipaySecure: "Secure online payment (Izipay)",
+            izipayRedirecting: "Opening secure Izipay checkout...",
+            izipayConfirming: "Confirming Izipay payment...",
+            izipayPaidSuccess: "Izipay payment confirmed. Your plan is active.",
+            izipayPending: "Your Izipay payment is still pending confirmation.",
+            referralsTitle: "Referral program",
+            referralsSubtitle: "Share your code and earn commission for each paid activation.",
+            referralCode: "Referral code",
+            referralLink: "Referral link",
+            referralInvited: "Invited",
+            referralConverted: "Converted",
+            referralPending: "Pending",
+            referralCommission: "Commission",
+            marketplaceTitle: "Premium theme marketplace",
+            marketplaceSubtitle: "Additional monetization: sell or activate premium packs by vertical.",
+            buyWithIzipay: "Buy with Izipay",
+            requestManual: "Request manual",
+            owned: "Active",
+            pending: "Pending",
           }
         : {
             saasBilling: "Facturacion SaaS",
@@ -230,6 +296,7 @@ export default function BillingPage() {
             notesPlaceholder: "Agrega detalles extra para el equipo admin.",
             submitBusiness: "Activar prueba de 14 dias",
             submitPaid: "Enviar solicitud de pago",
+            submitIzipay: "Pagar con Izipay",
             usageTitle: "Uso actual y limites",
             projects: "Proyectos publicados",
             products: "Productos en proyecto mas grande",
@@ -265,6 +332,25 @@ export default function BillingPage() {
             subtotal: "Subtotal",
             discount: "Descuento",
             total: "Total",
+            izipaySecure: "Pago seguro online (Izipay)",
+            izipayRedirecting: "Abriendo checkout seguro de Izipay...",
+            izipayConfirming: "Confirmando pago Izipay...",
+            izipayPaidSuccess: "Pago Izipay confirmado. Tu plan ya esta activo.",
+            izipayPending: "Tu pago Izipay sigue pendiente de confirmacion.",
+            referralsTitle: "Programa de referidos",
+            referralsSubtitle: "Comparte tu codigo y gana comision por cada activacion pagada.",
+            referralCode: "Codigo de referido",
+            referralLink: "Link de referido",
+            referralInvited: "Invitados",
+            referralConverted: "Convertidos",
+            referralPending: "Pendientes",
+            referralCommission: "Comision",
+            marketplaceTitle: "Marketplace de temas premium",
+            marketplaceSubtitle: "Monetizacion adicional: activa packs premium por rubro.",
+            buyWithIzipay: "Comprar con Izipay",
+            requestManual: "Solicitar manual",
+            owned: "Activo",
+            pending: "Pendiente",
           },
     [isEnglish],
   );
@@ -333,6 +419,187 @@ export default function BillingPage() {
       setDurationMonths(12);
     }
   }, [billingCycle, durationMonths]);
+
+  const loadReferralSummary = async () => {
+    if (!user?.uid) return;
+    setLoadingReferralSummary(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+      const response = await fetch("/api/referrals/summary", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        summary?: ReferralSummaryResponse;
+      };
+      if (!response.ok) return;
+      setReferralSummary(payload.summary || null);
+    } catch (error) {
+      console.error("[Billing] Could not load referral summary", error);
+    } finally {
+      setLoadingReferralSummary(false);
+    }
+  };
+
+  const loadThemeMarketplace = async () => {
+    if (!user?.uid) return;
+    setLoadingMarketplace(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+      const response = await fetch("/api/theme-marketplace/packs", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const payload = (await response.json().catch(() => ({}))) as ThemeMarketplaceCatalog & {
+        error?: string;
+      };
+      if (!response.ok) return;
+      setMarketplaceCatalog({
+        packs: payload.packs || [],
+        ownedPackIds: payload.ownedPackIds || [],
+        pendingOrders: payload.pendingOrders || [],
+      });
+    } catch (error) {
+      console.error("[Billing] Could not load theme marketplace", error);
+    } finally {
+      setLoadingMarketplace(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    void loadReferralSummary();
+    void loadThemeMarketplace();
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!user?.uid) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const izipayResult = String(params.get("izipayResult") || "").trim().toLowerCase();
+    const paymentId = String(params.get("paymentId") || "").trim();
+    const marketplaceResult = String(params.get("marketplaceResult") || "").trim().toLowerCase();
+    const orderId = String(params.get("orderId") || "").trim();
+
+    if (izipayResult === "success" && paymentId && !hasProcessedIzipayQueryRef.current) {
+      hasProcessedIzipayQueryRef.current = true;
+      setConfirmingIzipay(true);
+      setFeedback({ type: "success", text: i18n.izipayConfirming });
+      (async () => {
+        try {
+          const token = await auth.currentUser?.getIdToken(true);
+          if (!token) throw new Error("UNAUTHORIZED");
+          const response = await fetch("/api/payments/izipay/confirm", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ paymentId }),
+          });
+          const payload = (await response.json().catch(() => ({}))) as { paid?: boolean; error?: string };
+          if (!response.ok) {
+            throw new Error(payload.error || "No se pudo confirmar.");
+          }
+          setFeedback({
+            type: payload.paid ? "success" : "error",
+            text: payload.paid ? i18n.izipayPaidSuccess : i18n.izipayPending,
+          });
+          await reload();
+        } catch (error) {
+          setFeedback({
+            type: "error",
+            text: String((error as { message?: string })?.message || "No se pudo confirmar Izipay."),
+          });
+        } finally {
+          setConfirmingIzipay(false);
+        }
+      })();
+    }
+
+    if (marketplaceResult === "success" && orderId && !hasProcessedMarketplaceQueryRef.current) {
+      hasProcessedMarketplaceQueryRef.current = true;
+      (async () => {
+        try {
+          const token = await auth.currentUser?.getIdToken(true);
+          if (!token) throw new Error("UNAUTHORIZED");
+          const response = await fetch("/api/theme-marketplace/purchase", {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ orderId }),
+          });
+          const payload = (await response.json().catch(() => ({}))) as { paid?: boolean; error?: string };
+          if (!response.ok) throw new Error(payload.error || "No se pudo validar marketplace.");
+          setFeedback({
+            type: payload.paid ? "success" : "error",
+            text: payload.paid
+              ? "Pack premium activado correctamente."
+              : "La orden del marketplace sigue pendiente.",
+          });
+          await loadThemeMarketplace();
+        } catch (error) {
+          setFeedback({
+            type: "error",
+            text: String(
+              (error as { message?: string })?.message || "No se pudo confirmar orden de marketplace.",
+            ),
+          });
+        }
+      })();
+    }
+  }, [i18n.izipayConfirming, i18n.izipayPaidSuccess, i18n.izipayPending, reload, user?.uid]);
+
+  const purchaseThemePack = async (packId: string, method: ThemeMarketplacePaymentMethod) => {
+    if (!user?.uid) return;
+    setBuyingPackId(packId);
+    try {
+      const token = await auth.currentUser?.getIdToken(true);
+      if (!token) throw new Error(isEnglish ? "Session expired." : "Sesion expirada.");
+      const response = await fetch("/api/theme-marketplace/purchase", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ packId, paymentMethod: method }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        checkoutUrl?: string;
+        paymentFlow?: "MANUAL" | "IZIPAY";
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudo crear la orden.");
+      }
+      if (payload.paymentFlow === "IZIPAY" && payload.checkoutUrl) {
+        setFeedback({ type: "success", text: i18n.izipayRedirecting });
+        window.location.href = payload.checkoutUrl;
+        return;
+      }
+      setFeedback({
+        type: "success",
+        text: isEnglish
+          ? "Manual order created. Awaiting admin validation."
+          : "Orden manual creada. Queda pendiente de validacion admin.",
+      });
+      await loadThemeMarketplace();
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        text: String((error as { message?: string })?.message || "No se pudo comprar pack."),
+      });
+    } finally {
+      setBuyingPackId("");
+    }
+  };
 
   const upsells = useMemo(() => {
     const reasons = new Set<PlanUpsellReason>(["ai", "branding", "insights", "cloner", "limit"]);
@@ -427,6 +694,22 @@ export default function BillingPage() {
     }
   };
 
+  const copyText = async (value: string) => {
+    const text = String(value || "").trim();
+    if (!text) return;
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      }
+      setFeedback({
+        type: "success",
+        text: isEnglish ? "Copied to clipboard." : "Copiado al portapapeles.",
+      });
+    } catch (error) {
+      console.error("[Billing] Could not copy text", error);
+    }
+  };
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setFeedback(null);
@@ -441,6 +724,33 @@ export default function BillingPage() {
             ? "Your session expired. Sign in again."
             : "Tu sesion expiro. Inicia sesion nuevamente.",
         );
+      }
+
+      if (showPaymentFlow && paymentMethod === "IZIPAY") {
+        const response = await fetch("/api/payments/izipay/checkout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            plan: selectedPlan,
+            billingCycle,
+            durationMonths: effectiveDurationMonths,
+          }),
+        });
+        const data = (await response.json().catch(() => ({}))) as {
+          checkoutUrl?: string;
+          error?: string;
+        };
+        if (!response.ok || !data.checkoutUrl) {
+          throw new Error(
+            data?.error || (isEnglish ? "Could not start Izipay checkout." : "No se pudo iniciar Izipay."),
+          );
+        }
+        setFeedback({ type: "success", text: i18n.izipayRedirecting });
+        window.location.href = data.checkoutUrl;
+        return;
       }
 
       const formData = new FormData();
@@ -697,7 +1007,7 @@ export default function BillingPage() {
                   {i18n.paymentMethod}
                 </span>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {(["YAPE", "PLIN", "TRANSFERENCIA"] as PaymentMethod[]).map((method) => (
+                  {(["YAPE", "PLIN", "TRANSFERENCIA", "IZIPAY"] as PaymentMethod[]).map((method) => (
                     <button
                       key={method}
                       type="button"
@@ -724,6 +1034,11 @@ export default function BillingPage() {
             {isBusinessTrial ? (
               <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100">
                 {i18n.trialBlock}
+              </div>
+            ) : paymentMethod === "IZIPAY" ? (
+              <div className="space-y-2 rounded-xl border border-amber-300/35 bg-amber-500/10 px-3 py-3 text-sm text-amber-100">
+                <p className="font-semibold">{paymentInstructions[paymentMethod]}</p>
+                <p className="text-xs text-amber-100/90">{i18n.izipaySecure}</p>
               </div>
             ) : (
               <div className="space-y-3 rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
@@ -849,7 +1164,7 @@ export default function BillingPage() {
               </div>
             )}
 
-            {showPaymentFlow ? (
+            {showPaymentFlow && paymentMethod !== "IZIPAY" ? (
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
                   {i18n.uploadProof}
@@ -896,14 +1211,16 @@ export default function BillingPage() {
 
             <button
               type="submit"
-              disabled={submitting || loading || permissions.loading}
+              disabled={submitting || confirmingIzipay || loading || permissions.loading}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-60"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {submitting
+              {submitting || confirmingIzipay ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {submitting || confirmingIzipay
                 ? i18n.processing
                 : isBusinessTrial
                   ? i18n.submitBusiness
+                  : paymentMethod === "IZIPAY"
+                    ? i18n.submitIzipay
                   : i18n.submitPaid}
             </button>
           </form>
@@ -941,6 +1258,110 @@ export default function BillingPage() {
                     </p>
                   </div>
                 ))
+              )}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4">
+              <h4 className="text-xs font-black uppercase tracking-[0.15em] text-zinc-300">
+                {i18n.referralsTitle}
+              </h4>
+              <p className="mt-1 text-xs text-zinc-400">{i18n.referralsSubtitle}</p>
+              {loadingReferralSummary ? (
+                <p className="mt-3 text-xs text-zinc-500">{isEnglish ? "Loading..." : "Cargando..."}</p>
+              ) : referralSummary ? (
+                <div className="mt-3 space-y-2">
+                  <div className="rounded-xl border border-white/10 bg-black/35 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-500">{i18n.referralCode}</p>
+                    <button
+                      type="button"
+                      onClick={() => copyText(referralSummary.profile.referralCode)}
+                      className="mt-1 text-sm font-black text-amber-100"
+                    >
+                      {referralSummary.profile.referralCode}
+                    </button>
+                  </div>
+                  <div className="rounded-xl border border-white/10 bg-black/35 px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-zinc-500">{i18n.referralLink}</p>
+                    <button
+                      type="button"
+                      onClick={() => copyText(referralSummary.referralLink)}
+                      className="mt-1 break-all text-left text-xs text-zinc-200"
+                    >
+                      {referralSummary.referralLink}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-lg border border-white/10 bg-black/25 px-2 py-2">
+                      <p className="text-zinc-400">{i18n.referralInvited}</p>
+                      <p className="font-black text-white">{referralSummary.stats.invited}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/25 px-2 py-2">
+                      <p className="text-zinc-400">{i18n.referralConverted}</p>
+                      <p className="font-black text-white">{referralSummary.stats.converted}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/25 px-2 py-2">
+                      <p className="text-zinc-400">{i18n.referralPending}</p>
+                      <p className="font-black text-white">{referralSummary.stats.pending}</p>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-black/25 px-2 py-2">
+                      <p className="text-zinc-400">{i18n.referralCommission}</p>
+                      <p className="font-black text-emerald-200">S/ {referralSummary.stats.totalCommissionSoles.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-4">
+              <h4 className="text-xs font-black uppercase tracking-[0.15em] text-zinc-300">
+                {i18n.marketplaceTitle}
+              </h4>
+              <p className="mt-1 text-xs text-zinc-400">{i18n.marketplaceSubtitle}</p>
+              {loadingMarketplace ? (
+                <p className="mt-3 text-xs text-zinc-500">{isEnglish ? "Loading..." : "Cargando..."}</p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {(marketplaceCatalog?.packs || []).map((pack) => {
+                    const owned = Boolean(marketplaceCatalog?.ownedPackIds?.includes(pack.id));
+                    const pending = Boolean(
+                      marketplaceCatalog?.pendingOrders?.some(
+                        (order) => order.packId === pack.id && order.status === "PENDING",
+                      ),
+                    );
+                    return (
+                      <article key={pack.id} className="rounded-xl border border-white/10 bg-black/35 p-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-black text-white">{pack.name}</p>
+                            <p className="mt-1 text-xs text-zinc-400">{pack.description}</p>
+                            <p className="mt-1 text-xs font-semibold text-amber-200">{pack.badge} - S/ {pack.priceSoles}</p>
+                          </div>
+                          <span className="rounded-full border border-white/20 px-2 py-0.5 text-[10px] font-bold uppercase text-zinc-300">
+                            {owned ? i18n.owned : pending ? i18n.pending : pack.vertical}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            disabled={owned || pending || buyingPackId === pack.id}
+                            onClick={() => purchaseThemePack(pack.id, "IZIPAY")}
+                            className="rounded-lg border border-amber-300/40 bg-amber-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.09em] text-amber-100 disabled:opacity-50"
+                          >
+                            {buyingPackId === pack.id ? i18n.processing : i18n.buyWithIzipay}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={owned || pending || buyingPackId === pack.id}
+                            onClick={() => purchaseThemePack(pack.id, "YAPE")}
+                            className="rounded-lg border border-white/20 bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.09em] text-zinc-200 disabled:opacity-50"
+                          >
+                            {i18n.requestManual}
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </aside>

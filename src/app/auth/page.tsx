@@ -66,6 +66,14 @@ function normalizePlanIntent(rawValue: string | null): LandingPlanIntent | null 
   return null;
 }
 
+function normalizeReferralCode(rawValue: string | null): string {
+  return String(rawValue || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 20);
+}
+
 export default function AuthPage() {
   return (
     <Suspense
@@ -104,8 +112,10 @@ function AuthContent() {
             labelName: "Name",
             labelEmail: "Email",
             labelPassword: "Password",
+            labelReferral: "Referral code (optional)",
             placeholderName: "Your name",
             placeholderEmail: "you@domain.com",
+            placeholderReferral: "Example: FASTAB12",
             forgotPassword: "Forgot your password?",
             submitLogin: "Enter",
             submitRegister: "Create account",
@@ -154,8 +164,10 @@ function AuthContent() {
             labelName: "Nombre",
             labelEmail: "Email",
             labelPassword: "Contrasena",
+            labelReferral: "Codigo de referido (opcional)",
             placeholderName: "Tu nombre",
             placeholderEmail: "tucorreo@dominio.com",
+            placeholderReferral: "Ejemplo: FASTAB12",
             forgotPassword: "Olvidaste tu contrasena?",
             submitLogin: "Entrar",
             submitRegister: "Crear cuenta",
@@ -203,6 +215,8 @@ function AuthContent() {
   const [toast, setToast] = useState<string>("");
   const [isStandalonePwa, setIsStandalonePwa] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
+  const referralCodeIntent = normalizeReferralCode(searchParams.get("ref"));
+  const [registerReferralCode, setRegisterReferralCode] = useState(referralCodeIntent);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleError, setIsGoogleError] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -215,6 +229,11 @@ function AuthContent() {
   const demoThemeIntent = String(searchParams.get("demoTheme") || "")
     .trim()
     .replace(/[^\w-]/g, "");
+
+  useEffect(() => {
+    if (!referralCodeIntent) return;
+    setRegisterReferralCode((current) => current || referralCodeIntent);
+  }, [referralCodeIntent]);
 
   const isCanonicalRedirectNeeded = () => {
     if (typeof window === "undefined") return false;
@@ -306,6 +325,27 @@ function AuthContent() {
       }
     } catch (error) {
       console.warn("[Auth] No se pudo activar trial Business automaticamente.", error);
+    }
+  };
+
+  const applyReferralCodeAfterAuth = async (firebaseUser: any, forceApply = false) => {
+    const code = normalizeReferralCode(registerReferralCode || referralCodeIntent);
+    if (!code) return;
+    if (!forceApply && tab !== "register") return;
+    if (!firebaseUser?.uid) return;
+
+    try {
+      const token = await firebaseUser.getIdToken();
+      await fetch("/api/referrals/apply", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+      });
+    } catch (error) {
+      console.warn("[Auth] No se pudo aplicar codigo de referido.", error);
     }
   };
 
@@ -405,6 +445,7 @@ function AuthContent() {
 
       // 3. Sincronizar con Firestore - Esperar a que se complete para asegurar que el Admin lo vea
       await syncUserToFirestore(user, preferredVertical);
+      await applyReferralCodeAfterAuth(user, true);
       await activateBusinessTrial(user);
 
       showToast(i18n.accountCreated);
@@ -490,6 +531,7 @@ function AuthContent() {
       if (user) {
         // Sincronizacion prioritaria
         await syncUserToFirestore(user, preferredVertical);
+        await applyReferralCodeAfterAuth(user, tab === "register");
         await activateBusinessTrial(user);
 
         // Redireccion inmediata despues de asegurar datos
@@ -503,6 +545,7 @@ function AuthContent() {
         if (result?.user) {
           // Sincronizacion prioritaria
           await syncUserToFirestore(result.user, preferredVertical);
+          await applyReferralCodeAfterAuth(result.user, tab === "register");
           await activateBusinessTrial(result.user);
           if (tab === "register") {
             void trackGrowthEvent("signup_complete", {
@@ -536,6 +579,7 @@ function AuthContent() {
       if (result.user) {
         // Sincronizacion prioritaria (esperamos a que se guarde en Firestore)
         await syncUserToFirestore(result.user, preferredVertical);
+        await applyReferralCodeAfterAuth(result.user, tab === "register");
         await activateBusinessTrial(result.user);
         if (tab === "register") {
           void trackGrowthEvent("signup_complete", {
@@ -821,6 +865,20 @@ function AuthContent() {
                     placeholder={i18n.placeholderEmail}
                     required
                     className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-300 ml-1">
+                    {i18n.labelReferral}
+                  </label>
+                  <input
+                    name="referralCode"
+                    type="text"
+                    autoComplete="off"
+                    placeholder={i18n.placeholderReferral}
+                    value={registerReferralCode}
+                    onChange={(event) => setRegisterReferralCode(normalizeReferralCode(event.target.value))}
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white uppercase placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none"
                   />
                 </div>
                 <div className="space-y-2">

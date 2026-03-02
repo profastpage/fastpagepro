@@ -10,6 +10,7 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import { canAccessFeature, getPlanLimits, SubscriptionFeature } from "@/lib/permissions";
 import { getPlanDefinition } from "@/lib/subscription/plans";
 import { isRootAdminEmail } from "@/lib/adminAccess";
+import { markReferralPaid } from "@/lib/referrals/service";
 
 const FREE_PLAN_HORIZON_DAYS = 3650;
 const EXPIRY_WARNING_DAYS = 5;
@@ -1038,7 +1039,7 @@ export async function approveSubscriptionRequest(input: {
   reviewerId: string;
   durationDays: number;
 }) {
-  return prisma.$transaction(async (tx) => {
+  const approval = await prisma.$transaction(async (tx) => {
     const request = await tx.subscriptionRequest.findUnique({
       where: { id: input.requestId },
     });
@@ -1086,8 +1087,25 @@ export async function approveSubscriptionRequest(input: {
       },
     });
 
-    return activeSubscription;
+    return {
+      request,
+      activeSubscription,
+    };
   });
+
+  const approxMonths = Math.max(1, Math.round(input.durationDays / 30));
+  const approvedAmountSoles = Number(
+    (getPlanDefinition(approval.request.requestedPlan).monthlyPriceSoles * approxMonths).toFixed(2),
+  );
+  await markReferralPaid({
+    invitedUserId: approval.request.userId,
+    requestedPlan: approval.request.requestedPlan,
+    amountSoles: approvedAmountSoles,
+  }).catch((error) => {
+    console.error("[Subscription Approve] referral settlement warning:", error);
+  });
+
+  return approval.activeSubscription;
 }
 
 export async function getPendingRequestsByUser(userId: string): Promise<SubscriptionRequest[]> {

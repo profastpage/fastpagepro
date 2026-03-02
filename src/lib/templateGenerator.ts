@@ -2,6 +2,7 @@ export interface TemplateOptions {
   category: string;
   specialty: string;
   businessName?: string;
+  seasonalCampaignKey?: string;
 }
 
 type Theme = {
@@ -24,7 +25,53 @@ type TemplateSeed = {
   theme: keyof typeof themeByKey;
 };
 
+type SeasonalCampaign = {
+  key: string;
+  label: string;
+  headline: string;
+  subtitle: string;
+  ctaLabel: string;
+};
+
 const PHONE_PLACEHOLDER = "51999999999";
+
+const seasonalCampaigns: SeasonalCampaign[] = [
+  {
+    key: "summer",
+    label: "Campana Verano",
+    headline: "Oferta estacional para temporada alta",
+    subtitle: "Activa promos visuales para captar mas pedidos en verano.",
+    ctaLabel: "Ver promo verano",
+  },
+  {
+    key: "back-to-school",
+    label: "Campana Regreso a Clases",
+    headline: "Promociones para familias y consumo recurrente",
+    subtitle: "Copy y bloques listos para conversion semanal.",
+    ctaLabel: "Ver promo escolar",
+  },
+  {
+    key: "fiestas-patrias",
+    label: "Campana Fiestas Patrias",
+    headline: "Edicion especial para fechas nacionales",
+    subtitle: "Creatividades premium para elevar ticket promedio.",
+    ctaLabel: "Ver promo patrias",
+  },
+  {
+    key: "black-friday",
+    label: "Campana Black Friday",
+    headline: "Empuja conversion con urgencia real",
+    subtitle: "Bloques de oferta limitados para cerrar ventas rapido.",
+    ctaLabel: "Ver promo black",
+  },
+  {
+    key: "navidad",
+    label: "Campana Navidad",
+    headline: "Plantilla lista para campana navidena",
+    subtitle: "Diseño comercial para regalos, cenas y reservas premium.",
+    ctaLabel: "Ver promo navidad",
+  },
+];
 
 const themeByKey = {
   red: {
@@ -180,6 +227,14 @@ function getSeed(category: string, specialty: string): TemplateSeed {
   };
 }
 
+function getSeasonalCampaign(campaignKey?: string): SeasonalCampaign | null {
+  const normalized = String(campaignKey || "")
+    .trim()
+    .toLowerCase();
+  if (!normalized) return null;
+  return seasonalCampaigns.find((entry) => entry.key === normalized) || null;
+}
+
 function offers(label: string): string[] {
   return [`${label} Base`, `${label} Premium`, `${label} Full Conversion`];
 }
@@ -201,11 +256,15 @@ function galleryUrls(label: string): string[] {
   ];
 }
 
-function buildHtml(seed: TemplateSeed, businessName: string): string {
+function buildHtml(seed: TemplateSeed, businessName: string, seasonalCampaign: SeasonalCampaign | null): string {
   const safeBusiness = esc(businessName);
   const theme = themeByKey[seed.theme];
   const waText = encodeURIComponent(`Hola, quiero informacion de ${seed.specialtyLabel}.`);
   const waHref = `https://wa.me/${PHONE_PLACEHOLDER}?text=${waText}`;
+  const campaignTitle = seasonalCampaign ? esc(seasonalCampaign.label) : "";
+  const campaignHeadline = seasonalCampaign ? esc(seasonalCampaign.headline) : "";
+  const campaignSubtitle = seasonalCampaign ? esc(seasonalCampaign.subtitle) : "";
+  const campaignCta = seasonalCampaign ? esc(seasonalCampaign.ctaLabel) : "";
   const offerItems = offers(seed.specialtyLabel)
     .map(
       (name, index) => `
@@ -326,12 +385,22 @@ function buildHtml(seed: TemplateSeed, businessName: string): string {
     <section class="hero">
       <article class="panel hero-main">
         <span class="badge">${esc(seed.categoryLabel)} - ${esc(seed.specialtyLabel)}</span>
+        ${
+          seasonalCampaign
+            ? `<span class="badge" style="margin-left:8px;background:color-mix(in srgb,var(--accent) 22%,transparent);color:white;">${campaignTitle}</span>`
+            : ""
+        }
         <h1>Landing para ${esc(seed.specialtyLabel)} con ${esc(seed.voice)}</h1>
         <p class="sub">Modelo profesional listo para editar y publicar. Incluye estructura de ventas, FAQ y widget de WhatsApp.</p>
+        ${
+          seasonalCampaign
+            ? `<div style="margin:0 0 16px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:color-mix(in srgb,var(--primary) 14%,transparent);"><strong>${campaignHeadline}</strong><p style="margin:4px 0 0;color:var(--muted);font-size:13px;">${campaignSubtitle}</p></div>`
+            : ""
+        }
         <ul class="bullets">${highlightItems}</ul>
         <div class="hero-cta">
           <a class="btn btn-primary" href="${waHref}" target="_blank" rel="noopener noreferrer">Pedir informacion</a>
-          <a class="btn" href="#ofertas">Ver oferta</a>
+          <a class="btn" href="#ofertas">${seasonalCampaign ? campaignCta : "Ver oferta"}</a>
         </div>
       </article>
       <aside class="panel hero-side">
@@ -383,7 +452,8 @@ export class TemplateGenerator {
     const specialty = (options.specialty || "").trim().toLowerCase();
     const seed = getSeed(category, specialty);
     const businessName = options.businessName?.trim() || `${seed.specialtyLabel} Pro`;
-    return buildHtml(seed, businessName);
+    const seasonalCampaign = getSeasonalCampaign(options.seasonalCampaignKey);
+    return buildHtml(seed, businessName, seasonalCampaign);
   }
 }
 
