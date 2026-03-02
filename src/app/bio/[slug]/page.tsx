@@ -18,7 +18,13 @@ import {
   sanitizeSlug,
 } from "@/lib/linkHubProfile";
 import CartaThemeProvider from "@/theme/CartaThemeProvider";
-import { getCartaTheme, getSafeCartaThemeId, recommendCartaThemeIdByRubro } from "@/theme/cartaThemes";
+import {
+  CARTA_CUSTOM_DEFAULTS,
+  getCartaTheme,
+  getSafeCartaCustomStyle,
+  getSafeCartaThemeId,
+  recommendCartaThemeIdByRubro,
+} from "@/theme/cartaThemes";
 import ProductCard, { type ProductCardBadge } from "@/components/carta/ProductCard";
 import StickyCategoryBar from "@/components/carta/StickyCategoryBar";
 import FloatingCartButton from "@/components/carta/FloatingCartButton";
@@ -585,7 +591,12 @@ export default function PublicBioPage() {
   const cartaThemeId = getSafeCartaThemeId(
     profile.cartaThemeId || recommendCartaThemeIdByLinkTheme(profile.theme) || recommendCartaThemeIdByRubro(rubroHint),
   );
-  const activeCartaTheme = getCartaTheme(cartaThemeId);
+  const activeCartaTheme = getCartaTheme(cartaThemeId, {
+    primary: profile.cartaCustomPrimaryColor || CARTA_CUSTOM_DEFAULTS.primary,
+    secondary: profile.cartaCustomSecondaryColor || CARTA_CUSTOM_DEFAULTS.secondary,
+    accent: profile.cartaCustomAccentColor || CARTA_CUSTOM_DEFAULTS.accent,
+    style: getSafeCartaCustomStyle(profile.cartaCustomDesignStyle),
+  });
   const cartaBackgroundMode = getSafeLinkHubCartaBackgroundMode(profile.cartaBackgroundMode);
   const useWhiteCartaBackground = cartaBackgroundMode === "white";
   const readablePriceColor = resolvePriceColor(activeCartaTheme.tokens.accent, useWhiteCartaBackground);

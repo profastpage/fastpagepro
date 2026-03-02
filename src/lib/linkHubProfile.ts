@@ -10,7 +10,10 @@ import {
 } from "firebase/firestore";
 import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
 import {
+  CARTA_CUSTOM_DEFAULTS,
+  CartaCustomStyle,
   CartaThemeId,
+  getSafeCartaCustomStyle,
   getSafeCartaThemeId,
   recommendCartaThemeIdByRubro,
 } from "@/theme/cartaThemes";
@@ -448,6 +451,10 @@ export interface LinkHubProfile {
   textTone: LinkHubTextTone;
   cartaThemeId: CartaThemeId;
   cartaBackgroundMode: LinkHubCartaBackgroundMode;
+  cartaCustomPrimaryColor?: string;
+  cartaCustomSecondaryColor?: string;
+  cartaCustomAccentColor?: string;
+  cartaCustomDesignStyle?: CartaCustomStyle;
   sectionLabels: LinkHubSectionLabels;
   theme: LinkHubTheme;
   themePrimaryColor?: string;
@@ -973,6 +980,10 @@ export function buildRestaurantRecordingDemoProfile(user: LinkHubUserSeed): Link
       textTone: "blackGold",
       cartaThemeId: "fastfood",
       cartaBackgroundMode: "white",
+      cartaCustomPrimaryColor: CARTA_CUSTOM_DEFAULTS.primary,
+      cartaCustomSecondaryColor: CARTA_CUSTOM_DEFAULTS.secondary,
+      cartaCustomAccentColor: CARTA_CUSTOM_DEFAULTS.accent,
+      cartaCustomDesignStyle: CARTA_CUSTOM_DEFAULTS.style,
       sectionLabels: getDefaultLinkHubSectionLabels(),
       theme: "saffron",
       themePrimaryColor: "#ea580c",
@@ -1241,6 +1252,10 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     textTone: "white",
     cartaThemeId: recommendCartaThemeIdByRubro(rubroHint),
     cartaBackgroundMode: "white",
+    cartaCustomPrimaryColor: CARTA_CUSTOM_DEFAULTS.primary,
+    cartaCustomSecondaryColor: CARTA_CUSTOM_DEFAULTS.secondary,
+    cartaCustomAccentColor: CARTA_CUSTOM_DEFAULTS.accent,
+    cartaCustomDesignStyle: CARTA_CUSTOM_DEFAULTS.style,
     sectionLabels: getDefaultLinkHubSectionLabels(),
     theme: "midnight",
     themePrimaryColor: baseTheme.primary,
@@ -1589,6 +1604,23 @@ export function normalizeLinkHubProfile(
     cartaThemeId,
     cartaBackgroundMode: getSafeLinkHubCartaBackgroundMode(
       safeText((input as Record<string, unknown>)["cartaBackgroundMode"]) || base.cartaBackgroundMode,
+    ),
+    cartaCustomPrimaryColor: normalizeHexColor(
+      safeText((input as Record<string, unknown>)["cartaCustomPrimaryColor"]),
+      safeText(base.cartaCustomPrimaryColor) || CARTA_CUSTOM_DEFAULTS.primary,
+    ),
+    cartaCustomSecondaryColor: normalizeHexColor(
+      safeText((input as Record<string, unknown>)["cartaCustomSecondaryColor"]),
+      safeText(base.cartaCustomSecondaryColor) || CARTA_CUSTOM_DEFAULTS.secondary,
+    ),
+    cartaCustomAccentColor: normalizeHexColor(
+      safeText((input as Record<string, unknown>)["cartaCustomAccentColor"]),
+      safeText(base.cartaCustomAccentColor) || CARTA_CUSTOM_DEFAULTS.accent,
+    ),
+    cartaCustomDesignStyle: getSafeCartaCustomStyle(
+      safeText((input as Record<string, unknown>)["cartaCustomDesignStyle"]) ||
+        safeText(base.cartaCustomDesignStyle) ||
+        CARTA_CUSTOM_DEFAULTS.style,
     ),
     sectionLabels,
     theme: safeTheme,

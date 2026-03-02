@@ -45,6 +45,191 @@ export type CartaThemePreset = {
   tokens: CartaThemeTokens;
 };
 
+export type CartaCustomStyle = "luxe" | "soft" | "neon";
+
+export type CartaCustomThemeInput = {
+  primary?: string | null;
+  secondary?: string | null;
+  accent?: string | null;
+  style?: CartaCustomStyle | string | null;
+};
+
+export const CARTA_CUSTOM_DEFAULTS = {
+  primary: "#d4a84f",
+  secondary: "#0f172a",
+  accent: "#f59e0b",
+  style: "luxe" as CartaCustomStyle,
+};
+
+const HEX_COLOR_PATTERN = /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/;
+
+function normalizeHexToLong(input: string): string {
+  const source = String(input || "").trim();
+  if (!HEX_COLOR_PATTERN.test(source)) return "";
+  if (source.length === 7) return source.toLowerCase();
+  const [_, r, g, b] = source;
+  return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+}
+
+function clampByte(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function shiftHex(input: string, delta: number): string {
+  const safe = normalizeHexToLong(input);
+  const value = safe.replace("#", "");
+  const parsed = Number.parseInt(value, 16);
+  const r = clampByte(((parsed >> 16) & 255) + delta);
+  const g = clampByte(((parsed >> 8) & 255) + delta);
+  const b = clampByte((parsed & 255) + delta);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+function hexToRgba(input: string, alpha: number): string {
+  const safe = normalizeHexToLong(input);
+  const value = safe.replace("#", "");
+  const parsed = Number.parseInt(value, 16);
+  const r = (parsed >> 16) & 255;
+  const g = (parsed >> 8) & 255;
+  const b = parsed & 255;
+  const safeAlpha = Math.max(0, Math.min(1, Number(alpha) || 0));
+  return `rgba(${r}, ${g}, ${b}, ${safeAlpha})`;
+}
+
+function safeCustomHex(input: string | null | undefined, fallback: string): string {
+  const normalized = normalizeHexToLong(String(input || ""));
+  if (!normalized) return fallback;
+  return normalized;
+}
+
+export function getSafeCartaCustomStyle(value?: string | null): CartaCustomStyle {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized === "soft" || normalized === "neon" || normalized === "luxe") {
+    return normalized;
+  }
+  return CARTA_CUSTOM_DEFAULTS.style;
+}
+
+function buildCustomRgbThemeTokens(input?: CartaCustomThemeInput): CartaThemeTokens {
+  const primary = safeCustomHex(input?.primary, CARTA_CUSTOM_DEFAULTS.primary);
+  const secondary = safeCustomHex(input?.secondary, CARTA_CUSTOM_DEFAULTS.secondary);
+  const accent = safeCustomHex(input?.accent, CARTA_CUSTOM_DEFAULTS.accent);
+  const style = getSafeCartaCustomStyle(input?.style);
+
+  const primaryHover = shiftHex(primary, -14);
+  const accentHover = shiftHex(accent, -10);
+  const lightText = "#f8fafc";
+
+  if (style === "neon") {
+    return {
+      background: "#030712",
+      surface: `linear-gradient(155deg, ${hexToRgba(secondary, 0.88)} 0%, ${hexToRgba(primary, 0.26)} 60%, ${hexToRgba(accent, 0.22)} 100%)`,
+      surface2: `linear-gradient(145deg, ${hexToRgba(secondary, 0.94)} 0%, ${hexToRgba(primary, 0.2)} 100%)`,
+      text: lightText,
+      mutedText: "#cbd5e1",
+      primary,
+      primaryHover,
+      primaryText: "#f8fafc",
+      accent,
+      accentHover,
+      border: hexToRgba(primary, 0.42),
+      ring: hexToRgba(primary, 0.55),
+      shadow: `0 18px 36px -24px ${hexToRgba(primary, 0.58)}`,
+      chipBg: hexToRgba(secondary, 0.9),
+      chipText: lightText,
+      chipActiveBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.94)} 0%, ${hexToRgba(accent, 0.86)} 100%)`,
+      chipActiveText: "#ffffff",
+      chipBorder: hexToRgba(primary, 0.42),
+      navBg: `linear-gradient(120deg, ${hexToRgba(secondary, 0.96)} 0%, ${hexToRgba(primary, 0.18)} 100%)`,
+      navActiveBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.95)} 0%, ${hexToRgba(accent, 0.88)} 100%)`,
+      navActiveText: "#ffffff",
+      navText: "#cbd5e1",
+      badgeBg: `linear-gradient(120deg, ${hexToRgba(accent, 0.92)} 0%, ${hexToRgba(primary, 0.9)} 100%)`,
+      badgeText: "#ffffff",
+      buttonBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.94)} 0%, ${hexToRgba(accent, 0.86)} 100%)`,
+      buttonText: "#ffffff",
+      buttonSecondaryBg: hexToRgba(secondary, 0.9),
+      inputBg: hexToRgba(secondary, 0.88),
+      inputText: lightText,
+      placeholder: "#94a3b8",
+      inputBorder: hexToRgba(primary, 0.4),
+      gradientHero: `linear-gradient(120deg, ${hexToRgba(secondary, 0.96)} 0%, ${hexToRgba(primary, 0.24)} 50%, ${hexToRgba(accent, 0.2)} 100%)`,
+    };
+  }
+
+  if (style === "soft") {
+    return {
+      background: "#f8fafc",
+      surface: `linear-gradient(155deg, rgba(255,255,255,0.97) 0%, ${hexToRgba(primary, 0.12)} 100%)`,
+      surface2: `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${hexToRgba(accent, 0.12)} 100%)`,
+      text: "#0f172a",
+      mutedText: "#475569",
+      primary,
+      primaryHover,
+      primaryText: "#ffffff",
+      accent,
+      accentHover,
+      border: hexToRgba(primary, 0.24),
+      ring: hexToRgba(primary, 0.34),
+      shadow: `0 16px 30px -24px ${hexToRgba(primary, 0.34)}`,
+      chipBg: "rgba(255,255,255,0.96)",
+      chipText: "#0f172a",
+      chipActiveBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.92)} 0%, ${hexToRgba(accent, 0.86)} 100%)`,
+      chipActiveText: "#ffffff",
+      chipBorder: hexToRgba(primary, 0.24),
+      navBg: "linear-gradient(120deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.95) 100%)",
+      navActiveBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.92)} 0%, ${hexToRgba(accent, 0.86)} 100%)`,
+      navActiveText: "#ffffff",
+      navText: "#334155",
+      badgeBg: `linear-gradient(120deg, ${hexToRgba(accent, 0.92)} 0%, ${hexToRgba(primary, 0.86)} 100%)`,
+      badgeText: "#ffffff",
+      buttonBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.92)} 0%, ${hexToRgba(accent, 0.86)} 100%)`,
+      buttonText: "#ffffff",
+      buttonSecondaryBg: hexToRgba(primary, 0.1),
+      inputBg: "rgba(255,255,255,0.96)",
+      inputText: "#0f172a",
+      placeholder: "#64748b",
+      inputBorder: hexToRgba(primary, 0.2),
+      gradientHero: `linear-gradient(120deg, rgba(255,255,255,0.98) 0%, ${hexToRgba(primary, 0.14)} 50%, ${hexToRgba(accent, 0.14)} 100%)`,
+    };
+  }
+
+  return {
+    background: "#070a12",
+    surface: `linear-gradient(160deg, ${hexToRgba(secondary, 0.95)} 0%, ${hexToRgba(primary, 0.24)} 42%, ${hexToRgba(accent, 0.18)} 100%)`,
+    surface2: `linear-gradient(145deg, ${hexToRgba(secondary, 0.94)} 0%, ${hexToRgba(primary, 0.18)} 100%)`,
+    text: lightText,
+    mutedText: "#cbd5e1",
+    primary,
+    primaryHover,
+    primaryText: "#ffffff",
+    accent,
+    accentHover,
+    border: hexToRgba(primary, 0.34),
+    ring: hexToRgba(primary, 0.46),
+    shadow: `0 18px 36px -24px ${hexToRgba(primary, 0.5)}`,
+    chipBg: hexToRgba(secondary, 0.9),
+    chipText: lightText,
+    chipActiveBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.92)} 0%, ${hexToRgba(accent, 0.84)} 100%)`,
+    chipActiveText: "#ffffff",
+    chipBorder: hexToRgba(primary, 0.36),
+    navBg: `linear-gradient(120deg, ${hexToRgba(secondary, 0.96)} 0%, ${hexToRgba(primary, 0.14)} 100%)`,
+    navActiveBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.92)} 0%, ${hexToRgba(accent, 0.84)} 100%)`,
+    navActiveText: "#ffffff",
+    navText: "#cbd5e1",
+    badgeBg: `linear-gradient(120deg, ${hexToRgba(accent, 0.9)} 0%, ${hexToRgba(primary, 0.86)} 100%)`,
+    badgeText: "#ffffff",
+    buttonBg: `linear-gradient(130deg, ${hexToRgba(primary, 0.92)} 0%, ${hexToRgba(accent, 0.84)} 100%)`,
+    buttonText: "#ffffff",
+    buttonSecondaryBg: hexToRgba(secondary, 0.9),
+    inputBg: hexToRgba(secondary, 0.88),
+    inputText: lightText,
+    placeholder: "#94a3b8",
+    inputBorder: hexToRgba(primary, 0.32),
+    gradientHero: `linear-gradient(120deg, ${hexToRgba(secondary, 0.96)} 0%, ${hexToRgba(primary, 0.2)} 46%, ${hexToRgba(accent, 0.16)} 100%)`,
+  };
+}
+
 export const CARTA_THEMES = {
   gourmet: {
     id: "gourmet",
@@ -696,6 +881,17 @@ export const CARTA_THEMES = {
       gradientHero: "linear-gradient(120deg, rgba(17,12,10,0.96) 0%, rgba(194,65,12,0.24) 44%, rgba(245,158,11,0.2) 100%)",
     },
   },
+  rgb_creator: {
+    id: "rgb_creator",
+    name: "RGB Personalizable",
+    rubro: "Tema premium - Carta Digital",
+    previewImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1600&auto=format&fit=crop",
+    previewDescription: "Crea tu propio diseño con colores RGB y estilo visual premium.",
+    official: false,
+    premium: true,
+    sortOrder: 16,
+    tokens: buildCustomRgbThemeTokens(),
+  },
 } as const satisfies Record<string, CartaThemePreset>;
 
 export type CartaThemeId = keyof typeof CARTA_THEMES;
@@ -727,6 +923,7 @@ const LEGACY_THEME_ALIASES: Record<string, CartaThemeId> = {
   mediterraneo_luxe: "mediterraneo_luxe",
   urban_matcha: "urban_matcha",
   royal_cacao: "royal_cacao",
+  rgb_creator: "rgb_creator",
 };
 
 const RESTAURANT_DEMO_SLUG_THEME_MAP: Record<string, CartaThemeId> = {
@@ -760,8 +957,14 @@ export function getSafeCartaThemeId(value?: string | null): CartaThemeId {
   return "sushi";
 }
 
-export function getCartaTheme(themeId?: string | null): CartaThemePreset {
-  return CARTA_THEMES[getSafeCartaThemeId(themeId)];
+export function getCartaTheme(themeId?: string | null, customInput?: CartaCustomThemeInput): CartaThemePreset {
+  const safeThemeId = getSafeCartaThemeId(themeId);
+  const baseTheme = CARTA_THEMES[safeThemeId];
+  if (safeThemeId !== "rgb_creator") return baseTheme;
+  return {
+    ...baseTheme,
+    tokens: buildCustomRgbThemeTokens(customInput),
+  };
 }
 
 export function resolveCartaThemeIdFromDemo(

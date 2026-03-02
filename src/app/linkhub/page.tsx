@@ -50,9 +50,12 @@ import {
 } from "@/lib/linkHubProfile";
 import { isThemeAllowedForPlan } from "@/lib/permissions";
 import {
+  CARTA_CUSTOM_DEFAULTS,
   CARTA_THEME_OPTIONS,
+  CartaCustomStyle,
   CartaThemeId,
   getCartaTheme,
+  getSafeCartaCustomStyle,
   getSafeCartaThemeId,
   recommendCartaThemeIdByRubro,
   resolveCartaThemeIdFromDemo,
@@ -154,6 +157,30 @@ const RESTAURANT_SUBCATEGORY_OPTIONS = [
   "Comida criolla",
   "Comida saludable",
   "Comida rapida",
+];
+
+const CARTA_CUSTOM_STYLE_OPTIONS: Array<{
+  value: CartaCustomStyle;
+  label: string;
+  description: string;
+}> = [
+  { value: "luxe", label: "Luxe", description: "Contraste premium con brillo elegante." },
+  { value: "soft", label: "Soft", description: "Visual claro y limpio para lectura rapida." },
+  { value: "neon", label: "Neon", description: "Acentos intensos con estilo moderno." },
+];
+
+const CARTA_RGB_PRESET_OPTIONS: Array<{
+  id: string;
+  label: string;
+  primary: string;
+  secondary: string;
+  accent: string;
+  style: CartaCustomStyle;
+}> = [
+  { id: "gold_luxe", label: "Oro suave", primary: "#d4a84f", secondary: "#0f172a", accent: "#f59e0b", style: "luxe" },
+  { id: "ocean_soft", label: "Oceano premium", primary: "#0e7490", secondary: "#f8fafc", accent: "#2563eb", style: "soft" },
+  { id: "brasa_luxe", label: "Brasa deluxe", primary: "#d97706", secondary: "#111827", accent: "#dc2626", style: "luxe" },
+  { id: "neon_night", label: "Neon night", primary: "#6366f1", secondary: "#020617", accent: "#22d3ee", style: "neon" },
 ];
 
 const LINK_TYPE_ICON: Record<LinkHubLinkType, ComponentType<{ className?: string }>> = {
@@ -899,7 +926,39 @@ export default function LinkHubPage() {
     return getSafeCartaThemeId(profile?.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint));
   }, [profile?.cartaThemeId, profile?.categoryLabel]);
 
-  const activeCartaTheme = useMemo(() => getCartaTheme(resolvedCartaThemeId), [resolvedCartaThemeId]);
+  const resolvedCartaCustomPrimary = useMemo(
+    () => normalizeHexColor(profile?.cartaCustomPrimaryColor, CARTA_CUSTOM_DEFAULTS.primary),
+    [profile?.cartaCustomPrimaryColor],
+  );
+  const resolvedCartaCustomSecondary = useMemo(
+    () => normalizeHexColor(profile?.cartaCustomSecondaryColor, CARTA_CUSTOM_DEFAULTS.secondary),
+    [profile?.cartaCustomSecondaryColor],
+  );
+  const resolvedCartaCustomAccent = useMemo(
+    () => normalizeHexColor(profile?.cartaCustomAccentColor, CARTA_CUSTOM_DEFAULTS.accent),
+    [profile?.cartaCustomAccentColor],
+  );
+  const resolvedCartaCustomStyle = useMemo(
+    () => getSafeCartaCustomStyle(profile?.cartaCustomDesignStyle),
+    [profile?.cartaCustomDesignStyle],
+  );
+
+  const activeCartaTheme = useMemo(
+    () =>
+      getCartaTheme(resolvedCartaThemeId, {
+        primary: resolvedCartaCustomPrimary,
+        secondary: resolvedCartaCustomSecondary,
+        accent: resolvedCartaCustomAccent,
+        style: resolvedCartaCustomStyle,
+      }),
+    [
+      resolvedCartaCustomAccent,
+      resolvedCartaCustomPrimary,
+      resolvedCartaCustomSecondary,
+      resolvedCartaCustomStyle,
+      resolvedCartaThemeId,
+    ],
+  );
   const isRestaurantProfile = profile?.businessType === "restaurant";
   const resolvedCartaBackgroundMode = useMemo(
     () => getSafeLinkHubCartaBackgroundMode(profile?.cartaBackgroundMode),
@@ -1187,6 +1246,45 @@ export default function LinkHubPage() {
     setProfile((prev) => {
       if (!prev) return prev;
       return { ...prev, [field]: value };
+    });
+  }
+
+  function ensureCanCustomizeCartaRgb(): boolean {
+    if (canCustomizeColors) return true;
+    setMessage({
+      type: "error",
+      text: "El modo RGB personalizable se desbloquea en BUSINESS o PRO.",
+    });
+    return false;
+  }
+
+  function patchCartaCustomColor(
+    field: "cartaCustomPrimaryColor" | "cartaCustomSecondaryColor" | "cartaCustomAccentColor",
+    value: string,
+    fallback: string,
+  ) {
+    if (!ensureCanCustomizeCartaRgb()) return;
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        cartaThemeId: "rgb_creator",
+        cartaBackgroundMode: "white",
+        [field]: normalizeHexColor(value, fallback),
+      };
+    });
+  }
+
+  function patchCartaCustomStyle(style: CartaCustomStyle) {
+    if (!ensureCanCustomizeCartaRgb()) return;
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        cartaThemeId: "rgb_creator",
+        cartaBackgroundMode: "white",
+        cartaCustomDesignStyle: getSafeCartaCustomStyle(style),
+      };
     });
   }
 
@@ -4597,6 +4695,7 @@ export default function LinkHubPage() {
                           return {
                             ...prev,
                             cartaThemeId: suggestedThemeId,
+                            cartaBackgroundMode: "white",
                           };
                         });
                       }}
@@ -4629,6 +4728,124 @@ export default function LinkHubPage() {
                     </div>
                   </div>
 
+                  <div className="rounded-2xl border border-fuchsia-300/25 bg-fuchsia-500/5 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-fuchsia-100">
+                        Creador RGB de Carta Digital
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!ensureCanCustomizeCartaRgb()) return;
+                          setProfile((prev) => {
+                            if (!prev) return prev;
+                            return {
+                              ...prev,
+                              cartaThemeId: "rgb_creator",
+                              cartaBackgroundMode: "white",
+                            };
+                          });
+                        }}
+                        className="rounded-xl border border-fuchsia-300/35 bg-fuchsia-400/10 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-fuchsia-100"
+                        disabled={!canCustomizeColors}
+                      >
+                        Activar RGB
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-zinc-300">
+                      Crea un diseño propio con RGB personalizable y aplica variantes visuales distintas.
+                    </p>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {CARTA_RGB_PRESET_OPTIONS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            if (!ensureCanCustomizeCartaRgb()) return;
+                            setProfile((prev) => {
+                              if (!prev) return prev;
+                              return {
+                                ...prev,
+                                cartaThemeId: "rgb_creator",
+                                cartaBackgroundMode: "white",
+                                cartaCustomPrimaryColor: preset.primary,
+                                cartaCustomSecondaryColor: preset.secondary,
+                                cartaCustomAccentColor: preset.accent,
+                                cartaCustomDesignStyle: preset.style,
+                              };
+                            });
+                          }}
+                          disabled={!canCustomizeColors}
+                          className="rounded-xl border border-white/15 bg-black/25 px-3 py-2 text-[11px] font-bold text-zinc-100 transition hover:border-fuchsia-300/45 disabled:opacity-60"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-300">Primario</span>
+                        <input
+                          type="color"
+                          className="h-10 w-full rounded-xl border border-white/15 bg-zinc-900"
+                          value={resolvedCartaCustomPrimary}
+                          onChange={(event) =>
+                            patchCartaCustomColor("cartaCustomPrimaryColor", event.target.value, CARTA_CUSTOM_DEFAULTS.primary)
+                          }
+                          disabled={!canCustomizeColors}
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-300">Secundario</span>
+                        <input
+                          type="color"
+                          className="h-10 w-full rounded-xl border border-white/15 bg-zinc-900"
+                          value={resolvedCartaCustomSecondary}
+                          onChange={(event) =>
+                            patchCartaCustomColor("cartaCustomSecondaryColor", event.target.value, CARTA_CUSTOM_DEFAULTS.secondary)
+                          }
+                          disabled={!canCustomizeColors}
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-300">Acento</span>
+                        <input
+                          type="color"
+                          className="h-10 w-full rounded-xl border border-white/15 bg-zinc-900"
+                          value={resolvedCartaCustomAccent}
+                          onChange={(event) =>
+                            patchCartaCustomColor("cartaCustomAccentColor", event.target.value, CARTA_CUSTOM_DEFAULTS.accent)
+                          }
+                          disabled={!canCustomizeColors}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      {CARTA_CUSTOM_STYLE_OPTIONS.map((option) => {
+                        const active = resolvedCartaCustomStyle === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => patchCartaCustomStyle(option.value)}
+                            disabled={!canCustomizeColors}
+                            className={`rounded-xl border px-3 py-2 text-left transition ${
+                              active
+                                ? "border-fuchsia-300/60 bg-fuchsia-400/10"
+                                : "border-white/10 bg-black/20 hover:border-white/20"
+                            }`}
+                          >
+                            <p className="text-xs font-bold text-zinc-100">{option.label}</p>
+                            <p className="mt-0.5 text-[10px] text-zinc-400">{option.description}</p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {CARTA_THEME_OPTIONS.map((themeOption) => {
                       const isActive = resolvedCartaThemeId === themeOption.id;
@@ -4646,7 +4863,14 @@ export default function LinkHubPage() {
                               });
                               return;
                             }
-                            patchProfile("cartaThemeId", themeOption.id);
+                            setProfile((prev) => {
+                              if (!prev) return prev;
+                              return {
+                                ...prev,
+                                cartaThemeId: themeOption.id,
+                                cartaBackgroundMode: "white",
+                              };
+                            });
                           }}
                           disabled={!canUseTheme}
                           className={`overflow-hidden rounded-2xl border text-left transition-all ${
