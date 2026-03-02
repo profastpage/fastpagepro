@@ -36,6 +36,7 @@ import {
   removeItemFromCartStore,
   type CartaCartItem,
 } from "@/lib/cartaCartStore";
+import { buildWhatsappSendUrl, normalizeWhatsappDigits } from "@/lib/whatsapp";
 import {
   CalendarDays,
   AtSign,
@@ -161,8 +162,7 @@ function normalizePhone(raw: string): string {
 }
 
 function toWhatsappUrl(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  return digits ? `https://wa.me/${digits}` : "";
+  return buildWhatsappSendUrl(raw);
 }
 
 function parseHexColor(value: string): [number, number, number] | null {
@@ -655,7 +655,7 @@ export default function PublicBioPage() {
   const couponDiscount = cartSubtotal * couponDiscountRate;
   const cartTotal = Math.max(0, cartSubtotal - autoDiscount - couponDiscount);
   const amountToAutoDiscount = Math.max(0, AUTO_DISCOUNT_THRESHOLD - cartSubtotal);
-  const whatsappTargetDigits = (profile.whatsappNumber || profile.phoneNumber).replace(/\D/g, "");
+  const whatsappTargetDigits = normalizeWhatsappDigits(profile.whatsappNumber || profile.phoneNumber);
   const autoScheduleOpen = Boolean(
     profile.proFeaturesUnlocked &&
       profile.automation?.autoScheduleEnabled &&
@@ -926,7 +926,7 @@ export default function PublicBioPage() {
         quantity: item.quantity,
       })),
     });
-    const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(text)}`;
+    const url = buildWhatsappSendUrl(whatsappTargetDigits, text);
     window.open(url, "_blank", "noopener,noreferrer");
     setCartError("");
     setCartFeedback("Pedido listo. Te estamos redirigiendo a WhatsApp.");
@@ -974,7 +974,7 @@ export default function PublicBioPage() {
       })),
     });
 
-    const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(text)}`;
+    const url = buildWhatsappSendUrl(whatsappTargetDigits, text);
     window.open(url, "_blank", "noopener,noreferrer");
     setCartError("");
     setCartFeedback("Te estamos redirigiendo a WhatsApp.");
@@ -1040,7 +1040,7 @@ export default function PublicBioPage() {
       slug: profile?.slug || slug,
       quantity: guests,
     });
-    const url = `https://wa.me/${whatsappTargetDigits}?text=${encodeURIComponent(lines)}`;
+    const url = buildWhatsappSendUrl(whatsappTargetDigits, lines);
     window.open(url, "_blank", "noopener,noreferrer");
     setReservationError("");
     setReservationFeedback("Reserva lista. Te estamos redirigiendo a WhatsApp.");

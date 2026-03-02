@@ -1,3 +1,5 @@
+import { buildWhatsappSendUrl } from "@/lib/whatsapp";
+
 export const OFFICIAL_DEMO_WHATSAPP = "51919662011";
 
 export function buildOfficialDemoCallHref(): string {
@@ -5,11 +7,7 @@ export function buildOfficialDemoCallHref(): string {
 }
 
 export function buildOfficialDemoWhatsappUrl(lines: string[]): string {
-  const query = new URLSearchParams({
-    phone: OFFICIAL_DEMO_WHATSAPP,
-    text: lines.join("\n"),
-  });
-  return `https://api.whatsapp.com/send?${query.toString()}`;
+  return buildWhatsappSendUrl(OFFICIAL_DEMO_WHATSAPP, lines.join("\n"));
 }
 
 type RestaurantItem = {

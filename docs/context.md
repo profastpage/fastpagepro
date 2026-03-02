@@ -9,3 +9,7 @@
   - `TemplateGenerator` usa `51919662011` como numero placeholder por defecto.
   - defaults iniciales del editor de tienda (`/store`) usan `51919662011`.
   - seeds de demo accounts ahora asignan `51919662011`.
+- WhatsApp con emojis estables (demo + cuentas registradas):
+  - se agrego helper compartido `src/lib/whatsapp.ts` para generar links con `https://api.whatsapp.com/send` y `URLSearchParams`.
+  - las cartas digitales publicadas (`/bio/[slug]`) usan el helper en contacto, pedido de carrito y reserva.
+  - el preview del editor LinkHub (`/linkhub`) tambien usa el mismo helper.

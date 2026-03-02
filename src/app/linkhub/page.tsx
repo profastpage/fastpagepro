@@ -8,6 +8,7 @@ import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { auth } from "@/lib/firebase";
 import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import { requestPublishTarget } from "@/lib/subscription/publishClient";
+import { buildWhatsappSendUrl } from "@/lib/whatsapp";
 import {
   buildDefaultLinkHubProfile,
   buildRestaurantRecordingDemoProfile,
@@ -350,8 +351,7 @@ function normalizePhone(raw: string): string {
 }
 
 function toWhatsappUrl(raw: string): string {
-  const digits = raw.replace(/\D/g, "");
-  return digits ? `https://wa.me/${digits}` : "";
+  return buildWhatsappSendUrl(raw);
 }
 
 type CatalogDescriptionHint = {
@@ -5589,7 +5589,7 @@ export default function LinkHubPage() {
                         Llamar ahora
                       </a>
                       <a
-                        href={previewContactWhatsappDigits ? `https://wa.me/${previewContactWhatsappDigits}` : "#"}
+                        href={previewContactWhatsappDigits ? buildWhatsappSendUrl(previewContactWhatsappDigits) : "#"}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-[0.85rem] border text-[11px] font-bold"
