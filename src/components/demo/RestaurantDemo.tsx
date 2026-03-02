@@ -387,7 +387,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                               {item.compareAtPrice ? (
                                 <p className="text-[11px] line-through text-[var(--fp-muted)] md:text-xs">{formatMoney(item.compareAtPrice)}</p>
                               ) : null}
-                              <p className="text-[2.24rem] font-black text-[var(--fp-primary)] md:text-[2.35rem]">{formatMoney(item.price)}</p>
+                              <p className="text-[1.86rem] font-black text-[var(--fp-primary)] md:text-[2.02rem]">{formatMoney(item.price)}</p>
                             </div>
                             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-1.5 py-1">
                               <button

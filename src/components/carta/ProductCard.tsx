@@ -129,7 +129,7 @@ const ProductCard = memo(function ProductCard({
                   S/{oldPrice}
                 </span>
               ) : null}
-              <span className="text-[2.22rem] font-black leading-none md:text-[2.35rem]" style={{ color: "var(--carta-price-color, var(--carta-accent))" }}>
+              <span className="text-[1.86rem] font-black leading-none md:text-[2.02rem]" style={{ color: "var(--carta-price-color, var(--carta-accent))" }}>
                 S/{price}
               </span>
             </div>
