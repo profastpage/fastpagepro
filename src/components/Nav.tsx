@@ -9,13 +9,35 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { useSubscription } from "@/hooks/useSubscription";
 import PlanBadge from "@/components/subscription/PlanBadge";
-import { ChevronLeft, ChevronRight, Zap, LogOut, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Zap, LogOut, Lock, Download } from "lucide-react";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
+function isStandaloneMode() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+function isIOSDevice() {
+  if (typeof window === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+}
 
 export default function Nav() {
   const { user: session, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [desktopLockedOpen, setDesktopLockedOpen] = useState<string | null>(null);
   const [mobileLockedOpen, setMobileLockedOpen] = useState<string | null>(null);
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstallingApp, setIsInstallingApp] = useState(false);
+  const [isStandalonePwa, setIsStandalonePwa] = useState(false);
+  const [isIosDevice, setIsIosDevice] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
@@ -65,6 +87,51 @@ export default function Nav() {
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsStandalonePwa(isStandaloneMode());
+    setIsIosDevice(isIOSDevice());
+
+    const handleBeforeInstall = (event: Event) => {
+      event.preventDefault();
+      setDeferredInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    const handleInstalled = () => {
+      setDeferredInstallPrompt(null);
+      setIsStandalonePwa(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+
+  const installLabel = isEnglish ? "Install app" : "Instalar app";
+
+  const handleInstallFromMenu = async () => {
+    if (isStandalonePwa) return;
+    if (!deferredInstallPrompt) {
+      const message = isIosDevice
+        ? "En iPhone: Safari > Compartir > Anadir a pantalla de inicio."
+        : "Si no ves el boton de instalacion, abre el menu del navegador y elige Instalar app.";
+      window.alert(message);
+      return;
+    }
+
+    setIsInstallingApp(true);
+    try {
+      await deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      setDeferredInstallPrompt(null);
+      setIsOpen(false);
+    } finally {
+      setIsInstallingApp(false);
+    }
+  };
 
   const navLinks = useMemo(() => {
     if (!session) {
@@ -455,6 +522,20 @@ export default function Nav() {
                     </div>
                   ))}
                 </div>
+
+                {!isStandalonePwa ? (
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={handleInstallFromMenu}
+                      disabled={isInstallingApp}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/60 bg-amber-300/15 px-4 py-3 text-base font-black leading-tight text-amber-100 transition-all hover:border-amber-200 hover:bg-amber-300/25 disabled:cursor-not-allowed disabled:opacity-65"
+                    >
+                      <Download className="h-4 w-4" />
+                      {isInstallingApp ? (isEnglish ? "Installing..." : "Instalando...") : installLabel}
+                    </button>
+                  </div>
+                ) : null}
 
                 <div className="mt-8 flex flex-col gap-4">
                   {!session ? (

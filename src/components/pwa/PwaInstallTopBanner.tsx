@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { Download, Smartphone, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -69,16 +68,6 @@ export default function PwaInstallTopBanner() {
     };
   }, []);
 
-  const helperText = useMemo(() => {
-    if (isIos) {
-      return "En iPhone: Safari > Compartir > Anadir a pantalla de inicio.";
-    }
-    if (!deferredPrompt) {
-      return "Si no ves el boton de instalacion del navegador, abre menu y elige Instalar app.";
-    }
-    return "Al abrir la app: si ya iniciaste sesion entra al Hub, si no, va al autenticador.";
-  }, [deferredPrompt, isIos]);
-
   const hideForNow = () => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_TTL_MS));
@@ -87,7 +76,13 @@ export default function PwaInstallTopBanner() {
   };
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      const fallbackMessage = isIos
+        ? "En iPhone: Safari > Compartir > Anadir a pantalla de inicio."
+        : "Si no ves el boton de instalacion, abre el menu del navegador y elige Instalar app.";
+      window.alert(fallbackMessage);
+      return;
+    }
     setIsInstalling(true);
     try {
       await deferredPrompt.prompt();
@@ -107,40 +102,18 @@ export default function PwaInstallTopBanner() {
   if (!isVisible) return null;
 
   return (
-    <aside className="w-full rounded-2xl border border-amber-300/45 bg-[linear-gradient(160deg,rgba(251,191,36,0.22),rgba(23,17,8,0.9)_38%,rgba(8,8,10,0.96))] px-4 py-3 shadow-[0_16px_42px_-24px_rgba(251,191,36,0.78)] backdrop-blur-md">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-300/40 bg-black/65 text-amber-200">
+    <aside className="w-full rounded-2xl border border-amber-300/45 bg-[linear-gradient(160deg,rgba(251,191,36,0.2),rgba(23,17,8,0.9)_38%,rgba(8,8,10,0.97))] px-3 py-2.5 shadow-[0_16px_42px_-24px_rgba(251,191,36,0.72)] backdrop-blur-md">
+      <div className="flex items-center gap-2.5">
+        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-amber-300/40 bg-black/65 text-amber-200">
           <Smartphone className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-amber-300">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">
             Aplicacion movil
           </p>
-          <h2 className="mt-1 text-sm font-black leading-tight text-amber-50">
+          <h2 className="text-sm font-black leading-tight text-amber-50">
             Descargar aplicacion Fast Page
           </h2>
-          <p className="mt-1 text-xs leading-relaxed text-amber-100/95">
-            Mantente activo en tu cuenta sin cerrar sesion. Entra directo al autenticador o al Hub
-            principal si ya estas registrado.
-          </p>
-          <p className="mt-1 text-[11px] font-semibold text-amber-200/90">{helperText}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleInstall}
-              disabled={!deferredPrompt || isInstalling}
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-200 px-3 py-1.5 text-xs font-black text-zinc-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-65"
-            >
-              <Download className="h-3.5 w-3.5" />
-              {isInstalling ? "Instalando..." : "Instalar app"}
-            </button>
-            <Link
-              href="/auth"
-              className="inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:border-amber-300/55 hover:text-amber-200"
-            >
-              Ir al autenticador
-            </Link>
-          </div>
         </div>
         <button
           type="button"
@@ -151,7 +124,17 @@ export default function PwaInstallTopBanner() {
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
+      <div className="mt-2">
+        <button
+          type="button"
+          onClick={handleInstall}
+          disabled={isInstalling}
+          className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-200 px-3 py-1.5 text-[11px] font-black text-zinc-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-65"
+        >
+          <Download className="h-3.5 w-3.5" />
+          {isInstalling ? "Instalando..." : "Instalar app"}
+        </button>
+      </div>
     </aside>
   );
 }
-
