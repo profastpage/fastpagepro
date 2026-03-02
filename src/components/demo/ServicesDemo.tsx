@@ -57,7 +57,7 @@ export default function ServicesDemo({ demo }: { demo: LandingData }) {
             }
             className="inline-flex items-center gap-2 rounded-xl bg-[var(--fp-primary)] px-5 py-3 text-sm font-black text-white"
           >
-            💬 Contactar por WhatsApp <ArrowRight className="h-4 w-4" />
+            {"\u{1F4AC} Contactar por WhatsApp"} <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       </article>
@@ -95,4 +95,3 @@ export default function ServicesDemo({ demo }: { demo: LandingData }) {
     </section>
   );
 }
-

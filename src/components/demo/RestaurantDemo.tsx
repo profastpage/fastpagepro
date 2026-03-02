@@ -35,9 +35,9 @@ function formatMoney(value: number) {
 function normalizeBadge(value?: string) {
   const badge = String(value || "").toLowerCase();
   if (!badge) return "";
-  if (badge.includes("pedido") || badge.includes("mas vendido")) return "🔥 Más pedido";
-  if (badge.includes("favorito")) return "⭐ Favorito";
-  if (badge.includes("top")) return "🥇 Top";
+  if (badge.includes("pedido") || badge.includes("mas vendido")) return "\u{1F525} Mas pedido";
+  if (badge.includes("favorito")) return "\u2B50 Favorito";
+  if (badge.includes("top")) return "\u{1F947} Top";
   return value || "";
 }
 
@@ -279,11 +279,11 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
               <div className="pt-10 text-center md:pt-12">
                 <h2 className="text-4xl font-black md:text-6xl">{demo.title}</h2>
-                <p className="mt-2 text-sm uppercase tracking-[0.2em] text-[var(--fp-primary)]">🍔 Carta Digital 🍔</p>
+                <p className="mt-2 text-sm uppercase tracking-[0.2em] text-[var(--fp-primary)]">{`\u{1F354} Carta Digital \u{1F354}`}</p>
                 <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-1.5 text-xs font-bold">
-                  <span>🟢 Abierto</span>
-                  <span>•</span>
-                  <span>⏱️ {demo.openHours}</span>
+                  <span>{`\u{1F7E2} Abierto`}</span>
+                  <span>|</span>
+                  <span>{`\u23F1\uFE0F ${demo.openHours}`}</span>
                 </div>
                 <p className="mx-auto mt-4 max-w-2xl text-sm text-[var(--fp-muted)] md:text-base">{demo.description}</p>
               </div>
@@ -305,7 +305,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   }
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-4 text-sm font-black text-white"
                 >
-                  💬 Escribir ahora
+                  {"\u{1F4AC} Escribir ahora"}
                 </a>
               </div>
             </section>

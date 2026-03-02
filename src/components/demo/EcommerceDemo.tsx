@@ -263,9 +263,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
         type="button"
         onClick={() => setCartOpen(true)}
         className="fixed bottom-24 right-4 z-40 hidden items-center gap-2 rounded-full bg-[var(--fp-primary)] px-4 py-3 text-sm font-black text-white shadow-2xl md:inline-flex"
-      >
-        🛒 Ver carrito ({cartCount})
-      </button>
+      >{`\u{1F6D2} Ver carrito (${cartCount})`}</button>
 
       {cartOpen ? (
         <div className="fixed inset-0 z-50">
@@ -293,7 +291,7 @@ export default function EcommerceDemo({ demo }: { demo: EcommerceStoreData }) {
                 >
                   <p className="font-black">{product.name}</p>
                   <p className="text-sm text-[var(--fp-muted)]">
-                    x{product.quantity} • {formatMoney(product.price * product.quantity)}
+                    x{product.quantity} - {formatMoney(product.price * product.quantity)}
                   </p>
                 </article>
               ))}
