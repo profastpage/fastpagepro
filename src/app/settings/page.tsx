@@ -30,7 +30,9 @@ import {
   Bell,
   Trash2,
   AlertCircle,
-  Loader2
+  Loader2,
+  Copy,
+  Share2
 } from "lucide-react";
 
 // --- Local Components (Constructor Maestro Pattern) ---
@@ -111,6 +113,14 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [loadingReferral, setLoadingReferral] = useState(false);
+  const [referralData, setReferralData] = useState<{
+    code: string;
+    link: string;
+    invited: number;
+    converted: number;
+    commission: number;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -179,6 +189,82 @@ export default function SettingsPage() {
 
     fetchUserData();
   }, [authLoading, authUser, language]);
+
+  const loadReferralSummary = useCallback(async () => {
+    if (!authUser?.uid) return;
+    setLoadingReferral(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+      const response = await fetch("/api/referrals/summary", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        summary?: {
+          profile?: { referralCode?: string };
+          referralLink?: string;
+          stats?: {
+            invited?: number;
+            converted?: number;
+            totalCommissionSoles?: number;
+          };
+        };
+      };
+      if (!response.ok) return;
+      const summary = payload.summary;
+      if (!summary?.profile?.referralCode || !summary?.referralLink) return;
+      setReferralData({
+        code: String(summary.profile.referralCode || "").trim(),
+        link: String(summary.referralLink || "").trim(),
+        invited: Math.max(0, Number(summary.stats?.invited || 0)),
+        converted: Math.max(0, Number(summary.stats?.converted || 0)),
+        commission: Math.max(0, Number(summary.stats?.totalCommissionSoles || 0)),
+      });
+    } catch (error) {
+      console.error("Error loading referrals:", error);
+    } finally {
+      setLoadingReferral(false);
+    }
+  }, [authUser?.uid]);
+
+  useEffect(() => {
+    if (!authUser?.uid) return;
+    void loadReferralSummary();
+  }, [authUser?.uid, loadReferralSummary]);
+
+  const copyText = async (value: string, successText: string) => {
+    const text = String(value || "").trim();
+    if (!text) return;
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        setMessage({ type: "success", text: successText });
+      }
+    } catch (error) {
+      console.error("Error copying text:", error);
+      setMessage({ type: "error", text: "No se pudo copiar. Intenta nuevamente." });
+    }
+  };
+
+  const shareReferralLink = async () => {
+    const link = String(referralData?.link || "").trim();
+    if (!link) return;
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: "Invitacion Fast Page",
+          text: "Crea tu cuenta con mi enlace de referido:",
+          url: link,
+        });
+      } else {
+        await copyText(link, "Enlace de referido copiado.");
+      }
+    } catch (error) {
+      console.error("Error sharing referral:", error);
+    }
+  };
 
   const validateForm = () => {
     if (formData.website && !formData.website.startsWith("http")) {
@@ -449,6 +535,95 @@ export default function SettingsPage() {
                         onChange={(e) => setFormData({...formData, bio: e.target.value})}
                       />
                     </div>
+                  </div>
+
+                  <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/5 p-6 sm:p-8">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                          Programa de referidos
+                        </p>
+                        <h3 className="mt-1 text-xl font-black text-white">Enlace de referido</h3>
+                        <p className="mt-1 text-sm text-zinc-400">
+                          Comparte este enlace desde tu perfil y gana comisión por activaciones pagadas.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void loadReferralSummary()}
+                        disabled={loadingReferral}
+                        className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
+                      >
+                        {loadingReferral ? "Actualizando..." : "Actualizar"}
+                      </button>
+                    </div>
+
+                    {referralData ? (
+                      <div className="mt-6 grid grid-cols-1 gap-4">
+                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                            Código
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-lg font-black text-amber-200">{referralData.code}</span>
+                            <button
+                              type="button"
+                              onClick={() => copyText(referralData.code, "Código de referido copiado.")}
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              Copiar
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                            Enlace
+                          </p>
+                          <p className="mt-2 break-all text-sm text-zinc-200">{referralData.link}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => copyText(referralData.link, "Enlace de referido copiado.")}
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              Copiar enlace
+                            </button>
+                            <button
+                              type="button"
+                              onClick={shareReferralLink}
+                              className="inline-flex items-center gap-1 rounded-lg border border-amber-300/35 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-100"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                              Compartir
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Invitados</p>
+                            <p className="mt-1 text-lg font-black text-white">{referralData.invited}</p>
+                          </div>
+                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Convertidos</p>
+                            <p className="mt-1 text-lg font-black text-white">{referralData.converted}</p>
+                          </div>
+                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comisión</p>
+                            <p className="mt-1 text-lg font-black text-emerald-200">S/ {referralData.commission.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-5 text-sm text-zinc-400">
+                        {loadingReferral
+                          ? "Generando enlace de referido..."
+                          : "Aun no se pudo cargar tu enlace. Pulsa actualizar."}
+                      </div>
+                    )}
                   </div>
                 </SettingSection>
               )}
