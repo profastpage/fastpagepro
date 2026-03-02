@@ -358,36 +358,36 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                     {group.items.map((item) => (
                       <article
                         key={item.id}
-                        className="rounded-[1.2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3.5 md:p-4"
+                        className="rounded-[1.2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4 md:p-4.5"
                         style={{ boxShadow: "0 14px 24px -20px rgba(15,23,42,0.45)" }}
                       >
-                        <div className="flex gap-3.5 md:gap-4">
-                          <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-[0.9rem] border border-[var(--fp-border)] md:h-32 md:w-32">
+                        <div className="flex gap-4 md:gap-4.5">
+                          <div className="relative h-[120px] w-[120px] shrink-0 overflow-hidden rounded-[0.9rem] border border-[var(--fp-border)] md:h-[132px] md:w-[132px]">
                             <DemoImage
                               src={item.image}
                               alt={item.name}
                               fallbackLabel={item.name}
                               fill
                               unoptimized
-                              sizes="(max-width: 768px) 112px, 128px"
+                              sizes="(max-width: 768px) 120px, 132px"
                               className="object-cover"
                             />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <h4 className="line-clamp-2 text-[1.28rem] font-black leading-tight md:text-3xl">{item.name}</h4>
+                              <h4 className="line-clamp-2 text-[1.34rem] font-black leading-tight md:text-3xl">{item.name}</h4>
                               {item.badge ? (
                                 <span className="rounded-full bg-[var(--fp-primary)] px-2.5 py-1 text-[10px] font-black text-white">
                                   {normalizeBadge(item.badge)}
                                 </span>
                               ) : null}
                             </div>
-                            <p className="mt-1 line-clamp-2 text-[13px] text-[var(--fp-muted)] md:text-base">{item.description}</p>
+                            <p className="mt-1 line-clamp-2 text-[14px] text-[var(--fp-muted)] md:text-base">{item.description}</p>
                             <div className="mt-2 flex items-end gap-2">
                               {item.compareAtPrice ? (
                                 <p className="text-[11px] line-through text-[var(--fp-muted)] md:text-xs">{formatMoney(item.compareAtPrice)}</p>
                               ) : null}
-                              <p className="text-[2rem] font-black text-[var(--fp-primary)] md:text-[2.15rem]">{formatMoney(item.price)}</p>
+                              <p className="text-[2.12rem] font-black text-[var(--fp-primary)] md:text-[2.22rem]">{formatMoney(item.price)}</p>
                             </div>
                             <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-2.5 py-1">
                               <button

@@ -17,3 +17,4 @@
   - se aumentaron dimensiones de tarjetas de productos en la seccion carta para mobile-first.
   - imagenes, tipografia, precio y controles de cantidad ahora tienen mayor presencia visual.
   - aplica en demo sin registro (`RestaurantDemo`) y en carta publicada de cuentas registradas (`ProductCard` en `/bio/[slug]`).
+  - se reforzo tambien el preview de carta en `/linkhub` para que el tamano visible de items se acerque al render final mobile.

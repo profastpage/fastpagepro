@@ -52,22 +52,22 @@ const ProductCard = memo(function ProductCard({
 
   return (
     <article
-      className={`rounded-[1.35rem] border p-3.5 md:p-4 ${className || ""}`}
+      className={`rounded-[1.35rem] border p-4 md:p-4.5 ${className || ""}`}
       style={{
         borderColor: "var(--carta-border)",
         background: "var(--carta-surface-2)",
         boxShadow: "0 16px 28px -22px rgba(15,23,42,0.38)",
       }}
     >
-      <div className="flex gap-3.5 md:gap-4">
-        <div className="relative h-[118px] w-[118px] shrink-0 overflow-hidden rounded-[0.95rem] border border-[color:var(--carta-chip-border)] md:h-[128px] md:w-[128px]">
+      <div className="flex gap-4 md:gap-4.5">
+        <div className="relative h-[126px] w-[126px] shrink-0 overflow-hidden rounded-[0.95rem] border border-[color:var(--carta-chip-border)] md:h-[136px] md:w-[136px]">
           {primaryImage ? (
             <Image
               src={primaryImage}
               alt={title}
               fill
               loading="lazy"
-              sizes="(max-width: 768px) 118px, 128px"
+              sizes="(max-width: 768px) 126px, 136px"
               className="object-cover"
             />
           ) : (
@@ -79,7 +79,7 @@ const ProductCard = memo(function ProductCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <h4 className="line-clamp-2 text-[1.18rem] font-extrabold leading-tight md:text-[1.42rem]" style={{ color: "var(--carta-text)" }}>
+            <h4 className="line-clamp-2 text-[1.24rem] font-extrabold leading-tight md:text-[1.48rem]" style={{ color: "var(--carta-text)" }}>
               {title}
             </h4>
             {(priorityBadge || badge) && (
@@ -97,7 +97,7 @@ const ProductCard = memo(function ProductCard({
           </div>
 
           {description ? (
-            <p className="mt-1 line-clamp-2 text-[13px] leading-snug md:text-sm" style={{ color: "var(--carta-muted-text)" }}>
+            <p className="mt-1 line-clamp-2 text-[14px] leading-snug md:text-[15px]" style={{ color: "var(--carta-muted-text)" }}>
               {description}
             </p>
           ) : null}
@@ -129,7 +129,7 @@ const ProductCard = memo(function ProductCard({
                   S/{oldPrice}
                 </span>
               ) : null}
-              <span className="text-[2rem] font-black leading-none md:text-[2.15rem]" style={{ color: "var(--carta-price-color, var(--carta-accent))" }}>
+              <span className="text-[2.12rem] font-black leading-none md:text-[2.28rem]" style={{ color: "var(--carta-price-color, var(--carta-accent))" }}>
                 S/{price}
               </span>
             </div>

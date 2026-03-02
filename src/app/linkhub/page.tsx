@@ -5470,16 +5470,16 @@ export default function LinkHubPage() {
                 </div>
 
                 {previewTab === "catalog" ? (
-                  <div className="space-y-2 px-4 pb-3">
+                  <div className="space-y-2.5 px-4 pb-3">
                     {previewVisibleItems.length > 0 ? (
                       previewVisibleItems.map((item) => (
-                        <article key={item.id} className="rounded-[0.95rem] border p-2" style={previewItemCardStyle}>
-                          <div className="flex gap-2">
+                        <article key={item.id} className="rounded-[1rem] border p-2.5" style={previewItemCardStyle}>
+                          <div className="flex gap-2.5">
                             {item.imageUrl ? (
-                              <img src={item.imageUrl} alt={item.title} className="h-14 w-14 rounded-[0.75rem] object-cover" />
+                              <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-[0.8rem] object-cover" />
                             ) : (
                               <div
-                                className="h-14 w-14 rounded-[0.75rem] border flex items-center justify-center text-[9px] font-black"
+                                className="h-20 w-20 rounded-[0.8rem] border flex items-center justify-center text-[10px] font-black"
                                 style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
                               >
                                 ITEM
@@ -5490,23 +5490,23 @@ export default function LinkHubPage() {
                                 value={item.title}
                                 onChange={(event) => patchCatalogItem(item.id, { title: event.target.value })}
                                 placeholder="Nombre del item"
-                                className="w-full truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[13px] font-extrabold focus:border-[var(--carta-input-border)] focus:outline-none"
+                                className="w-full truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[15px] font-extrabold focus:border-[var(--carta-input-border)] focus:outline-none"
                                 style={{ color: previewTextBase }}
                               />
                               <input
                                 value={item.description}
                                 onChange={(event) => patchCatalogItem(item.id, { description: event.target.value })}
                                 placeholder="Descripcion comercial"
-                                className="mt-0.5 w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[11px] focus:border-[var(--carta-input-border)] focus:outline-none"
+                                className="mt-0.5 w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[12px] focus:border-[var(--carta-input-border)] focus:outline-none"
                                 style={{ color: previewTextMuted }}
                               />
-                              <div className="mt-1 flex items-center gap-1 text-[12px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
+                              <div className="mt-1.5 flex items-center gap-1 text-[14px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
                                 <span>S/</span>
                                 <input
                                   value={item.price}
                                   onChange={(event) => patchCatalogItem(item.id, { price: event.target.value })}
                                   placeholder="0.00"
-                                  className="w-20 rounded-md border border-transparent bg-transparent px-1 py-0.5 focus:border-[var(--carta-input-border)] focus:outline-none"
+                                  className="w-24 rounded-md border border-transparent bg-transparent px-1 py-0.5 focus:border-[var(--carta-input-border)] focus:outline-none"
                                   style={{ color: activeCartaTheme.tokens.primary }}
                                 />
                               </div>
