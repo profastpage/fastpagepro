@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import { buildReferralSummary } from "@/lib/referrals/service";
 
@@ -28,3 +28,4 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo cargar resumen de referidos" }, { status: 500 });
   }
 }
+

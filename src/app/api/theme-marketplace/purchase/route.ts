@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import { getThemePackById } from "@/lib/themeMarketplace/packs";
 import {
@@ -176,3 +176,4 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo confirmar orden del marketplace" }, { status: 500 });
   }
 }
+

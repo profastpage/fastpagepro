@@ -1,4 +1,4 @@
-export type IzipayCheckoutIntent = "SUBSCRIPTION" | "THEME_PACK";
+﻿export type IzipayCheckoutIntent = "SUBSCRIPTION" | "THEME_PACK";
 
 export interface CreateIzipayCheckoutInput {
   referenceId: string;
@@ -300,3 +300,4 @@ export async function fetchIzipayPaymentStatus(input: {
     rawResponse,
   };
 }
+

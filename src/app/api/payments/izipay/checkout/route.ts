@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import {
   calculateSubscriptionAmountSoles,
@@ -133,3 +133,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo iniciar pago con Izipay" }, { status: 500 });
   }
 }
+

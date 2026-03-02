@@ -1,4 +1,4 @@
-export type ThemePackVertical = "restaurant" | "ecommerce" | "services";
+﻿export type ThemePackVertical = "restaurant" | "ecommerce" | "services";
 
 export interface ThemePackDefinition {
   id: string;
@@ -42,7 +42,7 @@ export const THEME_PACKS: ThemePackDefinition[] = [
     id: "services-premium-brand",
     name: "Service Premium Brand",
     vertical: "services",
-    description: "Dise�os profesionales para consultoria, agencias y servicios locales premium.",
+    description: "Diseños profesionales para consultoria, agencias y servicios locales premium.",
     includedThemes: ["Executive Clean", "Agency Velvet", "Legal Prestige", "Clinic Prime"],
     priceSoles: 64,
     badge: "Profesional",
@@ -62,3 +62,4 @@ export function getThemePackById(packId: string): ThemePackDefinition | null {
   const normalized = String(packId || "").trim();
   return THEME_PACKS.find((pack) => pack.id === normalized) || null;
 }
+

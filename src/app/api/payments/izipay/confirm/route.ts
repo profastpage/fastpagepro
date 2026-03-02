@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import {
   getIzipaySubscriptionPayment,
@@ -99,3 +99,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo confirmar pago Izipay" }, { status: 500 });
   }
 }
+

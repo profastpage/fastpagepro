@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+﻿import { adminDb } from "@/lib/firebaseAdmin";
 import { THEME_PACKS, getThemePackById, type ThemePackDefinition } from "@/lib/themeMarketplace/packs";
 
 export type ThemeMarketplacePaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA" | "IZIPAY";
@@ -222,3 +222,4 @@ export async function markThemeMarketplaceOrderPaid(input: {
     updatedAt: now,
   };
 }
+

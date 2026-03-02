@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase-admin/firestore";
+﻿import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebaseAdmin";
 
 type ReferralEventStatus = "REGISTERED" | "PAID";
@@ -410,3 +410,4 @@ export async function buildReferralSummary(input: {
     },
   };
 }
+

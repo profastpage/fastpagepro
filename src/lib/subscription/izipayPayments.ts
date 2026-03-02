@@ -1,4 +1,4 @@
-import { adminDb } from "@/lib/firebaseAdmin";
+﻿import { adminDb } from "@/lib/firebaseAdmin";
 import type { PlanType } from "@/lib/subscription/plans";
 
 type BillingCycle = "MONTHLY" | "ANNUAL";
@@ -164,3 +164,4 @@ export async function markIzipaySubscriptionPaymentStatus(input: {
       { merge: true },
     );
 }
+

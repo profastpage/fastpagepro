@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 
 export const runtime = "nodejs";
@@ -122,3 +122,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo generar promociones semanales" }, { status: 500 });
   }
 }
+
