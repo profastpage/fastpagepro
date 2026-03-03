@@ -9,7 +9,6 @@ import {
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   sendPasswordResetEmail,
@@ -219,6 +218,7 @@ function AuthContent() {
   const [registerReferralCode, setRegisterReferralCode] = useState(referralCodeIntent);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleError, setIsGoogleError] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
   const planIntent = normalizePlanIntent(searchParams.get("plan"));
@@ -564,34 +564,20 @@ function AuthContent() {
   }, [demoSlugIntent, demoThemeIntent, planIntent, preferredVertical, router, tab, trialIntent]);
 
   const handleGoogleLogin = async () => {
+    if (isGoogleLoading) return;
+
     if (isCanonicalRedirectNeeded()) {
       showToast(i18n.redirectGoogle);
       setTimeout(() => redirectToCanonicalAuthHost(), 500);
       return;
     }
 
+    setIsGoogleLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      
-      // Intentamos con Popup primero
-      const result = await signInWithPopup(auth, provider);
-      if (result.user) {
-        // Sincronizacion prioritaria (esperamos a que se guarde en Firestore)
-        await syncUserToFirestore(result.user, preferredVertical);
-        await applyReferralCodeAfterAuth(result.user, tab === "register");
-        await activateBusinessTrial(result.user);
-        if (tab === "register") {
-          void trackGrowthEvent("signup_complete", {
-            vertical: preferredVertical,
-            location: "auth_google_popup",
-          });
-        }
-
-        // Forzar redireccion inmediata
-        const target = resolvePostAuthTarget(result.user.email);
-        window.location.href = target;
-      }
+      showToast(i18n.redirectGoogle);
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
       console.error("Google Login Error:", error);
       
@@ -602,29 +588,11 @@ function AuthContent() {
         } else {
           showToast(`${i18n.unauthorizedDomainFirebase} ${RECOMMENDED_FIREBASE_AUTH_DOMAINS.join(", ")}`);
         }
-      } else if (error.code === 'auth/popup-blocked') {
-        showToast(i18n.popupBlocked);
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        // Ignorar
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        showToast(i18n.loginCancelled);
-      } else if (error.message?.includes('Cross-Origin-Opener-Policy')) {
-        console.log("Detectado error COOP, intentando redireccion...");
-        try {
-          const provider = new GoogleAuthProvider();
-          await signInWithRedirect(auth, provider);
-        } catch (redirectError: any) {
-          showToast(i18n.browserSecurityError);
-        }
       } else {
-        // Fallback general para otros errores
-        try {
-          const provider = new GoogleAuthProvider();
-          await signInWithRedirect(auth, provider);
-        } catch (redirectError: any) {
-          showToast(`${i18n.loginError} ${error.message || i18n.unknownError}`);
-        }
+        showToast(`${i18n.loginError} ${error.message || i18n.unknownError}`);
       }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -954,10 +922,11 @@ function AuthContent() {
             {/* Social Login */}
             <button
               onClick={handleGoogleLogin}
+              disabled={isGoogleLoading}
               className={`w-full transition-all duration-300 py-3.5 rounded-full font-medium flex items-center justify-center gap-3 shadow-lg ${
                 isGoogleError
                   ? "bg-red-600 text-white animate-shake ring-4 ring-red-500/50"
-                  : "bg-[#0f141f] border border-white/15 text-white hover:from-amber-300 hover:via-yellow-300 hover:to-amber-400 hover:bg-gradient-to-r hover:text-black hover:border-yellow-200/80"
+                  : "bg-[#0f141f] border border-white/15 text-white hover:from-amber-300 hover:via-yellow-300 hover:to-amber-400 hover:bg-gradient-to-r hover:text-black hover:border-yellow-200/80 disabled:opacity-60 disabled:cursor-not-allowed"
               }`}
             >
               <svg
@@ -983,7 +952,7 @@ function AuthContent() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              {i18n.continueGoogle}
+              {isGoogleLoading ? i18n.redirectGoogle : i18n.continueGoogle}
             </button>
             <div className="mt-4 min-h-[24px]">
             {tab === "login" ? (

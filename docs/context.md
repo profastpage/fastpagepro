@@ -138,3 +138,7 @@
 - Carrusel de testimonios en desktop (`/`):
   - en modo PC los botones izquierda/derecha ahora rotan testimonios en carrusel con loop continuo (estilo feed/carrusel).
   - en mobile se mantiene scroll horizontal tactil con snap.
+- Login Google en `/auth` robustecido:
+  - el flujo paso a `signInWithRedirect` como estrategia principal para evitar bloqueos/restricciones de popup en navegadores moviles y politicas COOP.
+  - se agrego estado `loading` del boton Google para prevenir dobles clics y errores por solicitudes emergentes simultaneas.
+  - se mantiene manejo de dominio no autorizado y mensajes de error controlados.
