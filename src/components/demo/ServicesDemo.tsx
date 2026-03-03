@@ -4,12 +4,15 @@ import { ArrowRight, Star } from "lucide-react";
 import type { LandingData } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
 import DemoImage from "@/components/demo/DemoImage";
+import DemoSocialLinks from "@/components/demo/DemoSocialLinks";
+import { getDemoSocialLinks } from "@/lib/demoSocial";
 import {
   buildOfficialDemoWhatsappUrl,
   buildServicesDemoMessage,
 } from "@/lib/demoWhatsapp";
 
 export default function ServicesDemo({ demo }: { demo: LandingData }) {
+  const socialLinks = getDemoSocialLinks(demo);
   const whatsappHref = buildOfficialDemoWhatsappUrl(
     buildServicesDemoMessage({ title: demo.title }),
   );
@@ -34,6 +37,20 @@ export default function ServicesDemo({ demo }: { demo: LandingData }) {
           </p>
           <h2 className="text-3xl font-black md:text-5xl">{demo.title}</h2>
           <p className="text-[var(--fp-muted)]">{demo.description}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--fp-muted)]">Redes</span>
+            <DemoSocialLinks
+              links={socialLinks}
+              onOpen={(platform) =>
+                void trackGrowthEvent("click_social", {
+                  vertical: demo.vertical,
+                  slug: demo.slug,
+                  location: "services_hero",
+                  platform,
+                })
+              }
+            />
+          </div>
           <div className="grid gap-2 sm:grid-cols-3">
             {demo.bullets.map((bullet) => (
               <p

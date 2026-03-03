@@ -56,7 +56,7 @@ export const DEMO_CATALOG: DemoCatalogItem[] = [
     title: "Naranja Social Cafe",
     subtitle: "Jugos de naranja, brunch y carta de cafeteria",
     coverImage:
-      "https://images.unsplash.com/photo-1437419764061-2473afe69fc2?q=80&w=1400&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?q=80&w=1400&auto=format&fit=crop",
   },
   {
     vertical: "restaurant",

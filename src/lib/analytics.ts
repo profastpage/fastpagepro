@@ -5,7 +5,8 @@ export type GrowthEventName =
   | "click_cta_signup"
   | "start_signup"
   | "signup_complete"
-  | "click_whatsapp";
+  | "click_whatsapp"
+  | "click_social";
 
 type UTMContext = {
   utm_source?: string;

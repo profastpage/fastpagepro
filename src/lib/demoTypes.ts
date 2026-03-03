@@ -2,6 +2,19 @@ import type { BusinessVertical } from "@/lib/vertical";
 
 export type DemoMode = "demo" | "real";
 export type DemoVertical = BusinessVertical;
+export type DemoSocialPlatform =
+  | "instagram"
+  | "facebook"
+  | "tiktok"
+  | "youtube"
+  | "website"
+  | "whatsapp";
+
+export type DemoSocialLink = {
+  platform: DemoSocialPlatform;
+  url: string;
+  label?: string;
+};
 
 type DemoBase = {
   mode?: DemoMode;
@@ -14,6 +27,7 @@ type DemoBase = {
   profileImage?: string;
   whatsappNumber: string;
   recommendedBadges?: string[];
+  socialLinks?: DemoSocialLink[];
 };
 
 export type RestaurantMenuItem = {

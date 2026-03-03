@@ -93,3 +93,10 @@
   - se unifico el cambio de pestañas `Contacto/Carta/Ubicacion/Reserva` con handler comun para que la seleccion sea mas consistente en tap/click.
   - al cambiar de pestaña se asegura posicionamiento del contenido (ancla superior), mejorando la percepcion de cambio en mobile.
   - se mejoraron estados de boton (`active`, `focus-visible`, `touch-manipulation`, `aria-pressed`) para interaccion mas estable y responsiva.
+- Redes sociales en demos sin registro:
+  - se agrego soporte de `socialLinks` al modelo de demos y fallback automatico por demo cuando no estan definidas.
+  - se incorporo bloque visual de iconos sociales (Instagram, Facebook, TikTok, YouTube, Web y WhatsApp) en demos de `restaurant`, `ecommerce` y `services`.
+  - se instrumento metrica `click_social` por plataforma en el flujo de demo.
+- Demo `Naranja Social Cafe`:
+  - se cambio portada por una imagen de frutas y jugos especiales.
+  - se configuraron redes sociales explicitas en el JSON de la demo.

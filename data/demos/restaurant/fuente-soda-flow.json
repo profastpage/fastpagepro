@@ -4,13 +4,20 @@
   "title": "Naranja Social Cafe",
   "subtitle": "Jugos de naranja y platos de cafeteria con pedido rapido",
   "description": "Demo tematica de fuente de soda con foco en jugos de naranja, bebidas de autor y platos clasicos de cafeteria para conversion por WhatsApp.",
-  "coverImage": "https://images.unsplash.com/photo-1437419764061-2473afe69fc2?q=80&w=1800&auto=format&fit=crop",
+  "coverImage": "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?q=80&w=1800&auto=format&fit=crop",
   "profileImage": "https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?q=80&w=800&auto=format&fit=crop",
   "themeId": "darkKitchen",
   "promoStrip": "2x1 en bebidas seleccionadas de 4pm a 6pm",
   "openHours": "9:00 am - 11:30 pm",
   "address": "Av. Pardo 512, Miraflores",
   "whatsappNumber": "51987544021",
+  "socialLinks": [
+    { "platform": "instagram", "url": "https://instagram.com/naranjasocialcafe", "label": "Instagram" },
+    { "platform": "facebook", "url": "https://facebook.com/naranjasocialcafe", "label": "Facebook" },
+    { "platform": "tiktok", "url": "https://tiktok.com/@naranjasocialcafe", "label": "TikTok" },
+    { "platform": "youtube", "url": "https://youtube.com/@naranjasocialcafe", "label": "YouTube" },
+    { "platform": "website", "url": "https://www.fastpagepro.com/demo/restaurant/fuente-soda-flow", "label": "Web" }
+  ],
   "categories": ["Frappes y frozen", "Jugos naturales", "Milkshakes", "Mocktails", "Bebidas calientes", "Sandwiches cafe", "Brunch y desayunos", "Postres"],
   "items": [
     {

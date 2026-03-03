@@ -19,6 +19,8 @@ import {
 import type { RestaurantMenuData, RestaurantMenuItem } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
 import DemoImage from "@/components/demo/DemoImage";
+import DemoSocialLinks from "@/components/demo/DemoSocialLinks";
+import { getDemoSocialLinks } from "@/lib/demoSocial";
 import {
   buildOfficialDemoCallHref,
   buildOfficialDemoWhatsappUrl,
@@ -76,6 +78,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     demo.items[0]?.image ||
     demo.coverImage;
   const profileImage = demo.profileImage || mainImage || demo.coverImage;
+  const socialLinks = useMemo(() => getDemoSocialLinks(demo), [demo]);
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(demo.address)}&output=embed`;
   const mapsOpen = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`;
   const callHref = buildOfficialDemoCallHref();
@@ -466,6 +469,21 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   <span>{`\u23F1\uFE0F ${demo.openHours}`}</span>
                 </div>
                 <p className="mx-auto mt-4 max-w-2xl text-sm text-[var(--fp-muted)] md:text-base">{demo.description}</p>
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--fp-muted)]">Redes</span>
+                  <DemoSocialLinks
+                    links={socialLinks}
+                    className="justify-center"
+                    onOpen={(platform) =>
+                      void trackGrowthEvent("click_social", {
+                        vertical: demo.vertical,
+                        slug: demo.slug,
+                        location: "restaurant_contact",
+                        platform,
+                      })
+                    }
+                  />
+                </div>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
