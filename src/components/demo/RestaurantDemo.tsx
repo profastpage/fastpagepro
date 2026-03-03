@@ -305,7 +305,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   return (
     <section className="space-y-4">
       <article
-        className="mx-auto w-full max-w-md overflow-visible rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl"
+        className="mx-auto w-full max-w-md overflow-visible rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] text-[var(--fp-text)] md:max-w-5xl"
         style={demoSurfaceStyle}
       >
         <div className="z-20 border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3">
@@ -625,7 +625,11 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   {reservationConfig.title}
                 </h3>
                 <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{reservationConfig.subtitle}</p>
-                <div className="mt-3 rounded-2xl border border-emerald-400/35 bg-emerald-400/10 p-3 text-sm text-emerald-100">
+                <div
+                  className={`mt-3 rounded-2xl border border-emerald-400/35 bg-emerald-400/10 p-3 text-sm ${
+                    isLightBackground ? "text-emerald-900" : "text-emerald-100"
+                  }`}
+                >
                   <p className="font-black">{reservationConfig.reservationNudge}</p>
                 </div>
 
@@ -744,12 +748,20 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                 </div>
 
                 {reservationError ? (
-                  <p className="mt-3 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+                  <p
+                    className={`mt-3 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2 text-sm ${
+                      isLightBackground ? "text-rose-900" : "text-rose-100"
+                    }`}
+                  >
                     {reservationError}
                   </p>
                 ) : null}
                 {reservationFeedback ? (
-                  <p className="mt-3 rounded-xl border border-emerald-400/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                  <p
+                    className={`mt-3 rounded-xl border border-emerald-400/35 bg-emerald-500/10 px-3 py-2 text-sm ${
+                      isLightBackground ? "text-emerald-900" : "text-emerald-100"
+                    }`}
+                  >
                     {reservationFeedback}
                   </p>
                 ) : null}

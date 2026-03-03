@@ -62,6 +62,9 @@
   - se elimino el bloque de "Anticipo sugerido" en la UI de reserva de demos publicas.
   - se reemplazo por el texto opcional: "??? Asegura tu experiencia con reserva anticipada (opcional)."
   - el mensaje de WhatsApp de reserva en demo tambien elimina el bloque de anticipo para mantener consistencia.
+- Contraste en demos sin registro (`RestaurantDemo`):
+  - al activar fondo blanco, el contenedor principal ahora fuerza `text-[var(--fp-text)]` para evitar heredar texto claro del tema.
+  - los estados informativos de reserva (nudge, error y feedback) cambian a texto oscuro en modo blanco, evitando texto casi blanco sobre fondos claros.
 - Metricas PRO (`/metrics`):
   - cada apertura de enlace ahora suma `Clicks Totales` (+1 por page_view).
   - `Visitas` cambia a visitante unico por dispositivo/navegador (dedupe por `visitorId` persistente) en lugar de sumar cada apertura repetida.
