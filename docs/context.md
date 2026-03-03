@@ -131,3 +131,7 @@
   - `Billing` ahora soporta metodo `STRIPE` con checkout seguro, confirmacion al retorno y mensajes en ES/EN.
   - en `Configuracion > Plan` se agrego acceso directo a `Billing` con Stripe preseleccionado.
   - se documentaron variables de entorno nuevas: `STRIPE_MODE` y `STRIPE_SECRET_KEY`.
+- Internacionalizacion de landing (`/`) con toggle ES/EN:
+  - en la seccion de planes, todas las listas de beneficios y CTAs ahora cambian completamente segun idioma.
+  - testimonios ahora tienen version ES/EN en tarjetas (segmento y cita) y cambian al instante al pulsar idioma.
+  - actividad en vivo ahora cambia accion y tiempo (`Hace X min` / `X min ago`) segun idioma.

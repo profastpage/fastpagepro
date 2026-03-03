@@ -240,7 +240,15 @@ const FAQS_EN = [
   },
 ];
 
-const TESTIMONIALS = [
+type TestimonialItem = {
+  name: string;
+  city: string;
+  segment: string;
+  quote: string;
+  avatar: string;
+};
+
+const TESTIMONIALS_ES: TestimonialItem[] = [
   {
     name: "Mariana Quispe",
     city: "Lima, Peru",
@@ -403,38 +411,228 @@ const TESTIMONIALS = [
   },
 ];
 
+const TESTIMONIALS_EN: TestimonialItem[] = [
+  {
+    name: "Mariana Quispe",
+    city: "Lima, Peru",
+    segment: "Digital Menu",
+    quote: "With the digital menu, we went from random orders to a daily WhatsApp flow.",
+    avatar:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Carlos Gutierrez",
+    city: "Arequipa, Peru",
+    segment: "Digital Menu",
+    quote: "Search and categories helped our customers order much faster.",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Javier Rojas",
+    city: "Trujillo, Peru",
+    segment: "Online Store",
+    quote: "With FastPage our online store closed sales from the very first weekend.",
+    avatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Diana Salazar",
+    city: "Cusco, Peru",
+    segment: "Service Landing",
+    quote: "Our services landing now brings leads ready to book through WhatsApp.",
+    avatar:
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Fernando Paredes",
+    city: "Chiclayo, Peru",
+    segment: "Online Store",
+    quote: "We improved cold-traffic conversion and increased average ticket size.",
+    avatar:
+      "https://images.unsplash.com/photo-1463453091185-61582044d556?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Sofia Herrera",
+    city: "Piura, Peru",
+    segment: "Digital Menu",
+    quote: "Featured dishes increased our orders during peak hours.",
+    avatar:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Miguel Campos",
+    city: "Bogota, Colombia",
+    segment: "Service Landing",
+    quote: "We stopped depending on referrals and started acquiring clients with ads and landing pages.",
+    avatar:
+      "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Valentina Castro",
+    city: "Medellin, Colombia",
+    segment: "Online Store",
+    quote: "The store was campaign-ready and now we sell every single day.",
+    avatar:
+      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Luis Mendoza",
+    city: "Quito, Ecuador",
+    segment: "Digital Menu",
+    quote: "We reduced phone calls and centralized orders from one single link.",
+    avatar:
+      "https://images.unsplash.com/photo-1542204625-de293a06df33?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Camila Navarro",
+    city: "Guayaquil, Ecuador",
+    segment: "Service Landing",
+    quote: "With AI copy optimization, we increased qualified inquiries.",
+    avatar:
+      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Andres Molina",
+    city: "Santiago, Chile",
+    segment: "Online Store",
+    quote: "The mobile experience converted better than our previous website.",
+    avatar:
+      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Paula Ibanez",
+    city: "Valparaiso, Chile",
+    segment: "Digital Menu",
+    quote: "Our customers now find promotions in seconds.",
+    avatar:
+      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df2?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Daniela Ponce",
+    city: "CDMX, Mexico",
+    segment: "Online Store",
+    quote: "WhatsApp checkout simplified sales and follow-up.",
+    avatar:
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Ricardo Leon",
+    city: "Monterrey, Mexico",
+    segment: "Service Landing",
+    quote: "FastPage gave us a high-impact landing without depending on developers.",
+    avatar:
+      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Gabriela Flores",
+    city: "Puebla, Mexico",
+    segment: "Digital Menu",
+    quote: "The digital menu organized our delivery operation in one day.",
+    avatar:
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Jose Zamora",
+    city: "Santa Cruz, Bolivia",
+    segment: "Online Store",
+    quote: "With dynamic themes and offers, we increased conversion from Instagram Ads.",
+    avatar:
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Lucia Ortega",
+    city: "La Paz, Bolivia",
+    segment: "Service Landing",
+    quote: "We went from a few messages to a stable weekly meeting schedule.",
+    avatar:
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Diego Ferreyra",
+    city: "Buenos Aires, Argentina",
+    segment: "Online Store",
+    quote: "The catalog structure let us scale campaigns without friction.",
+    avatar:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Natalia Acosta",
+    city: "Cordoba, Argentina",
+    segment: "Digital Menu",
+    quote: "With category chips, customers buy more combinations.",
+    avatar:
+      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=320&auto=format&fit=crop",
+  },
+  {
+    name: "Hector Villanueva",
+    city: "Asuncion, Paraguay",
+    segment: "Service Landing",
+    quote: "FastPage helped us present our offer better and close faster.",
+    avatar:
+      "https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=320&auto=format&fit=crop",
+  },
+];
+
 type LiveActivityItem = {
   name: string;
   city: string;
   action: string;
-  timeAgo: string;
+  minutesAgo: number;
 };
 
-const LIVE_ACTIVITY_FEED: LiveActivityItem[] = [
-  { name: "Jorge M.", city: "Piura", action: "conecto su WhatsApp y activo su Carta Digital", timeAgo: "Hace 1 min" },
-  { name: "Valeria R.", city: "Lima", action: "publico su tienda online y recibio 2 pedidos", timeAgo: "Hace 2 min" },
-  { name: "Sushi Prime", city: "Arequipa", action: "convirtio 5 mensajes en ventas", timeAgo: "Hace 3 min" },
-  { name: "Urban Wear", city: "Trujillo", action: "cerro 3 ventas desde WhatsApp", timeAgo: "Hace 4 min" },
-  { name: "Cafe Nativo", city: "Cusco", action: "activo promociones en Carta Digital", timeAgo: "Hace 5 min" },
-  { name: "Luna Store", city: "Chiclayo", action: "recibio su primer carrito por WhatsApp", timeAgo: "Hace 6 min" },
-  { name: "Tacos MX", city: "CDMX", action: "aumento conversion desde menu digital", timeAgo: "Hace 7 min" },
-  { name: "NovaTech", city: "Bogota", action: "convirtio trafico en 4 consultas por WhatsApp", timeAgo: "Hace 8 min" },
-  { name: "Maki House", city: "Quito", action: "activo botones de pedido directo", timeAgo: "Hace 9 min" },
-  { name: "Casa Natura", city: "Medellin", action: "cerro 6 ventas con Online Store", timeAgo: "Hace 10 min" },
-  { name: "Deli Burger", city: "Guayaquil", action: "publico nueva carta y subio pedidos", timeAgo: "Hace 11 min" },
-  { name: "Fit Market", city: "Santiago", action: "activo checkout por WhatsApp", timeAgo: "Hace 12 min" },
-  { name: "Don Anticucho", city: "Lima", action: "logro 9 pedidos en hora punta", timeAgo: "Hace 13 min" },
-  { name: "Trendy Shop", city: "Monterrey", action: "recibio 5 ventas desde anuncios", timeAgo: "Hace 14 min" },
-  { name: "Punto Verde", city: "Santa Cruz", action: "convirtio visitas en ventas por chat", timeAgo: "Hace 15 min" },
-  { name: "Pan & Cafe", city: "La Paz", action: "activo CTA de pedido por WhatsApp", timeAgo: "Hace 16 min" },
-  { name: "Beauty Home", city: "Puebla", action: "publico catalogo y cerro 3 ventas", timeAgo: "Hace 17 min" },
-  { name: "Parrilla 51", city: "Buenos Aires", action: "aumento reservas desde Carta Digital", timeAgo: "Hace 18 min" },
-  { name: "Smart Lab", city: "Cordoba", action: "convirtio 7 leads en conversaciones", timeAgo: "Hace 19 min" },
-  { name: "Moda Street", city: "Asuncion", action: "activo ofertas y vendio por WhatsApp", timeAgo: "Hace 20 min" },
-  { name: "Crustaceo", city: "Piura", action: "subio el ticket promedio con combos", timeAgo: "Hace 21 min" },
-  { name: "Flash Store", city: "Lima", action: "recibio pago confirmado desde chat", timeAgo: "Hace 22 min" },
-  { name: "Sabor Criollo", city: "Arequipa", action: "reactivo clientes con menu digital", timeAgo: "Hace 23 min" },
-  { name: "Electro Home", city: "Trujillo", action: "convirtio mensajes en ventas del dia", timeAgo: "Hace 24 min" },
+const LIVE_ACTIVITY_FEED_ES: LiveActivityItem[] = [
+  { name: "Jorge M.", city: "Piura", action: "conecto su WhatsApp y activo su Carta Digital", minutesAgo: 1 },
+  { name: "Valeria R.", city: "Lima", action: "publico su tienda online y recibio 2 pedidos", minutesAgo: 2 },
+  { name: "Sushi Prime", city: "Arequipa", action: "convirtio 5 mensajes en ventas", minutesAgo: 3 },
+  { name: "Urban Wear", city: "Trujillo", action: "cerro 3 ventas desde WhatsApp", minutesAgo: 4 },
+  { name: "Cafe Nativo", city: "Cusco", action: "activo promociones en Carta Digital", minutesAgo: 5 },
+  { name: "Luna Store", city: "Chiclayo", action: "recibio su primer carrito por WhatsApp", minutesAgo: 6 },
+  { name: "Tacos MX", city: "CDMX", action: "aumento conversion desde menu digital", minutesAgo: 7 },
+  { name: "NovaTech", city: "Bogota", action: "convirtio trafico en 4 consultas por WhatsApp", minutesAgo: 8 },
+  { name: "Maki House", city: "Quito", action: "activo botones de pedido directo", minutesAgo: 9 },
+  { name: "Casa Natura", city: "Medellin", action: "cerro 6 ventas con Online Store", minutesAgo: 10 },
+  { name: "Deli Burger", city: "Guayaquil", action: "publico nueva carta y subio pedidos", minutesAgo: 11 },
+  { name: "Fit Market", city: "Santiago", action: "activo checkout por WhatsApp", minutesAgo: 12 },
+  { name: "Don Anticucho", city: "Lima", action: "logro 9 pedidos en hora punta", minutesAgo: 13 },
+  { name: "Trendy Shop", city: "Monterrey", action: "recibio 5 ventas desde anuncios", minutesAgo: 14 },
+  { name: "Punto Verde", city: "Santa Cruz", action: "convirtio visitas en ventas por chat", minutesAgo: 15 },
+  { name: "Pan & Cafe", city: "La Paz", action: "activo CTA de pedido por WhatsApp", minutesAgo: 16 },
+  { name: "Beauty Home", city: "Puebla", action: "publico catalogo y cerro 3 ventas", minutesAgo: 17 },
+  { name: "Parrilla 51", city: "Buenos Aires", action: "aumento reservas desde Carta Digital", minutesAgo: 18 },
+  { name: "Smart Lab", city: "Cordoba", action: "convirtio 7 leads en conversaciones", minutesAgo: 19 },
+  { name: "Moda Street", city: "Asuncion", action: "activo ofertas y vendio por WhatsApp", minutesAgo: 20 },
+  { name: "Crustaceo", city: "Piura", action: "subio el ticket promedio con combos", minutesAgo: 21 },
+  { name: "Flash Store", city: "Lima", action: "recibio pago confirmado desde chat", minutesAgo: 22 },
+  { name: "Sabor Criollo", city: "Arequipa", action: "reactivo clientes con menu digital", minutesAgo: 23 },
+  { name: "Electro Home", city: "Trujillo", action: "convirtio mensajes en ventas del dia", minutesAgo: 24 },
+];
+
+const LIVE_ACTIVITY_FEED_EN: LiveActivityItem[] = [
+  { name: "Jorge M.", city: "Piura", action: "connected WhatsApp and activated the digital menu", minutesAgo: 1 },
+  { name: "Valeria R.", city: "Lima", action: "published an online store and received 2 orders", minutesAgo: 2 },
+  { name: "Sushi Prime", city: "Arequipa", action: "converted 5 chats into sales", minutesAgo: 3 },
+  { name: "Urban Wear", city: "Trujillo", action: "closed 3 sales from WhatsApp", minutesAgo: 4 },
+  { name: "Cafe Nativo", city: "Cusco", action: "activated promotions on digital menu", minutesAgo: 5 },
+  { name: "Luna Store", city: "Chiclayo", action: "received first WhatsApp cart", minutesAgo: 6 },
+  { name: "Tacos MX", city: "CDMX", action: "improved conversion from digital menu", minutesAgo: 7 },
+  { name: "NovaTech", city: "Bogota", action: "turned traffic into 4 WhatsApp inquiries", minutesAgo: 8 },
+  { name: "Maki House", city: "Quito", action: "enabled direct order buttons", minutesAgo: 9 },
+  { name: "Casa Natura", city: "Medellin", action: "closed 6 sales with Online Store", minutesAgo: 10 },
+  { name: "Deli Burger", city: "Guayaquil", action: "published a new menu and increased orders", minutesAgo: 11 },
+  { name: "Fit Market", city: "Santiago", action: "enabled WhatsApp checkout", minutesAgo: 12 },
+  { name: "Don Anticucho", city: "Lima", action: "achieved 9 orders in peak hour", minutesAgo: 13 },
+  { name: "Trendy Shop", city: "Monterrey", action: "received 5 sales from ads", minutesAgo: 14 },
+  { name: "Punto Verde", city: "Santa Cruz", action: "converted visits into chat sales", minutesAgo: 15 },
+  { name: "Pan & Cafe", city: "La Paz", action: "enabled WhatsApp order CTA", minutesAgo: 16 },
+  { name: "Beauty Home", city: "Puebla", action: "published catalog and closed 3 sales", minutesAgo: 17 },
+  { name: "Parrilla 51", city: "Buenos Aires", action: "increased bookings from digital menu", minutesAgo: 18 },
+  { name: "Smart Lab", city: "Cordoba", action: "turned 7 leads into conversations", minutesAgo: 19 },
+  { name: "Moda Street", city: "Asuncion", action: "activated offers and sold via WhatsApp", minutesAgo: 20 },
+  { name: "Crustaceo", city: "Piura", action: "raised average ticket with combo offers", minutesAgo: 21 },
+  { name: "Flash Store", city: "Lima", action: "received a confirmed payment from chat", minutesAgo: 22 },
+  { name: "Sabor Criollo", city: "Arequipa", action: "reactivated clients with digital menu", minutesAgo: 23 },
+  { name: "Electro Home", city: "Trujillo", action: "converted chats into same-day sales", minutesAgo: 24 },
 ];
 
 const DELUXE_BUTTON_BASE =
@@ -444,6 +642,70 @@ const SOFT_BUTTON_BASE =
 const HERO_CTA_VARIANT_ES = "B" as "A" | "B";
 const HERO_PRIMARY_CTA_LABEL_ES =
   HERO_CTA_VARIANT_ES === "A" ? "PROBAR 14 DÍAS GRATIS" : "Probar gratis 14 días";
+
+const PRICING_FEATURES_ES = {
+  starter: [
+    "1 proyecto activo",
+    "10 productos por proyecto",
+    "🔒 Dominio propio (Business o Pro)",
+    "Branding visible",
+    "❌ Sin soporte directo",
+    "🔒 IA (Business o Pro)",
+  ],
+  business: [
+    "Hasta 5 proyectos activos",
+    "50 productos por proyecto",
+    "Dominio propio permitido",
+    "IA basica",
+    "Metricas basicas",
+    "📧 Soporte por correo (max. 24h)",
+    "🔒 Testimonios, copys PRO y galeria avanzada",
+  ],
+  pro: [
+    "Hasta 20 proyectos activos",
+    "Productos ilimitados",
+    "Branding removible",
+    "IA avanzada",
+    "💬 Soporte en vivo por WhatsApp",
+    "Metricas PRO + insights",
+    "Testimonios reales con transicion por tema",
+    "Copys de venta instantaneos por plato/producto",
+    "Galeria PRO: hasta 5 fotos por producto",
+    "Despacho configurable: delivery/recojo/comer en local",
+  ],
+} as const;
+
+const PRICING_FEATURES_EN = {
+  starter: [
+    "1 active project",
+    "10 products per project",
+    "🔒 Custom domain (Business or Pro)",
+    "Visible branding",
+    "❌ No direct support",
+    "🔒 AI (Business or Pro)",
+  ],
+  business: [
+    "Up to 5 active projects",
+    "50 products per project",
+    "Custom domain enabled",
+    "Basic AI",
+    "Basic metrics",
+    "📧 Email support (max 24h)",
+    "🔒 Testimonials, PRO copy and advanced gallery",
+  ],
+  pro: [
+    "Up to 20 active projects",
+    "Unlimited products",
+    "Removable branding",
+    "Advanced AI",
+    "💬 Live WhatsApp support",
+    "Pro metrics + insights",
+    "Real testimonials with theme transitions",
+    "Instant sales copy per dish/product",
+    "Pro gallery: up to 5 photos per product",
+    "Configurable fulfillment: delivery/pickup/dine-in",
+  ],
+} as const;
 
 export default function LandingHome() {
   const { user, loading } = useAuth();
@@ -475,12 +737,21 @@ export default function LandingHome() {
     });
   }, []);
 
+  const liveActivityFeed = isEnglish ? LIVE_ACTIVITY_FEED_EN : LIVE_ACTIVITY_FEED_ES;
+  const testimonials = isEnglish ? TESTIMONIALS_EN : TESTIMONIALS_ES;
+  const pricingFeatures = isEnglish ? PRICING_FEATURES_EN : PRICING_FEATURES_ES;
+
   useEffect(() => {
+    setActivityIndex(0);
+  }, [isEnglish]);
+
+  useEffect(() => {
+    if (!liveActivityFeed.length) return;
     const intervalId = window.setInterval(() => {
-      setActivityIndex((current) => (current + 1) % LIVE_ACTIVITY_FEED.length);
+      setActivityIndex((current) => (current + 1) % liveActivityFeed.length);
     }, 3800);
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [liveActivityFeed.length]);
 
   const copy = useMemo(
     () =>
@@ -626,10 +897,13 @@ export default function LandingHome() {
     [vertical],
   );
   const demoItems = useMemo(() => getDemoCatalog(demoTab), [demoTab]);
-  const activeLiveActivity = LIVE_ACTIVITY_FEED[activityIndex];
-  const activityTimeLabel = isEnglish
-    ? activeLiveActivity.timeAgo.replace("Hace ", "").replace("min", "min ago")
-    : activeLiveActivity.timeAgo;
+  const safeActivityIndex = liveActivityFeed.length ? activityIndex % liveActivityFeed.length : 0;
+  const activeLiveActivity = liveActivityFeed[safeActivityIndex] || liveActivityFeed[0];
+  const activityTimeLabel = activeLiveActivity
+    ? isEnglish
+      ? `${activeLiveActivity.minutesAgo} min ago`
+      : `Hace ${activeLiveActivity.minutesAgo} min`
+    : "";
 
   const scrollTestimonials = (direction: "left" | "right") => {
     const container = testimonialsRef.current;
@@ -991,12 +1265,9 @@ export default function LandingHome() {
               {copy.starterAnnualDiscount}
             </p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-300">
-              <li>1 proyecto activo</li>
-              <li>10 productos por proyecto</li>
-              <li>🔒 Dominio propio (Business o Pro)</li>
-              <li>Branding visible</li>
-              <li>❌ Sin soporte directo</li>
-              <li>🔒 IA (Business o Pro)</li>
+              {pricingFeatures.starter.map((feature) => (
+                <li key={feature}>{feature}</li>
+              ))}
             </ul>
             <Link href={starterSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
               {copy.starterCta}
@@ -1015,13 +1286,9 @@ export default function LandingHome() {
             </p>
             <p className="mt-1 text-xs font-semibold text-amber-100/90">{copy.businessNote}</p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
-              <li>Hasta 5 proyectos activos</li>
-              <li><strong>50 productos</strong> por proyecto</li>
-              <li>Dominio propio permitido</li>
-              <li>IA basica</li>
-              <li>Metricas basicas</li>
-              <li>📧 Soporte por correo (max. 24h)</li>
-              <li>🔒 Testimonios, copys PRO y galeria avanzada</li>
+              {pricingFeatures.business.map((feature) => (
+                <li key={feature}>{feature}</li>
+              ))}
             </ul>
             <Link href={businessSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
               {copy.businessCta}
@@ -1036,16 +1303,9 @@ export default function LandingHome() {
               {copy.proAnnualDiscount}
             </p>
             <ul className="mt-5 space-y-2 text-sm text-zinc-200">
-              <li>Hasta 20 proyectos activos</li>
-              <li><strong>Productos ilimitados</strong></li>
-              <li><strong>Branding removible</strong></li>
-              <li><strong>IA avanzada</strong></li>
-              <li>💬 Soporte en vivo por WhatsApp</li>
-              <li>Metricas PRO + insights</li>
-              <li>Testimonios reales con transicion por tema</li>
-              <li>Copys de venta instantaneos por plato/producto</li>
-              <li>Galeria PRO: hasta 5 fotos por producto</li>
-              <li>Despacho configurable: delivery/recojo/comer en local</li>
+              {pricingFeatures.pro.map((feature) => (
+                <li key={feature}>{feature}</li>
+              ))}
             </ul>
             <Link href={proSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
               {copy.proCta}
@@ -1086,7 +1346,7 @@ export default function LandingHome() {
           ref={testimonialsRef}
           className="no-scrollbar w-full max-w-full flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:[direction:ltr]"
         >
-          {TESTIMONIALS.map((item) => (
+          {testimonials.map((item) => (
             <article
               key={`${item.name}-${item.city}`}
               className="snap-start [direction:ltr] aspect-square w-[82vw] max-w-[360px] shrink-0 rounded-2xl border border-white/10 bg-black/45 p-5 md:aspect-auto md:min-h-[250px] md:w-[360px]"
