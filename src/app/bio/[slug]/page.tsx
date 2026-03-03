@@ -660,9 +660,10 @@ export default function PublicBioPage() {
   );
   const reservationRequiresDeposit = reservationEnabled && Boolean(profile.reservation.requiresDeposit);
   const reservationDepositAmount = String(profile.reservation.depositAmount || "").trim();
-  const reservationDepositInstructions = String(profile.reservation.depositInstructions || "")
-    .trim()
-    || "Te compartimos Yape/Plin para confirmar tu mesa.";
+  const reservationDepositInstructions = String(profile.reservation.depositInstructions || "").trim();
+  const reservationHasDepositDetails =
+    reservationRequiresDeposit &&
+    (reservationDepositAmount.length > 0 || reservationDepositInstructions.length > 0);
   const visibleTabCount = reservationEnabled ? 4 : 3;
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
@@ -1036,12 +1037,12 @@ export default function PublicBioPage() {
       cleanContact ? `\u{00B7} Contacto: ${cleanContact}` : "",
       cleanNote ? `\u{00B7} Nota: ${cleanNote}` : "",
     ].filter(Boolean);
-    const depositLines = reservationRequiresDeposit
+    const depositLines = reservationHasDepositDetails
       ? [
           "\u{1F4B3} *Anticipo para confirmar*",
           "",
-          `\u{00B7} Monto sugerido: ${reservationDepositAmount || "A coordinar por WhatsApp"}`,
-          `\u{00B7} Instrucciones: ${reservationDepositInstructions}`,
+          ...(reservationDepositAmount ? [`\u{00B7} Monto sugerido: ${reservationDepositAmount}`] : []),
+          ...(reservationDepositInstructions ? [`\u{00B7} Instrucciones: ${reservationDepositInstructions}`] : []),
         ]
       : [];
 
@@ -1891,7 +1892,7 @@ export default function PublicBioPage() {
                 <p className="mt-1 text-sm md:text-base" style={{ color: textPalette.muted }}>
                   {profile.reservation.subtitle || "Agenda tu mesa y te confirmamos por WhatsApp."}
                 </p>
-                {reservationRequiresDeposit ? (
+                {reservationHasDepositDetails ? (
                   <div
                     className="mt-3 rounded-xl border px-3 py-2 text-xs font-semibold"
                     style={{
@@ -1900,11 +1901,14 @@ export default function PublicBioPage() {
                       color: textPalette.base,
                     }}
                   >
-                    <p>
-                      Anticipo sugerido:{" "}
-                      <span className="font-black">{reservationDepositAmount || "A coordinar"}</span>
-                    </p>
-                    <p className="mt-1">{reservationDepositInstructions}</p>
+                    {reservationDepositAmount ? (
+                      <p>
+                        Anticipo sugerido: <span className="font-black">{reservationDepositAmount}</span>
+                      </p>
+                    ) : null}
+                    {reservationDepositInstructions ? (
+                      <p className={reservationDepositAmount ? "mt-1" : undefined}>{reservationDepositInstructions}</p>
+                    ) : null}
                   </div>
                 ) : null}
               </div>

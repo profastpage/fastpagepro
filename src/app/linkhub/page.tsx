@@ -3579,9 +3579,7 @@ export default function LinkHubPage() {
         "Ejemplo: celebracion, terraza o alergias alimentarias.",
       requiresDeposit: canUseReservations ? Boolean(profile.reservation.requiresDeposit) : false,
       depositAmount: profile.reservation.depositAmount.trim(),
-      depositInstructions:
-        profile.reservation.depositInstructions.trim() ||
-        "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
+      depositInstructions: profile.reservation.depositInstructions.trim(),
     };
     const promoDiscount = Math.max(0, Math.min(90, Math.round(Number(profile.automation.promoDiscountPercent) || 0)));
     const cleanedWeeklyPromoPlan = Array.isArray(profile.automation.weeklyPromoPlan)

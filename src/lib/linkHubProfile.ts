@@ -666,7 +666,7 @@ function createDefaultReservationConfig(): LinkHubReservationConfig {
     notePlaceholder: "Ejemplo: celebracion, terraza o alergias alimentarias.",
     requiresDeposit: false,
     depositAmount: "",
-    depositInstructions: "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
+    depositInstructions: "",
   };
 }
 
@@ -1488,9 +1488,8 @@ export function normalizeLinkHubProfile(
       typeof rawReservation["requiresDeposit"] === "boolean"
         ? (rawReservation["requiresDeposit"] as boolean)
         : base.reservation.requiresDeposit,
-    depositAmount: safeText(rawReservation["depositAmount"]) || base.reservation.depositAmount,
-    depositInstructions:
-      safeText(rawReservation["depositInstructions"]) || base.reservation.depositInstructions,
+    depositAmount: safeText(rawReservation["depositAmount"]),
+    depositInstructions: safeText(rawReservation["depositInstructions"]),
   };
 
   const rawAutomation = isRecord((input as Record<string, unknown>)["automation"])

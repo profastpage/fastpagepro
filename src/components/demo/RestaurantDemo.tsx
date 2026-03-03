@@ -94,8 +94,6 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
       slotOptions: slots.length > 0 ? slots : ["Por coordinar"],
       minPartySize: minParty,
       maxPartySize: maxParty,
-      reservationNudge:
-        demo.reservation?.depositInstructions || "🍽️ Asegura tu experiencia con reserva anticipada (opcional).",
       ctaLabel: demo.reservation?.ctaLabel || "Enviar reserva",
       notePlaceholder: demo.reservation?.notePlaceholder || "Celebracion, alergias o zona preferida.",
     };
@@ -625,13 +623,6 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   {reservationConfig.title}
                 </h3>
                 <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{reservationConfig.subtitle}</p>
-                <div
-                  className={`mt-3 rounded-2xl border border-emerald-400/35 bg-emerald-400/10 p-3 text-sm ${
-                    isLightBackground ? "text-emerald-900" : "text-emerald-100"
-                  }`}
-                >
-                  <p className="font-black">{reservationConfig.reservationNudge}</p>
-                </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                   <label className="space-y-1.5 md:col-span-2">

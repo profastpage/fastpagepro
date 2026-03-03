@@ -60,8 +60,11 @@
   - listado visible de clientes en nivel 1 y nivel 2 con estado y comision acumulada.
 - Reservas en demo sin registro (`RestaurantDemo`):
   - se elimino el bloque de "Anticipo sugerido" en la UI de reserva de demos publicas.
-  - se reemplazo por el texto opcional: "??? Asegura tu experiencia con reserva anticipada (opcional)."
+  - se elimino tambien el texto opcional de "reserva anticipada" para que no aparezca ningun bloque de anticipo en demos.
   - el mensaje de WhatsApp de reserva en demo tambien elimina el bloque de anticipo para mantener consistencia.
+- Reservas en carta publicada con registro (`/bio/[slug]`):
+  - el bloque de anticipo ahora solo se muestra si `requiresDeposit` esta activo y existe al menos un dato configurado (`depositAmount` o `depositInstructions`).
+  - se eliminaron fallbacks de texto de anticipo al guardar perfil y al renderizar la carta, por lo que si el usuario deja vacio ese campo en edicion no aparece en la seccion reserva.
 - Contraste en demos sin registro (`RestaurantDemo`):
   - al activar fondo blanco, el contenedor principal ahora fuerza `text-[var(--fp-text)]` para evitar heredar texto claro del tema.
   - los estados informativos de reserva (nudge, error y feedback) cambian a texto oscuro en modo blanco, evitando texto casi blanco sobre fondos claros.
