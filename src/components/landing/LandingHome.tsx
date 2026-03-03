@@ -716,6 +716,7 @@ export default function LandingHome() {
   const [demoTab, setDemoTab] = useState<BusinessVertical>("restaurant");
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
   const [activityIndex, setActivityIndex] = useState(0);
+  const [desktopTestimonialIndex, setDesktopTestimonialIndex] = useState(0);
   const testimonialsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -904,8 +905,32 @@ export default function LandingHome() {
       ? `${activeLiveActivity.minutesAgo} min ago`
       : `Hace ${activeLiveActivity.minutesAgo} min`
     : "";
+  const desktopTestimonials = useMemo(() => {
+    if (testimonials.length === 0) return [];
+    const visibleCount = Math.min(3, testimonials.length);
+    return Array.from({ length: visibleCount }, (_, offset) => {
+      const index = (desktopTestimonialIndex + offset) % testimonials.length;
+      return testimonials[index];
+    });
+  }, [desktopTestimonialIndex, testimonials]);
+
+  useEffect(() => {
+    setDesktopTestimonialIndex(0);
+  }, [isEnglish, testimonials.length]);
 
   const scrollTestimonials = (direction: "left" | "right") => {
+    const isDesktopViewport =
+      typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
+    if (isDesktopViewport && testimonials.length > 0) {
+      setDesktopTestimonialIndex((current) => {
+        if (direction === "left") {
+          return (current - 1 + testimonials.length) % testimonials.length;
+        }
+        return (current + 1) % testimonials.length;
+      });
+      return;
+    }
+
     const container = testimonialsRef.current;
     if (!container) return;
     const card = container.querySelector("article") as HTMLElement | null;
@@ -1342,14 +1367,46 @@ export default function LandingHome() {
             </button>
           </div>
         </div>
+        <div className="hidden grid-cols-3 gap-4 md:grid">
+          {desktopTestimonials.map((item, index) => (
+            <article
+              key={`${item.name}-${item.city}-desktop-${desktopTestimonialIndex}-${index}`}
+              className="min-h-[250px] rounded-2xl border border-white/10 bg-black/45 p-5 transition-all duration-300"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-amber-300/30">
+                  <Image
+                    src={item.avatar}
+                    alt={item.name}
+                    fill
+                    unoptimized
+                    sizes="48px"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-white">{item.name}</p>
+                  <p className="truncate text-[11px] uppercase tracking-[0.14em] text-zinc-400">{item.city}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-relaxed text-zinc-200">&quot;{item.quote}&quot;</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.16em] text-amber-300">{item.segment}</p>
+              <div className="mt-3 flex gap-1 text-amber-300">
+                {Array.from({ length: 5 }).map((_, sparkIndex) => (
+                  <Sparkles key={`${item.name}-desktop-${sparkIndex}`} className="h-4 w-4" />
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
         <div
           ref={testimonialsRef}
-          className="no-scrollbar w-full max-w-full flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:[direction:ltr]"
+          className="no-scrollbar w-full max-w-full flex gap-4 overflow-x-auto px-2 pb-2 snap-x snap-mandatory [direction:rtl] md:hidden"
         >
           {testimonials.map((item) => (
             <article
               key={`${item.name}-${item.city}`}
-              className="snap-start [direction:ltr] aspect-square w-[82vw] max-w-[360px] shrink-0 rounded-2xl border border-white/10 bg-black/45 p-5 md:aspect-auto md:min-h-[250px] md:w-[360px]"
+              className="snap-start [direction:ltr] aspect-square w-[82vw] max-w-[360px] shrink-0 rounded-2xl border border-white/10 bg-black/45 p-5"
             >
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full border border-amber-300/30">

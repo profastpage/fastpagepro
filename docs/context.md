@@ -135,3 +135,6 @@
   - en la seccion de planes, todas las listas de beneficios y CTAs ahora cambian completamente segun idioma.
   - testimonios ahora tienen version ES/EN en tarjetas (segmento y cita) y cambian al instante al pulsar idioma.
   - actividad en vivo ahora cambia accion y tiempo (`Hace X min` / `X min ago`) segun idioma.
+- Carrusel de testimonios en desktop (`/`):
+  - en modo PC los botones izquierda/derecha ahora rotan testimonios en carrusel con loop continuo (estilo feed/carrusel).
+  - en mobile se mantiene scroll horizontal tactil con snap.
