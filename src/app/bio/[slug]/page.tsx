@@ -376,6 +376,7 @@ export default function PublicBioPage() {
   const [reservationNote, setReservationNote] = useState("");
   const [reservationError, setReservationError] = useState("");
   const [reservationFeedback, setReservationFeedback] = useState("");
+  const [reservationPanelReady, setReservationPanelReady] = useState(false);
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
   const tabContentAnchorRef = useRef<HTMLDivElement | null>(null);
   const catalogScrollRef = useRef<HTMLDivElement | null>(null);
@@ -523,6 +524,45 @@ export default function PublicBioPage() {
   }, [activeTab, profile?.reservation?.enabled]);
 
   useEffect(() => {
+    if (!profile?.reservation?.enabled) {
+      setReservationPanelReady(false);
+      return;
+    }
+
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    let disposed = false;
+    const warmReservationPanel = () => {
+      if (disposed) return;
+      setReservationPanelReady(true);
+    };
+
+    if (typeof win.requestIdleCallback === "function") {
+      const idleHandle = win.requestIdleCallback(() => warmReservationPanel(), { timeout: 1200 });
+      return () => {
+        disposed = true;
+        win.cancelIdleCallback?.(idleHandle);
+      };
+    }
+
+    const timer = window.setTimeout(() => warmReservationPanel(), 350);
+    return () => {
+      disposed = true;
+      window.clearTimeout(timer);
+    };
+  }, [profile?.reservation?.enabled]);
+
+  useEffect(() => {
+    if (!profile?.reservation?.enabled) return;
+    const hero = String(profile.reservation.heroImageUrl || "").trim();
+    if (!hero) return;
+    const img = new Image();
+    img.src = hero;
+  }, [profile?.reservation?.enabled, profile?.reservation?.heroImageUrl]);
+
+  useEffect(() => {
     if (!profile) return;
     setBackgroundMode(getSafeLinkHubCartaBackgroundMode(profile.cartaBackgroundMode));
   }, [profile?.cartaBackgroundMode, profile?.slug]);
@@ -668,6 +708,9 @@ export default function PublicBioPage() {
   const visibleTabCount = reservationEnabled ? 4 : 3;
   const activateTab = (nextTab: PublicTab) => {
     const resolvedTab = nextTab === "reservation" && !reservationEnabled ? "contact" : nextTab;
+    if (resolvedTab === "reservation") {
+      setReservationPanelReady(true);
+    }
     setActiveTab(resolvedTab);
     if (typeof window === "undefined") return;
     window.requestAnimationFrame(() => {
@@ -1874,9 +1917,9 @@ export default function PublicBioPage() {
             </section>
           )}
 
-          {activeTab === "reservation" && reservationEnabled && (
+          {reservationEnabled && (activeTab === "reservation" || reservationPanelReady) && (
             <section
-              className={`h-full overflow-y-auto rounded-[1.9rem] border p-4 no-scrollbar ${cardClass}`}
+              className={`${activeTab === "reservation" ? "block" : "hidden"} h-full overflow-y-auto rounded-[1.9rem] border p-4 no-scrollbar ${cardClass}`}
               style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}
             >
               <div className="overflow-hidden rounded-2xl border" style={{ borderColor: "var(--carta-border)" }}>

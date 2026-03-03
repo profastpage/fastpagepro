@@ -104,3 +104,7 @@
   - se agrego endpoint server-side `POST /api/linkhub/storage/offload` (autenticado con Firebase ID token) para subir imagenes a Firebase Storage desde backend y evitar bloqueos CORS del navegador.
   - el guardado ahora intenta primero la subida server-side por cada imagen inline; si falla, mantiene fallback al flujo cliente previo.
   - se exporto `adminStorage` en Firebase Admin para uso centralizado del nuevo endpoint.
+- Rendimiento de pestaña `Reserva` (demo sin registro y carta con registro):
+  - se precarga el panel de reserva en `idle` para evitar latencia al primer clic.
+  - se hace prefetch de la imagen hero de reservas para abrir con contenido visual inmediato.
+  - se mantiene el panel montado en segundo plano (`hidden`) y se muestra al instante cuando el usuario toca `Reserva`.

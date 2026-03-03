@@ -51,6 +51,7 @@ function normalizeBadge(value?: string) {
 export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const [tab, setTab] = useState<RestaurantTab>("contact");
   const [backgroundMode, setBackgroundMode] = useState<"theme" | "white">("theme");
+  const [reservationPanelReady, setReservationPanelReady] = useState(false);
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [category, setCategory] = useState("Todos");
@@ -123,6 +124,40 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   }, [isLightBackground]);
 
   const categories = useMemo(() => ["Todos", ...demo.categories], [demo.categories]);
+
+  useEffect(() => {
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    let disposed = false;
+
+    const warmReservationPanel = () => {
+      if (disposed) return;
+      setReservationPanelReady(true);
+    };
+
+    if (typeof win.requestIdleCallback === "function") {
+      const idleHandle = win.requestIdleCallback(() => warmReservationPanel(), { timeout: 1200 });
+      return () => {
+        disposed = true;
+        win.cancelIdleCallback?.(idleHandle);
+      };
+    }
+
+    const timer = window.setTimeout(() => warmReservationPanel(), 350);
+    return () => {
+      disposed = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const hero = String(reservationConfig.heroImage || "").trim();
+    if (!hero) return;
+    const img = new Image();
+    img.src = hero;
+  }, [reservationConfig.heroImage]);
 
   useEffect(() => {
     const today = new Date();
@@ -305,6 +340,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98] md:h-12 md:text-sm";
 
   const activateTab = (nextTab: RestaurantTab) => {
+    if (nextTab === "reservation") {
+      setReservationPanelReady(true);
+    }
     setTab(nextTab);
     if (typeof window === "undefined") return;
     window.requestAnimationFrame(() => {
@@ -641,8 +679,10 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             </section>
           ) : null}
 
-          {tab === "reservation" ? (
-            <section className="space-y-4 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 md:p-5">
+          {tab === "reservation" || reservationPanelReady ? (
+            <section
+              className={`${tab === "reservation" ? "block" : "hidden"} space-y-4 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 md:p-5`}
+            >
               <div className="overflow-hidden rounded-2xl border border-[var(--fp-border)]">
                 <DemoImage
                   src={reservationConfig.heroImage}
