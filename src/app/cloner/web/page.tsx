@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -178,7 +178,8 @@ function toEditableTemplateHtml(rawHtml: string): string {
 
 export default function WebClonerPage() {
   const { user, loading: authLoading } = useAuth(true);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const tx = (es: string, en: string) => (language === "en" ? en : es);
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [html, setHtml] = useState<string | null>(null);
@@ -212,7 +213,7 @@ export default function WebClonerPage() {
     } catch (err: any) {
       console.error("Error fetching sites:", err);
       setPublishedSites([]);
-      setSitesError("No se pudieron cargar los proyectos publicados de tu cuenta.");
+      setSitesError(tx("No se pudieron cargar los proyectos publicados de tu cuenta.", "Could not load your account's published projects."));
     } finally {
       setFetchingSites(false);
     }
@@ -234,10 +235,10 @@ export default function WebClonerPage() {
     setSavingToEditor(true);
     try {
       if (authLoading) {
-        throw new Error("Espera un momento mientras validamos tu sesion.");
+        throw new Error(tx("Espera un momento mientras validamos tu sesion.", "Please wait while we validate your session."));
       }
       if (!user?.uid) {
-        throw new Error("Debes iniciar sesion para guardar y editar.");
+        throw new Error(tx("Debes iniciar sesion para guardar y editar.", "You must sign in to save and edit."));
       }
 
       const siteId =
@@ -264,7 +265,7 @@ export default function WebClonerPage() {
         {
           expectedUpdatedAt: Number(sitePayload.updatedAt || Date.now()),
           requiredFields: ["id", "userId"],
-          errorMessage: "No se pudo confirmar el guardado del proyecto en Firestore.",
+          errorMessage: tx("No se pudo confirmar el guardado del proyecto en Firestore.", "Could not confirm project save in Firestore."),
         },
       );
       router.push(`/editor/${siteId}`);
@@ -272,9 +273,9 @@ export default function WebClonerPage() {
       const msg = String(e?.message || "");
       const low = msg.toLowerCase();
       if (low.includes("permission") || low.includes("insufficient")) {
-        setError("No tienes permisos para guardar en Firebase. Revisa reglas de Firestore para cloned_sites.");
+        setError(tx("No tienes permisos para guardar en Firebase. Revisa reglas de Firestore para cloned_sites.", "You don't have permission to save in Firebase. Check Firestore rules for cloned_sites."));
       } else {
-        setError(msg || "No se pudo guardar el proyecto. Verifica tu sesion y permisos.");
+        setError(msg || tx("No se pudo guardar el proyecto. Verifica tu sesion y permisos.", "Could not save the project. Verify your session and permissions."));
       }
     } finally {
       setSavingToEditor(false);
@@ -295,7 +296,7 @@ export default function WebClonerPage() {
       await fetchPublishedSites(user.uid);
     } catch (e: any) {
       console.error("Error deleting site:", e);
-      setDeleteError(e?.message || "No se pudo eliminar el sitio. Revisa permisos de Firestore.");
+      setDeleteError(e?.message || tx("No se pudo eliminar el sitio. Revisa permisos de Firestore.", "Could not delete the site. Check Firestore permissions."));
     } finally {
       setDeleting(false);
     }
@@ -317,7 +318,7 @@ export default function WebClonerPage() {
         const text = await res.text();
         setHtml(text);
       } catch (e: any) {
-        setError(e.message || "Error inesperado");
+        setError(e.message || tx("Error inesperado", "Unexpected error"));
       } finally {
         setLoading(false);
       }
@@ -331,7 +332,7 @@ export default function WebClonerPage() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <MobilePageBar
-        title="Clonador Web"
+        title={tx("Clonador Web", "Web Cloner")}
         onBack={() => {
           if (typeof window !== "undefined" && window.history.length > 1) {
             router.back();
@@ -360,7 +361,7 @@ export default function WebClonerPage() {
                   <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
                     <BookOpen className="w-5 h-5 text-cyan-400" />
                   </div>
-                  <h2 className="text-2xl font-bold">Manual de Usuario: Clonador Web PRO</h2>
+                  <h2 className="text-2xl font-bold">{tx("Manual de Usuario: Clonador Web PRO", "User Guide: Web Cloner PRO")}</h2>
                 </div>
                 <button 
                   onClick={() => setShowGuide(false)}
@@ -373,43 +374,44 @@ export default function WebClonerPage() {
                 <section>
                   <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Globe className="w-5 h-5 text-cyan-400" />
-                    1. Clonación de Sitios
+                    {tx("1. Clonación de Sitios", "1. Website Cloning")}
                   </h3>
                   <p className="text-zinc-400 leading-relaxed">
-                    Ingresa cualquier URL válida en el campo principal. Nuestro motor inteligente extraerá el HTML, CSS y recursos, sanitizando el código para que sea completamente editable.
+                    {tx("Ingresa cualquier URL válida en el campo principal. Nuestro motor inteligente extraerá el HTML, CSS y recursos, sanitizando el código para que sea completamente editable.", "Enter any valid URL in the main field. Our smart engine extracts HTML, CSS and resources, sanitizing the code so everything is fully editable.")}
                   </p>
                 </section>
                 <section>
                   <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Edit3 className="w-5 h-5 text-cyan-400" />
-                    2. Editor Visual Intuitivo
+                    {tx("2. Editor Visual Intuitivo", "2. Intuitive Visual Editor")}
                   </h3>
                   <p className="text-zinc-400 leading-relaxed">
-                    Haz clic en cualquier elemento (texto, imágenes, fondos) para editarlo. Aparecerá una barra de herramientas flotante para modificar colores, tamaños y estilos en tiempo real.
+                    {tx("Haz clic en cualquier elemento (texto, imágenes, fondos) para editarlo. Aparecerá una barra de herramientas flotante para modificar colores, tamaños y estilos en tiempo real.", "Click any element (text, images, backgrounds) to edit it. A floating toolbar appears to adjust colors, sizes, and styles in real time.")}
                   </p>
                 </section>
                 <section>
                   <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Zap className="w-5 h-5 text-cyan-400" />
-                    3. Guardado Automático
+                    {tx("3. Guardado Automático", "3. Auto Save")}
                   </h3>
                   <p className="text-zinc-400 leading-relaxed">
-                    Tus cambios se guardan automáticamente cada 15 segundos mientras editas. También puedes usar el botón "Guardar" para asegurar tus cambios manualmente.
+                    {tx("Tus cambios se guardan automáticamente cada 15 segundos mientras editas. También puedes usar el botón \"Guardar\" para asegurar tus cambios manualmente.", "Your changes are auto-saved every 15 seconds while editing. You can also use the \"Save\" button to secure changes manually.")}
                   </p>
                 </section>
                 <section>
                   <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                     <Rocket className="w-5 h-5 text-cyan-400" />
-                    4. Publicación en un Clic
+                    {tx("4. Publicación en un Clic", "4. One-Click Publish")}
                   </h3>
                   <p className="text-zinc-400 leading-relaxed">
-                    Una vez satisfecho con los cambios, pulsa "Publicar". El sistema optimizará el código, validará los recursos y generará la versión final de tu landing page.
+                    {tx("Una vez satisfecho con los cambios, pulsa \"Publicar\". El sistema optimizará el código, validará los recursos y generará la versión final de tu landing page.", "When you're satisfied with changes, click \"Publish\". The system optimizes code, validates resources, and generates the final version of your landing page.")}
                   </p>
                 </section>
                 <div className="bg-cyan-500/5 border border-cyan-500/10 rounded-2xl p-4 flex items-start gap-3">
                   <ShieldCheck className="w-5 h-5 text-cyan-400 mt-0.5" />
                   <p className="text-xs text-cyan-400/80 leading-relaxed">
-                    <strong>Nota de Seguridad:</strong> Todos los sitios clonados pasan por un proceso de limpieza para eliminar scripts maliciosos y rastreadores, garantizando que tu nueva página sea rápida y segura.
+                    <strong>{tx("Nota de Seguridad:", "Security Note:")}</strong>{" "}
+                    {tx("Todos los sitios clonados pasan por un proceso de limpieza para eliminar scripts maliciosos y rastreadores, garantizando que tu nueva página sea rápida y segura.", "All cloned sites pass through a cleanup process to remove malicious scripts and trackers, ensuring your new page is fast and safe.")}
                   </p>
                 </div>
               </div>
@@ -418,7 +420,7 @@ export default function WebClonerPage() {
                   onClick={() => setShowGuide(false)}
                   className="w-full py-4 rounded-2xl bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-all"
                 >
-                  Entendido, ¡empezar a clonar!
+                  {tx("Entendido, ¡empezar a clonar!", "Got it, start cloning!")}
                 </button>
               </div>
             </div>
@@ -447,7 +449,7 @@ export default function WebClonerPage() {
                 <input
                   id="clone-url"
                   type="url"
-                  placeholder="https://ejemplo.com"
+                  placeholder={tx("https://ejemplo.com", "https://example.com")}
                   className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 outline-none text-sm md:text-base"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
@@ -461,7 +463,7 @@ export default function WebClonerPage() {
                 className="w-full sm:w-auto px-6 py-3 rounded-xl bg-cyan-500 text-black font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-cyan-500/20"
                 disabled={!isValidUrl(debouncedUrl) || !html || savingToEditor || authLoading || !user?.uid}
                 onClick={handleOpenEditor}
-                aria-label="Abrir editor"
+                aria-label={tx("Abrir editor", "Open editor")}
               >
                 {savingToEditor ? (
                   <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
@@ -487,7 +489,7 @@ export default function WebClonerPage() {
               <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
                 <Rocket className="w-5 h-5 text-cyan-400" />
               </div>
-              <h2 className="text-xl font-bold">Proyectos Publicados</h2>
+              <h2 className="text-xl font-bold">{tx("Proyectos Publicados", "Published Projects")}</h2>
               <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400 border border-white/5 font-bold">
                 {publishedSites.length}
               </span>
@@ -515,7 +517,7 @@ export default function WebClonerPage() {
                           <button 
                             onClick={() => router.push(`/editor/${site.id}`)}
                             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
-                            title="Editar Proyecto"
+                            title={tx("Editar Proyecto", "Edit Project")}
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
@@ -525,8 +527,8 @@ export default function WebClonerPage() {
                               setDeleteTarget(site);
                             }}
                             className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-all"
-                            title="Eliminar Proyecto"
-                            aria-label="Eliminar proyecto"
+                            title={tx("Eliminar Proyecto", "Delete Project")}
+                            aria-label={tx("Eliminar proyecto", "Delete project")}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -534,7 +536,7 @@ export default function WebClonerPage() {
                       </div>
 
                       <div className="mb-4">
-                        <h3 className="font-bold text-zinc-200 line-clamp-1 mb-1">Proyecto #{site.id}</h3>
+                        <h3 className="font-bold text-zinc-200 line-clamp-1 mb-1">{tx("Proyecto", "Project")} #{site.id}</h3>
                         <p className="text-xs text-zinc-500 line-clamp-1">{site.url}</p>
                       </div>
 
@@ -549,7 +551,7 @@ export default function WebClonerPage() {
                           }}
                           className="flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
                         >
-                          Ver Sitio <ExternalLink className="w-3 h-3" />
+                          {tx("Ver Sitio", "View Site")} <ExternalLink className="w-3 h-3" />
                         </button>
                       </div>
                     </div>
@@ -561,8 +563,8 @@ export default function WebClonerPage() {
                 <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
                   <Rocket className="w-6 h-6 text-zinc-600" />
                 </div>
-                <h3 className="text-zinc-400 font-bold mb-1">No hay proyectos publicados</h3>
-                <p className="text-zinc-600 text-sm">Clona un sitio y dale a "Publicar" para que aparezca aquí.</p>
+                <h3 className="text-zinc-400 font-bold mb-1">{tx("No hay proyectos publicados", "No published projects yet")}</h3>
+                <p className="text-zinc-600 text-sm">{tx("Clona un sitio y dale a \"Publicar\" para que aparezca aquí.", "Clone a site and click \"Publish\" so it appears here.")}</p>
               </div>
             )}
             {sitesError && (
@@ -575,7 +577,7 @@ export default function WebClonerPage() {
 
           <div className="rounded-3xl overflow-hidden border border-white/10 bg-black">
             {loading && (
-              <div className="p-8 text-center text-zinc-400">Cargando preview...</div>
+              <div className="p-8 text-center text-zinc-400">{tx("Cargando preview...", "Loading preview...")}</div>
             )}
             {!loading && html && (
               <iframe
@@ -586,7 +588,7 @@ export default function WebClonerPage() {
               />
             )}
             {!loading && !html && (
-              <div className="p-8 text-center text-zinc-500">Ingresa una URL válida para ver el preview.</div>
+              <div className="p-8 text-center text-zinc-500">{tx("Ingresa una URL válida para ver el preview.", "Enter a valid URL to see the preview.")}</div>
             )}
           </div>
         </div>
@@ -594,9 +596,9 @@ export default function WebClonerPage() {
 
       <ConfirmDeleteModal
         open={Boolean(deleteTarget)}
-        title="¿Eliminar sitio publicado?"
-        description={`Se eliminara permanentemente el proyecto #${deleteTarget?.id || ""}.`}
-        confirmLabel={deleting ? "Eliminando..." : "Eliminar ahora"}
+        title={tx("¿Eliminar sitio publicado?", "Delete published site?")}
+        description={`${tx("Se eliminara permanentemente el proyecto", "Project will be permanently deleted")} #${deleteTarget?.id || ""}.`}
+        confirmLabel={deleting ? tx("Eliminando...", "Deleting...") : tx("Eliminar ahora", "Delete now")}
         loading={deleting}
         error={deleteError}
         onCancel={() => {

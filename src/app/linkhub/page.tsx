@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
+import { useLanguage } from "@/context/LanguageContext";
 import { auth, storage } from "@/lib/firebase";
 import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import { requestPublishTarget } from "@/lib/subscription/publishClient";
@@ -1284,6 +1285,8 @@ export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
   const { summary: subscriptionSummary, reload: reloadSubscription } = useSubscription(Boolean(user?.uid));
   const planPermissions = usePlanPermissions(Boolean(user?.uid));
+  const { language } = useLanguage();
+  const tx = (es: string, en: string) => (language === "en" ? en : es);
   const router = useRouter();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
   const [activeProfileId, setActiveProfileId] = useState<string>("");
@@ -2178,14 +2181,14 @@ export default function LinkHubPage() {
   }
 
   const mobileSectionLabelMap: Record<EditorSectionKey, string> = {
-    checklist: "Publica en 10 minutos (tutorial) 📘",
-    identity: "Identidad de negocio",
-    bioLinks: "BIO y enlaces",
-    catalog: "Carta digital",
-    pro: "Funciones PRO",
-    location: "Ubicacion",
-    reservation: "Reserva",
-    themes: "Temas",
+    checklist: tx("Publica en 10 minutos (tutorial) 📘", "Publish in 10 minutes (tutorial) 📘"),
+    identity: tx("Identidad de negocio", "Business identity"),
+    bioLinks: tx("BIO y enlaces", "BIO and links"),
+    catalog: tx("Carta digital", "Digital menu"),
+    pro: tx("Funciones PRO", "PRO features"),
+    location: tx("Ubicacion", "Location"),
+    reservation: tx("Reserva", "Booking"),
+    themes: tx("Temas", "Themes"),
   };
 
   function openMobileSectionMenu() {
@@ -4087,7 +4090,7 @@ export default function LinkHubPage() {
       <div className={`${containerClassName} rounded-2xl border border-white/10 bg-zinc-950/65 p-4`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-black text-white">Publica en 10 minutos (tutorial) 📘</p>
+            <p className="text-sm font-black text-white">{tx("Publica en 10 minutos (tutorial) 📘", "Publish in 10 minutes (tutorial) 📘")}</p>
             <p className="mt-1 text-xs text-zinc-300">
               Checklist rapido para dejar tu carta lista y convertir mejor.
             </p>
@@ -4138,9 +4141,9 @@ export default function LinkHubPage() {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center px-6">
         <div className="max-w-lg rounded-3xl border border-red-400/30 bg-red-500/10 p-8 text-center">
-          <h1 className="text-2xl font-black">No se pudo abrir Carta Digital</h1>
+          <h1 className="text-2xl font-black">{tx("No se pudo abrir Carta Digital", "Could not open Digital Menu")}</h1>
           <p className="mt-3 text-red-100/90">
-            Ocurrio un problema de permisos o conexion. Recarga la pagina e intenta nuevamente.
+            {tx("Ocurrio un problema de permisos o conexion. Recarga la pagina e intenta nuevamente.", "A permissions or connection issue occurred. Reload the page and try again.")}
           </p>
         </div>
       </div>
@@ -4158,8 +4161,8 @@ export default function LinkHubPage() {
                   onClick={() => saveProfile("draft")}
                   disabled={isSaving || isProcessingImages}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-sm font-bold text-white"
-                  title="Guardar borrador"
-                  aria-label="Guardar borrador"
+                  title={tx("Guardar borrador", "Save draft")}
+                  aria-label={tx("Guardar borrador", "Save draft")}
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 </button>
@@ -4167,8 +4170,8 @@ export default function LinkHubPage() {
                   onClick={() => saveProfile("publish")}
                   disabled={isSaving || isProcessingImages}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-sm font-bold text-emerald-100"
-                  title="Publicar Carta Digital"
-                  aria-label="Publicar Carta Digital"
+                  title={tx("Publicar Carta Digital", "Publish Digital Menu")}
+                  aria-label={tx("Publicar Carta Digital", "Publish Digital Menu")}
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
                 </button>
@@ -4176,8 +4179,8 @@ export default function LinkHubPage() {
                   onClick={copyPublicUrl}
                   disabled={!publicUrl}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-sky-300/40 bg-sky-400/10 text-sm font-bold text-sky-100 disabled:opacity-50"
-                  title="Copiar URL"
-                  aria-label="Copiar URL"
+                  title={tx("Copiar URL", "Copy URL")}
+                  aria-label={tx("Copiar URL", "Copy URL")}
                 >
                   <Copy className="w-4 h-4" />
                 </button>
@@ -4195,7 +4198,7 @@ export default function LinkHubPage() {
                 className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-400/15 px-3 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-100"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                Edicion
+                {tx("Edicion", "Edit")}
               </button>
             </div>
             {mobileEditMenuOpen ? (
@@ -4204,35 +4207,35 @@ export default function LinkHubPage() {
                   <>
                     <button type="button" onClick={scrollToPublishChecklist} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-400/15 px-3 py-2 text-[11px] font-bold text-emerald-100">
                       <Rocket className="h-3.5 w-3.5" />
-                      Publica en 10 minutos (tutorial) 📘
+                      {tx("Publica en 10 minutos (tutorial) 📘", "Publish in 10 minutes (tutorial) 📘")}
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("identity")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <Store className="h-3.5 w-3.5" />
-                      Identidad de negocio
+                      {tx("Identidad de negocio", "Business identity")}
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("bioLinks")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <MessageCircle className="h-3.5 w-3.5" />
-                      BIO y enlaces
+                      {tx("BIO y enlaces", "BIO and links")}
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("catalog")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <Fish className="h-3.5 w-3.5" />
-                      Carta digital
+                      {tx("Carta digital", "Digital menu")}
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("pro")} className="flex w-full items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/15 px-3 py-2 text-[11px] font-bold text-amber-100">
                       <Lock className="h-3.5 w-3.5" />
-                      Funciones PRO
+                      {tx("Funciones PRO", "PRO features")}
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("location")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <MapPin className="h-3.5 w-3.5" />
-                      Ubicacion
+                      {tx("Ubicacion", "Location")}
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("reservation")} className="flex w-full items-center gap-2 rounded-xl border border-emerald-300/35 bg-emerald-400/12 px-3 py-2 text-[11px] font-bold text-emerald-100">
                       <CalendarDays className="h-3.5 w-3.5" />
-                      Reserva
+                      {tx("Reserva", "Booking")}
                     </button>
                     <button type="button" onClick={() => scrollToEditorSection("themes")} className="flex w-full items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-bold text-zinc-100">
                       <Palette className="h-3.5 w-3.5" />
-                      Temas
+                      {tx("Temas", "Themes")}
                     </button>
                   </>
                 ) : (
@@ -4244,19 +4247,19 @@ export default function LinkHubPage() {
                         className="inline-flex h-8 items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-zinc-100"
                       >
                         <ChevronLeft className="h-3.5 w-3.5" />
-                        Volver
+                        {tx("Volver", "Back")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setMobileEditMenuOpen(false)}
                         className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-zinc-200"
-                        aria-label="Cerrar menu edicion"
+                        aria-label={tx("Cerrar menu edicion", "Close edit menu")}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
                     <p className="mt-2 text-[11px] font-bold text-emerald-100">
-                      Editando: {mobileSectionLabelMap[mobileEditorSection]}
+                      {tx("Editando", "Editing")}: {mobileSectionLabelMap[mobileEditorSection]}
                     </p>
                   </div>
                 )}
@@ -4269,12 +4272,14 @@ export default function LinkHubPage() {
         <MobilePlanStatusCard userId={user?.uid} className="mb-4" />
         <div className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">Carta Digital</h1>
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">{tx("Carta Digital", "Digital Menu")}</h1>
             <PlanBadge plan={activePlan} />
           </div>
           <p className="mt-2 text-zinc-400 max-w-3xl">
-            Crea una landing mobile-first con contacto, {catalogLabel?.toLowerCase()}, ubicacion y reserva opcional (Business/Pro).
-            Diseñada para mostrar tu carta con experiencia premium.
+            {tx(
+              `Crea una landing mobile-first con contacto, ${catalogLabel?.toLowerCase()}, ubicacion y reserva opcional (Business/Pro). Diseñada para mostrar tu carta con experiencia premium.`,
+              `Create a mobile-first landing with contact, ${catalogLabel?.toLowerCase()}, location, and optional booking (Business/Pro). Designed to showcase your menu with a premium experience.`,
+            )}
           </p>
           <div className="mt-4">
             <SubscriptionExpiryBanner
@@ -4284,10 +4289,10 @@ export default function LinkHubPage() {
           </div>
           <div className="mt-3 hidden md:flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
-              Proyectos publicados: {publishedProjectsLabel}
+              {tx("Proyectos publicados", "Published projects")}: {publishedProjectsLabel}
             </span>
             <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
-              {subscriptionSummary?.isBusinessTrial ? "Dias de prueba" : "Dias de plan"}:{" "}
+              {subscriptionSummary?.isBusinessTrial ? tx("Dias de prueba", "Trial days") : tx("Dias de plan", "Plan days")}:{" "}
               {planDaysRemaining}
             </span>
           </div>
@@ -4312,19 +4317,19 @@ export default function LinkHubPage() {
           <div ref={proTrialBannerRef} className="mb-6 rounded-2xl border border-emerald-300/35 bg-emerald-500/10 p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="text-sm font-black text-emerald-100">Prueba PRO 7 dias con 1 clic</p>
+                <p className="text-sm font-black text-emerald-100">{tx("Prueba PRO 7 dias con 1 clic", "PRO trial 7 days in 1 click")}</p>
                 <p className="mt-1 text-xs text-emerald-50/90">
                   {proTrialFeatureLabel
-                    ? `${proTrialFeatureLabel} requiere PRO.`
-                    : "Esta función requiere PRO."}{" "}
-                  Activa la prueba ahora mismo desde el editor.
+                    ? tx(`${proTrialFeatureLabel} requiere PRO.`, `${proTrialFeatureLabel} requires PRO.`)
+                    : tx("Esta función requiere PRO.", "This feature requires PRO.")}{" "}
+                  {tx("Activa la prueba ahora mismo desde el editor.", "Activate the trial right now from the editor.")}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsProTrialModalOpen(false)}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-emerald-100"
-                aria-label="Cerrar prueba PRO"
+                aria-label={tx("Cerrar prueba PRO", "Close PRO trial")}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -4342,7 +4347,7 @@ export default function LinkHubPage() {
                 className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/45 bg-emerald-500/20 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-emerald-100 disabled:opacity-60"
               >
                 {isActivatingProTrial ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Activar prueba PRO 7 dias
+                {tx("Activar prueba PRO 7 dias", "Activate PRO trial 7 days")}
               </button>
               <button
                 type="button"

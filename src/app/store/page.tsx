@@ -39,6 +39,7 @@ import {
 import InlineEditable from "@/components/editor/InlineEditable";
 import EditorSidebar, { type EditorSidebarTab } from "@/components/editor/EditorSidebar";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   ArrowLeft,
   Bot,
@@ -535,6 +536,8 @@ export default function StorePage() {
 function StoreEditorPage() {
   const { user, loading: authLoading } = useAuth(true);
   const { summary: subscriptionSummary } = useSubscription(Boolean(user?.uid));
+  const { language } = useLanguage();
+  const tx = (es: string, en: string) => (language === "en" ? en : es);
   const router = useRouter();
   const hydratedRef = useRef(false);
   const demoThemeAppliedRef = useRef(false);
@@ -728,11 +731,11 @@ function StoreEditorPage() {
             localStorage.removeItem(scopedStoreProjectKey(user.uid));
             localStorage.removeItem("fastpage_store_project_id");
           }
-          setError("Se detecto un borrador de otra cuenta. Se inicio un borrador nuevo.");
+          setError(tx("Se detecto un borrador de otra cuenta. Se inicio un borrador nuevo.", "A draft from another account was detected. A new draft has been started."));
           return;
         }
-        setError(e?.message || "No se pudo cargar.");
-        setEditorError(e?.message || "No se pudo cargar.");
+        setError(e?.message || tx("No se pudo cargar.", "Could not load."));
+        setEditorError(e?.message || tx("No se pudo cargar.", "Could not load."));
       } finally {
         if (!cancelled) setLoadingProject(false);
       }
@@ -973,7 +976,7 @@ function StoreEditorPage() {
   };
 
   const removeProduct = (id: string) => {
-    if (!confirm("Eliminar producto?")) return;
+    if (!confirm(tx("Eliminar producto?", "Delete product?"))) return;
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
@@ -982,7 +985,7 @@ function StoreEditorPage() {
       const image = await compressImage(file);
       cb(image);
     } catch (e: any) {
-      setError(e?.message || "No se pudo subir imagen.");
+      setError(e?.message || tx("No se pudo subir imagen.", "Could not upload image."));
     }
   };
 
@@ -1011,8 +1014,8 @@ function StoreEditorPage() {
     setError(null);
     if (publishNow) setSyncWarning(null);
     try {
-      if (authLoading) throw new Error("Validando sesion...");
-      if (!user?.uid) throw new Error("Debes iniciar sesion.");
+      if (authLoading) throw new Error(tx("Validando sesion...", "Validating session..."));
+      if (!user?.uid) throw new Error(tx("Debes iniciar sesion.", "You must sign in."));
 
       const targetMode: PublishTargetMode =
         publishNow ? (projectId ? publishMode : "new") : "existing";
@@ -1049,7 +1052,7 @@ function StoreEditorPage() {
         userId: user.uid,
         source: "store-builder",
         type: "ecommerce",
-        templateName: nextConfig.storeName || "Tienda Online",
+        templateName: nextConfig.storeName || tx("Tienda Online", "Online Store"),
         url: `/t/${storeSlug}`,
         storeConfig: nextConfig,
         storeSlug,
@@ -1070,7 +1073,7 @@ function StoreEditorPage() {
           {
             expectedUpdatedAt: now,
             requiredFields: ["id", "userId"],
-            errorMessage: "No se pudo confirmar el guardado de la tienda en Firestore.",
+            errorMessage: tx("No se pudo confirmar el guardado de la tienda en Firestore.", "Could not confirm store save in Firestore."),
           },
         );
       } catch (writeError: any) {
@@ -1096,7 +1099,7 @@ function StoreEditorPage() {
           {
             expectedUpdatedAt: now,
             requiredFields: ["id", "userId"],
-            errorMessage: "No se pudo confirmar el guardado de la tienda en Firestore.",
+            errorMessage: tx("No se pudo confirmar el guardado de la tienda en Firestore.", "Could not confirm store save in Firestore."),
           },
         );
       }
@@ -1115,7 +1118,7 @@ function StoreEditorPage() {
         } catch (syncError) {
           console.warn("[Store] Secondary publish sync failed:", syncError);
           editorSyncWarning =
-            "Publicacion confirmada. No se pudo sincronizar metadata interna del editor; la tienda sigue publicada.";
+            tx("Publicacion confirmada. No se pudo sincronizar metadata interna del editor; la tienda sigue publicada.", "Publish confirmed. Internal editor metadata could not be synced; the store remains published.");
         }
       } else {
         try {
@@ -1128,7 +1131,7 @@ function StoreEditorPage() {
         } catch (syncError) {
           console.warn("[Store] Secondary draft sync failed:", syncError);
           editorSyncWarning =
-            "Guardado confirmado. No se pudo sincronizar metadata interna del editor, pero tu tienda si quedo guardada.";
+            tx("Guardado confirmado. No se pudo sincronizar metadata interna del editor, pero tu tienda si quedo guardada.", "Save confirmed. Internal editor metadata could not be synced, but your store was saved.");
         }
       }
 
@@ -1153,14 +1156,14 @@ function StoreEditorPage() {
     } catch (e: any) {
       if (!publishNow && isPermissionDeniedError(e)) {
         setSyncWarning(
-          "Sin permisos de escritura en Firestore. Los cambios se mantienen localmente hasta iniciar sesion con una cuenta autorizada.",
+          tx("Sin permisos de escritura en Firestore. Los cambios se mantienen localmente hasta iniciar sesion con una cuenta autorizada.", "No write permissions in Firestore. Changes are kept locally until you sign in with an authorized account."),
         );
         setError(null);
         setEditorError(null);
         return false;
       }
-      setError(e?.message || "No se pudo guardar.");
-      setEditorError(e?.message || "No se pudo guardar.");
+      setError(e?.message || tx("No se pudo guardar.", "Could not save."));
+      setEditorError(e?.message || tx("No se pudo guardar.", "Could not save."));
       return false;
     } finally {
       setSaving(false);
@@ -1177,11 +1180,11 @@ function StoreEditorPage() {
   });
 
   const storeMobileSectionLabelMap: Record<StoreEditorSectionKey, string> = {
-    content: "Contenido",
-    design: "Diseno",
+    content: tx("Contenido", "Content"),
+    design: tx("Diseno", "Design"),
     ai: "IA",
     seo: "SEO",
-    settings: "Ajustes",
+    settings: tx("Ajustes", "Settings"),
   };
 
   const isStoreMobileEditorModeActive =
@@ -1235,7 +1238,7 @@ function StoreEditorPage() {
           className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-300 bg-slate-50 px-3 text-[10px] font-black uppercase tracking-[0.11em] text-slate-800"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
-          Volver al submenu
+          {tx("Volver al submenu", "Back to submenu")}
         </button>
         <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
           {storeMobileSectionLabelMap[section]}
@@ -1261,7 +1264,7 @@ function StoreEditorPage() {
       setCopiedToast(true);
       window.setTimeout(() => setCopiedToast(false), 1400);
     } catch {
-      setError("No se pudo copiar el enlace publico.");
+      setError(tx("No se pudo copiar el enlace publico.", "Could not copy the public link."));
     }
   };
 
@@ -1345,8 +1348,8 @@ function StoreEditorPage() {
                   onClick={() => void handlePublishClick()}
                   disabled={publishing || loadingProject}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-300/40 bg-emerald-400/10 text-emerald-100 disabled:opacity-60"
-                  title="Publicar tienda"
-                  aria-label="Publicar tienda"
+                  title={tx("Publicar tienda", "Publish store")}
+                  aria-label={tx("Publicar tienda", "Publish store")}
                 >
                   {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
                 </button>
@@ -1355,8 +1358,8 @@ function StoreEditorPage() {
                   onClick={() => void saveProject(false)}
                   disabled={saving || loadingProject}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-white disabled:opacity-60"
-                  title="Guardar borrador"
-                  aria-label="Guardar borrador"
+                  title={tx("Guardar borrador", "Save draft")}
+                  aria-label={tx("Guardar borrador", "Save draft")}
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 </button>
@@ -1394,7 +1397,7 @@ function StoreEditorPage() {
                       </button>
                       <button type="button" onClick={() => openStoreMobileEditorSection("settings")} className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-800">
                         <Settings className="h-3.5 w-3.5" />
-                        Ajustes
+                        {tx("Ajustes", "Settings")}
                       </button>
                     </>
                   ) : (
@@ -1406,7 +1409,7 @@ function StoreEditorPage() {
                           className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[10px] font-black uppercase tracking-[0.1em] text-slate-800"
                         >
                           <ChevronLeft className="h-3.5 w-3.5" />
-                          Volver
+                          {tx("Volver", "Back")}
                         </button>
                         <button
                           type="button"
@@ -1415,7 +1418,7 @@ function StoreEditorPage() {
                             setStoreMobileEditMenuMode("sections");
                           }}
                           className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700"
-                          aria-label="Cerrar menu edicion"
+                          aria-label={tx("Cerrar menu edicion", "Close edit menu")}
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -1531,7 +1534,7 @@ function StoreEditorPage() {
                   </div>
 
                   <div className="mt-8 rounded-2xl border bg-white p-3 text-slate-900" style={{ borderColor: "var(--vs-border)" }}>
-                    <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={content.searchPlaceholder || "Buscar producto..."} className="h-10 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                    <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={content.searchPlaceholder || tx("Buscar producto...", "Search product...")} className="h-10 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
                     <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{categories.map((c) => <button key={c} onClick={() => setCategory(c)} className="shrink-0 rounded-xl border px-4 py-2 text-sm font-bold" style={category === c ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" } : { borderColor: "var(--vs-border)" }}>{c}</button>)}</div>
                     <div className="mt-3 flex items-center justify-between"><p className="text-sm font-semibold" style={{ color: "var(--vs-muted)" }}>Total: {filteredProducts.length} productos</p><select value={sortBy} onChange={(e) => setSortBy(e.target.value as VisualSort)} className="h-10 rounded-xl border px-3 text-sm font-semibold outline-none" style={{ borderColor: "var(--vs-border)" }}><option value="featured">Ordenar por</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option><option value="nameAsc">Nombre A-Z</option></select></div>
                   </div>
@@ -1583,13 +1586,13 @@ function StoreEditorPage() {
                           >
                             {p.active !== false ? "Producto activo" : "Producto oculto"}
                           </button>
-                          <button onClick={() => removeProduct(p.id)} className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold text-red-600" style={{ borderColor: "#fecaca", background: "#fff5f5" }}><Trash2 className="h-3.5 w-3.5" />Eliminar</button>
+                          <button onClick={() => removeProduct(p.id)} className="inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg border text-xs font-bold text-red-600" style={{ borderColor: "#fecaca", background: "#fff5f5" }}><Trash2 className="h-3.5 w-3.5" />{tx("Eliminar", "Delete")}</button>
                         </div>
                       </article>
                     ))}
                   </div>
 
-                  <button onClick={addProduct} className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-black text-white" style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}><Plus className="h-4 w-4" />Agregar producto</button>
+                  <button onClick={addProduct} className="mt-4 inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-black text-white" style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}><Plus className="h-4 w-4" />{tx("Agregar producto", "Add product")}</button>
                 </div>
               </div>
             </div>
@@ -1612,8 +1615,8 @@ function StoreEditorPage() {
               style={{ borderColor: "var(--vs-border)", boxShadow: "var(--vs-shadow)" }}
             >
               {renderStoreMobileSectionBack("design")}
-              <h3 className="text-sm font-black uppercase tracking-[0.15em]">Tema dinamico</h3>
-              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>Selecciona rubro y aplica temas relacionados.</p>
+              <h3 className="text-sm font-black uppercase tracking-[0.15em]">{tx("Tema dinamico", "Dynamic theme")}</h3>
+              <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>{tx("Selecciona rubro y aplica temas relacionados.", "Select a category and apply related themes.")}</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {(["restaurant", "ecommerce", "services"] as BusinessVertical[]).map((vertical) => (
                   <button
@@ -1715,7 +1718,7 @@ function StoreEditorPage() {
                   RGB personalizable disponible en BUSINESS/PRO.
                 </p>
               ) : null}
-              <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>Rubro activo: <b>{currentVertical}</b><br />Tema activo: <b>{visualTheme.label}</b><br />URL publica: <b>{`/t/${publicStoreSlug}`}</b></div>
+              <div className="mt-2 rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>{tx("Rubro activo", "Active category")}: <b>{currentVertical}</b><br />{tx("Tema activo", "Active theme")}: <b>{visualTheme.label}</b><br />{tx("URL publica", "Public URL")}: <b>{`/t/${publicStoreSlug}`}</b></div>
             </section>
             <section
               ref={contentSectionRef}
@@ -1725,7 +1728,7 @@ function StoreEditorPage() {
               {renderStoreMobileSectionBack("content")}
               <h3 className="text-sm font-black uppercase tracking-[0.15em]">Ecommerce real</h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
-                Configura ventas reales: moneda, WhatsApp, envio, metodos de pago y terminos.
+                {tx("Configura ventas reales: moneda, WhatsApp, envio, metodos de pago y terminos.", "Configure real sales: currency, WhatsApp, shipping, payment methods, and terms.")}
               </p>
               <div className="mt-3 space-y-3">
                 <label className="block text-xs font-semibold">
@@ -1779,7 +1782,7 @@ function StoreEditorPage() {
                         : { borderColor: "var(--vs-border)" }
                     }
                   >
-                    Delivery
+                    {tx("Delivery", "Delivery")}
                   </button>
                   <button
                     type="button"
@@ -1791,7 +1794,7 @@ function StoreEditorPage() {
                         : { borderColor: "var(--vs-border)" }
                     }
                   >
-                    Recojo en tienda
+                    {tx("Recojo en tienda", "Store pickup")}
                   </button>
                   <button
                     type="button"
@@ -2025,7 +2028,7 @@ function StoreEditorPage() {
                     onChange={(e) => setContent({ kicker: e.target.value })}
                     className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                     style={{ borderColor: "var(--vs-border)" }}
-                    placeholder="Tienda online + WhatsApp"
+                    placeholder={tx("Tienda online + WhatsApp", "Online store + WhatsApp")}
                   />
                 </label>
                 <label className="block text-xs font-semibold">
@@ -2035,11 +2038,11 @@ function StoreEditorPage() {
                     onChange={(e) => setContent({ searchPlaceholder: e.target.value })}
                     className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                     style={{ borderColor: "var(--vs-border)" }}
-                    placeholder="Buscar producto..."
+                    placeholder={tx("Buscar producto...", "Search product...")}
                   />
                 </label>
                 <div className="rounded-xl border p-3 text-xs" style={{ borderColor: "var(--vs-border)" }}>
-                  URL publica actual: <b>{`/t/${publicStoreSlug}`}</b>
+                  {tx("URL publica actual", "Current public URL")}: <b>{`/t/${publicStoreSlug}`}</b>
                 </div>
               </div>
             </section>
@@ -2055,11 +2058,11 @@ function StoreEditorPage() {
                 Ajustes PRO tienda
               </h3>
               <p className="mt-1 text-xs" style={{ color: "var(--vs-muted)" }}>
-                Autosave activo cada 30s. Configura carrito, widget, testimonios y FAQ.
+                {tx("Autosave activo cada 30s. Configura carrito, widget, testimonios y FAQ.", "Autosave active every 30s. Configure cart, widget, testimonials, and FAQ.")}
               </p>
               <div className="mt-3 space-y-4">
                 <div className="rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
-                  <p className="text-xs font-black uppercase tracking-[0.12em]">Carrito</p>
+                  <p className="text-xs font-black uppercase tracking-[0.12em]">{tx("Carrito", "Cart")}</p>
                   <label className="mt-2 block text-xs font-semibold">
                     Etiqueta del boton
                     <input
@@ -2067,7 +2070,7 @@ function StoreEditorPage() {
                       onChange={(e) => setCartSettings({ floatingButtonLabel: e.target.value })}
                       className={`mt-1 h-10 w-full rounded-lg border px-3 text-sm outline-none ${DARK_FORM_FIELD_CLASS}`}
                       style={{ borderColor: "var(--vs-border)" }}
-                      placeholder="Carrito"
+                      placeholder={tx("Carrito", "Cart")}
                     />
                   </label>
                   <button
@@ -2181,13 +2184,13 @@ function StoreEditorPage() {
                           onClick={() => removeTestimonial(testimonial.id)}
                           className="mt-2 h-8 w-full rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-600"
                         >
-                          Eliminar testimonio
+                          {tx("Eliminar testimonio", "Delete testimonial")}
                         </button>
                       </div>
                     ))}
                   </div>
                   <button onClick={addTestimonial} className="mt-2 h-9 w-full rounded-lg border px-3 text-xs font-black text-white" style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}>
-                    Agregar testimonio
+                    {tx("Agregar testimonio", "Add testimonial")}
                   </button>
                 </div>
 
@@ -2201,27 +2204,27 @@ function StoreEditorPage() {
                           onChange={(e) => updateFaq(faq.id, { question: e.target.value })}
                           className={`h-9 w-full rounded-lg border px-2 text-xs outline-none ${DARK_FORM_FIELD_CLASS}`}
                           style={{ borderColor: "var(--vs-border)" }}
-                          placeholder="Pregunta"
+                          placeholder={tx("Pregunta", "Question")}
                         />
                         <textarea
                           value={faq.answer}
                           onChange={(e) => updateFaq(faq.id, { answer: e.target.value })}
                           className={`mt-2 min-h-[64px] w-full rounded-lg border px-2 py-2 text-xs outline-none ${DARK_FORM_FIELD_CLASS}`}
                           style={{ borderColor: "var(--vs-border)" }}
-                          placeholder="Respuesta"
+                          placeholder={tx("Respuesta", "Answer")}
                         />
                         <button
                           type="button"
                           onClick={() => removeFaq(faq.id)}
                           className="mt-2 h-8 w-full rounded-lg border border-red-200 bg-red-50 text-xs font-bold text-red-600"
                         >
-                          Eliminar FAQ
+                          {tx("Eliminar FAQ", "Delete FAQ")}
                         </button>
                       </div>
                     ))}
                   </div>
                   <button onClick={addFaq} className="mt-2 h-9 w-full rounded-lg border px-3 text-xs font-black text-white" style={{ borderColor: "var(--vs-accent)", background: "var(--vs-accent)" }}>
-                    Agregar FAQ
+                    {tx("Agregar FAQ", "Add FAQ")}
                   </button>
                 </div>
               </div>

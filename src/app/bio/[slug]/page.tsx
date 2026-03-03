@@ -63,6 +63,7 @@ import {
   Music2,
   Share2,
 } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 type PublicTab = "contact" | "catalog" | "location" | "reservation";
 type CheckoutStep = "cart" | "checkout";
@@ -345,6 +346,10 @@ function postLinkHubMetric(payload: Record<string, unknown>) {
 }
 
 export default function PublicBioPage() {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const tx = (es: string, en: string) => (isEn ? en : es);
+
   const params = useParams<{ slug: string }>();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -635,11 +640,13 @@ export default function PublicBioPage() {
     return (
       <div className="min-h-screen bg-slate-100 px-6 text-slate-900 flex items-center justify-center">
         <div className="max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-[0_20px_45px_-35px_rgba(15,23,42,0.35)]">
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-500 font-bold">Carta Digital</p>
-          <h1 className="mt-3 text-3xl font-black">Perfil no disponible</h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-slate-500 font-bold">{tx("Carta Digital", "Digital Menu")}</p>
+          <h1 className="mt-3 text-3xl font-black">{tx("Perfil no disponible", "Profile unavailable")}</h1>
           <p className="mt-3 text-slate-600">
-            Este enlace no existe, no fue publicado o fue pausado por plan vencido. El negocio debe pagar para
-            reactivarlo.
+            {tx(
+              "Este enlace no existe, no fue publicado o fue pausado por plan vencido. El negocio debe pagar para reactivarlo.",
+              "This link doesn't exist, was not published, or was paused due to an expired plan. The business must pay to reactivate it.",
+            )}
           </p>
         </div>
       </div>
@@ -684,7 +691,7 @@ export default function PublicBioPage() {
   const whatsappHref = toWhatsappUrl(profile.whatsappNumber);
   const catalogLabel =
     profile.businessType === "restaurant" ? profile.sectionLabels.menu : profile.sectionLabels.catalog;
-  const reservationLabel = profile.sectionLabels.reservation || "Reserva";
+  const reservationLabel = profile.sectionLabels.reservation || tx("Reserva", "Booking");
   const reservationEnabled = Boolean(profile.reservation.enabled);
   const reservationSlots = profile.reservation.slotOptions
     .map((slot) => String(slot || "").trim())
@@ -724,7 +731,7 @@ export default function PublicBioPage() {
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
     .slice(0, 8);
-  const businessName = profile.displayName || "Negocio";
+  const businessName = profile.displayName || tx("Negocio", "Business");
   const cartItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
   const cartQtyById = new Map<string, number>();
@@ -749,18 +756,18 @@ export default function PublicBioPage() {
   const etaMinutes = resolveEtaMinutes(profile.location.scheduleLines);
 
   const deliveryLabelMap: Record<DeliveryMethod, string> = {
-    delivery: "Envio a domicilio",
-    pickup: "Recoger en local",
-    dinein: "Comer en el lugar",
+    delivery: tx("Envio a domicilio", "Home delivery"),
+    pickup: tx("Recoger en local", "Store pickup"),
+    dinein: tx("Comer en el lugar", "Dine in"),
   };
-  const availableDeliveryOptions = (
+  const availableDeliveryOptions: Array<{ value: DeliveryMethod; label: string }> = (
     proFeaturesEnabled
       ? ORDER_DELIVERY_OPTIONS.filter((option) => profile?.proDeliveryModes?.[option.value] !== false)
       : ORDER_DELIVERY_OPTIONS
-  ) as Array<{ value: DeliveryMethod; label: string }>;
+  ).map((option) => ({ ...option, label: deliveryLabelMap[option.value] }));
   const paymentLabelMap: Record<PaymentMethod, string> = {
-    cash: "Efectivo",
-    transfer: "Transferencia",
+    cash: tx("Efectivo", "Cash"),
+    transfer: tx("Transferencia", "Bank transfer"),
     yape: "Yape",
     plin: "Plin",
   };
@@ -894,12 +901,12 @@ export default function PublicBioPage() {
     const code = couponInput.trim().toUpperCase();
     if (!code) {
       setAppliedCouponCode("");
-      setCartError("Ingresa un cupon para aplicar descuento.");
+      setCartError(tx("Ingresa un cupon para aplicar descuento.", "Enter a coupon to apply discount."));
       return;
     }
     if (!COUPON_DISCOUNTS[code]) {
       setAppliedCouponCode("");
-      setCartError("Cupon invalido. Prueba con FAST5 o FAST10.");
+      setCartError(tx("Cupon invalido. Prueba con FAST5 o FAST10.", "Invalid coupon. Try FAST5 or FAST10."));
       return;
     }
     setAppliedCouponCode(code);
@@ -917,59 +924,59 @@ export default function PublicBioPage() {
     const deliveryLabel =
       selectedDelivery && deliveryLabelMap[selectedDelivery]
         ? deliveryLabelMap[selectedDelivery]
-        : availableDeliveryOptions[0]?.label || "Por confirmar";
+        : availableDeliveryOptions[0]?.label || tx("Por confirmar", "Pending");
     const paymentLabel =
       paymentMethod && paymentLabelMap[paymentMethod]
         ? paymentLabelMap[paymentMethod]
-        : "Por confirmar";
+        : tx("Por confirmar", "Pending");
     const itemLines = cartItems
       .map((item, index) => {
         const itemSubtotal = item.unitPrice * item.quantity;
         return [
           `${index + 1}. \u{1F37D}\u{FE0F} ${item.title} ${item.categoryName ? `(${item.categoryName})` : ""}`,
-          `   Cantidad: ${item.quantity}`,
-          `   Precio unitario: ${formatSoles(item.unitPrice)}`,
+          `   ${tx("Cantidad", "Quantity")}: ${item.quantity}`,
+          `   ${tx("Precio unitario", "Unit price")}: ${formatSoles(item.unitPrice)}`,
           `   Subtotal: ${formatSoles(itemSubtotal)}`,
         ].join("\n");
       })
       .join("\n\n");
 
     const discountLines = [
-      autoDiscount > 0 ? `- Descuento por compra: ${formatSoles(autoDiscount)}` : "",
-      couponDiscount > 0 ? `- Cupon (${appliedCouponCode}): ${formatSoles(couponDiscount)}` : "",
+      autoDiscount > 0 ? `- ${tx("Descuento por compra", "Purchase discount")}: ${formatSoles(autoDiscount)}` : "",
+      couponDiscount > 0 ? `- ${tx("Cupon", "Coupon")} (${appliedCouponCode}): ${formatSoles(couponDiscount)}` : "",
     ]
       .filter(Boolean)
       .join("\n");
 
-    const noteLine = note.trim() ? `- Nota adicional: ${note.trim()}` : "";
-    const customerLine = customerName.trim() ? `- Nombre de referencia: ${customerName.trim()}` : "";
-    const customerPhoneLine = customerPhone.trim() ? `- Celular de referencia: ${customerPhone.trim()}` : "";
+    const noteLine = note.trim() ? `- ${tx("Nota adicional", "Additional note")}: ${note.trim()}` : "";
+    const customerLine = customerName.trim() ? `- ${tx("Nombre de referencia", "Reference name")}: ${customerName.trim()}` : "";
+    const customerPhoneLine = customerPhone.trim() ? `- ${tx("Celular de referencia", "Reference phone")}: ${customerPhone.trim()}` : "";
 
     return [
-      `\u{1F9FE} *Solicitud de pedido para ${businessName}*`,
+      `\u{1F9FE} *${tx("Solicitud de pedido para", "Order request for")} ${businessName}*`,
       `\u{1F194} Ref: ${orderRef}`,
       "",
-      `\u{1F44B} Hola equipo ${businessName}, quiero confirmar este pedido:`,
+      `\u{1F44B} ${tx(`Hola equipo ${businessName}, quiero confirmar este pedido:`, `Hi ${businessName} team, I want to confirm this order:`)}`,
       "",
-      "\u{1F9FE} *Detalle del pedido*",
+      `\u{1F9FE} *${tx("Detalle del pedido", "Order details")}*`,
       itemLines,
       "",
-      "\u{1F4CC} *Datos para coordinar*",
+      `\u{1F4CC} *${tx("Datos para coordinar", "Coordination details")}*`,
       customerLine,
       customerPhoneLine,
-      `- Entrega: ${deliveryLabel}`,
-      `- Pago: ${paymentLabel}`,
+      `- ${tx("Entrega", "Delivery")}: ${deliveryLabel}`,
+      `- ${tx("Pago", "Payment")}: ${paymentLabel}`,
       noteLine,
       "",
-      "\u{1F4B0} *Resumen*",
+      `\u{1F4B0} *${tx("Resumen", "Summary")}*`,
       `- Subtotal: ${formatSoles(cartSubtotal)}`,
-      discountLines || "- Descuentos: S/0.00 SOLES",
+      discountLines || `- ${tx("Descuentos", "Discounts")}: S/0.00 SOLES`,
       `- Total: ${formatSoles(cartTotal)}`,
       "",
-      "\u{1F4F2} Canal: Carta Digital FastPage",
-      `\u{1F552} Pedido generado: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+      `\u{1F4F2} ${tx("Canal", "Channel")}: ${tx("Carta Digital FastPage", "FastPage Digital Menu")}`,
+      `\u{1F552} ${tx("Pedido generado", "Order generated")}: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
-      "\u{1F64F} Muchas gracias. Quedo atento(a) a su confirmacion. \u{2728}",
+      tx("\u{1F64F} Muchas gracias. Quedo atento(a) a su confirmacion. \u{2728}", "\u{1F64F} Thank you very much. I’ll be waiting for your confirmation. \u{2728}"),
     ]
       .filter(Boolean)
       .join("\n");
@@ -977,15 +984,15 @@ export default function PublicBioPage() {
 
   function submitOrderWhatsapp() {
     if (cartItems.length === 0) {
-      setCartError("Tu carrito esta vacio. Agrega productos para continuar.");
+      setCartError(tx("Tu carrito esta vacio. Agrega productos para continuar.", "Your cart is empty. Add products to continue."));
       return;
     }
     if (!whatsappTargetDigits) {
-      setCartError("Este negocio no tiene WhatsApp configurado aun.");
+      setCartError(tx("Este negocio no tiene WhatsApp configurado aun.", "This business doesn't have WhatsApp configured yet."));
       return;
     }
     if (availableDeliveryOptions.length > 0 && !deliveryMethod) {
-      setCartError("Selecciona una opcion de entrega para continuar.");
+      setCartError(tx("Selecciona una opcion de entrega para continuar.", "Select a delivery option to continue."));
       return;
     }
 
@@ -1006,12 +1013,12 @@ export default function PublicBioPage() {
     const url = buildWhatsappSendUrl(whatsappTargetDigits, text);
     window.open(url, "_blank", "noopener,noreferrer");
     setCartError("");
-    setCartFeedback("Pedido listo. Te estamos redirigiendo a WhatsApp.");
+    setCartFeedback(tx("Pedido listo. Te estamos redirigiendo a WhatsApp.", "Order ready. Redirecting you to WhatsApp."));
   }
 
   function submitQuickOrderWhatsapp() {
     if (!whatsappTargetDigits) {
-      setCartError("Este negocio no tiene WhatsApp configurado aun.");
+      setCartError(tx("Este negocio no tiene WhatsApp configurado aun.", "This business doesn't have WhatsApp configured yet."));
       return;
     }
 
@@ -1022,18 +1029,21 @@ export default function PublicBioPage() {
             (item, index) =>
               `${index + 1}. ${item.title} x${item.quantity} - ${formatSoles(item.unitPrice * item.quantity)}`,
           )
-        : ["1. Quiero realizar un pedido y necesito asesoria."];
+        : [tx("1. Quiero realizar un pedido y necesito asesoria.", "1. I want to place an order and need assistance.")];
 
     const text = [
-      `\u{1F44B} Hola equipo ${businessName}, les escribo desde su Carta Digital FastPage.`,
+      tx(
+        `\u{1F44B} Hola equipo ${businessName}, les escribo desde su Carta Digital FastPage.`,
+        `\u{1F44B} Hi ${businessName} team, I'm contacting you from your FastPage Digital Menu.`,
+      ),
       "",
-      "\u{1F9FE} *Resumen rapido de mi pedido:*",
+      `\u{1F9FE} *${tx("Resumen rapido de mi pedido", "Quick summary of my order")}*`,
       ...quickLines,
       "",
-      `\u{1F4B0} Total estimado: ${formatSoles(cartTotal)}`,
+      `\u{1F4B0} ${tx("Total estimado", "Estimated total")}: ${formatSoles(cartTotal)}`,
       `\u{1F552} ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
-      "Quedo atento(a) para confirmar mi pedido. Gracias.",
+      tx("Quedo atento(a) para confirmar mi pedido. Gracias.", "I'll wait for your confirmation. Thanks."),
     ].join("\n");
 
     postLinkHubMetric({
@@ -1054,7 +1064,7 @@ export default function PublicBioPage() {
     const url = buildWhatsappSendUrl(whatsappTargetDigits, text);
     window.open(url, "_blank", "noopener,noreferrer");
     setCartError("");
-    setCartFeedback("Te estamos redirigiendo a WhatsApp.");
+    setCartFeedback(tx("Te estamos redirigiendo a WhatsApp.", "Redirecting you to WhatsApp."));
   }
 
   function submitReservationWhatsapp() {
@@ -1063,54 +1073,54 @@ export default function PublicBioPage() {
       return;
     }
     if (!whatsappTargetDigits) {
-      setReservationError("Este negocio no tiene WhatsApp configurado para reservas.");
+      setReservationError(tx("Este negocio no tiene WhatsApp configurado para reservas.", "This business doesn't have WhatsApp configured for bookings."));
       return;
     }
     const cleanName = reservationName.trim();
     if (!cleanName) {
-      setReservationError("Ingresa tu nombre para enviar la reserva.");
+      setReservationError(tx("Ingresa tu nombre para enviar la reserva.", "Enter your name to send the booking."));
       return;
     }
     if (!reservationDate) {
-      setReservationError("Selecciona una fecha para la reserva.");
+      setReservationError(tx("Selecciona una fecha para la reserva.", "Select a date for the booking."));
       return;
     }
     const requestedGuests = Math.round(Number(reservationGuests) || reservationMinParty);
     const guests = Math.max(reservationMinParty, Math.min(reservationMaxParty, requestedGuests));
-    const selectedSlot = reservationSlot || reservationSlots[0] || "Por coordinar";
+    const selectedSlot = reservationSlot || reservationSlots[0] || tx("Por coordinar", "To be confirmed");
     const cleanContact = reservationContact.trim();
     const cleanNote = reservationNote.trim();
     const date = new Date();
     const reservationDataLines = [
-      `\u{00B7} Nombre: ${cleanName}`,
-      `\u{00B7} Personas: ${guests}`,
-      `\u{00B7} Fecha: ${reservationDate}`,
-      `\u{00B7} Horario: ${selectedSlot}`,
-      cleanContact ? `\u{00B7} Contacto: ${cleanContact}` : "",
-      cleanNote ? `\u{00B7} Nota: ${cleanNote}` : "",
+      `\u{00B7} ${tx("Nombre", "Name")}: ${cleanName}`,
+      `\u{00B7} ${tx("Personas", "Guests")}: ${guests}`,
+      `\u{00B7} ${tx("Fecha", "Date")}: ${reservationDate}`,
+      `\u{00B7} ${tx("Horario", "Time")}: ${selectedSlot}`,
+      cleanContact ? `\u{00B7} ${tx("Contacto", "Contact")}: ${cleanContact}` : "",
+      cleanNote ? `\u{00B7} ${tx("Nota", "Note")}: ${cleanNote}` : "",
     ].filter(Boolean);
     const depositLines = reservationHasDepositDetails
       ? [
-          "\u{1F4B3} *Anticipo para confirmar*",
+          `\u{1F4B3} *${tx("Anticipo para confirmar", "Deposit to confirm")}*`,
           "",
-          ...(reservationDepositAmount ? [`\u{00B7} Monto sugerido: ${reservationDepositAmount}`] : []),
-          ...(reservationDepositInstructions ? [`\u{00B7} Instrucciones: ${reservationDepositInstructions}`] : []),
+          ...(reservationDepositAmount ? [`\u{00B7} ${tx("Monto sugerido", "Suggested amount")}: ${reservationDepositAmount}`] : []),
+          ...(reservationDepositInstructions ? [`\u{00B7} ${tx("Instrucciones", "Instructions")}: ${reservationDepositInstructions}`] : []),
         ]
       : [];
 
     const lines = [
-      `\u{1F37D}\u{FE0F} *Solicitud de reserva para ${businessName}*`,
+      `\u{1F37D}\u{FE0F} *${tx("Solicitud de reserva para", "Booking request for")} ${businessName}*`,
       "",
-      `\u{1F44B} Hola equipo ${businessName}, quiero agendar una reserva:`,
+      tx(`\u{1F44B} Hola equipo ${businessName}, quiero agendar una reserva:`, `\u{1F44B} Hi ${businessName} team, I'd like to schedule a booking:`),
       "",
-      "\u{1F4CB} *Datos de reserva:*",
+      `\u{1F4CB} *${tx("Datos de reserva", "Booking details")}:*`,
       "",
       ...reservationDataLines,
       ...(depositLines.length > 0 ? ["", ...depositLines] : []),
       "",
-      `\u{1F552} *Solicitud enviada:* ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+      `\u{1F552} *${tx("Solicitud enviada", "Request sent")}:* ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
-      "\u{1F64F} Gracias. Quedo atento(a) a su confirmacion por WhatsApp.",
+      tx("\u{1F64F} Gracias. Quedo atento(a) a su confirmacion por WhatsApp.", "\u{1F64F} Thanks. I’ll wait for your confirmation on WhatsApp."),
     ].join("\n");
 
     postLinkHubMetric({
@@ -1122,7 +1132,7 @@ export default function PublicBioPage() {
     const url = buildWhatsappSendUrl(whatsappTargetDigits, lines);
     window.open(url, "_blank", "noopener,noreferrer");
     setReservationError("");
-    setReservationFeedback("Reserva lista. Te estamos redirigiendo a WhatsApp.");
+    setReservationFeedback(tx("Reserva lista. Te estamos redirigiendo a WhatsApp.", "Booking ready. Redirecting you to WhatsApp."));
     window.setTimeout(() => setReservationFeedback(""), 2200);
   }
 
@@ -1133,12 +1143,12 @@ export default function PublicBioPage() {
       if (navigator.share) {
         await navigator.share({
           title: profile.displayName,
-          text: `Mira ${profile.displayName} en Fast Page`,
+          text: tx(`Mira ${profile.displayName} en Fast Page`, `Check out ${profile.displayName} on Fast Page`),
           url,
         });
       } else {
         await navigator.clipboard.writeText(url);
-        setShareFeedback("Enlace copiado");
+        setShareFeedback(tx("Enlace copiado", "Link copied"));
         window.setTimeout(() => setShareFeedback(""), 1800);
       }
     } catch {
@@ -1396,11 +1406,11 @@ export default function PublicBioPage() {
                             color: "var(--carta-nav-text)",
                           }
                     }
-                    aria-label="Usar fondo del tema"
-                    title="Modo tema"
+                    aria-label={tx("Usar fondo del tema", "Use theme background")}
+                    title={tx("Modo tema", "Theme mode")}
                   >
                     <Palette className="h-4 w-4" />
-                    <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">Tema</span>
+                    <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">{tx("Tema", "Theme")}</span>
                   </button>
                   <button
                     type="button"
@@ -1421,11 +1431,11 @@ export default function PublicBioPage() {
                             color: "var(--carta-nav-text)",
                           }
                     }
-                    aria-label="Usar fondo claro"
-                    title="Modo claro"
+                    aria-label={tx("Usar fondo claro", "Use light background")}
+                    title={tx("Modo claro", "Light mode")}
                   >
                     <SunMedium className="h-4 w-4" />
-                    <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">Claro</span>
+                    <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">{tx("Claro", "Light")}</span>
                   </button>
                 </div>
                 <button
@@ -1433,7 +1443,7 @@ export default function PublicBioPage() {
                   onClick={handleShare}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
                   style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
-                  aria-label="Compartir"
+                  aria-label={tx("Compartir", "Share")}
                 >
                   <Share2 className="h-4 w-4" />
                 </button>
@@ -1762,7 +1772,7 @@ export default function PublicBioPage() {
                     <input
                       value={searchTerm}
                       onChange={(event) => setSearchTerm(event.target.value)}
-                      placeholder={profile.businessType === "restaurant" ? "Buscar en la carta..." : "Buscar en el catalogo..."}
+                      placeholder={profile.businessType === "restaurant" ? tx("Buscar en la carta...", "Search in menu...") : tx("Buscar en el catalogo...", "Search in catalog...")}
                       className="w-full bg-transparent text-sm focus:outline-none placeholder:[color:var(--carta-placeholder)]"
                       style={{ color: "var(--carta-input-text)" }}
                     />
@@ -1866,7 +1876,7 @@ export default function PublicBioPage() {
                   />
                 ) : (
                   <div className="h-64 w-full flex items-center justify-center px-6 text-center" style={{ ...itemSurfaceStyle, color: textPalette.muted }}>
-                    Agrega un link de Google Maps Embed para mostrar el mapa.
+                    {tx("Agrega un link de Google Maps Embed para mostrar el mapa.", "Add a Google Maps Embed link to show the map.")}
                   </div>
                 )}
               </div>
@@ -1881,7 +1891,7 @@ export default function PublicBioPage() {
 
               {profile.location.scheduleLines.length > 0 && (
                 <div className="mt-4">
-                  <p className="text-2xl font-black" style={{ color: accentWordColor }}>Horarios</p>
+                  <p className="text-2xl font-black" style={{ color: accentWordColor }}>{tx("Horarios", "Hours")}</p>
                   <div className="mt-2 space-y-2 text-sm" style={{ color: textPalette.muted }}>
                     {profile.location.scheduleLines.map((line, index) => (
                       <p key={`${line}-${index}`}>{line}</p>
@@ -1899,7 +1909,7 @@ export default function PublicBioPage() {
                   style={interactiveStyle}
                 >
                   <MapPin className="h-4 w-4" />
-                  {profile.location.ctaLabel || "Ir ahora"}
+                  {profile.location.ctaLabel || tx("Ir ahora", "Go now")}
                 </a>
               )}
 
@@ -1911,7 +1921,7 @@ export default function PublicBioPage() {
                   className="underline underline-offset-2"
                   style={{ color: accentWordColor }}
                 >
-                  Creado por FastPage
+                  {tx("Creado por FastPage", "Created by FastPage")}
                 </a>
               </p>
             </section>
@@ -1926,7 +1936,7 @@ export default function PublicBioPage() {
                 {profile.reservation.heroImageUrl ? (
                   <img
                     src={profile.reservation.heroImageUrl}
-                    alt="Reservas"
+                    alt={tx("Reservas", "Bookings")}
                     className="h-40 w-full object-cover md:h-56"
                   />
                 ) : (
@@ -1938,17 +1948,17 @@ export default function PublicBioPage() {
                       color: textPalette.muted,
                     }}
                   >
-                    Imagen de reservas premium
+                    {tx("Imagen de reservas premium", "Premium booking image")}
                   </div>
                 )}
               </div>
 
               <div className="mt-4">
                 <h2 className="text-2xl font-black md:text-3xl" style={{ color: accentWordColor }}>
-                  {profile.reservation.title || "Reserva premium"}
+                  {profile.reservation.title || tx("Reserva premium", "Premium booking")}
                 </h2>
                 <p className="mt-1 text-sm md:text-base" style={{ color: textPalette.muted }}>
-                  {profile.reservation.subtitle || "Agenda tu mesa y te confirmamos por WhatsApp."}
+                  {profile.reservation.subtitle || tx("Agenda tu mesa y te confirmamos por WhatsApp.", "Book your table and we'll confirm via WhatsApp.")}
                 </p>
                 {reservationHasDepositDetails ? (
                   <div
@@ -1961,7 +1971,7 @@ export default function PublicBioPage() {
                   >
                     {reservationDepositAmount ? (
                       <p>
-                        Anticipo sugerido: <span className="font-black">{reservationDepositAmount}</span>
+                        {tx("Anticipo sugerido", "Suggested deposit")}: <span className="font-black">{reservationDepositAmount}</span>
                       </p>
                     ) : null}
                     {reservationDepositInstructions ? (
@@ -1974,12 +1984,12 @@ export default function PublicBioPage() {
               <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                 <label className="space-y-1.5 md:col-span-2">
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
-                    Nombre completo
+                    {tx("Nombre completo", "Full name")}
                   </span>
                   <input
                     value={reservationName}
                     onChange={(event) => setReservationName(event.target.value)}
-                    placeholder="Ej. Maria Gomez"
+                    placeholder={tx("Ej. Maria Gomez", "Ex. Maria Gomez")}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
                     style={checkoutInputStyle}
                   />
@@ -1987,7 +1997,7 @@ export default function PublicBioPage() {
 
                 <label className="space-y-1.5">
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
-                    Personas
+                    {tx("Personas", "Guests")}
                   </span>
                   <div className={`flex items-center rounded-xl border ${buttonRadiusClass}`} style={checkoutInputStyle}>
                     <button
@@ -1996,14 +2006,14 @@ export default function PublicBioPage() {
                       disabled={reservationGuestsCount <= reservationMinParty}
                       className="inline-flex h-11 w-11 items-center justify-center transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
                       style={{ borderRight: "1px solid var(--carta-input-border)", color: "var(--carta-input-text)" }}
-                      aria-label="Disminuir personas"
+                      aria-label={tx("Disminuir personas", "Decrease guests")}
                     >
                       <ChevronDown className="h-4 w-4" />
                     </button>
                     <div
                       className="flex min-w-0 flex-1 flex-col items-center justify-center px-2"
                       role="spinbutton"
-                      aria-label="Cantidad de personas"
+                      aria-label={tx("Cantidad de personas", "Guests quantity")}
                       aria-valuemin={reservationMinParty}
                       aria-valuemax={reservationMaxParty}
                       aria-valuenow={reservationGuestsCount}
@@ -2012,7 +2022,7 @@ export default function PublicBioPage() {
                         {reservationGuestsCount}
                       </span>
                       <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]" style={{ color: textPalette.soft }}>
-                        personas
+                        {tx("personas", "guests")}
                       </span>
                     </div>
                     <button
@@ -2021,19 +2031,19 @@ export default function PublicBioPage() {
                       disabled={reservationGuestsCount >= reservationMaxParty}
                       className="inline-flex h-11 w-11 items-center justify-center transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
                       style={{ borderLeft: "1px solid var(--carta-input-border)", color: "var(--carta-input-text)" }}
-                      aria-label="Aumentar personas"
+                      aria-label={tx("Aumentar personas", "Increase guests")}
                     >
                       <ChevronUp className="h-4 w-4" />
                     </button>
                   </div>
                   <p className="text-[11px] font-medium" style={{ color: textPalette.soft }}>
-                    Rango permitido: {reservationMinParty} a {reservationMaxParty} personas.
+                    {tx("Rango permitido", "Allowed range")}: {reservationMinParty} {tx("a", "to")} {reservationMaxParty} {tx("personas", "guests")}.
                   </p>
                 </label>
 
                 <label className="space-y-1.5">
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
-                    Fecha
+                    {tx("Fecha", "Date")}
                   </span>
                   <input
                     type="date"
@@ -2046,7 +2056,7 @@ export default function PublicBioPage() {
 
                 <label className="space-y-1.5">
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
-                    Horario
+                    {tx("Horario", "Time")}
                   </span>
                   <select
                     value={reservationSlot}
@@ -2054,7 +2064,7 @@ export default function PublicBioPage() {
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
                     style={checkoutInputStyle}
                   >
-                    {(reservationSlots.length > 0 ? reservationSlots : ["Por coordinar"]).map((slot) => (
+                    {(reservationSlots.length > 0 ? reservationSlots : [tx("Por coordinar", "To be confirmed")]).map((slot) => (
                       <option key={slot} value={slot}>
                         {slot}
                       </option>
@@ -2064,7 +2074,7 @@ export default function PublicBioPage() {
 
                 <label className="space-y-1.5">
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
-                    Celular (opcional)
+                    {tx("Celular (opcional)", "Phone (optional)")}
                   </span>
                   <input
                     value={reservationContact}
@@ -2077,13 +2087,13 @@ export default function PublicBioPage() {
 
                 <label className="space-y-1.5 md:col-span-2">
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
-                    Nota adicional
+                    {tx("Nota adicional", "Additional note")}
                   </span>
                   <textarea
                     rows={3}
                     value={reservationNote}
                     onChange={(event) => setReservationNote(event.target.value)}
-                    placeholder={profile.reservation.notePlaceholder || "Celebracion, alergias o zona preferida."}
+                    placeholder={profile.reservation.notePlaceholder || tx("Celebracion, alergias o zona preferida.", "Celebration, allergies, or preferred area.")}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm resize-none ${buttonRadiusClass}`}
                     style={checkoutInputStyle}
                   />
@@ -2108,10 +2118,10 @@ export default function PublicBioPage() {
                 style={interactiveStyle}
               >
                 <CalendarDays className="h-4 w-4" />
-                {profile.reservation.ctaLabel || "Enviar reserva"}
+                {profile.reservation.ctaLabel || tx("Enviar reserva", "Send booking")}
               </button>
               <p className="mt-2 text-[11px]" style={{ color: textPalette.soft }}>
-                Confirmamos por WhatsApp segun disponibilidad real del restaurante.
+                {tx("Confirmamos por WhatsApp segun disponibilidad real del restaurante.", "We confirm via WhatsApp based on real-time restaurant availability.")}
               </p>
             </section>
           )}
@@ -2209,7 +2219,7 @@ export default function PublicBioPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-3xl font-black leading-tight" style={{ color: textPalette.heading }}>
-                    {checkoutStep === "cart" ? "Mi Pedido" : "Completa tu pedido"}
+                    {checkoutStep === "cart" ? tx("Mi Pedido", "My Order") : tx("Completa tu pedido", "Complete your order")}
                   </p>
                   <p className="text-sm" style={{ color: textPalette.muted }}>
                     {profile.displayName}
@@ -2228,7 +2238,7 @@ export default function PublicBioPage() {
                     color: "var(--carta-button-text)",
                     background: "var(--carta-badge-bg)",
                   }}
-                  aria-label="Cerrar carrito"
+                  aria-label={tx("Cerrar carrito", "Close cart")}
                 >
                   <XCircle className="h-6 w-6" />
                 </button>
@@ -2240,7 +2250,7 @@ export default function PublicBioPage() {
                 <div className="space-y-4">
                   {cartItems.length === 0 ? (
                     <div className="rounded-2xl border border-dashed p-5 text-sm" style={{ borderColor: "var(--carta-border)", color: textPalette.muted }}>
-                      Tu carrito esta vacio. Agrega productos desde la carta para continuar.
+                      {tx("Tu carrito esta vacio. Agrega productos desde la carta para continuar.", "Your cart is empty. Add products from the menu to continue.")}
                     </div>
                   ) : (
                     <>
@@ -2270,16 +2280,16 @@ export default function PublicBioPage() {
                                     onClick={() => removeCartItem(item.id)}
                                     className="inline-flex h-8 w-8 items-center justify-center rounded-lg border"
                                     style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-badge-text)", background: "var(--carta-badge-bg)" }}
-                                    aria-label="Eliminar item"
+                                    aria-label={tx("Eliminar item", "Remove item")}
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </button>
                                 </div>
                                 <p className="mt-1 text-sm" style={{ color: textPalette.muted }}>
-                                  Cantidad: {item.quantity}
+                                  {tx("Cantidad", "Quantity")}: {item.quantity}
                                 </p>
                                 <p className="mt-1 text-sm font-semibold" style={{ color: textPalette.muted }}>
-                                  Precio base: {formatSoles(item.unitPrice)}
+                                  {tx("Precio base", "Base price")}: {formatSoles(item.unitPrice)}
                                 </p>
                                 <div className="mt-2 flex items-center justify-between gap-2">
                                   <div className="inline-flex items-center gap-1 rounded-xl border px-1 py-1" style={{ borderColor: "var(--carta-chip-border)" }}>
@@ -2288,7 +2298,7 @@ export default function PublicBioPage() {
                                       className="inline-flex h-7 w-7 items-center justify-center rounded-md border"
                                       style={{ borderColor: "var(--carta-chip-border)" }}
                                       onClick={() => patchCartItemQuantity(item.id, item.quantity - 1)}
-                                      aria-label="Disminuir cantidad"
+                                      aria-label={tx("Disminuir cantidad", "Decrease quantity")}
                                     >
                                       <Minus className="h-3.5 w-3.5" />
                                     </button>
@@ -2298,7 +2308,7 @@ export default function PublicBioPage() {
                                       className="inline-flex h-7 w-7 items-center justify-center rounded-md border"
                                       style={{ borderColor: "var(--carta-chip-border)" }}
                                       onClick={() => patchCartItemQuantity(item.id, item.quantity + 1)}
-                                      aria-label="Aumentar cantidad"
+                                      aria-label={tx("Aumentar cantidad", "Increase quantity")}
                                     >
                                       <Plus className="h-3.5 w-3.5" />
                                     </button>
@@ -2315,7 +2325,7 @@ export default function PublicBioPage() {
 
                       <div className="rounded-2xl border p-4" style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
                         <p className="text-base font-semibold" style={{ color: textPalette.muted }}>
-                          Subtotal: {formatSoles(cartSubtotal)}
+                          {tx("Subtotal", "Subtotal")}: {formatSoles(cartSubtotal)}
                         </p>
                         <div
                           className="mt-3 rounded-xl px-3 py-3 text-sm font-semibold"
@@ -2325,11 +2335,11 @@ export default function PublicBioPage() {
                           }}
                         >
                           {amountToAutoDiscount > 0
-                            ? `🎁 ¡Agrega ${formatSoles(amountToAutoDiscount)} mas para obtener 5% de descuento!`
-                            : "🎉 ¡Excelente! Ya tienes 5% de descuento por monto acumulado."}
+                            ? tx(`🎁 ¡Agrega ${formatSoles(amountToAutoDiscount)} mas para obtener 5% de descuento!`, `🎁 Add ${formatSoles(amountToAutoDiscount)} more to unlock a 5% discount!`)
+                            : tx("🎉 ¡Excelente! Ya tienes 5% de descuento por monto acumulado.", "🎉 Great! You already unlocked a 5% discount by total amount.")}
                         </div>
                         <div className="mt-3 border-t pt-3 text-3xl font-black" style={{ borderColor: "var(--carta-border)", color: textPalette.heading }}>
-                          Total: {formatSoles(cartTotal)}
+                          {tx("Total", "Total")}: {formatSoles(cartTotal)}
                         </div>
                       </div>
                     </>
@@ -2347,13 +2357,13 @@ export default function PublicBioPage() {
                       className={`border px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] ${buttonRadiusClass}`}
                       style={{ borderColor: "var(--carta-border)", color: textPalette.heading }}
                     >
-                      Vaciar carrito
+                      {tx("Vaciar carrito", "Clear cart")}
                     </button>
                     <button
                       type="button"
                       onClick={() => {
                         if (cartItems.length === 0) {
-                          setCartError("Tu carrito esta vacio. Agrega productos antes de continuar.");
+                          setCartError(tx("Tu carrito esta vacio. Agrega productos antes de continuar.", "Your cart is empty. Add products before continuing."));
                           return;
                         }
                         setCheckoutStep("checkout");
@@ -2362,7 +2372,7 @@ export default function PublicBioPage() {
                       className={`border px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] ${buttonRadiusClass}`}
                       style={interactiveStyle}
                     >
-                      Completar pedido
+                      {tx("Completar pedido", "Complete order")}
                     </button>
                   </div>
                 </div>
@@ -2376,22 +2386,22 @@ export default function PublicBioPage() {
                     className="text-sm font-semibold"
                     style={{ color: textPalette.muted }}
                   >
-                    ← Regresar al carrito
+                    {tx("← Regresar al carrito", "← Back to cart")}
                   </button>
 
                   <div className="space-y-3">
                     <label className="block space-y-1">
-                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Nombre:</span>
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>{tx("Nombre", "Name")}:</span>
                       <input
                         value={customerName}
                         onChange={(event) => setCustomerName(event.target.value)}
                         className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] placeholder:[color:var(--carta-placeholder)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
-                        placeholder="Tu nombre completo"
+                        placeholder={tx("Tu nombre completo", "Your full name")}
                       />
                     </label>
                     <label className="block space-y-1">
-                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Telefono:</span>
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>{tx("Telefono", "Phone")}:</span>
                       <input
                         value={customerPhone}
                         onChange={(event) => setCustomerPhone(event.target.value)}
@@ -2401,7 +2411,7 @@ export default function PublicBioPage() {
                       />
                     </label>
                     <label className="block space-y-1">
-                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Opciones de entrega:</span>
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>{tx("Opciones de entrega", "Delivery options")}:</span>
                       <select
                         value={deliveryMethod}
                         onChange={(event) => setDeliveryMethod(event.target.value as DeliveryMethod)}
@@ -2410,7 +2420,7 @@ export default function PublicBioPage() {
                         disabled={availableDeliveryOptions.length === 0}
                       >
                         <option value="">
-                          {availableDeliveryOptions.length === 0 ? "Sin opciones configuradas" : "Selecciona una opcion"}
+                          {availableDeliveryOptions.length === 0 ? tx("Sin opciones configuradas", "No options configured") : tx("Selecciona una opcion", "Select an option")}
                         </option>
                         {availableDeliveryOptions.map((option) => (
                           <option key={option.value} value={option.value}>{option.label}</option>
@@ -2418,23 +2428,23 @@ export default function PublicBioPage() {
                       </select>
                     </label>
                     <label className="block space-y-1">
-                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Formas de pago:</span>
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>{tx("Formas de pago", "Payment methods")}:</span>
                       <select
                         value={paymentMethod}
                         onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
                         className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
                       >
-                        <option value="">Selecciona una opcion</option>
+                        <option value="">{tx("Selecciona una opcion", "Select an option")}</option>
                         {ORDER_PAYMENT_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
+                          <option key={option.value} value={option.value}>{paymentLabelMap[option.value]}</option>
                         ))}
                       </select>
                     </label>
 
                     <div className="space-y-1">
                       <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>
-                        ¿Tienes un cupon de descuento?
+                        {tx("¿Tienes un cupon de descuento?", "Do you have a discount coupon?")}
                       </span>
                       <div className="flex gap-2">
                         <input
@@ -2442,7 +2452,7 @@ export default function PublicBioPage() {
                           onChange={(event) => setCouponInput(event.target.value)}
                           className={`min-w-0 flex-1 border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] placeholder:[color:var(--carta-placeholder)] ${buttonRadiusClass}`}
                           style={checkoutInputStyle}
-                          placeholder="Ingresa el codigo"
+                          placeholder={tx("Ingresa el codigo", "Enter code")}
                         />
                         <button
                           type="button"
@@ -2450,13 +2460,13 @@ export default function PublicBioPage() {
                           className={`border px-4 py-3 text-sm font-bold ${buttonRadiusClass}`}
                           style={interactiveStyle}
                         >
-                          Aplicar
+                          {tx("Aplicar", "Apply")}
                         </button>
                       </div>
                     </div>
 
                     <div className="rounded-2xl border p-4" style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
-                      <p className="text-lg font-semibold" style={{ color: textPalette.heading }}>Resumen del pedido</p>
+                      <p className="text-lg font-semibold" style={{ color: textPalette.heading }}>{tx("Resumen del pedido", "Order summary")}</p>
                       <div
                         className="mt-3 rounded-xl px-3 py-3 text-sm font-semibold"
                         style={{
@@ -2465,41 +2475,41 @@ export default function PublicBioPage() {
                         }}
                       >
                         {amountToAutoDiscount > 0
-                          ? `🎁 ¡Estas cerca! Te faltan ${formatSoles(amountToAutoDiscount)} para obtener 5% de descuento`
-                          : "🎉 Descuento de 5% activado por monto acumulado."}
+                          ? tx(`🎁 ¡Estas cerca! Te faltan ${formatSoles(amountToAutoDiscount)} para obtener 5% de descuento`, `🎁 You're close! You need ${formatSoles(amountToAutoDiscount)} more to unlock a 5% discount`)
+                          : tx("🎉 Descuento de 5% activado por monto acumulado.", "🎉 5% discount activated by total amount.")}
                       </div>
                       <div className="mt-3 space-y-1 text-sm" style={{ color: textPalette.muted }}>
                         <div className="flex items-center justify-between">
-                          <span>Subtotal:</span>
+                          <span>{tx("Subtotal", "Subtotal")}:</span>
                           <span>{formatSoles(cartSubtotal)}</span>
                         </div>
                         {autoDiscount > 0 && (
                           <div className="flex items-center justify-between">
-                            <span>Descuento por monto:</span>
+                            <span>{tx("Descuento por monto", "Amount discount")}:</span>
                             <span>- {formatSoles(autoDiscount)}</span>
                           </div>
                         )}
                         {couponDiscount > 0 && (
                           <div className="flex items-center justify-between">
-                            <span>Cupon ({appliedCouponCode}):</span>
+                            <span>{tx("Cupon", "Coupon")} ({appliedCouponCode}):</span>
                             <span>- {formatSoles(couponDiscount)}</span>
                           </div>
                         )}
                       </div>
                       <div className="mt-3 border-t pt-3 text-2xl font-black" style={{ borderColor: "var(--carta-border)", color: textPalette.heading }}>
-                        Total: {formatSoles(cartTotal)}
+                        {tx("Total", "Total")}: {formatSoles(cartTotal)}
                       </div>
                     </div>
 
                     <label className="block space-y-1">
-                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>Nota adicional:</span>
+                      <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>{tx("Nota adicional", "Additional note")}:</span>
                       <textarea
                         rows={3}
                         value={note}
                         onChange={(event) => setNote(event.target.value)}
                         className={`w-full border px-3 py-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] placeholder:[color:var(--carta-placeholder)] ${buttonRadiusClass}`}
                         style={checkoutInputStyle}
-                        placeholder="Ejemplo: sin cebolla, tocar timbre, etc."
+                        placeholder={tx("Ejemplo: sin cebolla, tocar timbre, etc.", "Example: no onion, ring the bell, etc.")}
                       />
                     </label>
 
@@ -2511,12 +2521,12 @@ export default function PublicBioPage() {
                         className="mt-0.5"
                       />
                       <span>
-                        Acepto los <a href="#" className="underline">terminos y condiciones</a>.
+                        {tx("Acepto los", "I accept")} <a href="#" className="underline">{tx("terminos y condiciones", "terms and conditions")}</a>.
                       </span>
                     </label>
 
                     <div className="rounded-xl border-l-2 px-3 py-2 text-xs" style={{ borderColor: "var(--carta-accent)", color: textPalette.muted }}>
-                      ℹ️ Importante: al enviar este pedido, se abrirá WhatsApp con el mensaje listo para confirmar.
+                      {tx("ℹ️ Importante: al enviar este pedido, se abrirá WhatsApp con el mensaje listo para confirmar.", "ℹ️ Important: when sending this order, WhatsApp opens with the message ready to confirm.")}
                     </div>
 
                     {cartFeedback && (
@@ -2536,7 +2546,7 @@ export default function PublicBioPage() {
                       }}
                     >
                       <MessageCircleIcon className="h-5 w-5" />
-                      Enviar pedido
+                      {tx("Enviar pedido", "Send order")}
                     </button>
                   </div>
                 </div>

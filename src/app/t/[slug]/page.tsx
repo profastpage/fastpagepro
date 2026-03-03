@@ -26,6 +26,7 @@ import {
   type PublicStorefront,
 } from "@/lib/publicStorefront";
 import { getVisualStoreTheme, getVisualStoreVars } from "@/lib/storeVisualTheme";
+import { useLanguage } from "@/context/LanguageContext";
 
 type SortOption = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
 type ShippingMethod = "delivery" | "pickup" | "instore";
@@ -60,18 +61,18 @@ function isOffer(item: {
   );
 }
 
-function paymentMethodLabel(method: PaymentMethod) {
+function paymentMethodLabel(method: PaymentMethod, language: "es" | "en" | "pt") {
   if (method === "yape") return "Yape";
   if (method === "plin") return "Plin";
-  if (method === "transfer") return "Transferencia";
-  if (method === "cash") return "Efectivo";
-  return "Tarjeta";
+  if (method === "transfer") return language === "en" ? "Bank transfer" : "Transferencia";
+  if (method === "cash") return language === "en" ? "Cash" : "Efectivo";
+  return language === "en" ? "Card" : "Tarjeta";
 }
 
-function shippingMethodLabel(method: ShippingMethod) {
-  if (method === "delivery") return "Delivery";
-  if (method === "pickup") return "Recojo en tienda";
-  return "Consumir en local";
+function shippingMethodLabel(method: ShippingMethod, language: "es" | "en" | "pt") {
+  if (method === "delivery") return language === "en" ? "Delivery" : "Delivery";
+  if (method === "pickup") return language === "en" ? "Store pickup" : "Recojo en tienda";
+  return language === "en" ? "Dine in" : "Consumir en local";
 }
 
 function renderStars(value: number) {
@@ -80,6 +81,11 @@ function renderStars(value: number) {
 }
 
 export default function PublicStorePage() {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const tx = (es: string, en: string) => (isEn ? en : es);
+  const allCategoryKey = "__all__";
+
   const params = useParams<{ slug: string }>();
   const slug = useMemo(() => sanitizeStoreSlug(params?.slug || ""), [params?.slug]);
 
@@ -89,7 +95,7 @@ export default function PublicStorePage() {
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("Todos");
+  const [category, setCategory] = useState(allCategoryKey);
   const [sortBy, setSortBy] = useState<SortOption>("featured");
   const [page, setPage] = useState(1);
 
@@ -133,7 +139,7 @@ export default function PublicStorePage() {
         setStore(data);
       } catch (e: any) {
         if (!active) return;
-        setError(e?.message || "No se pudo cargar la tienda.");
+        setError(e?.message || tx("No se pudo cargar la tienda.", "Unable to load the store."));
       } finally {
         if (active) setLoading(false);
       }
@@ -159,7 +165,7 @@ export default function PublicStorePage() {
             id: String(item?.id || ""),
             name: String(item?.name || ""),
             imageUrl: String(item?.imageUrl || ""),
-            category: String(item?.category || "General"),
+            category: String(item?.category || tx("General", "General")),
             priceCents: Math.max(0, Number(item?.priceCents || 0)),
             quantity: clampQty(Number(item?.quantity || 1)),
           }))
@@ -176,14 +182,14 @@ export default function PublicStorePage() {
   }, [cartKey, cart]);
 
   const categories = useMemo(() => {
-    const set = new Set<string>(["Todos"]);
-    (store?.products || []).forEach((p) => set.add(String(p.category || "General")));
+    const set = new Set<string>([allCategoryKey]);
+    (store?.products || []).forEach((p) => set.add(String(p.category || tx("General", "General"))));
     return Array.from(set);
-  }, [store?.products]);
+  }, [allCategoryKey, store?.products, isEn]);
 
   const content = (store?.config?.content || {}) as any;
   const themeConfig = store?.config || {
-    storeName: "Tienda",
+    storeName: tx("Tienda", "Store"),
     tagline: "",
     currency: "PEN" as const,
     themeId: "ruby" as const,
@@ -192,20 +198,27 @@ export default function PublicStorePage() {
   const vars = getVisualStoreVars(themeConfig);
   const cartSettings = {
     floatingButtonEnabled: store?.config?.cart?.floatingButtonEnabled !== false,
-    floatingButtonLabel: String(store?.config?.cart?.floatingButtonLabel || "Carrito"),
+    floatingButtonLabel: String(store?.config?.cart?.floatingButtonLabel || tx("Carrito", "Cart")),
   };
   const widgetSettings = {
     enabled: store?.config?.widget?.enabled === true,
     mode: store?.config?.widget?.mode === "assistant" ? "assistant" : "whatsapp",
-    title: String(store?.config?.widget?.title || "Asistente de tienda"),
+    title: String(store?.config?.widget?.title || tx("Asistente de tienda", "Store assistant")),
     welcomeMessage:
       String(
         store?.config?.widget?.welcomeMessage ||
-          "Hola, te ayudo con productos, precios y pedidos.",
-      ) || "Hola, te ayudo con productos, precios y pedidos.",
-    ctaLabel: String(store?.config?.widget?.ctaLabel || "Abrir chat"),
+          tx(
+            "Hola, te ayudo con productos, precios y pedidos.",
+            "Hi, I can help you with products, prices, and orders.",
+          ),
+      ) ||
+      tx(
+        "Hola, te ayudo con productos, precios y pedidos.",
+        "Hi, I can help you with products, prices, and orders.",
+      ),
+    ctaLabel: String(store?.config?.widget?.ctaLabel || tx("Abrir chat", "Open chat")),
     assistantPlaceholder: String(
-      store?.config?.widget?.assistantPlaceholder || "Escribe tu consulta...",
+      store?.config?.widget?.assistantPlaceholder || tx("Escribe tu consulta...", "Write your question..."),
     ),
     position: store?.config?.widget?.position === "left" ? "left" : "right",
   } as const;
@@ -279,15 +292,15 @@ export default function PublicStorePage() {
   const sorted = useMemo(() => {
     const term = search.trim().toLowerCase();
     let items = (store?.products || []).filter((p) => p.active).filter((p) => {
-      if (category !== "Todos" && String(p.category || "General") !== category) return false;
+      if (category !== allCategoryKey && String(p.category || tx("General", "General")) !== category) return false;
       if (!term) return true;
       return [p.name, p.description, p.category || "", p.badge || ""].join(" ").toLowerCase().includes(term);
     });
     if (sortBy === "priceAsc") items = [...items].sort((a, b) => a.displayPriceCents - b.displayPriceCents);
     else if (sortBy === "priceDesc") items = [...items].sort((a, b) => b.displayPriceCents - a.displayPriceCents);
-    else if (sortBy === "nameAsc") items = [...items].sort((a, b) => a.name.localeCompare(b.name, "es"));
+    else if (sortBy === "nameAsc") items = [...items].sort((a, b) => a.name.localeCompare(b.name, isEn ? "en" : "es"));
     return items;
-  }, [store?.products, search, category, sortBy]);
+  }, [store?.products, search, category, sortBy, allCategoryKey, isEn]);
 
   const pageSize = 12;
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -343,7 +356,7 @@ export default function PublicStorePage() {
   const addToCart = (product: any) => {
     const maxStock = Math.max(0, Number(product?.stockQty ?? 0));
     if (maxStock === 0) {
-      setCheckoutError("Este producto esta agotado temporalmente.");
+      setCheckoutError(tx("Este producto esta agotado temporalmente.", "This product is temporarily sold out."));
       return;
     }
     setCheckoutError("");
@@ -352,7 +365,7 @@ export default function PublicStorePage() {
       const idx = prev.findIndex((x) => x.id === product.id);
       if (idx >= 0) {
         if (prev[idx].quantity >= maxStock) {
-          setCheckoutError("No hay mas stock disponible para este producto.");
+          setCheckoutError(tx("No hay mas stock disponible para este producto.", "No more stock available for this product."));
           return prev;
         }
         const copy = [...prev];
@@ -365,7 +378,7 @@ export default function PublicStorePage() {
           id: product.id,
           name: product.name,
           imageUrl: product.imageUrl,
-          category: String(product.category || "General"),
+          category: String(product.category || tx("General", "General")),
           priceCents: product.displayPriceCents,
           quantity: 1,
         },
@@ -396,7 +409,10 @@ export default function PublicStorePage() {
     if (!wa) return;
     const baseText =
       widgetMessage.trim() ||
-      `Hola, quiero informacion de ${store.config.storeName}.`;
+      tx(
+        `Hola, quiero informacion de ${store.config.storeName}.`,
+        `Hi, I want information about ${store.config.storeName}.`,
+      );
     window.open(
       `https://wa.me/${wa}?text=${encodeURIComponent(baseText)}`,
       "_blank",
@@ -409,24 +425,43 @@ export default function PublicStorePage() {
     if (!question) return;
     const normalized = question.toLowerCase();
     let response =
-      "Te ayudo con precios, stock y metodos de compra. Si prefieres, te atendemos por WhatsApp.";
+      tx(
+        "Te ayudo con precios, stock y metodos de compra. Si prefieres, te atendemos por WhatsApp.",
+        "I can help with prices, stock, and purchase methods. If you prefer, we can assist you on WhatsApp.",
+      );
     if (normalized.includes("delivery")) {
-      response = "Tenemos delivery activo. El costo final se calcula segun tu zona.";
+      response = tx(
+        "Tenemos delivery activo. El costo final se calcula segun tu zona.",
+        "Delivery is active. Final cost is calculated based on your area.",
+      );
     } else if (normalized.includes("precio") || normalized.includes("costo")) {
-      response = "Puedes ver precios actualizados en cada producto y agregar al carrito para cotizar.";
+      response = tx(
+        "Puedes ver precios actualizados en cada producto y agregar al carrito para cotizar.",
+        "You can see updated prices on each product and add items to cart for a quote.",
+      );
     } else if (normalized.includes("pago") || normalized.includes("yape") || normalized.includes("plin")) {
-      response = "Aceptamos los metodos de pago activos de la tienda. Tambien puedes pedir soporte por WhatsApp.";
+      response = tx(
+        "Aceptamos los metodos de pago activos de la tienda. Tambien puedes pedir soporte por WhatsApp.",
+        "We accept the store's active payment methods. You can also request support via WhatsApp.",
+      );
     } else if (normalized.includes("stock")) {
-      response = "El stock visible se actualiza por producto. Si ves un item agotado, vuelve pronto o escribenos.";
+      response = tx(
+        "El stock visible se actualiza por producto. Si ves un item agotado, vuelve pronto o escribenos.",
+        "Visible stock is updated per product. If an item is out of stock, check back soon or message us.",
+      );
     }
-    setWidgetReplies((prev) => [...prev.slice(-4), `Tu: ${question}`, `Asistente: ${response}`]);
+    setWidgetReplies((prev) => [
+      ...prev.slice(-4),
+      `${tx("Tu", "You")}: ${question}`,
+      `${tx("Asistente", "Assistant")}: ${response}`,
+    ]);
     setWidgetMessage("");
   };
 
   async function submitOrder() {
     if (!store) return;
     if (!cart.length) {
-      setCheckoutError("Tu carrito esta vacio.");
+      setCheckoutError(tx("Tu carrito esta vacio.", "Your cart is empty."));
       return;
     }
 
@@ -434,14 +469,14 @@ export default function PublicStorePage() {
     if (!checkoutName.trim() || !checkoutPhone.trim() || (needsAddress && !checkoutAddress.trim())) {
       setCheckoutError(
         needsAddress
-          ? "Completa nombre, celular y direccion."
-          : "Completa nombre y celular.",
+          ? tx("Completa nombre, celular y direccion.", "Complete name, phone, and address.")
+          : tx("Completa nombre y celular.", "Complete name and phone."),
       );
       return;
     }
 
     if (ecommerce.termsRequired && !checkoutAcceptedTerms) {
-      setCheckoutError("Debes aceptar los terminos de compra para continuar.");
+      setCheckoutError(tx("Debes aceptar los terminos de compra para continuar.", "You must accept the purchase terms to continue."));
       return;
     }
 
@@ -488,7 +523,10 @@ export default function PublicStorePage() {
       const wa = normalizeDigits(store.config.supportWhatsapp || "");
       if (wa) {
         const lines = [
-          `Hola, quiero finalizar mi pedido en ${store.config.storeName}:`,
+          tx(
+            `Hola, quiero finalizar mi pedido en ${store.config.storeName}:`,
+            `Hi, I want to complete my order at ${store.config.storeName}:`,
+          ),
           "",
           ...cart.map(
             (item, i) =>
@@ -498,19 +536,19 @@ export default function PublicStorePage() {
               )}`,
           ),
           "",
-          `Subtotal: ${formatStoreMoney(cartSubtotal, store.config.currency)}`,
-          `Envio: ${
+          `${tx("Subtotal", "Subtotal")}: ${formatStoreMoney(cartSubtotal, store.config.currency)}`,
+          `${tx("Envio", "Shipping")}: ${
             shippingFeeCents > 0
               ? formatStoreMoney(shippingFeeCents, store.config.currency)
-              : "Gratis"
+              : tx("Gratis", "Free")
           }`,
-          `Total: ${formatStoreMoney(cartTotal, store.config.currency)}`,
-          `Entrega: ${shippingMethodLabel(checkoutShippingMethod)}`,
-          `Pago: ${paymentMethodLabel(checkoutPaymentMethod)}`,
-          `Nombre: ${checkoutName.trim()}`,
-          `Celular: ${checkoutPhone.trim()}`,
-          checkoutAddress.trim() ? `Direccion: ${checkoutAddress.trim()}` : "",
-          checkoutNote.trim() ? `Nota: ${checkoutNote.trim()}` : "",
+          `${tx("Total", "Total")}: ${formatStoreMoney(cartTotal, store.config.currency)}`,
+          `${tx("Entrega", "Delivery method")}: ${shippingMethodLabel(checkoutShippingMethod, language)}`,
+          `${tx("Pago", "Payment")}: ${paymentMethodLabel(checkoutPaymentMethod, language)}`,
+          `${tx("Nombre", "Name")}: ${checkoutName.trim()}`,
+          `${tx("Celular", "Phone")}: ${checkoutPhone.trim()}`,
+          checkoutAddress.trim() ? `${tx("Direccion", "Address")}: ${checkoutAddress.trim()}` : "",
+          checkoutNote.trim() ? `${tx("Nota", "Note")}: ${checkoutNote.trim()}` : "",
         ].filter(Boolean);
         window.open(
           `https://wa.me/${wa}?text=${encodeURIComponent(lines.join("\n"))}`,
@@ -527,9 +565,9 @@ export default function PublicStorePage() {
       setCheckoutAddress("");
       setCheckoutNote("");
       setCheckoutAcceptedTerms(false);
-      setCheckoutSuccess("Pedido registrado correctamente.");
+      setCheckoutSuccess(tx("Pedido registrado correctamente.", "Order registered successfully."));
     } catch (e: any) {
-      setCheckoutError(e?.message || "No se pudo finalizar el pedido.");
+      setCheckoutError(e?.message || tx("No se pudo finalizar el pedido.", "Could not complete the order."));
     } finally {
       setSubmitting(false);
     }
@@ -539,7 +577,7 @@ export default function PublicStorePage() {
   }
 
   if (notFound || !store) {
-    return <div className="grid min-h-screen place-items-center text-center"><div><h1 className="text-2xl font-black">Tienda no disponible</h1><p className="mt-2 text-slate-500">Esta tienda no existe, no esta publicada o fue pausada por plan vencido. Debe pagar para reactivarla.</p></div></div>;
+    return <div className="grid min-h-screen place-items-center text-center"><div><h1 className="text-2xl font-black">{tx("Tienda no disponible", "Store unavailable")}</h1><p className="mt-2 text-slate-500">{tx("Esta tienda no existe, no esta publicada o fue pausada por plan vencido. Debe pagar para reactivarla.", "This store doesn't exist, is not published, or was paused due to an expired plan. Payment is required to reactivate it.")}</p></div></div>;
   }
 
   return (
@@ -563,7 +601,7 @@ export default function PublicStorePage() {
       </header>
 
       <section className="text-center text-sm font-bold text-white" style={{ background: theme.dark }}>
-        <div className="mx-auto max-w-6xl px-3 py-2">{content.topStripText || "Promocion activa"}</div>
+        <div className="mx-auto max-w-6xl px-3 py-2">{content.topStripText || tx("Promocion activa", "Active promotion")}</div>
       </section>
 
       <section className="relative mx-auto max-w-6xl overflow-hidden border-x border-b bg-white" style={{ borderColor: "var(--vs-border)" }}>
@@ -586,7 +624,7 @@ export default function PublicStorePage() {
       <div className="mx-auto mt-8 max-w-6xl px-3 md:px-6">
         {offerProducts.length > 0 && (
           <section>
-            <h2 className="text-4xl font-black">{content.offerSectionTitle || "ðŸ”¥ Ofertas Especiales"}</h2>
+            <h2 className="text-4xl font-black">{content.offerSectionTitle || tx("🔥 Ofertas Especiales", "🔥 Special Offers")}</h2>
             <div className="mt-4 flex snap-x gap-4 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:overflow-visible">
               {offerProducts.slice(0, 9).map((product) => (
                 <article key={`offer-${product.id}`} className="min-w-[84%] snap-start overflow-hidden rounded-2xl border bg-white md:min-w-0" style={{ borderColor: "var(--vs-border)" }}>
@@ -594,7 +632,7 @@ export default function PublicStorePage() {
                     {product.imageUrl ? (
                       <Image src={product.imageUrl} alt={product.name} fill unoptimized sizes="(max-width: 768px) 84vw, 33vw" className="object-cover" />
                     ) : null}
-                    <span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-black uppercase text-white">{product.badge || "Oferta"}</span>
+                    <span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-black uppercase text-white">{product.badge || tx("Oferta", "Offer")}</span>
                   </div>
                   <div className="p-4">
                     <p className="text-xl font-black">{product.name}</p>
@@ -606,8 +644,8 @@ export default function PublicStorePage() {
                       style={{ background: "var(--vs-accent)" }}
                     >
                       {(product.stockQty ?? 0) <= 0
-                        ? "Agotado"
-                        : product.ctaLabel || "Ver oferta"}
+                        ? tx("Agotado", "Sold out")
+                        : product.ctaLabel || tx("Ver oferta", "View offer")}
                     </button>
                   </div>
                 </article>
@@ -619,10 +657,10 @@ export default function PublicStorePage() {
         <section className="mt-8 rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)" }}>
           <label className="flex h-12 items-center gap-2 rounded-xl border px-3" style={{ borderColor: "var(--vs-border)" }}>
             <Search className="h-4 w-4" style={{ color: "var(--vs-muted)" }} />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={content.searchPlaceholder || "Buscar producto..."} className="w-full bg-transparent text-sm outline-none" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={content.searchPlaceholder || tx("Buscar producto...", "Search product...")} className="w-full bg-transparent text-sm outline-none" />
           </label>
-          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{categories.map((c) => <button key={c} onClick={() => setCategory(c)} className="shrink-0 rounded-xl border px-4 py-2 text-sm font-bold" style={category === c ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" } : { borderColor: "var(--vs-border)", background: "#fff" }}>{c}</button>)}</div>
-          <div className="mt-4 flex items-center justify-between gap-3"><p className="text-sm font-semibold">Total: {sorted.length} productos</p><label className="relative"><select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)} className="h-11 appearance-none rounded-xl border bg-white px-3 pr-9 text-sm font-semibold outline-none" style={{ borderColor: "var(--vs-border)" }}><option value="featured">Ordenar por</option><option value="priceAsc">Precio ascendente</option><option value="priceDesc">Precio descendente</option><option value="nameAsc">Nombre A-Z</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" /></label></div>
+          <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{categories.map((c) => <button key={c} onClick={() => setCategory(c)} className="shrink-0 rounded-xl border px-4 py-2 text-sm font-bold" style={category === c ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" } : { borderColor: "var(--vs-border)", background: "#fff" }}>{c === allCategoryKey ? tx("Todos", "All") : c}</button>)}</div>
+          <div className="mt-4 flex items-center justify-between gap-3"><p className="text-sm font-semibold">{tx("Total", "Total")}: {sorted.length} {tx("productos", "products")}</p><label className="relative"><select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortOption)} className="h-11 appearance-none rounded-xl border bg-white px-3 pr-9 text-sm font-semibold outline-none" style={{ borderColor: "var(--vs-border)" }}><option value="featured">{tx("Ordenar por", "Sort by")}</option><option value="priceAsc">{tx("Precio ascendente", "Price low to high")}</option><option value="priceDesc">{tx("Precio descendente", "Price high to low")}</option><option value="nameAsc">{tx("Nombre A-Z", "Name A-Z")}</option></select><ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" /></label></div>
         </section>
 
         <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
@@ -630,14 +668,14 @@ export default function PublicStorePage() {
             <article key={product.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
               <div className="relative h-44 bg-slate-100">
                 {product.imageUrl ? <Image src={product.imageUrl} alt={product.name} fill unoptimized sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" /> : null}
-                <span className="absolute left-2 top-2 rounded-lg bg-red-500 px-2 py-1 text-[10px] font-black uppercase text-white">{product.badge || "Oferta"}</span>
+                <span className="absolute left-2 top-2 rounded-lg bg-red-500 px-2 py-1 text-[10px] font-black uppercase text-white">{product.badge || tx("Oferta", "Offer")}</span>
               </div>
               <div className="p-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--vs-muted)" }}>{product.category || "General"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--vs-muted)" }}>{product.category || tx("General", "General")}</p>
                 <h3 className="mt-1 line-clamp-2 text-xl font-black">{product.name}</h3>
                 <p className="line-clamp-1 text-sm" style={{ color: "var(--vs-muted)" }}>{product.description}</p>
                 <p className="mt-1 text-xs font-semibold" style={{ color: "var(--vs-muted)" }}>
-                  Stock: {Math.max(0, Number(product.stockQty || 0))}
+                  {tx("Stock", "Stock")}: {Math.max(0, Number(product.stockQty || 0))}
                 </p>
                 {(product.compareAtPriceCents || 0) > product.displayPriceCents ? <p className="mt-1 text-sm line-through" style={{ color: "var(--vs-muted)" }}>{formatStoreMoney(product.compareAtPriceCents || 0, store.config.currency)}</p> : <div className="h-5" />}
                 <p className="text-3xl font-black" style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(product.displayPriceCents, store.config.currency)}</p>
@@ -648,8 +686,8 @@ export default function PublicStorePage() {
                   style={{ background: "var(--vs-accent)" }}
                 >
                   {(product.stockQty ?? 0) <= 0
-                    ? "Agotado"
-                    : product.ctaLabel || "Ver producto"}
+                    ? tx("Agotado", "Sold out")
+                    : product.ctaLabel || tx("Ver producto", "View product")}
                 </button>
               </div>
             </article>
@@ -657,18 +695,18 @@ export default function PublicStorePage() {
         </section>
 
         <div className="mt-6 flex items-center justify-center gap-2">
-          <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>&lt; Anterior</button>
+          <button disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>&lt; {tx("Anterior", "Previous")}</button>
           {Array.from({ length: totalPages }).slice(0, 5).map((_, i) => {
             const p = i + 1;
             return <button key={p} onClick={() => setPage(p)} className="h-10 w-10 rounded-xl border text-sm font-black" style={p === page ? { borderColor: "var(--vs-accent)", background: "var(--vs-accent)", color: "#fff" } : { borderColor: "var(--vs-border)" }}>{p}</button>;
           })}
-          <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>Siguiente &gt;</button>
+          <button disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="rounded-xl border px-4 py-2 text-sm font-semibold disabled:opacity-45" style={{ borderColor: "var(--vs-border)" }}>{tx("Siguiente", "Next")} &gt;</button>
         </div>
 
         {currentTestimonial ? (
           <section className="mt-8 rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)" }}>
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-lg font-black">Testimonios reales</h3>
+              <h3 className="text-lg font-black">{tx("Testimonios reales", "Real testimonials")}</h3>
               <p className="text-xs font-bold" style={{ color: "var(--vs-muted)" }}>
                 {testimonialIndex + 1}/{testimonials.length}
               </p>
@@ -682,7 +720,7 @@ export default function PublicStorePage() {
                 {currentTestimonial.name}
               </p>
               <p className="text-xs" style={{ color: "var(--vs-muted)" }}>
-                {currentTestimonial.role || "Cliente"}
+                {currentTestimonial.role || tx("Cliente", "Customer")}
               </p>
             </div>
           </section>
@@ -690,7 +728,7 @@ export default function PublicStorePage() {
 
         {faqItems.length ? (
           <section className="mt-8 rounded-2xl border bg-white p-4" style={{ borderColor: "var(--vs-border)" }}>
-            <h3 className="text-lg font-black">Preguntas frecuentes</h3>
+            <h3 className="text-lg font-black">{tx("Preguntas frecuentes", "Frequently asked questions")}</h3>
             <div className="mt-3 space-y-2">
               {faqItems.map((faq) => (
                 <details key={faq.id} className="rounded-xl border px-3 py-2" style={{ borderColor: "var(--vs-border)" }}>
@@ -713,8 +751,8 @@ export default function PublicStorePage() {
             { label: "TikTok", url: content.tiktokUrl || "#" },
           ].map((social) => (
             <div key={social.label} className="mb-3 flex items-center justify-between rounded-2xl border border-white/10 px-4 py-3">
-              <div><p className="text-xs text-white/70">Siguenos en {social.label}</p><p className="text-xl font-black">{store.config.storeName}</p></div>
-              <a href={social.url} target="_blank" rel="noopener noreferrer" className="rounded-full bg-black/50 px-5 py-2 text-sm font-black">Seguir</a>
+              <div><p className="text-xs text-white/70">{tx("Siguenos en", "Follow us on")} {social.label}</p><p className="text-xl font-black">{store.config.storeName}</p></div>
+              <a href={social.url} target="_blank" rel="noopener noreferrer" className="rounded-full bg-black/50 px-5 py-2 text-sm font-black">{tx("Seguir", "Follow")}</a>
             </div>
           ))}
           <p className="mt-5 text-center text-sm text-white/75">{content.footerLeft || "(c) 2026 Fast Page"}</p>
@@ -725,7 +763,7 @@ export default function PublicStorePage() {
               rel="noopener noreferrer"
               className="underline underline-offset-2"
             >
-              Creado por FastPage
+              {tx("Creado por FastPage", "Created by FastPage")}
             </a>
           </p>
         </div>
@@ -755,7 +793,7 @@ export default function PublicStorePage() {
                         <p key={`${item}-${index}`}>{item}</p>
                       ))
                     ) : (
-                      <p style={{ color: "var(--vs-muted)" }}>Pregunta por delivery, pagos o stock.</p>
+                      <p style={{ color: "var(--vs-muted)" }}>{tx("Pregunta por delivery, pagos o stock.", "Ask about delivery, payment, or stock.")}</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
@@ -781,7 +819,7 @@ export default function PublicStorePage() {
                     className="h-9 w-full rounded-lg border text-xs font-black"
                     style={{ borderColor: "var(--vs-border)" }}
                   >
-                    Pasar a WhatsApp
+                    {tx("Pasar a WhatsApp", "Move to WhatsApp")}
                   </button>
                 </div>
               ) : (
@@ -791,7 +829,7 @@ export default function PublicStorePage() {
                   className="mt-3 h-9 w-full rounded-lg text-xs font-black text-white"
                   style={{ background: "var(--vs-accent)" }}
                 >
-                  Ir a WhatsApp
+                  {tx("Ir a WhatsApp", "Go to WhatsApp")}
                 </button>
               )}
             </div>
@@ -812,53 +850,53 @@ export default function PublicStorePage() {
         <div className="fixed inset-0 z-50">
           <button className="absolute inset-0 bg-black/55" onClick={() => { setCartOpen(false); setCheckoutOpen(false); }} />
           <aside className="absolute right-0 top-0 h-full w-full max-w-md border-l bg-white p-4" style={{ borderColor: "var(--vs-border)" }}>
-            <div className="flex items-center justify-between"><h3 className="text-xl font-black">Carrito</h3><button onClick={() => { setCartOpen(false); setCheckoutOpen(false); }} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border" style={{ borderColor: "var(--vs-border)" }}><X className="h-4 w-4" /></button></div>
+            <div className="flex items-center justify-between"><h3 className="text-xl font-black">{tx("Carrito", "Cart")}</h3><button onClick={() => { setCartOpen(false); setCheckoutOpen(false); }} className="inline-flex h-9 w-9 items-center justify-center rounded-xl border" style={{ borderColor: "var(--vs-border)" }}><X className="h-4 w-4" /></button></div>
             {!checkoutOpen && (
               <div className="mt-4 flex h-[calc(100%-88px)] flex-col">
                 <div className="flex-1 overflow-y-auto pr-1">
-                  {!cart.length ? <div className="rounded-xl border border-dashed p-4 text-sm" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>Tu carrito esta vacio.</div> : cart.map((item) => (
+                  {!cart.length ? <div className="rounded-xl border border-dashed p-4 text-sm" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>{tx("Tu carrito esta vacio.", "Your cart is empty.")}</div> : cart.map((item) => (
                     <article key={item.id} className="mb-3 rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
                       <div className="flex gap-3">
                         <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-slate-100">{item.imageUrl ? <Image src={item.imageUrl} alt={item.name} fill unoptimized sizes="64px" className="object-cover" /> : null}</div>
                         <div className="min-w-0 flex-1"><p className="line-clamp-1 font-black">{item.name}</p><p className="text-xs" style={{ color: "var(--vs-muted)" }}>{item.category}</p><p className="font-black" style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(item.priceCents, store.config.currency)}</p></div>
                       </div>
-                      <div className="mt-2 flex items-center justify-between"><div className="inline-flex items-center rounded-lg border" style={{ borderColor: "var(--vs-border)" }}><button onClick={() => updateQty(item.id, -1)} className="inline-flex h-8 w-8 items-center justify-center"><Minus className="h-3.5 w-3.5" /></button><span className="w-8 text-center text-sm font-black">{item.quantity}</span><button onClick={() => updateQty(item.id, 1)} className="inline-flex h-8 w-8 items-center justify-center"><Plus className="h-3.5 w-3.5" /></button></div><button onClick={() => removeItem(item.id)} className="text-xs font-black uppercase text-red-600">Quitar</button></div>
+                      <div className="mt-2 flex items-center justify-between"><div className="inline-flex items-center rounded-lg border" style={{ borderColor: "var(--vs-border)" }}><button onClick={() => updateQty(item.id, -1)} className="inline-flex h-8 w-8 items-center justify-center"><Minus className="h-3.5 w-3.5" /></button><span className="w-8 text-center text-sm font-black">{item.quantity}</span><button onClick={() => updateQty(item.id, 1)} className="inline-flex h-8 w-8 items-center justify-center"><Plus className="h-3.5 w-3.5" /></button></div><button onClick={() => removeItem(item.id)} className="text-xs font-black uppercase text-red-600">{tx("Quitar", "Remove")}</button></div>
                     </article>
                   ))}
                 </div>
                 <div className="border-t pt-3" style={{ borderColor: "var(--vs-border)" }}>
                   <div className="flex items-center justify-between text-sm">
-                    <span style={{ color: "var(--vs-muted)" }}>Subtotal</span>
+                    <span style={{ color: "var(--vs-muted)" }}>{tx("Subtotal", "Subtotal")}</span>
                     <span className="font-black" style={{ color: "var(--vs-accent)" }}>
                       {formatStoreMoney(cartSubtotal, store.config.currency)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-sm">
-                    <span style={{ color: "var(--vs-muted)" }}>Envio</span>
+                    <span style={{ color: "var(--vs-muted)" }}>{tx("Envio", "Shipping")}</span>
                     <span className="font-black" style={{ color: "var(--vs-accent)" }}>
                       {shippingFeeCents > 0
                         ? formatStoreMoney(shippingFeeCents, store.config.currency)
-                        : "Gratis"}
+                        : tx("Gratis", "Free")}
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between text-sm">
-                    <span style={{ color: "var(--vs-muted)" }}>Total</span>
+                    <span style={{ color: "var(--vs-muted)" }}>{tx("Total", "Total")}</span>
                     <span className="text-xl font-black" style={{ color: "var(--vs-accent)" }}>
                       {formatStoreMoney(cartTotal, store.config.currency)}
                     </span>
                   </div>
-                  <button disabled={!cart.length} onClick={() => setCheckoutOpen(true)} className="mt-3 h-11 w-full rounded-xl text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-accent)" }}>Finalizar pedido</button>
+                  <button disabled={!cart.length} onClick={() => setCheckoutOpen(true)} className="mt-3 h-11 w-full rounded-xl text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-accent)" }}>{tx("Finalizar pedido", "Checkout order")}</button>
                 </div>
               </div>
             )}
             {checkoutOpen && (
               <div className="mt-4 flex h-[calc(100%-88px)] flex-col">
                 <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-                  <input value={checkoutName} onChange={(e) => setCheckoutName(e.target.value)} placeholder="Nombre" className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
-                  <input value={checkoutPhone} onChange={(e) => setCheckoutPhone(e.target.value)} placeholder="Celular" className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                  <input value={checkoutName} onChange={(e) => setCheckoutName(e.target.value)} placeholder={tx("Nombre", "Name")} className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                  <input value={checkoutPhone} onChange={(e) => setCheckoutPhone(e.target.value)} placeholder={tx("Celular", "Phone")} className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
                   <div>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--vs-muted)" }}>
-                      Metodo de entrega
+                      {tx("Metodo de entrega", "Delivery method")}
                     </p>
                     <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                       {availableShippingMethods.map((method) => (
@@ -873,17 +911,17 @@ export default function PublicStorePage() {
                               : { borderColor: "var(--vs-border)" }
                           }
                         >
-                          {shippingMethodLabel(method)}
+                          {shippingMethodLabel(method, language)}
                         </button>
                       ))}
                     </div>
                   </div>
                   {checkoutShippingMethod === "delivery" ? (
-                    <input value={checkoutAddress} onChange={(e) => setCheckoutAddress(e.target.value)} placeholder="Direccion de entrega" className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                    <input value={checkoutAddress} onChange={(e) => setCheckoutAddress(e.target.value)} placeholder={tx("Direccion de entrega", "Delivery address")} className="h-11 w-full rounded-xl border px-3 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
                   ) : null}
                   <div>
                     <p className="mb-1 text-xs font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--vs-muted)" }}>
-                      Metodo de pago
+                      {tx("Metodo de pago", "Payment method")}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {availablePaymentMethods.map((method) => (
@@ -898,12 +936,12 @@ export default function PublicStorePage() {
                               : { borderColor: "var(--vs-border)" }
                           }
                         >
-                          {paymentMethodLabel(method)}
+                          {paymentMethodLabel(method, language)}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <textarea value={checkoutNote} onChange={(e) => setCheckoutNote(e.target.value)} placeholder="Nota" className="min-h-[88px] w-full rounded-xl border px-3 py-2 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
+                  <textarea value={checkoutNote} onChange={(e) => setCheckoutNote(e.target.value)} placeholder={tx("Nota", "Note")} className="min-h-[88px] w-full rounded-xl border px-3 py-2 text-sm outline-none" style={{ borderColor: "var(--vs-border)" }} />
                   {ecommerce.termsRequired ? (
                     <label className="flex items-start gap-2 rounded-xl border px-3 py-2 text-xs font-semibold" style={{ borderColor: "var(--vs-border)" }}>
                       <input
@@ -921,20 +959,20 @@ export default function PublicStorePage() {
                 <div className="border-t pt-3" style={{ borderColor: "var(--vs-border)" }}>
                   <div className="mb-2 space-y-1 text-sm">
                     <div className="flex items-center justify-between">
-                      <span style={{ color: "var(--vs-muted)" }}>Subtotal</span>
+                      <span style={{ color: "var(--vs-muted)" }}>{tx("Subtotal", "Subtotal")}</span>
                       <b>{formatStoreMoney(cartSubtotal, store.config.currency)}</b>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span style={{ color: "var(--vs-muted)" }}>Envio</span>
-                      <b>{shippingFeeCents > 0 ? formatStoreMoney(shippingFeeCents, store.config.currency) : "Gratis"}</b>
+                      <span style={{ color: "var(--vs-muted)" }}>{tx("Envio", "Shipping")}</span>
+                      <b>{shippingFeeCents > 0 ? formatStoreMoney(shippingFeeCents, store.config.currency) : tx("Gratis", "Free")}</b>
                     </div>
                     <div className="flex items-center justify-between text-base">
-                      <span>Total</span>
+                      <span>{tx("Total", "Total")}</span>
                       <b style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(cartTotal, store.config.currency)}</b>
                     </div>
                   </div>
-                  <button onClick={submitOrder} disabled={submitting} className="h-11 w-full rounded-xl text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-accent)" }}>{submitting ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Enviar pedido por WhatsApp"}</button>
-                  <button onClick={() => setCheckoutOpen(false)} className="mt-2 h-11 w-full rounded-xl border text-xs font-black uppercase" style={{ borderColor: "var(--vs-border)" }}>Volver al carrito</button>
+                  <button onClick={submitOrder} disabled={submitting} className="h-11 w-full rounded-xl text-sm font-black text-white disabled:opacity-60" style={{ background: "var(--vs-accent)" }}>{submitting ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : tx("Enviar pedido por WhatsApp", "Send order via WhatsApp")}</button>
+                  <button onClick={() => setCheckoutOpen(false)} className="mt-2 h-11 w-full rounded-xl border text-xs font-black uppercase" style={{ borderColor: "var(--vs-border)" }}>{tx("Volver al carrito", "Back to cart")}</button>
                 </div>
               </div>
             )}

@@ -142,3 +142,8 @@
   - el flujo paso a `signInWithRedirect` como estrategia principal para evitar bloqueos/restricciones de popup en navegadores moviles y politicas COOP.
   - se agrego estado `loading` del boton Google para prevenir dobles clics y errores por solicitudes emergentes simultaneas.
   - se mantiene manejo de dominio no autorizado y mensajes de error controlados.
+- Internacionalizacion transversal ES/EN (editor + publicado):
+  - tienda publicada (`/t/[slug]`) ahora cambia labels, filtros, carrito, checkout, FAQ/testimonios y mensajes de WhatsApp segun idioma.
+  - carta publicada (`/bio/[slug]`) ahora cambia tabs, reserva, checkout, feedbacks y mensajes de WhatsApp segun idioma.
+  - clonador web (`/cloner/web`) ahora traduce estados, errores, modal de ayuda y seccion de proyectos publicados.
+  - editor de tienda (`/store`) y editor de carta (`/linkhub`) ahora respetan idioma en acciones principales de UI (guardar/publicar/copiar, menu movil, textos clave de navegacion y mensajes base).
