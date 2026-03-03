@@ -175,3 +175,4 @@ if (!admin.apps.length) {
 
 export const adminDb = isInitialized ? admin.firestore() : null;
 export const adminAuth = isInitialized ? admin.auth() : null;
+export const adminStorage = isInitialized ? admin.storage() : null;

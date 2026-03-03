@@ -100,3 +100,7 @@
 - Demo `Naranja Social Cafe`:
   - se cambio portada por una imagen de frutas y jugos especiales.
   - se configuraron redes sociales explicitas en el JSON de la demo.
+- Carga de imagenes en Carta Digital con registro (`/linkhub`):
+  - se agrego endpoint server-side `POST /api/linkhub/storage/offload` (autenticado con Firebase ID token) para subir imagenes a Firebase Storage desde backend y evitar bloqueos CORS del navegador.
+  - el guardado ahora intenta primero la subida server-side por cada imagen inline; si falla, mantiene fallback al flujo cliente previo.
+  - se exporto `adminStorage` en Firebase Admin para uso centralizado del nuevo endpoint.

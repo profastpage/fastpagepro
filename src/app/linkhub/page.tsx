@@ -760,7 +760,55 @@ async function dataUrlToBlob(dataUrl: string, mimeType: string): Promise<Blob> {
 type OffloadImageOptions = {
   userId: string;
   profileId: string;
+  idToken?: string;
 };
+
+async function uploadInlineImageViaServer(
+  source: string,
+  pathSegment: string,
+  options: OffloadImageOptions,
+): Promise<string> {
+  const token = String(options.idToken || "").trim();
+  if (!token) {
+    throw new Error("server_upload_missing_token");
+  }
+
+  const response = await withOperationTimeout(
+    fetch("/api/linkhub/storage/offload", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        profileId: options.profileId,
+        pathSegment,
+        dataUrl: source,
+      }),
+    }),
+    STORAGE_UPLOAD_TIMEOUT_MS,
+    "storage_server_request",
+  );
+
+  const payload = (await response.json().catch(() => ({}))) as {
+    success?: boolean;
+    url?: string;
+    error?: string;
+  };
+
+  if (!response.ok || !payload?.success) {
+    throw new Error(
+      `server_upload_failed:${response.status}:${String(payload?.error || "unknown")}`,
+    );
+  }
+
+  const url = String(payload.url || "").trim();
+  if (!url) {
+    throw new Error("server_upload_empty_url");
+  }
+
+  return url;
+}
 
 async function offloadProfileInlineImagesToStorage(
   input: LinkHubProfile,
@@ -774,6 +822,17 @@ async function offloadProfileInlineImagesToStorage(
     if (!isInlineImageDataUrl(source)) return source;
     const cached = cache.get(source);
     if (cached) return cached;
+
+    if (options.idToken) {
+      try {
+        const serverUrl = await uploadInlineImageViaServer(source, pathSegment, options);
+        cache.set(source, serverUrl);
+        return serverUrl;
+      } catch (serverError) {
+        console.warn("[LinkHub] Server upload fallback to client SDK:", serverError);
+      }
+    }
+
     try {
       const mimeType = getDataUrlMimeType(source);
       const extension = getMimeExtension(mimeType);
@@ -3873,11 +3932,18 @@ export default function LinkHubPage() {
         "profile_compaction",
       );
       let nextProfile = compactedProfileResult.profile;
+      let storageUploadToken = "";
+      try {
+        storageUploadToken = (await auth.currentUser?.getIdToken()) || "";
+      } catch {
+        storageUploadToken = "";
+      }
       try {
         nextProfile = await withOperationTimeout(
           offloadProfileInlineImagesToStorage(nextProfile, {
             userId: user.uid,
             profileId: targetProfileId,
+            idToken: storageUploadToken,
           }),
           PROFILE_COMPACT_TIMEOUT_MS,
           "storage_offload",
