@@ -113,3 +113,8 @@
   - se agrego resolucion robusta de `storageBucket` para mantener consistencia en servicios server-side.
   - la lectura de service account ahora completa `projectId` faltante desde variables de entorno/fallback para no dejar inicializaciones parciales.
   - el endpoint `PATCH /api/referrals/profile` ahora detecta errores de `projectId` faltante y responde `503` controlado en lugar de `500`.
+- Preview de carta en LinkHub (`/linkhub`) ahora con scroll interno y edicion continua:
+  - se elimino el limite visual de 4 productos en preview; ahora muestra todos los items filtrados.
+  - el cuerpo del preview es desplazable (`overflow-y`) para navegar listas largas sin cortar la UI en mobile/desktop.
+  - la barra inferior de secciones (`Contacto`, `Carta`, `Ubicacion`, `Reserva`) permanece visible en el preview para cambiar y editar secciones desde el mismo panel.
+  - se agrego boton rapido `Crear nuevo item` dentro del tab Carta del preview para insertar producto sin salir del preview.

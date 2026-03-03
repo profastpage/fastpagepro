@@ -1938,7 +1938,7 @@ export default function LinkHubPage() {
     () => (profile?.catalogCategories || []).slice(0, 6),
     [profile?.catalogCategories],
   );
-  const previewVisibleItems = useMemo(() => previewItems.slice(0, 4), [previewItems]);
+  const previewVisibleItems = useMemo(() => previewItems, [previewItems]);
   const previewNormalizedLocation = useMemo(
     () =>
       normalizeGoogleMapsLocationInput(
@@ -6375,7 +6375,7 @@ export default function LinkHubPage() {
               style={previewShellStyle}
               onClick={handleMobilePreviewTapCloseMenu}
             >
-              <div className="flex min-h-[31rem] flex-col overflow-hidden rounded-[1.85rem] border" style={previewPanelStyle}>
+              <div className="flex h-[min(74vh,46rem)] min-h-[31rem] flex-col overflow-hidden rounded-[1.85rem] border md:h-[min(78vh,52rem)]" style={previewPanelStyle}>
                 <p className="px-4 pt-4 text-[10px] uppercase tracking-[0.25em] font-black" style={{ color: previewTextMuted }}>
                   Preview Mobile
                 </p>
@@ -6492,8 +6492,24 @@ export default function LinkHubPage() {
                   ) : null}
                 </div>
 
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {previewTab === "catalog" ? (
                   <div className="space-y-2.5 px-4 pb-3">
+                    <button
+                      type="button"
+                      className="inline-flex h-8 items-center gap-1 rounded-[0.8rem] border px-2.5 text-[10px] font-bold uppercase tracking-[0.08em]"
+                      style={previewChipBaseStyle}
+                      onClick={() => {
+                        const fallbackItemId =
+                          previewVisibleItems[previewVisibleItems.length - 1]?.id || profile.catalogItems[profile.catalogItems.length - 1]?.id;
+                        if (fallbackItemId) {
+                          createCatalogItemBelow(fallbackItemId);
+                        }
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Crear nuevo item
+                    </button>
                     {previewVisibleItems.length > 0 ? (
                       previewVisibleItems.map((item) => (
                         <article key={item.id} className="rounded-[1rem] border p-2.5" style={previewItemCardStyle}>
@@ -6739,8 +6755,9 @@ export default function LinkHubPage() {
                     </article>
                   </div>
                 )}
+                </div>
 
-                <div className="px-3 pb-3">
+                <div className="px-3 pb-3 pt-2">
                   <div
                     className="grid gap-1 rounded-[1rem] border p-1"
                     style={{
