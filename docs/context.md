@@ -82,3 +82,10 @@
   - cada apertura de enlace ahora suma `Clicks Totales` (+1 por page_view).
   - `Visitas` cambia a visitante unico por dispositivo/navegador (dedupe por `visitorId` persistente) en lugar de sumar cada apertura repetida.
   - la tabla inferior `Rendimiento por Proyecto` ahora incluye columna dinamica de `Clicks` por proyecto.
+
+## 2026-03-03
+
+- Demo sin registro `fuente-soda-flow` (restaurant):
+  - se actualizo branding visible a `Naranja Social Cafe`.
+  - portada y foto de perfil ahora usan imagenes de jugos de naranja para reforzar el rubro.
+  - la carta ahora incluye platos tipicos de cafeteria (club sandwich, panini, tostadas francesas, waffles y croissant) ademas de bebidas.

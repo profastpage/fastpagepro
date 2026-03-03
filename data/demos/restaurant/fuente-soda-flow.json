@@ -1,17 +1,17 @@
 {
   "vertical": "restaurant",
   "slug": "fuente-soda-flow",
-  "title": "Fuente Soda Flow",
-  "subtitle": "Carta de bebidas y refrescos con pedido rapido",
-  "description": "Demo tematica de fuente de soda enfocada en bebidas frias, calientes y mixes sin alcohol para conversion por WhatsApp.",
-  "coverImage": "https://images.unsplash.com/photo-1523362628745-0c100150b504?q=80&w=1800&auto=format&fit=crop",
-  "profileImage": "https://images.unsplash.com/photo-1470337458703-46ad1756a187?q=80&w=800&auto=format&fit=crop",
+  "title": "Naranja Social Cafe",
+  "subtitle": "Jugos de naranja y platos de cafeteria con pedido rapido",
+  "description": "Demo tematica de fuente de soda con foco en jugos de naranja, bebidas de autor y platos clasicos de cafeteria para conversion por WhatsApp.",
+  "coverImage": "https://images.unsplash.com/photo-1437419764061-2473afe69fc2?q=80&w=1800&auto=format&fit=crop",
+  "profileImage": "https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?q=80&w=800&auto=format&fit=crop",
   "themeId": "darkKitchen",
   "promoStrip": "2x1 en bebidas seleccionadas de 4pm a 6pm",
   "openHours": "9:00 am - 11:30 pm",
   "address": "Av. Pardo 512, Miraflores",
   "whatsappNumber": "51987544021",
-  "categories": ["Frappes y frozen", "Jugos naturales", "Milkshakes", "Mocktails", "Bebidas calientes", "Postres"],
+  "categories": ["Frappes y frozen", "Jugos naturales", "Milkshakes", "Mocktails", "Bebidas calientes", "Sandwiches cafe", "Brunch y desayunos", "Postres"],
   "items": [
     {
       "id": "fs-1",
@@ -130,6 +130,47 @@
       "description": "Postre helado con crema suave, salsa de frutos rojos y crocante de galleta.",
       "image": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?q=80&w=1400&auto=format&fit=crop",
       "price": 16
+    },
+    {
+      "id": "fs-15",
+      "category": "Sandwiches cafe",
+      "name": "Club sandwich clasico",
+      "description": "Pan tostado, pechuga de pollo, tocino, tomate fresco y papas crocantes.",
+      "image": "https://images.unsplash.com/photo-1550317138-10000687a72b?q=80&w=1400&auto=format&fit=crop",
+      "price": 24,
+      "featured": true
+    },
+    {
+      "id": "fs-16",
+      "category": "Sandwiches cafe",
+      "name": "Panini caprese grill",
+      "description": "Mozzarella fundida, pesto de albahaca y tomate confitado en pan artesanal.",
+      "image": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?q=80&w=1400&auto=format&fit=crop",
+      "price": 21
+    },
+    {
+      "id": "fs-17",
+      "category": "Brunch y desayunos",
+      "name": "Tostadas francesas miel y frutas",
+      "description": "Brioche dorado, miel natural, frutas frescas y crema ligera.",
+      "image": "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?q=80&w=1400&auto=format&fit=crop",
+      "price": 22
+    },
+    {
+      "id": "fs-18",
+      "category": "Brunch y desayunos",
+      "name": "Waffles berries supreme",
+      "description": "Waffles crujientes con frutos rojos, salsa dulce y azucar glass.",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?q=80&w=1400&auto=format&fit=crop",
+      "price": 23
+    },
+    {
+      "id": "fs-19",
+      "category": "Brunch y desayunos",
+      "name": "Croissant mixto de pavo",
+      "description": "Croissant mantequilla relleno de pavo ahumado, queso y mix de hojas.",
+      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=1400&auto=format&fit=crop",
+      "price": 19
     }
   ],
   "reservation": {

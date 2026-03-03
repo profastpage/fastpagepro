@@ -53,10 +53,10 @@ export const DEMO_CATALOG: DemoCatalogItem[] = [
   {
     vertical: "restaurant",
     slug: "fuente-soda-flow",
-    title: "Fuente Soda Flow",
-    subtitle: "Fuente de soda full bebidas y pedidos instantaneos",
+    title: "Naranja Social Cafe",
+    subtitle: "Jugos de naranja, brunch y carta de cafeteria",
     coverImage:
-      "https://images.unsplash.com/photo-1523362628745-0c100150b504?q=80&w=1400&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1437419764061-2473afe69fc2?q=80&w=1400&auto=format&fit=crop",
   },
   {
     vertical: "restaurant",
