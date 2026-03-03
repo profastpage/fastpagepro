@@ -89,3 +89,7 @@
   - se actualizo branding visible a `Naranja Social Cafe`.
   - portada y foto de perfil ahora usan imagenes de jugos de naranja para reforzar el rubro.
   - la carta ahora incluye platos tipicos de cafeteria (club sandwich, panini, tostadas francesas, waffles y croissant) ademas de bebidas.
+- Navegacion de pestañas (demo sin registro y carta publicada con registro):
+  - se unifico el cambio de pestañas `Contacto/Carta/Ubicacion/Reserva` con handler comun para que la seleccion sea mas consistente en tap/click.
+  - al cambiar de pestaña se asegura posicionamiento del contenido (ancla superior), mejorando la percepcion de cambio en mobile.
+  - se mejoraron estados de boton (`active`, `focus-visible`, `touch-manipulation`, `aria-pressed`) para interaccion mas estable y responsiva.

@@ -61,6 +61,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const [reservationNote, setReservationNote] = useState("Cumpleanos");
   const [reservationError, setReservationError] = useState("");
   const [reservationFeedback, setReservationFeedback] = useState("");
+  const tabContentAnchorRef = useRef<HTMLDivElement | null>(null);
   const menuStickyRef = useRef<HTMLDivElement | null>(null);
   const menuStartRef = useRef<HTMLDivElement | null>(null);
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -298,7 +299,19 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   };
 
   const navButton =
-    "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition md:h-12 md:text-sm";
+    "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98] md:h-12 md:text-sm";
+
+  const activateTab = (nextTab: RestaurantTab) => {
+    setTab(nextTab);
+    if (typeof window === "undefined") return;
+    window.requestAnimationFrame(() => {
+      const anchor = tabContentAnchorRef.current;
+      if (!anchor) return;
+      const offset = window.innerWidth < 768 ? 14 : 22;
+      const top = window.scrollY + anchor.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    });
+  };
 
   return (
     <section className="space-y-4">
@@ -377,7 +390,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
         <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-3 md:grid md:grid-cols-4">
           <button
             type="button"
-            onClick={() => setTab("contact")}
+            onClick={() => activateTab("contact")}
+            aria-pressed={tab === "contact"}
             className={navButton}
             style={tab === "contact" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
           >
@@ -385,7 +399,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           </button>
           <button
             type="button"
-            onClick={() => setTab("menu")}
+            onClick={() => activateTab("menu")}
+            aria-pressed={tab === "menu"}
             className={navButton}
             style={tab === "menu" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
           >
@@ -393,7 +408,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           </button>
           <button
             type="button"
-            onClick={() => setTab("location")}
+            onClick={() => activateTab("location")}
+            aria-pressed={tab === "location"}
             className={navButton}
             style={tab === "location" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
           >
@@ -401,7 +417,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           </button>
           <button
             type="button"
-            onClick={() => setTab("reservation")}
+            onClick={() => activateTab("reservation")}
+            aria-pressed={tab === "reservation"}
             className={navButton}
             style={tab === "reservation" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
           >
@@ -410,6 +427,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
         </div>
 
         <div className="min-h-[62vh] px-4 pb-24 pt-4 md:px-8 md:pb-8 md:pt-6">
+          <div ref={tabContentAnchorRef} className="h-0 w-full" aria-hidden="true" />
           {tab === "contact" ? (
             <section className="space-y-4">
               <div className="relative pb-10 md:pb-12">
@@ -801,8 +819,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           <div className="grid grid-cols-4 gap-1">
             <button
               type="button"
-              onClick={() => setTab("contact")}
-              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
+              onClick={() => activateTab("contact")}
+              aria-pressed={tab === "contact"}
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98]"
               style={tab === "contact" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
               <Phone className="mx-auto mb-1 h-4 w-4" />
@@ -810,8 +829,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             </button>
             <button
               type="button"
-              onClick={() => setTab("menu")}
-              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
+              onClick={() => activateTab("menu")}
+              aria-pressed={tab === "menu"}
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98]"
               style={tab === "menu" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
               <Menu className="mx-auto mb-1 h-4 w-4" />
@@ -819,8 +839,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             </button>
             <button
               type="button"
-              onClick={() => setTab("location")}
-              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
+              onClick={() => activateTab("location")}
+              aria-pressed={tab === "location"}
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98]"
               style={tab === "location" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
               <MapPin className="mx-auto mb-1 h-4 w-4" />
@@ -828,8 +849,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             </button>
             <button
               type="button"
-              onClick={() => setTab("reservation")}
-              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
+              onClick={() => activateTab("reservation")}
+              aria-pressed={tab === "reservation"}
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em] touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98]"
               style={tab === "reservation" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
             >
               <CalendarDays className="mx-auto mb-1 h-4 w-4" />

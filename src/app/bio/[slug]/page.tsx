@@ -377,6 +377,7 @@ export default function PublicBioPage() {
   const [reservationError, setReservationError] = useState("");
   const [reservationFeedback, setReservationFeedback] = useState("");
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0);
+  const tabContentAnchorRef = useRef<HTMLDivElement | null>(null);
   const catalogScrollRef = useRef<HTMLDivElement | null>(null);
   const catalogStickyRef = useRef<HTMLDivElement | null>(null);
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -665,6 +666,18 @@ export default function PublicBioPage() {
     reservationRequiresDeposit &&
     (reservationDepositAmount.length > 0 || reservationDepositInstructions.length > 0);
   const visibleTabCount = reservationEnabled ? 4 : 3;
+  const activateTab = (nextTab: PublicTab) => {
+    const resolvedTab = nextTab === "reservation" && !reservationEnabled ? "contact" : nextTab;
+    setActiveTab(resolvedTab);
+    if (typeof window === "undefined") return;
+    window.requestAnimationFrame(() => {
+      const anchor = tabContentAnchorRef.current;
+      if (!anchor) return;
+      const offset = window.innerWidth < 768 ? 14 : 22;
+      const top = window.scrollY + anchor.getBoundingClientRect().top - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    });
+  };
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
     .slice(0, 8);
@@ -722,30 +735,26 @@ export default function PublicBioPage() {
 
   function onGoldKeywordClick(action: GoldKeywordAction) {
     if (action === "catalog") {
-      setActiveTab("catalog");
+      activateTab("catalog");
       return;
     }
     if (action === "location") {
-      setActiveTab("location");
+      activateTab("location");
       return;
     }
     if (action === "contact") {
-      setActiveTab("contact");
+      activateTab("contact");
       return;
     }
     if (action === "reservation") {
-      if (reservationEnabled) {
-        setActiveTab("reservation");
-      } else {
-        setActiveTab("contact");
-      }
+      activateTab("reservation");
       return;
     }
     if (action === "call") {
       if (callHref) {
         window.location.href = callHref;
       } else {
-        setActiveTab("contact");
+        activateTab("contact");
       }
       return;
     }
@@ -757,7 +766,7 @@ export default function PublicBioPage() {
       });
       window.open(whatsappHref, "_blank", "noopener,noreferrer");
     } else {
-      setActiveTab("contact");
+      activateTab("contact");
     }
   }
 
@@ -1404,8 +1413,9 @@ export default function PublicBioPage() {
         >
           <button
             type="button"
-            onClick={() => setActiveTab("contact")}
-            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            onClick={() => activateTab("contact")}
+            aria-pressed={activeTab === "contact"}
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
             style={
               activeTab === "contact"
                 ? navActiveStyle
@@ -1419,8 +1429,9 @@ export default function PublicBioPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("catalog")}
-            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            onClick={() => activateTab("catalog")}
+            aria-pressed={activeTab === "catalog"}
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
             style={
               activeTab === "catalog"
                 ? navActiveStyle
@@ -1434,8 +1445,9 @@ export default function PublicBioPage() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("location")}
-            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+            onClick={() => activateTab("location")}
+            aria-pressed={activeTab === "location"}
+            className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
             style={
               activeTab === "location"
                 ? navActiveStyle
@@ -1450,8 +1462,9 @@ export default function PublicBioPage() {
           {reservationEnabled ? (
             <button
               type="button"
-              onClick={() => setActiveTab("reservation")}
-              className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition"
+              onClick={() => activateTab("reservation")}
+              aria-pressed={activeTab === "reservation"}
+              className="rounded-[1.1rem] border px-3 py-3 text-sm font-black uppercase tracking-[0.08em] transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
               style={
                 activeTab === "reservation"
                   ? navActiveStyle
@@ -1465,6 +1478,8 @@ export default function PublicBioPage() {
             </button>
           ) : null}
         </div>
+
+        <div ref={tabContentAnchorRef} className="h-0 w-full" aria-hidden="true" />
 
         {activeTab === "contact" ? (
           <>
@@ -2075,8 +2090,9 @@ export default function PublicBioPage() {
           <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${visibleTabCount}, minmax(0, 1fr))` }}>
             <button
               type="button"
-              onClick={() => setActiveTab("contact")}
-              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              onClick={() => activateTab("contact")}
+              aria-pressed={activeTab === "contact"}
+              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
               style={
                 activeTab === "contact"
                   ? navActiveStyle
@@ -2091,8 +2107,9 @@ export default function PublicBioPage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("catalog")}
-              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              onClick={() => activateTab("catalog")}
+              aria-pressed={activeTab === "catalog"}
+              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
               style={
                 activeTab === "catalog"
                   ? navActiveStyle
@@ -2107,8 +2124,9 @@ export default function PublicBioPage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("location")}
-              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+              onClick={() => activateTab("location")}
+              aria-pressed={activeTab === "location"}
+              className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
               style={
                 activeTab === "location"
                   ? navActiveStyle
@@ -2123,8 +2141,9 @@ export default function PublicBioPage() {
             {reservationEnabled ? (
               <button
                 type="button"
-                onClick={() => setActiveTab("reservation")}
-                className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight"
+                onClick={() => activateTab("reservation")}
+                aria-pressed={activeTab === "reservation"}
+                className="h-14 rounded-[0.95rem] px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.08em] leading-tight touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--carta-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--carta-bg)] active:scale-[0.98]"
                 style={activeTab === "reservation" ? navActiveStyle : { color: "var(--carta-nav-text)" }}
               >
                 <div className="mx-auto mb-1 h-4 w-4">
