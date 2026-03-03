@@ -4892,8 +4892,15 @@ export default function LinkHubPage() {
                         </button>
                       </div>
                     </div>
-                    <div className="mb-3 grid grid-cols-1 md:grid-cols-[120px_minmax(0,1fr)] gap-3">
-                      <div className="rounded-xl border border-white/10 bg-black/40 p-2">
+                    <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[120px_minmax(0,1fr)]">
+                      <label
+                        className={`rounded-xl border border-white/10 bg-black/40 p-2 ${
+                          uploadingCatalogItemId === item.id
+                            ? "cursor-not-allowed opacity-70"
+                            : "cursor-pointer transition hover:border-sky-300/45 hover:bg-sky-500/10"
+                        }`}
+                        title="Haz clic en la imagen para subir/cambiar foto"
+                      >
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt={item.title || "Producto"} className="h-24 w-full rounded-lg object-cover" />
                         ) : (
@@ -4911,7 +4918,17 @@ export default function LinkHubPage() {
                         >
                           {item.outOfStock ? "Sin stock" : "Stock disponible"}
                         </p>
-                      </div>
+                        <p className="mt-1 text-center text-[9px] font-semibold uppercase tracking-[0.1em] text-sky-200/80">
+                          Toca la imagen para cambiar
+                        </p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
+                          className="hidden"
+                          disabled={uploadingCatalogItemId === item.id}
+                        />
+                      </label>
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-sky-300/40 bg-sky-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-sky-100">
@@ -6379,16 +6396,33 @@ export default function LinkHubPage() {
                       previewVisibleItems.map((item) => (
                         <article key={item.id} className="rounded-[1rem] border p-2.5" style={previewItemCardStyle}>
                           <div className="flex gap-2.5">
-                            {item.imageUrl ? (
-                              <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-[0.8rem] object-cover" />
-                            ) : (
-                              <div
-                                className="h-20 w-20 rounded-[0.8rem] border flex items-center justify-center text-[10px] font-black"
-                                style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
-                              >
-                                ITEM
-                              </div>
-                            )}
+                            <label
+                              className={`h-20 w-20 shrink-0 overflow-hidden rounded-[0.8rem] border ${
+                                uploadingCatalogItemId === item.id
+                                  ? "cursor-not-allowed opacity-70"
+                                  : "cursor-pointer transition hover:brightness-110"
+                              }`}
+                              style={{ borderColor: previewMenuBorder }}
+                              title="Toca la imagen para subir/cambiar foto"
+                            >
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-[0.8rem] object-cover" />
+                              ) : (
+                                <div
+                                  className="h-20 w-20 rounded-[0.8rem] border flex items-center justify-center text-[10px] font-black"
+                                  style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
+                                >
+                                  ITEM
+                                </div>
+                              )}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
+                                className="hidden"
+                                disabled={uploadingCatalogItemId === item.id}
+                              />
+                            </label>
                             <div className="min-w-0 flex-1">
                               <input
                                 value={item.title}

@@ -26,6 +26,7 @@
   - en carta publicada (`/bio/[slug]`), los badges manuales de item ya no se usan; solo se muestran badges de promo automatica cuando aplica.
   - en `Etiqueta del rubro` (editor `/linkhub`) se habilito emoji automatico al inicio del rubro, incluyendo cuando se escribe un rubro nuevo; se agrego tambien la opcion `Parrilla`.
   - para cuentas registradas, si el catalogo tiene menos de 5 items se autocompleta con platos base del rubro actual; y al confirmar cambio de rubro se cargan 5 platos predefinidos del rubro (titulo, descripcion, precio y emoji referencial).
+  - en el editor de items de carta (`/linkhub`), ahora se puede tocar/clicar directamente la imagen del producto para adjuntar o cambiar foto (ademas del boton `Subir imagen`), reutilizando la misma compresion automatica para mantener bajo peso.
 - Tema de carta en editor LinkHub (`/linkhub`):
   - al cambiar tema (sugerido por rubro, tema oficial o RGB) ya no se fuerza `cartaBackgroundMode: "white"`; ahora respeta el modo activo elegido por el usuario.
   - en modo `theme`, el preview aplica fallback de texto oscuro cuando detecta fondos de tema claros, para evitar texto blanco sin contraste.
