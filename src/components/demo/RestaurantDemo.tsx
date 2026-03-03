@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -46,6 +46,7 @@ function normalizeBadge(value?: string) {
 
 export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const [tab, setTab] = useState<RestaurantTab>("contact");
+  const [backgroundMode, setBackgroundMode] = useState<"theme" | "white">("theme");
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [category, setCategory] = useState("Todos");
@@ -106,6 +107,18 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
       Math.round(Number(reservationGuests) || reservationConfig.minPartySize),
     ),
   );
+  const isLightBackground = backgroundMode === "white";
+  const demoSurfaceStyle = useMemo<CSSProperties | undefined>(() => {
+    if (!isLightBackground) return undefined;
+    return {
+      "--fp-bg": "#f8fafc",
+      "--fp-surface": "#ffffff",
+      "--fp-card": "#ffffff",
+      "--fp-text": "#0f172a",
+      "--fp-muted": "#475569",
+      "--fp-border": "rgba(15,23,42,0.14)",
+    } as CSSProperties;
+  }, [isLightBackground]);
 
   const categories = useMemo(() => ["Todos", ...demo.categories], [demo.categories]);
 
@@ -294,9 +307,12 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
   return (
     <section className="space-y-4">
-      <article className="mx-auto w-full max-w-md overflow-visible rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl">
+      <article
+        className="mx-auto w-full max-w-md overflow-visible rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] md:max-w-5xl"
+        style={demoSurfaceStyle}
+      >
         <div className="z-20 border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2 md:gap-3">
             <div className="flex min-w-0 items-center gap-2">
               <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)]">
                 <DemoImage
@@ -311,17 +327,42 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               </div>
               <p className="truncate text-sm font-semibold">{demo.title}</p>
             </div>
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--fp-border)]"
-              aria-label="Compartir demo"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="inline-flex h-10 items-center rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-1">
+                <button
+                  type="button"
+                  onClick={() => setBackgroundMode("theme")}
+                  className="rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                  style={
+                    backgroundMode === "theme"
+                      ? { background: "var(--fp-primary)", color: "#fff" }
+                      : { color: "var(--fp-muted)" }
+                  }
+                >
+                  Tema
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBackgroundMode("white")}
+                  className="rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                  style={
+                    backgroundMode === "white"
+                      ? { background: "var(--fp-primary)", color: "#fff" }
+                      : { color: "var(--fp-muted)" }
+                  }
+                >
+                  Claro
+                </button>
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--fp-border)]"
+                aria-label="Compartir demo"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-          <p className="mt-2 text-center text-lg font-black uppercase tracking-[0.18em] text-[var(--fp-primary)] md:text-xl">
-            {tab === "contact" ? "Contacto" : tab === "menu" ? "Carta" : tab === "location" ? "Ubicacion" : "Reserva"}
-          </p>
         </div>
 
         <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-3 md:grid md:grid-cols-4">

@@ -348,6 +348,7 @@ export default function PublicBioPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState<PublicTab>("contact");
+  const [backgroundMode, setBackgroundMode] = useState<"theme" | "white">("theme");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
@@ -520,6 +521,11 @@ export default function PublicBioPage() {
   }, [activeTab, profile?.reservation?.enabled]);
 
   useEffect(() => {
+    if (!profile) return;
+    setBackgroundMode(getSafeLinkHubCartaBackgroundMode(profile.cartaBackgroundMode));
+  }, [profile?.cartaBackgroundMode, profile?.slug]);
+
+  useEffect(() => {
     if (!profile?.slug) return;
     postLinkHubMetric({
       eventType: "page_view",
@@ -611,8 +617,7 @@ export default function PublicBioPage() {
     accent: profile.cartaCustomAccentColor || CARTA_CUSTOM_DEFAULTS.accent,
     style: getSafeCartaCustomStyle(profile.cartaCustomDesignStyle),
   });
-  const cartaBackgroundMode = getSafeLinkHubCartaBackgroundMode(profile.cartaBackgroundMode);
-  const useWhiteCartaBackground = cartaBackgroundMode === "white";
+  const useWhiteCartaBackground = backgroundMode === "white";
   const readablePriceColor = resolvePriceColor(activeCartaTheme.tokens.accent, useWhiteCartaBackground);
   const textTone = getSafeLinkHubTextTone(profile.textTone);
   const _legacyTextPalette = getTextTonePalette(textTone, colors.primary);
@@ -1285,7 +1290,7 @@ export default function PublicBioPage() {
         style={wrapperStyle}
       >
         <div
-          className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"} ${activeTab === "catalog" ? "hidden" : ""}`}
+          className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"}`}
           style={headerBarStyle}
         >
           <div className="relative space-y-1.5 md:space-y-0">
@@ -1310,29 +1315,56 @@ export default function PublicBioPage() {
                 {profile.displayName}
               </span>
               </div>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
-                style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
-                aria-label="Compartir"
-              >
-                <Share2 className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <div
+                  className="inline-flex h-10 items-center rounded-lg border p-1"
+                  style={{
+                    borderColor: "var(--carta-chip-border)",
+                    background: "var(--carta-button-secondary-bg)",
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setBackgroundMode("theme")}
+                    className="rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                    style={
+                      backgroundMode === "theme"
+                        ? {
+                            background: "var(--carta-nav-active-bg)",
+                            color: "var(--carta-nav-active-text)",
+                          }
+                        : { color: "var(--carta-nav-text)" }
+                    }
+                  >
+                    Tema
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBackgroundMode("white")}
+                    className="rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                    style={
+                      backgroundMode === "white"
+                        ? {
+                            background: "var(--carta-nav-active-bg)",
+                            color: "var(--carta-nav-active-text)",
+                          }
+                        : { color: "var(--carta-nav-text)" }
+                    }
+                  >
+                    Claro
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
+                  style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
+                  aria-label="Compartir"
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-
-            <p
-              className="pointer-events-none mx-auto max-w-[72%] truncate text-center text-xs font-black uppercase tracking-[0.12em] md:absolute md:left-1/2 md:top-1/2 md:w-[46%] md:-translate-x-1/2 md:-translate-y-1/2 md:text-base"
-              style={{ color: accentWordColor }}
-            >
-              {activeTab === "catalog"
-                ? catalogLabel
-                : activeTab === "location"
-                ? profile.sectionLabels.location
-                : activeTab === "reservation"
-                  ? reservationLabel
-                  : profile.sectionLabels.contact}
-            </p>
           </div>
           {shareFeedback && (
             <p
