@@ -32,7 +32,10 @@ import {
   AlertCircle,
   Loader2,
   Copy,
-  Share2
+  Share2,
+  Users,
+  RefreshCw,
+  BadgePercent
 } from "lucide-react";
 
 // --- Local Components (Constructor Maestro Pattern) ---
@@ -101,6 +104,33 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
+type ReferralNetworkItem = {
+  invitedUserId: string;
+  invitedEmail: string;
+  status: "REGISTERED" | "PAID";
+  level: 1 | 2;
+  createdAt: number;
+  totalGeneratedSoles: number;
+  totalCommissionSoles: number;
+};
+
+type ReferralData = {
+  code: string;
+  alias: string;
+  link: string;
+  invited: number;
+  converted: number;
+  commission: number;
+  level1Commission: number;
+  level2Commission: number;
+  level1Percent: number;
+  level2Percent: number;
+  level1Clients: number;
+  level2Clients: number;
+  networkLevel1: ReferralNetworkItem[];
+  networkLevel2: ReferralNetworkItem[];
+};
+
 // --- Main Page Component ---
 
 export default function SettingsPage() {
@@ -114,13 +144,9 @@ export default function SettingsPage() {
   const [message, setMessage] = useState({ type: "", text: "" });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loadingReferral, setLoadingReferral] = useState(false);
-  const [referralData, setReferralData] = useState<{
-    code: string;
-    link: string;
-    invited: number;
-    converted: number;
-    commission: number;
-  } | null>(null);
+  const [savingReferralConfig, setSavingReferralConfig] = useState(false);
+  const [referralAliasInput, setReferralAliasInput] = useState("");
+  const [referralData, setReferralData] = useState<ReferralData | null>(null);
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -203,25 +229,46 @@ export default function SettingsPage() {
       });
       const payload = (await response.json().catch(() => ({}))) as {
         summary?: {
-          profile?: { referralCode?: string };
+          profile?: { referralCode?: string; customAlias?: string };
           referralLink?: string;
+          network?: {
+            level1?: ReferralNetworkItem[];
+            level2?: ReferralNetworkItem[];
+          };
           stats?: {
             invited?: number;
             converted?: number;
+            level1Referrals?: number;
+            level2Referrals?: number;
             totalCommissionSoles?: number;
+            level1CommissionSoles?: number;
+            level2CommissionSoles?: number;
+            level1CommissionPercent?: number;
+            level2CommissionPercent?: number;
           };
         };
       };
       if (!response.ok) return;
       const summary = payload.summary;
       if (!summary?.profile?.referralCode || !summary?.referralLink) return;
-      setReferralData({
+      const nextReferralData: ReferralData = {
         code: String(summary.profile.referralCode || "").trim(),
+        alias: String(summary.profile.customAlias || "").trim(),
         link: String(summary.referralLink || "").trim(),
         invited: Math.max(0, Number(summary.stats?.invited || 0)),
         converted: Math.max(0, Number(summary.stats?.converted || 0)),
         commission: Math.max(0, Number(summary.stats?.totalCommissionSoles || 0)),
-      });
+        level1Commission: Math.max(0, Number(summary.stats?.level1CommissionSoles || 0)),
+        level2Commission: Math.max(0, Number(summary.stats?.level2CommissionSoles || 0)),
+        level1Percent: Math.max(0, Number(summary.stats?.level1CommissionPercent || 40)),
+        level2Percent: Math.max(0, Number(summary.stats?.level2CommissionPercent || 10)),
+        level1Clients: Math.max(0, Number(summary.stats?.level1Referrals || 0)),
+        level2Clients: Math.max(0, Number(summary.stats?.level2Referrals || 0)),
+        networkLevel1: Array.isArray(summary.network?.level1) ? summary.network?.level1 || [] : [],
+        networkLevel2: Array.isArray(summary.network?.level2) ? summary.network?.level2 || [] : [],
+      };
+      setReferralData(nextReferralData);
+      setReferralAliasInput(nextReferralData.alias);
     } catch (error) {
       console.error("Error loading referrals:", error);
     } finally {
@@ -263,6 +310,88 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error("Error sharing referral:", error);
+    }
+  };
+
+  const saveReferralSettings = async (options?: { regenerateCode?: boolean }) => {
+    if (!authUser?.uid) return;
+    setSavingReferralConfig(true);
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) return;
+      const response = await fetch("/api/referrals/profile", {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customAlias: referralAliasInput,
+          regenerateCode: Boolean(options?.regenerateCode),
+        }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        summary?: {
+          profile?: { referralCode?: string; customAlias?: string };
+          referralLink?: string;
+          network?: {
+            level1?: ReferralNetworkItem[];
+            level2?: ReferralNetworkItem[];
+          };
+          stats?: {
+            invited?: number;
+            converted?: number;
+            level1Referrals?: number;
+            level2Referrals?: number;
+            totalCommissionSoles?: number;
+            level1CommissionSoles?: number;
+            level2CommissionSoles?: number;
+            level1CommissionPercent?: number;
+            level2CommissionPercent?: number;
+          };
+        };
+      };
+      const summary = payload.summary;
+      const profile = summary?.profile;
+      if (!response.ok || !summary?.referralLink || !profile?.referralCode) {
+        setMessage({
+          type: "error",
+          text: String(payload.error || "No se pudo actualizar referidos."),
+        });
+        return;
+      }
+
+      const nextReferralData: ReferralData = {
+        code: String(profile.referralCode || "").trim(),
+        alias: String(profile.customAlias || "").trim(),
+        link: String(summary.referralLink || "").trim(),
+        invited: Math.max(0, Number(summary.stats?.invited || 0)),
+        converted: Math.max(0, Number(summary.stats?.converted || 0)),
+        commission: Math.max(0, Number(summary.stats?.totalCommissionSoles || 0)),
+        level1Commission: Math.max(0, Number(summary.stats?.level1CommissionSoles || 0)),
+        level2Commission: Math.max(0, Number(summary.stats?.level2CommissionSoles || 0)),
+        level1Percent: Math.max(0, Number(summary.stats?.level1CommissionPercent || 40)),
+        level2Percent: Math.max(0, Number(summary.stats?.level2CommissionPercent || 10)),
+        level1Clients: Math.max(0, Number(summary.stats?.level1Referrals || 0)),
+        level2Clients: Math.max(0, Number(summary.stats?.level2Referrals || 0)),
+        networkLevel1: Array.isArray(summary.network?.level1) ? summary.network?.level1 || [] : [],
+        networkLevel2: Array.isArray(summary.network?.level2) ? summary.network?.level2 || [] : [],
+      };
+
+      setReferralData(nextReferralData);
+      setReferralAliasInput(nextReferralData.alias);
+      setMessage({
+        type: "success",
+        text: options?.regenerateCode
+          ? "Enlace de referido regenerado."
+          : "Alias de referido actualizado.",
+      });
+    } catch (error) {
+      console.error("Error updating referral settings:", error);
+      setMessage({ type: "error", text: "No se pudo actualizar referidos." });
+    } finally {
+      setSavingReferralConfig(false);
     }
   };
 
@@ -342,6 +471,7 @@ export default function SettingsPage() {
     { id: "profile", label: t("settings.tabs.profile"), icon: <User className="w-5 h-5" />, desc: t("settings.tabs.profile.desc") },
     { id: "account", label: t("settings.tabs.account"), icon: <Smartphone className="w-5 h-5" />, desc: t("settings.tabs.account.desc") },
     { id: "plan", label: t("settings.tabs.plan"), icon: <CreditCard className="w-5 h-5" />, desc: t("settings.tabs.plan.desc") },
+    { id: "referrals", label: "Referidos", icon: <Users className="w-5 h-5" />, desc: "Dashboard de afiliados" },
     { id: "security", label: t("settings.tabs.security"), icon: <Shield className="w-5 h-5" />, desc: t("settings.tabs.security.desc") },
   ], [t]);
 
@@ -538,92 +668,13 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/5 p-6 sm:p-8">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">
-                          Programa de referidos
-                        </p>
-                        <h3 className="mt-1 text-xl font-black text-white">Enlace de referido</h3>
-                        <p className="mt-1 text-sm text-zinc-400">
-                          Comparte este enlace desde tu perfil y gana comisión por activaciones pagadas.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void loadReferralSummary()}
-                        disabled={loadingReferral}
-                        className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white disabled:opacity-50"
-                      >
-                        {loadingReferral ? "Actualizando..." : "Actualizar"}
-                      </button>
-                    </div>
-
-                    {referralData ? (
-                      <div className="mt-6 grid grid-cols-1 gap-4">
-                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                            Código
-                          </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className="text-lg font-black text-amber-200">{referralData.code}</span>
-                            <button
-                              type="button"
-                              onClick={() => copyText(referralData.code, "Código de referido copiado.")}
-                              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                              Copiar
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                            Enlace
-                          </p>
-                          <p className="mt-2 break-all text-sm text-zinc-200">{referralData.link}</p>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              onClick={() => copyText(referralData.link, "Enlace de referido copiado.")}
-                              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                              Copiar enlace
-                            </button>
-                            <button
-                              type="button"
-                              onClick={shareReferralLink}
-                              className="inline-flex items-center gap-1 rounded-lg border border-amber-300/35 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-100"
-                            >
-                              <Share2 className="w-3.5 h-3.5" />
-                              Compartir
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Invitados</p>
-                            <p className="mt-1 text-lg font-black text-white">{referralData.invited}</p>
-                          </div>
-                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Convertidos</p>
-                            <p className="mt-1 text-lg font-black text-white">{referralData.converted}</p>
-                          </div>
-                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comisión</p>
-                            <p className="mt-1 text-lg font-black text-emerald-200">S/ {referralData.commission.toFixed(2)}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-5 text-sm text-zinc-400">
-                        {loadingReferral
-                          ? "Generando enlace de referido..."
-                          : "Aun no se pudo cargar tu enlace. Pulsa actualizar."}
-                      </div>
-                    )}
+                    <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">
+                      Programa de referidos
+                    </p>
+                    <h3 className="mt-1 text-xl font-black text-white">Nueva seccion Referidos</h3>
+                    <p className="mt-1 text-sm text-zinc-300">
+                      Gestiona enlace, alias, clientes por nivel y comisiones desde la pestaña de referidos.
+                    </p>
                   </div>
                 </SettingSection>
               )}
@@ -662,6 +713,183 @@ export default function SettingsPage() {
                         desc="Recibe actualizaciones sobre tu cuenta."
                       />
                     </div>
+                  </div>
+                </SettingSection>
+              )}
+
+              {activeTab === "referrals" && (
+                <SettingSection
+                  title="Dashboard de referidos"
+                  desc="Crea tu enlace unico, personaliza alias y revisa comisiones por nivel."
+                >
+                  <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/5 p-6 sm:p-8">
+                    <div className="flex flex-col gap-6">
+                      <div className="flex flex-col gap-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">
+                          Programa de afiliados
+                        </p>
+                        <h3 className="text-2xl font-black text-white">Seccion de referidos por niveles</h3>
+                        <p className="text-sm text-zinc-300">
+                          Nivel 1: {referralData?.level1Percent ?? 40}% mensual. Nivel 2: {referralData?.level2Percent ?? 10}% mensual.
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_auto_auto]">
+                        <input
+                          type="text"
+                          value={referralAliasInput}
+                          onChange={(event) => setReferralAliasInput(event.target.value)}
+                          placeholder="tu-alias"
+                          className="w-full rounded-2xl border border-white/15 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-amber-400/40"
+                        />
+                        <button
+                          type="button"
+                          disabled={savingReferralConfig}
+                          onClick={() => void saveReferralSettings()}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-black uppercase tracking-wider text-white disabled:opacity-50"
+                        >
+                          {savingReferralConfig ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgePercent className="h-4 w-4" />}
+                          Guardar alias
+                        </button>
+                        <button
+                          type="button"
+                          disabled={savingReferralConfig || loadingReferral}
+                          onClick={() => void saveReferralSettings({ regenerateCode: true })}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300/35 bg-amber-500/10 px-4 py-3 text-xs font-black uppercase tracking-wider text-amber-100 disabled:opacity-50"
+                        >
+                          {savingReferralConfig || loadingReferral ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                          Actualizar enlace
+                        </button>
+                      </div>
+                    </div>
+
+                    {referralData ? (
+                      <div className="mt-6 grid grid-cols-1 gap-4">
+                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                            Codigo de referido
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-lg font-black text-amber-200">{referralData.code}</span>
+                            <button
+                              type="button"
+                              onClick={() => copyText(referralData.code, "Codigo de referido copiado.")}
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              Copiar
+                            </button>
+                          </div>
+                          <p className="mt-3 text-xs text-zinc-400">
+                            Alias: <span className="font-bold text-zinc-200">{referralData.alias || "sin-alias"}</span>
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Enlace de referido</p>
+                          <p className="mt-2 break-all text-sm text-zinc-200">{referralData.link}</p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => copyText(referralData.link, "Enlace de referido copiado.")}
+                              className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-white"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                              Copiar enlace
+                            </button>
+                            <button
+                              type="button"
+                              onClick={shareReferralLink}
+                              className="inline-flex items-center gap-1 rounded-lg border border-amber-300/35 bg-amber-500/10 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-amber-100"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                              Compartir
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Nivel 1</p>
+                            <p className="mt-1 text-lg font-black text-white">{referralData.level1Clients}</p>
+                          </div>
+                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Nivel 2</p>
+                            <p className="mt-1 text-lg font-black text-white">{referralData.level2Clients}</p>
+                          </div>
+                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comision N1</p>
+                            <p className="mt-1 text-lg font-black text-emerald-200">S/ {referralData.level1Commission.toFixed(2)}</p>
+                          </div>
+                          <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comision N2</p>
+                            <p className="mt-1 text-lg font-black text-emerald-200">S/ {referralData.level2Commission.toFixed(2)}</p>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                          <h4 className="text-xs font-black uppercase tracking-widest text-zinc-300">
+                            Clientes referidos nivel 1
+                          </h4>
+                          <div className="mt-3 space-y-2">
+                            {referralData.networkLevel1.length === 0 ? (
+                              <p className="rounded-xl border border-dashed border-white/15 bg-black/20 px-3 py-3 text-sm text-zinc-400">
+                                Aun no tienes clientes en nivel 1.
+                              </p>
+                            ) : (
+                              referralData.networkLevel1.slice(0, 30).map((item) => (
+                                <div
+                                  key={`n1-${item.invitedUserId}-${item.createdAt}`}
+                                  className="rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm"
+                                >
+                                  <p className="font-semibold text-white">{item.invitedEmail || item.invitedUserId}</p>
+                                  <p className="text-zinc-400">
+                                    {item.status === "PAID" ? "Pagado" : "Registrado"} - {new Date(item.createdAt).toLocaleDateString()}
+                                  </p>
+                                  <p className="text-emerald-200">
+                                    Comision acumulada: S/ {Number(item.totalCommissionSoles || 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                          <h4 className="text-xs font-black uppercase tracking-widest text-zinc-300">
+                            Clientes referidos nivel 2
+                          </h4>
+                          <div className="mt-3 space-y-2">
+                            {referralData.networkLevel2.length === 0 ? (
+                              <p className="rounded-xl border border-dashed border-white/15 bg-black/20 px-3 py-3 text-sm text-zinc-400">
+                                Aun no tienes clientes en nivel 2.
+                              </p>
+                            ) : (
+                              referralData.networkLevel2.slice(0, 30).map((item) => (
+                                <div
+                                  key={`n2-${item.invitedUserId}-${item.createdAt}`}
+                                  className="rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-sm"
+                                >
+                                  <p className="font-semibold text-white">{item.invitedEmail || item.invitedUserId}</p>
+                                  <p className="text-zinc-400">
+                                    {item.status === "PAID" ? "Pagado" : "Registrado"} - {new Date(item.createdAt).toLocaleDateString()}
+                                  </p>
+                                  <p className="text-emerald-200">
+                                    Comision acumulada: S/ {Number(item.totalCommissionSoles || 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-5 text-sm text-zinc-400">
+                        {loadingReferral
+                          ? "Generando enlace de referido..."
+                          : "Aun no se pudo cargar tu enlace. Pulsa actualizar enlace."}
+                      </div>
+                    )}
                   </div>
                 </SettingSection>
               )}

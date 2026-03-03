@@ -62,6 +62,57 @@ export function buildRestaurantDemoMessage(input: {
   ];
 }
 
+export function buildRestaurantReservationDemoMessage(input: {
+  title: string;
+  name: string;
+  guests: number;
+  date: string;
+  slot: string;
+  contact?: string;
+  note?: string;
+  requiresDeposit?: boolean;
+  depositAmount?: string;
+  depositInstructions?: string;
+}): string[] {
+  const contact = String(input.contact || "").trim();
+  const note = String(input.note || "").trim();
+  const requiresDeposit = Boolean(input.requiresDeposit);
+  const dateStamp = new Date();
+
+  const reservationLines = [
+    `\u00B7 Nombre: ${input.name}`,
+    `\u00B7 Personas: ${input.guests}`,
+    `\u00B7 Fecha: ${input.date}`,
+    `\u00B7 Horario: ${input.slot}`,
+    contact ? `\u00B7 Contacto: ${contact}` : "",
+    note ? `\u00B7 Nota: ${note}` : "",
+  ].filter(Boolean);
+
+  const depositLines = requiresDeposit
+    ? [
+        "\u{1F4B3} *Anticipo para confirmar*",
+        "",
+        `\u00B7 Monto sugerido: ${String(input.depositAmount || "").trim() || "A coordinar por WhatsApp"}`,
+        `\u00B7 Instrucciones: ${String(input.depositInstructions || "").trim() || "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar."}`,
+      ]
+    : [];
+
+  return [
+    `\u{1F37D}\u{FE0F} *Solicitud de reserva para ${input.title}*`,
+    "",
+    `\u{1F44B} Hola equipo ${input.title}, quiero agendar una reserva:`,
+    "",
+    "\u{1F4CB} *Datos de reserva:*",
+    "",
+    ...reservationLines,
+    ...(depositLines.length > 0 ? ["", ...depositLines] : []),
+    "",
+    `\u{1F552} *Solicitud enviada:* ${dateStamp.toLocaleDateString()} ${dateStamp.toLocaleTimeString()}`,
+    "",
+    "\u{1F64F} Gracias. Quedo atento(a) a su confirmacion por WhatsApp.",
+  ];
+}
+
 export function buildEcommerceDemoMessage(input: {
   title: string;
   deliveryMode: "delivery" | "retiro";

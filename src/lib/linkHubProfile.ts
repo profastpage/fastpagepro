@@ -1363,19 +1363,18 @@ export function normalizeLinkHubProfile(
       const rawCategoryId = safeText(item?.categoryId);
       const categoryId = categoryIds.has(rawCategoryId) ? rawCategoryId : firstCategoryId;
 
+      const imageUrl = safeText(item?.imageUrl);
       return {
         id: safeText(item?.id) || createId("item"),
         categoryId,
         title: safeText(item?.title),
         description: safeText(item?.description),
         salesCopy: safeText(item?.salesCopy),
-        imageUrl: safeText(item?.imageUrl),
-        galleryImageUrls: [
-          ...(Array.isArray(item?.galleryImageUrls) ? item.galleryImageUrls : []),
-          safeText(item?.imageUrl),
-        ]
+        imageUrl,
+        galleryImageUrls: (Array.isArray(item?.galleryImageUrls) ? item.galleryImageUrls : [])
           .map((image) => safeText(image))
           .filter(Boolean)
+          .filter((image) => image !== imageUrl)
           .filter((image, index, list) => list.indexOf(image) === index)
           .slice(0, MAX_LINK_HUB_ITEM_GALLERY_IMAGES),
         price: safeText(item?.price),
@@ -1467,10 +1466,10 @@ export function normalizeLinkHubProfile(
   const rawMinPartySize = Number(rawReservation["minPartySize"]);
   const rawMaxPartySize = Number(rawReservation["maxPartySize"]);
   const normalizedMinParty = Number.isFinite(rawMinPartySize)
-    ? Math.max(1, Math.min(60, Math.round(rawMinPartySize)))
+    ? Math.max(1, Math.min(99, Math.round(rawMinPartySize)))
     : base.reservation.minPartySize;
   const normalizedMaxParty = Number.isFinite(rawMaxPartySize)
-    ? Math.max(1, Math.min(60, Math.round(rawMaxPartySize)))
+    ? Math.max(1, Math.min(99, Math.round(rawMaxPartySize)))
     : base.reservation.maxPartySize;
   const reservation: LinkHubReservationConfig = {
     enabled:
@@ -1748,6 +1747,7 @@ export async function saveLinkHubProfileForUser(
       expectedUpdatedAt: Number(normalized.updatedAt || Date.now()),
       requiredFields: ["userId", "slug"],
       errorMessage: "No se pudo confirmar el guardado del perfil en Firestore.",
+      bestEffort: true,
     },
   );
   return targetId;

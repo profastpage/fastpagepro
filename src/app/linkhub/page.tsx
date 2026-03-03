@@ -242,6 +242,42 @@ function randomColorHex(): string {
   return `#${value.toString(16).padStart(6, "0")}`;
 }
 
+function parseHexColorToRgb(value: string): [number, number, number] | null {
+  const normalized = String(value || "").trim();
+  const short = normalized.match(/^#([0-9a-fA-F]{3})$/);
+  if (short) {
+    const [r, g, b] = short[1].split("").map((char) => Number.parseInt(char + char, 16));
+    if ([r, g, b].some((channel) => Number.isNaN(channel))) return null;
+    return [r, g, b];
+  }
+  const long = normalized.match(/^#([0-9a-fA-F]{6})$/);
+  if (!long) return null;
+  const hex = long[1];
+  const r = Number.parseInt(hex.slice(0, 2), 16);
+  const g = Number.parseInt(hex.slice(2, 4), 16);
+  const b = Number.parseInt(hex.slice(4, 6), 16);
+  if ([r, g, b].some((channel) => Number.isNaN(channel))) return null;
+  return [r, g, b];
+}
+
+function resolveSolidHexColor(value: string): string | null {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  if (raw.startsWith("#")) return raw;
+  const match = raw.match(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/);
+  return match ? match[0] : null;
+}
+
+function isLightThemeSurface(value: string): boolean {
+  const solid = resolveSolidHexColor(value);
+  if (!solid) return false;
+  const rgb = parseHexColorToRgb(solid);
+  if (!rgb) return false;
+  const [r, g, b] = rgb;
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance >= 0.67;
+}
+
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -646,6 +682,26 @@ export default function LinkHubPage() {
     async function loadProfile() {
       if (!user?.uid) return;
       setIsLoadingProfile(true);
+      try {
+        const bootstrapScopedKey = requestedProfileId ? `linkhub_draft_${user.uid}_${requestedProfileId}` : "";
+        const bootstrapFallbackKey = `linkhub_draft_${user.uid}`;
+        const bootstrapCached = (bootstrapScopedKey ? window.localStorage.getItem(bootstrapScopedKey) : null)
+          || window.localStorage.getItem(bootstrapFallbackKey);
+        if (bootstrapCached) {
+          const bootstrapDraft = normalizeLinkHubProfile(
+            JSON.parse(bootstrapCached) as Partial<LinkHubProfile>,
+            user,
+          );
+          setActiveProfileId(requestedProfileId || user.uid);
+          setProfile((prev) => {
+            if (!prev) return bootstrapDraft;
+            return Number(bootstrapDraft.updatedAt || 0) > Number(prev.updatedAt || 0) ? bootstrapDraft : prev;
+          });
+          setPreviewCategoryId(bootstrapDraft.catalogCategories[0]?.id || "");
+        }
+      } catch {
+        // Ignore local storage parse errors and continue with remote fetch.
+      }
 
       try {
         let records = await listLinkHubProfilesByUserId(user.uid);
@@ -976,6 +1032,10 @@ export default function LinkHubPage() {
     [profile?.cartaBackgroundMode],
   );
   const useWhiteCartaBackground = resolvedCartaBackgroundMode === "white";
+  const useThemeContrastPalette = useMemo(
+    () => !useWhiteCartaBackground && isLightThemeSurface(activeCartaTheme.tokens.background),
+    [activeCartaTheme.tokens.background, useWhiteCartaBackground],
+  );
 
   const previewItems = useMemo(() => {
     if (!profile) return [];
@@ -1061,24 +1121,24 @@ export default function LinkHubPage() {
     ],
   );
   const previewTextBase = useMemo(
-    () => (useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.text),
-    [activeCartaTheme.tokens.text, useWhiteCartaBackground],
+    () => (useWhiteCartaBackground || useThemeContrastPalette ? "#0f172a" : activeCartaTheme.tokens.text),
+    [activeCartaTheme.tokens.text, useThemeContrastPalette, useWhiteCartaBackground],
   );
   const previewTextMuted = useMemo(
-    () => (useWhiteCartaBackground ? "#64748b" : activeCartaTheme.tokens.mutedText),
-    [activeCartaTheme.tokens.mutedText, useWhiteCartaBackground],
+    () => (useWhiteCartaBackground || useThemeContrastPalette ? "#64748b" : activeCartaTheme.tokens.mutedText),
+    [activeCartaTheme.tokens.mutedText, useThemeContrastPalette, useWhiteCartaBackground],
   );
   const previewNavText = useMemo(
-    () => (useWhiteCartaBackground ? "#64748b" : activeCartaTheme.tokens.navText),
-    [activeCartaTheme.tokens.navText, useWhiteCartaBackground],
+    () => (useWhiteCartaBackground || useThemeContrastPalette ? "#64748b" : activeCartaTheme.tokens.navText),
+    [activeCartaTheme.tokens.navText, useThemeContrastPalette, useWhiteCartaBackground],
   );
   const previewPlaceholderText = useMemo(
-    () => (useWhiteCartaBackground ? "#94a3b8" : activeCartaTheme.tokens.placeholder),
-    [activeCartaTheme.tokens.placeholder, useWhiteCartaBackground],
+    () => (useWhiteCartaBackground || useThemeContrastPalette ? "#94a3b8" : activeCartaTheme.tokens.placeholder),
+    [activeCartaTheme.tokens.placeholder, useThemeContrastPalette, useWhiteCartaBackground],
   );
   const previewInputText = useMemo(
-    () => (useWhiteCartaBackground ? "#0f172a" : activeCartaTheme.tokens.inputText),
-    [activeCartaTheme.tokens.inputText, useWhiteCartaBackground],
+    () => (useWhiteCartaBackground || useThemeContrastPalette ? "#0f172a" : activeCartaTheme.tokens.inputText),
+    [activeCartaTheme.tokens.inputText, useThemeContrastPalette, useWhiteCartaBackground],
   );
   const previewSearchStyle = useMemo(
     () => ({
@@ -1280,7 +1340,6 @@ export default function LinkHubPage() {
       return {
         ...prev,
         cartaThemeId: "rgb_creator",
-        cartaBackgroundMode: "white",
         [field]: normalizeHexColor(value, fallback),
       };
     });
@@ -1293,7 +1352,6 @@ export default function LinkHubPage() {
       return {
         ...prev,
         cartaThemeId: "rgb_creator",
-        cartaBackgroundMode: "white",
         cartaCustomDesignStyle: getSafeCartaCustomStyle(style),
       };
     });
@@ -2363,10 +2421,10 @@ export default function LinkHubPage() {
       const optimizedImages: string[] = [];
       for (const file of validFiles) {
         const optimized = await optimizeImageFile(file, {
-          maxSize: 1280,
-          quality: 0.88,
-          heavyQuality: 0.72,
-          heavyThreshold: 1_100_000,
+          maxSize: 960,
+          quality: 0.82,
+          heavyQuality: 0.64,
+          heavyThreshold: 520_000,
         });
         optimizedImages.push(optimized);
       }
@@ -2414,7 +2472,12 @@ export default function LinkHubPage() {
 
     setUploadingCatalogItemId(itemId);
     try {
-      const optimized = await optimizeImageFile(file, { maxSize: 960, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 980_000 });
+      const optimized = await optimizeImageFile(file, {
+        maxSize: 760,
+        quality: 0.82,
+        heavyQuality: 0.64,
+        heavyThreshold: 420_000,
+      });
       setProfile((prev) => {
         if (!prev) return prev;
         return {
@@ -2462,7 +2525,12 @@ export default function LinkHubPage() {
 
     setUploadingCatalogItemId(itemId);
     try {
-      const optimized = await optimizeImageFile(file, { maxSize: 960, quality: 0.88, heavyQuality: 0.72, heavyThreshold: 980_000 });
+      const optimized = await optimizeImageFile(file, {
+        maxSize: 760,
+        quality: 0.82,
+        heavyQuality: 0.64,
+        heavyThreshold: 420_000,
+      });
       appendCatalogGalleryImage(itemId, optimized);
       setMessage({ type: "success", text: "Foto agregada a la galeria PRO." });
     } catch (error) {
@@ -2491,10 +2559,10 @@ export default function LinkHubPage() {
     setIsUploadingReservationImage(true);
     try {
       const optimized = await optimizeImageFile(file, {
-        maxSize: 1400,
-        quality: 0.88,
-        heavyQuality: 0.72,
-        heavyThreshold: 1_100_000,
+        maxSize: 960,
+        quality: 0.82,
+        heavyQuality: 0.64,
+        heavyThreshold: 520_000,
       });
       patchReservation("heroImageUrl", optimized);
       setMessage({ type: "success", text: "Imagen de reservas cargada correctamente." });
@@ -2546,10 +2614,10 @@ export default function LinkHubPage() {
       const optimizedBatch: string[] = [];
       for (const file of selectedFiles) {
         const optimized = await optimizeImageFile(file, {
-          maxSize: 960,
-          quality: 0.88,
-          heavyQuality: 0.72,
-          heavyThreshold: 980_000,
+          maxSize: 760,
+          quality: 0.82,
+          heavyQuality: 0.64,
+          heavyThreshold: 420_000,
         });
         optimizedBatch.push(optimized);
       }
@@ -2628,10 +2696,10 @@ export default function LinkHubPage() {
       const optimizedBatch: Array<{ itemId: string; imageUrl: string }> = [];
       for (let index = 0; index < assignCount; index += 1) {
         const optimized = await optimizeImageFile(selectedFiles[index], {
-          maxSize: 960,
-          quality: 0.88,
-          heavyQuality: 0.72,
-          heavyThreshold: 980_000,
+          maxSize: 760,
+          quality: 0.82,
+          heavyQuality: 0.64,
+          heavyThreshold: 420_000,
         });
         optimizedBatch.push({ itemId: targetItems[index].id, imageUrl: optimized });
       }
@@ -2720,7 +2788,7 @@ export default function LinkHubPage() {
         description: item.description.trim(),
         salesCopy: (item.salesCopy || "").trim(),
         imageUrl: item.imageUrl.trim(),
-        galleryImageUrls: mergeGalleryImages([...(item.galleryImageUrls || []), item.imageUrl]),
+        galleryImageUrls: mergeGalleryImages((item.galleryImageUrls || []).filter((image) => image.trim() !== item.imageUrl.trim())),
         price: item.price.trim(),
         compareAtPrice: (item.compareAtPrice || "").trim(),
         badge: (item.badge || "").trim(),
@@ -2759,8 +2827,8 @@ export default function LinkHubPage() {
       .map((slot) => slot.trim())
       .filter(Boolean)
       .slice(0, 12);
-    const reservationMinParty = Math.max(1, Math.min(60, Math.round(Number(profile.reservation.minPartySize) || 1)));
-    const reservationMaxParty = Math.max(1, Math.min(60, Math.round(Number(profile.reservation.maxPartySize) || 12)));
+    const reservationMinParty = Math.max(1, Math.min(99, Math.round(Number(profile.reservation.minPartySize) || 1)));
+    const reservationMaxParty = Math.max(1, Math.min(99, Math.round(Number(profile.reservation.maxPartySize) || 12)));
     const cleanedReservation = {
       ...profile.reservation,
       enabled: canUseReservations ? Boolean(profile.reservation.enabled) : false,
@@ -3083,6 +3151,15 @@ export default function LinkHubPage() {
           type: "error",
           text: "No se pudo guardar por un dato invalido en el perfil. Actualiza e intenta nuevamente.",
         });
+      } else if (
+        rawMessage.includes("maximum size") ||
+        rawMessage.includes("document too large") ||
+        (rawMessage.includes("exceeds") && rawMessage.includes("size"))
+      ) {
+        setMessage({
+          type: "error",
+          text: "No se pudo guardar porque las imagenes pesan demasiado para un solo perfil. Reduce cantidad/calidad e intenta nuevamente.",
+        });
       } else if (isFirestorePermissionDenied(error)) {
         setMessage({ type: "error", text: "No se pudo guardar por permisos de Firestore." });
       } else {
@@ -3137,7 +3214,7 @@ export default function LinkHubPage() {
     );
   }
 
-  if (loading || isLoadingProfile) {
+  if ((loading || isLoadingProfile) && !profile) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-amber-400 animate-spin" />
@@ -4692,7 +4769,7 @@ export default function LinkHubPage() {
                   <input
                     type="number"
                     min={1}
-                    max={60}
+                    max={99}
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white disabled:opacity-60"
                     value={profile.reservation.minPartySize}
                     onChange={(event) => patchReservation("minPartySize", Number(event.target.value) || 1)}
@@ -4704,7 +4781,7 @@ export default function LinkHubPage() {
                   <input
                     type="number"
                     min={1}
-                    max={60}
+                    max={99}
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white disabled:opacity-60"
                     value={profile.reservation.maxPartySize}
                     onChange={(event) => patchReservation("maxPartySize", Number(event.target.value) || 12)}
@@ -4832,7 +4909,6 @@ export default function LinkHubPage() {
                           return {
                             ...prev,
                             cartaThemeId: suggestedThemeId,
-                            cartaBackgroundMode: "white",
                           };
                         });
                       }}
@@ -4879,7 +4955,6 @@ export default function LinkHubPage() {
                             return {
                               ...prev,
                               cartaThemeId: "rgb_creator",
-                              cartaBackgroundMode: "white",
                             };
                           });
                         }}
@@ -4905,7 +4980,6 @@ export default function LinkHubPage() {
                               return {
                                 ...prev,
                                 cartaThemeId: "rgb_creator",
-                                cartaBackgroundMode: "white",
                                 cartaCustomPrimaryColor: preset.primary,
                                 cartaCustomSecondaryColor: preset.secondary,
                                 cartaCustomAccentColor: preset.accent,
@@ -5005,7 +5079,6 @@ export default function LinkHubPage() {
                               return {
                                 ...prev,
                                 cartaThemeId: themeOption.id,
-                                cartaBackgroundMode: "white",
                               };
                             });
                           }}

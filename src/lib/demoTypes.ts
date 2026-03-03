@@ -29,6 +29,20 @@ export type RestaurantMenuItem = {
   favoriteOfDay?: boolean;
 };
 
+export type RestaurantReservationData = {
+  title?: string;
+  subtitle?: string;
+  heroImage?: string;
+  slotOptions?: string[];
+  minPartySize?: number;
+  maxPartySize?: number;
+  requiresDeposit?: boolean;
+  depositAmount?: string;
+  depositInstructions?: string;
+  ctaLabel?: string;
+  notePlaceholder?: string;
+};
+
 export type EcommerceProduct = {
   id: string;
   category: string;
@@ -56,6 +70,7 @@ export type RestaurantMenuData = DemoBase & {
   address: string;
   categories: string[];
   items: RestaurantMenuItem[];
+  reservation?: RestaurantReservationData;
 };
 
 export type EcommerceStoreData = DemoBase & {

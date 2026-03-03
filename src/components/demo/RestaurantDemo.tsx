@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Clock3,
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
   MapPin,
   Menu,
   Minus,
@@ -19,10 +21,11 @@ import {
   buildOfficialDemoCallHref,
   buildOfficialDemoWhatsappUrl,
   buildRestaurantDemoMessage,
+  buildRestaurantReservationDemoMessage,
 } from "@/lib/demoWhatsapp";
 
 type CartMap = Record<string, number>;
-type RestaurantTab = "contact" | "menu" | "location";
+type RestaurantTab = "contact" | "menu" | "location" | "reservation";
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("es-PE", {
@@ -47,6 +50,14 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const [searchDebounced, setSearchDebounced] = useState("");
   const [category, setCategory] = useState("Todos");
   const [cart, setCart] = useState<CartMap>({});
+  const [reservationName, setReservationName] = useState("Fabio Herrera");
+  const [reservationGuests, setReservationGuests] = useState("2");
+  const [reservationDate, setReservationDate] = useState("");
+  const [reservationSlot, setReservationSlot] = useState("");
+  const [reservationContact, setReservationContact] = useState("906431630");
+  const [reservationNote, setReservationNote] = useState("Cumpleanos");
+  const [reservationError, setReservationError] = useState("");
+  const [reservationFeedback, setReservationFeedback] = useState("");
   const menuStickyRef = useRef<HTMLDivElement | null>(null);
   const menuStartRef = useRef<HTMLDivElement | null>(null);
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -64,8 +75,64 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(demo.address)}&output=embed`;
   const mapsOpen = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`;
   const callHref = buildOfficialDemoCallHref();
+  const reservationConfig = useMemo(() => {
+    const slots = (demo.reservation?.slotOptions || ["12:00 pm", "12:30 pm", "1:00 pm", "7:00 pm"])
+      .map((slot) => String(slot || "").trim())
+      .filter(Boolean)
+      .slice(0, 12);
+    const minParty = Math.max(1, Math.min(99, Math.round(Number(demo.reservation?.minPartySize) || 3)));
+    const maxPartyRaw = Math.max(1, Math.min(99, Math.round(Number(demo.reservation?.maxPartySize) || 9)));
+    const maxParty = Math.max(minParty, maxPartyRaw);
+
+    return {
+      title: demo.reservation?.title || "Reserva premium",
+      subtitle: demo.reservation?.subtitle || "Agenda tu mesa en segundos y recibe confirmacion por WhatsApp.",
+      heroImage: demo.reservation?.heroImage || demo.coverImage,
+      slotOptions: slots.length > 0 ? slots : ["Por coordinar"],
+      minPartySize: minParty,
+      maxPartySize: maxParty,
+      requiresDeposit: demo.reservation?.requiresDeposit ?? true,
+      depositAmount: demo.reservation?.depositAmount || "40",
+      depositInstructions:
+        demo.reservation?.depositInstructions || "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
+      ctaLabel: demo.reservation?.ctaLabel || "Enviar reserva",
+      notePlaceholder: demo.reservation?.notePlaceholder || "Celebracion, alergias o zona preferida.",
+    };
+  }, [demo.coverImage, demo.reservation]);
+  const reservationGuestsCount = Math.max(
+    reservationConfig.minPartySize,
+    Math.min(
+      reservationConfig.maxPartySize,
+      Math.round(Number(reservationGuests) || reservationConfig.minPartySize),
+    ),
+  );
 
   const categories = useMemo(() => ["Todos", ...demo.categories], [demo.categories]);
+
+  useEffect(() => {
+    const today = new Date();
+    const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    setReservationDate((prev) => prev || iso);
+  }, []);
+
+  useEffect(() => {
+    const selected = reservationSlot.trim();
+    if (reservationConfig.slotOptions.includes(selected)) return;
+    setReservationSlot(reservationConfig.slotOptions[0] || "");
+  }, [reservationConfig.slotOptions, reservationSlot]);
+
+  useEffect(() => {
+    const clampedGuests = Math.max(
+      reservationConfig.minPartySize,
+      Math.min(
+        reservationConfig.maxPartySize,
+        Math.round(Number(reservationGuests) || reservationConfig.minPartySize),
+      ),
+    );
+    if (String(clampedGuests) !== reservationGuests) {
+      setReservationGuests(String(clampedGuests));
+    }
+  }, [reservationConfig.maxPartySize, reservationConfig.minPartySize, reservationGuests]);
 
   const filteredItems = useMemo(() => {
     const term = searchDebounced.trim().toLowerCase();
@@ -185,6 +252,43 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     return buildOfficialDemoWhatsappUrl(lines);
   }, [cartItems, demo.address, demo.title, total]);
 
+  const submitReservationDemo = () => {
+    const cleanName = reservationName.trim();
+    if (!cleanName) {
+      setReservationError("Ingresa tu nombre para enviar la reserva.");
+      setReservationFeedback("");
+      return;
+    }
+    if (!reservationDate) {
+      setReservationError("Selecciona una fecha para la reserva.");
+      setReservationFeedback("");
+      return;
+    }
+
+    const lines = buildRestaurantReservationDemoMessage({
+      title: demo.title,
+      name: cleanName,
+      guests: reservationGuestsCount,
+      date: reservationDate,
+      slot: reservationSlot || reservationConfig.slotOptions[0] || "Por coordinar",
+      contact: reservationContact.trim(),
+      note: reservationNote.trim(),
+      requiresDeposit: reservationConfig.requiresDeposit,
+      depositAmount: reservationConfig.depositAmount,
+      depositInstructions: reservationConfig.depositInstructions,
+    });
+    const href = buildOfficialDemoWhatsappUrl(lines);
+    window.open(href, "_blank", "noopener,noreferrer");
+    setReservationError("");
+    setReservationFeedback("Reserva lista. Te estamos redirigiendo a WhatsApp.");
+    void trackGrowthEvent("click_whatsapp", {
+      vertical: demo.vertical,
+      slug: demo.slug,
+      location: "restaurant_reservation",
+    });
+    window.setTimeout(() => setReservationFeedback(""), 2200);
+  };
+
   const navButton =
     "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition md:h-12 md:text-sm";
 
@@ -216,11 +320,11 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             </button>
           </div>
           <p className="mt-2 text-center text-lg font-black uppercase tracking-[0.18em] text-[var(--fp-primary)] md:text-xl">
-            {tab === "contact" ? "Contacto" : tab === "menu" ? "Carta" : "Ubicacion"}
+            {tab === "contact" ? "Contacto" : tab === "menu" ? "Carta" : tab === "location" ? "Ubicacion" : "Reserva"}
           </p>
         </div>
 
-        <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-3 md:grid md:grid-cols-3">
+        <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-3 md:grid md:grid-cols-4">
           <button
             type="button"
             onClick={() => setTab("contact")}
@@ -244,6 +348,14 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             style={tab === "location" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
           >
             Ubicacion
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("reservation")}
+            className={navButton}
+            style={tab === "reservation" ? { background: "var(--fp-primary)", color: "#fff", borderColor: "var(--fp-primary)" } : { borderColor: "var(--fp-border)" }}
+          >
+            Reserva
           </button>
         </div>
 
@@ -442,6 +554,167 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               </a>
             </section>
           ) : null}
+
+          {tab === "reservation" ? (
+            <section className="space-y-4 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 md:p-5">
+              <div className="overflow-hidden rounded-2xl border border-[var(--fp-border)]">
+                <DemoImage
+                  src={reservationConfig.heroImage}
+                  alt={reservationConfig.title}
+                  fallbackLabel={reservationConfig.title}
+                  unoptimized
+                  width={1400}
+                  height={600}
+                  className="h-40 w-full object-cover md:h-52"
+                />
+              </div>
+              <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4 md:p-5">
+                <h3 className="text-3xl font-black md:text-4xl" style={{ color: "var(--fp-primary)" }}>
+                  {reservationConfig.title}
+                </h3>
+                <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{reservationConfig.subtitle}</p>
+                {reservationConfig.requiresDeposit ? (
+                  <div className="mt-3 rounded-2xl border border-emerald-400/35 bg-emerald-400/10 p-3 text-sm text-emerald-100">
+                    <p className="font-black">Anticipo sugerido: {reservationConfig.depositAmount || "A coordinar"}</p>
+                    <p className="mt-1">{reservationConfig.depositInstructions}</p>
+                  </div>
+                ) : null}
+
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <label className="space-y-1.5 md:col-span-2">
+                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
+                      Nombre completo
+                    </span>
+                    <input
+                      value={reservationName}
+                      onChange={(event) => setReservationName(event.target.value)}
+                      placeholder="Ej. Fabio Herrera"
+                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                    />
+                  </label>
+
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
+                      Personas
+                    </span>
+                    <div className="flex items-center rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)]">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReservationGuests(String(Math.max(reservationConfig.minPartySize, reservationGuestsCount - 1)))
+                        }
+                        disabled={reservationGuestsCount <= reservationConfig.minPartySize}
+                        className="inline-flex h-11 w-11 items-center justify-center border-r border-[var(--fp-border)] disabled:opacity-45"
+                        aria-label="Disminuir personas"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                      <div
+                        className="flex min-w-0 flex-1 flex-col items-center justify-center px-2"
+                        role="spinbutton"
+                        aria-label="Cantidad de personas"
+                        aria-valuemin={reservationConfig.minPartySize}
+                        aria-valuemax={reservationConfig.maxPartySize}
+                        aria-valuenow={reservationGuestsCount}
+                      >
+                        <span className="text-base font-black leading-none">{reservationGuestsCount}</span>
+                        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--fp-muted)]">
+                          personas
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setReservationGuests(String(Math.min(reservationConfig.maxPartySize, reservationGuestsCount + 1)))
+                        }
+                        disabled={reservationGuestsCount >= reservationConfig.maxPartySize}
+                        className="inline-flex h-11 w-11 items-center justify-center border-l border-[var(--fp-border)] disabled:opacity-45"
+                        aria-label="Aumentar personas"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-[var(--fp-muted)]">
+                      Rango permitido: {reservationConfig.minPartySize} a {reservationConfig.maxPartySize} personas.
+                    </p>
+                  </label>
+
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
+                      Fecha
+                    </span>
+                    <input
+                      type="date"
+                      value={reservationDate}
+                      onChange={(event) => setReservationDate(event.target.value)}
+                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                    />
+                  </label>
+
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
+                      Horario
+                    </span>
+                    <select
+                      value={reservationSlot}
+                      onChange={(event) => setReservationSlot(event.target.value)}
+                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                    >
+                      {reservationConfig.slotOptions.map((slot) => (
+                        <option key={slot} value={slot}>
+                          {slot}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-1.5">
+                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
+                      Celular (opcional)
+                    </span>
+                    <input
+                      value={reservationContact}
+                      onChange={(event) => setReservationContact(event.target.value)}
+                      placeholder="906431630"
+                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                    />
+                  </label>
+
+                  <label className="space-y-1.5 md:col-span-2">
+                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
+                      Nota adicional
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={reservationNote}
+                      onChange={(event) => setReservationNote(event.target.value)}
+                      placeholder={reservationConfig.notePlaceholder}
+                      className="w-full resize-none rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                    />
+                  </label>
+                </div>
+
+                {reservationError ? (
+                  <p className="mt-3 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+                    {reservationError}
+                  </p>
+                ) : null}
+                {reservationFeedback ? (
+                  <p className="mt-3 rounded-xl border border-emerald-400/35 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                    {reservationFeedback}
+                  </p>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={submitReservationDemo}
+                  className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-4 text-sm font-black text-white"
+                >
+                  {reservationConfig.ctaLabel}
+                </button>
+              </div>
+            </section>
+          ) : null}
         </div>
       </article>
 
@@ -473,7 +746,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
       <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),0.6rem)] md:hidden">
         <div className="mx-auto w-full max-w-md rounded-[1.35rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-1">
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-4 gap-1">
             <button
               type="button"
               onClick={() => setTab("contact")}
@@ -500,6 +773,15 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
             >
               <MapPin className="mx-auto mb-1 h-4 w-4" />
               Ubicacion
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("reservation")}
+              className="h-14 rounded-xl text-[9px] font-black uppercase tracking-[0.08em]"
+              style={tab === "reservation" ? { background: "var(--fp-primary)", color: "#fff" } : undefined}
+            >
+              <CalendarDays className="mx-auto mb-1 h-4 w-4" />
+              Reserva
             </button>
           </div>
         </div>

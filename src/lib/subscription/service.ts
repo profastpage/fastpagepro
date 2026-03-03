@@ -1101,6 +1101,7 @@ export async function approveSubscriptionRequest(input: {
     invitedUserId: approval.request.userId,
     requestedPlan: approval.request.requestedPlan,
     amountSoles: approvedAmountSoles,
+    paymentRef: approval.request.id,
   }).catch((error) => {
     console.error("[Subscription Approve] referral settlement warning:", error);
   });

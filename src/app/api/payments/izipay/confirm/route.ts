@@ -6,7 +6,6 @@ import {
 } from "@/lib/subscription/izipayPayments";
 import { fetchIzipayPaymentStatus } from "@/lib/payments/izipay";
 import { assignSubscriptionPlanByAdmin } from "@/lib/subscription/service";
-import { markReferralPaid } from "@/lib/referrals/service";
 
 export const runtime = "nodejs";
 
@@ -61,14 +60,6 @@ export async function POST(request: NextRequest) {
       plan: payment.plan,
       durationDays,
       paymentMethod: "TRANSFERENCIA",
-    });
-
-    await markReferralPaid({
-      invitedUserId: payment.userId,
-      requestedPlan: payment.plan,
-      amountSoles: payment.amountSoles,
-    }).catch((error) => {
-      console.error("[Izipay Confirm] Referral settlement warning:", error);
     });
 
     return NextResponse.json({

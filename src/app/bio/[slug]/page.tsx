@@ -40,6 +40,8 @@ import { buildWhatsappSendUrl, normalizeWhatsappDigits } from "@/lib/whatsapp";
 import {
   CalendarDays,
   AtSign,
+  ChevronDown,
+  ChevronUp,
   Facebook,
   Fish,
   Globe,
@@ -545,6 +547,18 @@ export default function PublicBioPage() {
   }, [profile?.reservation?.enabled, profile?.reservation?.slotOptions, reservationSlot]);
 
   useEffect(() => {
+    if (!profile?.reservation?.enabled) return;
+    const minParty = Math.max(1, Math.min(99, Math.round(Number(profile.reservation.minPartySize) || 1)));
+    const maxFromProfile = Math.max(1, Math.min(99, Math.round(Number(profile.reservation.maxPartySize) || minParty)));
+    const maxParty = Math.max(minParty, maxFromProfile);
+    const requestedGuests = Math.round(Number(reservationGuests) || minParty);
+    const clampedGuests = Math.max(minParty, Math.min(maxParty, requestedGuests));
+    if (String(clampedGuests) !== reservationGuests) {
+      setReservationGuests(String(clampedGuests));
+    }
+  }, [profile?.reservation?.enabled, profile?.reservation?.maxPartySize, profile?.reservation?.minPartySize, reservationGuests]);
+
+  useEffect(() => {
     const html = document.documentElement;
     const body = document.body;
     const prevHtmlOverflow = html.style.overflow;
@@ -629,10 +643,14 @@ export default function PublicBioPage() {
     .map((slot) => String(slot || "").trim())
     .filter(Boolean)
     .slice(0, 12);
-  const reservationMinParty = Math.max(1, Math.round(Number(profile.reservation.minPartySize) || 1));
+  const reservationMinParty = Math.max(1, Math.min(99, Math.round(Number(profile.reservation.minPartySize) || 1)));
   const reservationMaxParty = Math.max(
     reservationMinParty,
-    Math.round(Number(profile.reservation.maxPartySize) || reservationMinParty),
+    Math.min(99, Math.round(Number(profile.reservation.maxPartySize) || reservationMinParty)),
+  );
+  const reservationGuestsCount = Math.max(
+    reservationMinParty,
+    Math.min(reservationMaxParty, Math.round(Number(reservationGuests) || reservationMinParty)),
   );
   const reservationRequiresDeposit = reservationEnabled && Boolean(profile.reservation.requiresDeposit);
   const reservationDepositAmount = String(profile.reservation.depositAmount || "").trim();
@@ -1004,12 +1022,20 @@ export default function PublicBioPage() {
     const cleanContact = reservationContact.trim();
     const cleanNote = reservationNote.trim();
     const date = new Date();
+    const reservationDataLines = [
+      `\u{00B7} Nombre: ${cleanName}`,
+      `\u{00B7} Personas: ${guests}`,
+      `\u{00B7} Fecha: ${reservationDate}`,
+      `\u{00B7} Horario: ${selectedSlot}`,
+      cleanContact ? `\u{00B7} Contacto: ${cleanContact}` : "",
+      cleanNote ? `\u{00B7} Nota: ${cleanNote}` : "",
+    ].filter(Boolean);
     const depositLines = reservationRequiresDeposit
       ? [
-          "",
           "\u{1F4B3} *Anticipo para confirmar*",
-          `- Monto sugerido: ${reservationDepositAmount || "A coordinar por WhatsApp"}`,
-          `- Instrucciones: ${reservationDepositInstructions}`,
+          "",
+          `\u{00B7} Monto sugerido: ${reservationDepositAmount || "A coordinar por WhatsApp"}`,
+          `\u{00B7} Instrucciones: ${reservationDepositInstructions}`,
         ]
       : [];
 
@@ -1018,21 +1044,15 @@ export default function PublicBioPage() {
       "",
       `\u{1F44B} Hola equipo ${businessName}, quiero agendar una reserva:`,
       "",
-      "\u{1F4CB} *Datos de reserva*",
-      `- Nombre: ${cleanName}`,
-      `- Personas: ${guests}`,
-      `- Fecha: ${reservationDate}`,
-      `- Horario: ${selectedSlot}`,
-      cleanContact ? `- Contacto: ${cleanContact}` : "",
-      cleanNote ? `- Nota: ${cleanNote}` : "",
-      ...depositLines,
+      "\u{1F4CB} *Datos de reserva:*",
       "",
-      `\u{1F552} Solicitud enviada: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
+      ...reservationDataLines,
+      ...(depositLines.length > 0 ? ["", ...depositLines] : []),
+      "",
+      `\u{1F552} *Solicitud enviada:* ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
       "\u{1F64F} Gracias. Quedo atento(a) a su confirmacion por WhatsApp.",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    ].join("\n");
 
     postLinkHubMetric({
       eventType: "reservation_whatsapp",
@@ -1854,15 +1874,46 @@ export default function PublicBioPage() {
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
                     Personas
                   </span>
-                  <input
-                    type="number"
-                    min={reservationMinParty}
-                    max={reservationMaxParty}
-                    value={reservationGuests}
-                    onChange={(event) => setReservationGuests(event.target.value)}
-                    className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
-                    style={checkoutInputStyle}
-                  />
+                  <div className={`flex items-center rounded-xl border ${buttonRadiusClass}`} style={checkoutInputStyle}>
+                    <button
+                      type="button"
+                      onClick={() => setReservationGuests(String(Math.max(reservationMinParty, reservationGuestsCount - 1)))}
+                      disabled={reservationGuestsCount <= reservationMinParty}
+                      className="inline-flex h-11 w-11 items-center justify-center transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
+                      style={{ borderRight: "1px solid var(--carta-input-border)", color: "var(--carta-input-text)" }}
+                      aria-label="Disminuir personas"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <div
+                      className="flex min-w-0 flex-1 flex-col items-center justify-center px-2"
+                      role="spinbutton"
+                      aria-label="Cantidad de personas"
+                      aria-valuemin={reservationMinParty}
+                      aria-valuemax={reservationMaxParty}
+                      aria-valuenow={reservationGuestsCount}
+                    >
+                      <span className="text-base font-black leading-none" style={{ color: "var(--carta-input-text)" }}>
+                        {reservationGuestsCount}
+                      </span>
+                      <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]" style={{ color: textPalette.soft }}>
+                        personas
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReservationGuests(String(Math.min(reservationMaxParty, reservationGuestsCount + 1)))}
+                      disabled={reservationGuestsCount >= reservationMaxParty}
+                      className="inline-flex h-11 w-11 items-center justify-center transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
+                      style={{ borderLeft: "1px solid var(--carta-input-border)", color: "var(--carta-input-text)" }}
+                      aria-label="Aumentar personas"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] font-medium" style={{ color: textPalette.soft }}>
+                    Rango permitido: {reservationMinParty} a {reservationMaxParty} personas.
+                  </p>
                 </label>
 
                 <label className="space-y-1.5">

@@ -21,3 +21,29 @@
   - ajuste fino adicional: badge mas compacto y stepper tipo pildora mas corto para acercar la UI al layout de referencia (imagen 2).
   - ajuste adicional: precios reducidos en tarjetas de carta para demo sin registro y carta publicada con registro.
   - ajuste extra: precios aun mas pequenos y imagenes de producto significativamente mas grandes en desktop (tambien ajustadas en mobile).
+- Tema de carta en editor LinkHub (`/linkhub`):
+  - al cambiar tema (sugerido por rubro, tema oficial o RGB) ya no se fuerza `cartaBackgroundMode: "white"`; ahora respeta el modo activo elegido por el usuario.
+  - en modo `theme`, el preview aplica fallback de texto oscuro cuando detecta fondos de tema claros, para evitar texto blanco sin contraste.
+- Reservas (editor + carta publicada):
+  - el rango de configuracion de personas para reserva se amplio de `1..60` a `1..99` en saneamiento y UI del editor (`/linkhub`).
+  - en la carta publicada (`/bio/[slug]`), la seleccion de personas en reserva dejo de usar input numerico libre y ahora usa control con botones de flecha (`-1` / `+1`) respetando min/max del restaurante.
+- Rendimiento de arranque (reingreso a la app):
+  - `useAuth` ahora libera `loading` de forma optimista con datos de Firebase/Auth y mueve validaciones lentas (Firestore status, reset demo y sync de suscripcion) a segundo plano.
+  - se agrego cache/memoizacion con dedupe para lectura de usuario en Firestore y sync de suscripcion, reduciendo llamadas repetidas cuando multiples componentes usan `useAuth`.
+  - en `/linkhub`, el editor recupera borrador local al inicio antes de terminar lectura remota y ya no bloquea pantalla completa si ese borrador existe.
+- Guardado de Carta Digital (LinkHub):
+  - se habilito verificacion `best-effort` en guardado de perfil para no bloquear guardado por relecturas de confirmacion inestables en red movil.
+  - se redujo compresion objetivo de imagenes (portada, reservas y catalogo) para disminuir peso del documento y mejorar exito de guardado.
+  - al guardar, se eliminan duplicados entre `imageUrl` y `galleryImageUrls` en items para evitar inflar tamano del perfil.
+  - se agrego mensaje de error explicito cuando Firestore rechaza por tamano de documento.
+- Mensaje WhatsApp de reservas (`/bio/[slug]`):
+  - se reformateo el texto de redireccion al enviar reserva con bloques separados por espacios: titulo, intro, `Datos de reserva`, bloque de anticipo opcional y bloque `Solicitud enviada`.
+  - se unifico listado con bullets `·` para mejor lectura en WhatsApp.
+- Referidos multinivel (backend + dashboard):
+  - comisiones por nivel habilitadas: `40%` para nivel 1 y `10%` para nivel 2 por defecto (tope total configurable por entorno).
+  - liquidacion de comisiones por pago con registros `payout` para soportar pago mensual recurrente e idempotencia por `paymentRef`.
+  - personalizacion de alias de afiliado y regeneracion de enlace unico desde API (`PATCH /api/referrals/profile`).
+  - nueva ruta publica `/afiliados/[alias]` para redirigir a signup con el codigo de referido.
+- Referidos en ajustes (`/settings`):
+  - nueva pestana `Referidos` con dashboard: alias editable, boton para actualizar enlace, link compartible y metricas por niveles.
+  - listado visible de clientes en nivel 1 y nivel 2 con estado y comision acumulada.
