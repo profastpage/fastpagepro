@@ -6,6 +6,7 @@
   - los botones/carro que redirigen a WhatsApp ahora usan siempre el numero oficial `51919662011`.
   - la demo de restaurante tambien fija el CTA de llamada a `tel:+51919662011`.
   - se agrego una nueva demo restaurante sin registro: `dolce-bella` (rubro postres), con portada, foto de perfil, ubicacion, menu tematico y reserva lista para preview/entrega.
+  - se agrego otra demo restaurante sin registro: `fuente-soda-flow` (rubro fuente de soda / full bebidas), con portada, perfil, ubicacion y carta completa de bebidas para preview comercial.
 - Flujos base sin demo:
   - `TemplateGenerator` usa `51919662011` como numero placeholder por defecto.
   - defaults iniciales del editor de tienda (`/store`) usan `51919662011`.

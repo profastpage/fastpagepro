@@ -6,6 +6,7 @@ import brasaPower from "../../data/demos/restaurant/brasa-power.json";
 import cevicheHouse from "../../data/demos/restaurant/ceviche-house.json";
 import coffeeRoute from "../../data/demos/restaurant/coffee-route.json";
 import dolceBella from "../../data/demos/restaurant/dolce-bella.json";
+import fuenteSodaFlow from "../../data/demos/restaurant/fuente-soda-flow.json";
 import pizzaNorte from "../../data/demos/restaurant/pizza-norte.json";
 import sushiPrime from "../../data/demos/restaurant/sushi-prime.json";
 import couturePlus from "../../data/demos/ecommerce/couture-plus.json";
@@ -36,6 +37,7 @@ const MOCK_DEMOS: Record<DemoVertical, Record<string, DemoData>> = {
     "ceviche-house": cevicheHouse as DemoData,
     "coffee-route": coffeeRoute as DemoData,
     "dolce-bella": dolceBella as DemoData,
+    "fuente-soda-flow": fuenteSodaFlow as DemoData,
     "pizza-norte": pizzaNorte as DemoData,
     "sushi-prime": sushiPrime as DemoData,
   },

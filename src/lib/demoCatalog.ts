@@ -52,6 +52,14 @@ export const DEMO_CATALOG: DemoCatalogItem[] = [
   },
   {
     vertical: "restaurant",
+    slug: "fuente-soda-flow",
+    title: "Fuente Soda Flow",
+    subtitle: "Fuente de soda full bebidas y pedidos instantaneos",
+    coverImage:
+      "https://images.unsplash.com/photo-1523362628745-0c100150b504?q=80&w=1400&auto=format&fit=crop",
+  },
+  {
+    vertical: "restaurant",
     slug: "pizza-norte",
     title: "Pizza Norte",
     subtitle: "Pizzeria con promos y pedidos rapidos por WhatsApp",
