@@ -161,13 +161,25 @@ const RESTAURANT_SUBCATEGORY_OPTIONS = [
   "Pizzeria",
   "Restobar",
   "Parrilla",
+  "Anticucheria",
   "Panaderia",
+  "Jugueria",
+  "Heladeria",
   "Cevicheria",
+  "Comida marina",
   "Polleria",
   "Hamburgueseria",
   "Pasteleria",
   "Sangucheria",
   "Comida criolla",
+  "Comida china",
+  "Chifa",
+  "Sushi",
+  "Comida japonesa",
+  "Comida mexicana",
+  "Comida italiana",
+  "Comida internacional",
+  "Carnes y parrillas",
   "Comida saludable",
   "Comida rapida",
 ];
@@ -1711,6 +1723,14 @@ export default function LinkHubPage() {
     ],
   );
   const isRestaurantProfile = profile?.businessType === "restaurant";
+  const selectedRestaurantRubroOption = useMemo(() => {
+    const currentRubro = stripRubroEmojiPrefix(profile?.categoryLabel || DEFAULT_RESTAURANT_RUBRO);
+    const currentKeyword = normalizeRubroKeyword(currentRubro);
+    const matched = RESTAURANT_SUBCATEGORY_OPTIONS.find(
+      (option) => normalizeRubroKeyword(option) === currentKeyword,
+    );
+    return matched || "__custom__";
+  }, [profile?.categoryLabel]);
   const resolvedCartaBackgroundMode = useMemo(
     () => getSafeLinkHubCartaBackgroundMode(profile?.cartaBackgroundMode),
     [profile?.cartaBackgroundMode],
@@ -4311,6 +4331,22 @@ export default function LinkHubPage() {
                 </label>
                 <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Etiqueta del rubro</span>
+                  <select
+                    className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
+                    value={selectedRestaurantRubroOption}
+                    onChange={(event) => {
+                      const nextRubro = String(event.target.value || "").trim();
+                      if (!nextRubro || nextRubro === "__custom__") return;
+                      handleRestaurantRubroChange(nextRubro);
+                    }}
+                  >
+                    <option value="__custom__">Seleccionar rubro predefinido</option>
+                    {RESTAURANT_SUBCATEGORY_OPTIONS.map((subcategory) => (
+                      <option key={`quick-${subcategory}`} value={subcategory}>
+                        {formatRubroLabelWithEmoji(subcategory)}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     list="restaurant-rubro-options"
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
@@ -4322,7 +4358,7 @@ export default function LinkHubPage() {
                       event.preventDefault();
                       handleRestaurantRubroChange((event.target as HTMLInputElement).value);
                     }}
-                    placeholder="🍽️ Cafeteria"
+                    placeholder="Escribe un rubro nuevo o elige uno predefinido"
                   />
                   <datalist id="restaurant-rubro-options">
                     {RESTAURANT_SUBCATEGORY_OPTIONS.map((subcategory) => (
