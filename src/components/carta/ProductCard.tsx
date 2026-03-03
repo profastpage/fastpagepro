@@ -21,6 +21,9 @@ type ProductCardProps = {
   quantity?: number;
   onIncrement?: () => void;
   onDecrement?: () => void;
+  addButtonLabel?: string;
+  removeUnitAriaLabel?: string;
+  addUnitAriaLabel?: string;
   className?: string;
 };
 
@@ -39,6 +42,9 @@ const ProductCard = memo(function ProductCard({
   quantity = 0,
   onIncrement,
   onDecrement,
+  addButtonLabel = "Agregar",
+  removeUnitAriaLabel,
+  addUnitAriaLabel,
   className,
 }: ProductCardProps) {
   const useStepper = Boolean(onIncrement && onDecrement);
@@ -152,7 +158,7 @@ const ProductCard = memo(function ProductCard({
                     color: "var(--carta-chip-text)",
                     background: "var(--carta-surface-2)",
                   }}
-                  aria-label={`Quitar una unidad de ${title}`}
+                  aria-label={removeUnitAriaLabel || `Quitar una unidad de ${title}`}
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -168,7 +174,7 @@ const ProductCard = memo(function ProductCard({
                     color: "var(--carta-chip-text)",
                     background: "var(--carta-surface-2)",
                   }}
-                  aria-label={`Agregar una unidad de ${title}`}
+                  aria-label={addUnitAriaLabel || `Agregar una unidad de ${title}`}
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -186,7 +192,7 @@ const ProductCard = memo(function ProductCard({
                 }}
               >
                 <ShoppingBag className="h-3.5 w-3.5" />
-                Agregar
+                {addButtonLabel}
               </button>
             )}
           </div>

@@ -147,3 +147,10 @@
   - carta publicada (`/bio/[slug]`) ahora cambia tabs, reserva, checkout, feedbacks y mensajes de WhatsApp segun idioma.
   - clonador web (`/cloner/web`) ahora traduce estados, errores, modal de ayuda y seccion de proyectos publicados.
   - editor de tienda (`/store`) y editor de carta (`/linkhub`) ahora respetan idioma en acciones principales de UI (guardar/publicar/copiar, menu movil, textos clave de navegacion y mensajes base).
+- Boton visible EN/ES en experiencias publicadas y demo:
+  - carta digital publicada (`/bio/[slug]`) y tienda publicada (`/t/[slug]`) ahora incluyen boton EN/ES dentro del header propio de la experiencia (independiente del Nav global).
+  - demos (`DemoExperience`) ahora exponen tambien toggle EN/ES en la barra superior para cambiar idioma sin salir del preview.
+- Traduccion dinamica para texto nuevo:
+  - se agrego `src/lib/autoI18n.ts` con localizacion bidireccional ES/EN por frases y palabras para contenido dinamico ingresado por usuario.
+  - se conecto en carta y tienda publicadas para nombre de negocio, etiquetas de seccion, categorias, productos, FAQ/testimonios, reservas y copy configurable.
+  - `ProductCard` ahora acepta labels/aria parametrizables para no dejar acciones fijas en un solo idioma.

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { CSSProperties, ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
@@ -64,6 +64,7 @@ import {
   Share2,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+import { localizeDynamicText } from "@/lib/autoI18n";
 
 type PublicTab = "contact" | "catalog" | "location" | "reservation";
 type CheckoutStep = "cart" | "checkout";
@@ -281,9 +282,9 @@ function formatSoles(value: number): string {
 function resolvePriorityBadge(badge?: string): ProductCardBadge | null {
   const value = String(badge || "").toLowerCase();
   if (!value) return null;
-  if (value.includes("pedido") || value.includes("top")) return "🔥 Más pedido";
-  if (value.includes("favorito")) return "⭐ Favorito";
-  if (value.includes("acaba") || value.includes("ultima")) return "🕒 Se acaba";
+  if (value.includes("pedido") || value.includes("top")) return "ðŸ”¥ MÃ¡s pedido";
+  if (value.includes("favorito")) return "â­ Favorito";
+  if (value.includes("acaba") || value.includes("ultima")) return "ðŸ•’ Se acaba";
   return null;
 }
 
@@ -346,9 +347,14 @@ function postLinkHubMetric(payload: Record<string, unknown>) {
 }
 
 export default function PublicBioPage() {
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const isEn = language === "en";
   const tx = (es: string, en: string) => (isEn ? en : es);
+  const td = (value: string) => localizeDynamicText(value, language);
+  const tdv = (value: unknown, fallback = "") => {
+    const parsed = String(value || "").trim();
+    return td(parsed || fallback);
+  };
 
   const params = useParams<{ slug: string }>();
   const [profile, setProfile] = useState<LinkHubProfile | null>(null);
@@ -447,12 +453,27 @@ export default function PublicBioPage() {
       const items = catalogItems.filter((item) => {
         if (item.categoryId !== category.id) return false;
         if (!normalizedSearch) return true;
+        const localizedTitle = td(item.title);
+        const localizedDescription = td(item.description);
         return (
           item.title.toLowerCase().includes(normalizedSearch) ||
-          item.description.toLowerCase().includes(normalizedSearch)
+          item.description.toLowerCase().includes(normalizedSearch) ||
+          localizedTitle.toLowerCase().includes(normalizedSearch) ||
+          localizedDescription.toLowerCase().includes(normalizedSearch)
         );
       });
-      return { ...category, items };
+      return {
+        ...category,
+        localizedName: td(category.name),
+        localizedEmoji: tdv(category.emoji, ""),
+        items: items.map((item) => ({
+          ...item,
+          localizedTitle: td(item.title),
+          localizedDescription: td(item.description),
+          localizedSalesCopy: tdv(item.salesCopy, ""),
+          localizedBadge: tdv(item.badge, ""),
+        })),
+      };
     })
     .filter((section) => section.items.length > 0);
 
@@ -689,9 +710,13 @@ export default function PublicBioPage() {
   const cardClass = getCardClass(profile.cardStyle);
   const callHref = profile.phoneNumber ? `tel:${normalizePhone(profile.phoneNumber)}` : "";
   const whatsappHref = toWhatsappUrl(profile.whatsappNumber);
-  const catalogLabel =
-    profile.businessType === "restaurant" ? profile.sectionLabels.menu : profile.sectionLabels.catalog;
-  const reservationLabel = profile.sectionLabels.reservation || tx("Reserva", "Booking");
+  const contactLabel = tdv(profile.sectionLabels.contact, tx("Contacto", "Contact"));
+  const catalogLabel = tdv(
+    profile.businessType === "restaurant" ? profile.sectionLabels.menu : profile.sectionLabels.catalog,
+    profile.businessType === "restaurant" ? tx("Carta", "Menu") : tx("Catalogo", "Catalog"),
+  );
+  const locationLabel = tdv(profile.sectionLabels.location, tx("Ubicacion", "Location"));
+  const reservationLabel = tdv(profile.sectionLabels.reservation, tx("Reserva", "Booking"));
   const reservationEnabled = Boolean(profile.reservation.enabled);
   const reservationSlots = profile.reservation.slotOptions
     .map((slot) => String(slot || "").trim())
@@ -731,7 +756,7 @@ export default function PublicBioPage() {
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
     .slice(0, 8);
-  const businessName = profile.displayName || tx("Negocio", "Business");
+  const businessName = tdv(profile.displayName, tx("Negocio", "Business"));
   const cartItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
   const cartQtyById = new Map<string, number>();
@@ -857,9 +882,9 @@ export default function PublicBioPage() {
     setCartItems((prev) =>
       addItemToCartStore(prev, {
         id: item.id,
-        title: item.title || "Producto",
+        title: tdv(item.title, tx("Producto", "Product")),
         imageUrl: selectedImage,
-        categoryName,
+        categoryName: tdv(categoryName, tx("Categoria", "Category")),
         priceLabel: normalizedPriceLabel,
         unitPrice,
       }),
@@ -869,12 +894,14 @@ export default function PublicBioPage() {
       ownerUserId: profile?.userId || "",
       slug: profile?.slug || slug,
       itemId: item.id,
-      itemTitle: item.title || "Producto",
+      itemTitle: tdv(item.title, tx("Producto", "Product")),
       categoryId: item.categoryId,
-      categoryName,
+      categoryName: tdv(categoryName, tx("Categoria", "Category")),
       quantity: 1,
     });
-    setCartFeedback(`"${item.title || "Producto"}" agregado al pedido.`);
+    setCartFeedback(
+      tx(`"${tdv(item.title, "Producto")}" agregado al pedido.`, `"${tdv(item.title, "Product")}" added to the order.`),
+    );
     setCartError("");
     window.setTimeout(() => setCartFeedback(""), 1400);
   }
@@ -933,7 +960,7 @@ export default function PublicBioPage() {
       .map((item, index) => {
         const itemSubtotal = item.unitPrice * item.quantity;
         return [
-          `${index + 1}. \u{1F37D}\u{FE0F} ${item.title} ${item.categoryName ? `(${item.categoryName})` : ""}`,
+          `${index + 1}. \u{1F37D}\u{FE0F} ${tdv(item.title, tx("Producto", "Product"))} ${item.categoryName ? `(${tdv(item.categoryName, tx("Categoria", "Category"))})` : ""}`,
           `   ${tx("Cantidad", "Quantity")}: ${item.quantity}`,
           `   ${tx("Precio unitario", "Unit price")}: ${formatSoles(item.unitPrice)}`,
           `   Subtotal: ${formatSoles(itemSubtotal)}`,
@@ -976,7 +1003,7 @@ export default function PublicBioPage() {
       `\u{1F4F2} ${tx("Canal", "Channel")}: ${tx("Carta Digital FastPage", "FastPage Digital Menu")}`,
       `\u{1F552} ${tx("Pedido generado", "Order generated")}: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
-      tx("\u{1F64F} Muchas gracias. Quedo atento(a) a su confirmacion. \u{2728}", "\u{1F64F} Thank you very much. I’ll be waiting for your confirmation. \u{2728}"),
+      tx("\u{1F64F} Muchas gracias. Quedo atento(a) a su confirmacion. \u{2728}", "\u{1F64F} Thank you very much. Iâ€™ll be waiting for your confirmation. \u{2728}"),
     ]
       .filter(Boolean)
       .join("\n");
@@ -1027,7 +1054,7 @@ export default function PublicBioPage() {
       cartItems.length > 0
         ? cartItems.map(
             (item, index) =>
-              `${index + 1}. ${item.title} x${item.quantity} - ${formatSoles(item.unitPrice * item.quantity)}`,
+              `${index + 1}. ${tdv(item.title, tx("Producto", "Product"))} x${item.quantity} - ${formatSoles(item.unitPrice * item.quantity)}`,
           )
         : [tx("1. Quiero realizar un pedido y necesito asesoria.", "1. I want to place an order and need assistance.")];
 
@@ -1120,7 +1147,7 @@ export default function PublicBioPage() {
       "",
       `\u{1F552} *${tx("Solicitud enviada", "Request sent")}:* ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`,
       "",
-      tx("\u{1F64F} Gracias. Quedo atento(a) a su confirmacion por WhatsApp.", "\u{1F64F} Thanks. I’ll wait for your confirmation on WhatsApp."),
+      tx("\u{1F64F} Gracias. Quedo atento(a) a su confirmacion por WhatsApp.", "\u{1F64F} Thanks. Iâ€™ll wait for your confirmation on WhatsApp."),
     ].join("\n");
 
     postLinkHubMetric({
@@ -1142,8 +1169,8 @@ export default function PublicBioPage() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: profile.displayName,
-          text: tx(`Mira ${profile.displayName} en Fast Page`, `Check out ${profile.displayName} on Fast Page`),
+          title: businessName,
+          text: tx(`Mira ${businessName} en Fast Page`, `Check out ${businessName} on Fast Page`),
           url,
         });
       } else {
@@ -1164,7 +1191,7 @@ export default function PublicBioPage() {
       ownerUserId: profile?.userId || "",
       slug: profile?.slug || slug,
       categoryId,
-      categoryName: categoryMeta?.name || "Categoria",
+      categoryName: categoryMeta?.localizedName || tx("Categoria", "Category"),
     });
     const container = catalogScrollRef.current;
     const target = categorySectionRefs.current[categoryId];
@@ -1363,7 +1390,7 @@ export default function PublicBioPage() {
               {profile.avatarUrl ? (
                 <img
                   src={profile.avatarUrl}
-                  alt={profile.displayName}
+                  alt={businessName}
                   className="h-9 w-9 md:h-10 md:w-10 rounded-full border object-cover"
                   style={avatarFallbackStyle}
                 />
@@ -1372,11 +1399,11 @@ export default function PublicBioPage() {
                   className="h-9 w-9 md:h-10 md:w-10 rounded-full border flex items-center justify-center text-sm font-black"
                   style={avatarFallbackStyle}
                 >
-                  {profile.displayName.slice(0, 1).toUpperCase()}
+                  {businessName.slice(0, 1).toUpperCase()}
                 </div>
               )}
               <span className="truncate text-xs md:text-sm font-semibold" style={{ color: textPalette.muted }}>
-                {profile.displayName}
+                {businessName}
               </span>
               </div>
               <div className="flex items-center gap-2">
@@ -1440,6 +1467,16 @@ export default function PublicBioPage() {
                 </div>
                 <button
                   type="button"
+                  onClick={() => setLanguage(language === "en" ? "es" : "en")}
+                  className="inline-flex h-10 min-w-[52px] items-center justify-center rounded-lg border px-2 text-[10px] font-black uppercase tracking-[0.1em] transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
+                  style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
+                  aria-label={tx("Cambiar idioma", "Change language")}
+                  title={tx("Cambiar idioma", "Change language")}
+                >
+                  {language === "en" ? "ES" : "EN"}
+                </button>
+                <button
+                  type="button"
                   onClick={handleShare}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-lg border transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
                   style={{ borderColor: "var(--carta-chip-border)", color: "var(--carta-text)", background: "var(--carta-button-secondary-bg)" }}
@@ -1478,7 +1515,7 @@ export default function PublicBioPage() {
                   }
             }
           >
-            {profile.sectionLabels.contact}
+            {contactLabel}
           </button>
           <button
             type="button"
@@ -1510,7 +1547,7 @@ export default function PublicBioPage() {
                   }
             }
           >
-            {profile.sectionLabels.location}
+            {locationLabel}
           </button>
           {reservationEnabled ? (
             <button
@@ -1581,7 +1618,7 @@ export default function PublicBioPage() {
                 {profile.avatarUrl ? (
                   <img
                     src={profile.avatarUrl}
-                    alt={profile.displayName}
+                    alt={businessName}
                     className="h-28 w-28 md:h-36 md:w-36 rounded-full border-4 object-cover"
                     style={{
                       borderColor: "var(--carta-chip-border)",
@@ -1596,7 +1633,7 @@ export default function PublicBioPage() {
                       background: avatarFallbackStyle.background,
                     }}
                   >
-                    {profile.displayName.slice(0, 1).toUpperCase()}
+                    {businessName.slice(0, 1).toUpperCase()}
                   </div>
                 )}
               </div>
@@ -1604,22 +1641,22 @@ export default function PublicBioPage() {
 
             <div className="px-5 md:px-8 pt-20 md:pt-24 pb-4 text-center">
               <h1 className="text-4xl md:text-6xl font-black tracking-tight" style={{ color: textPalette.heading }}>
-                {renderTitleWithAccent(profile.displayName, accentWordColor)}
+                {renderTitleWithAccent(businessName, accentWordColor)}
               </h1>
               <p className="mt-2 text-sm md:text-base uppercase tracking-[0.18em]" style={{ color: "var(--carta-accent)" }}>
-                {profile.categoryLabel || (profile.businessType === "restaurant" ? "Restaurante" : "Tienda online")}
+                {tdv(profile.categoryLabel, profile.businessType === "restaurant" ? tx("Restaurante", "Restaurant") : tx("Tienda online", "Online store"))}
               </p>
               {profile.businessType === "restaurant" ? (
                 <RestaurantStatusChip isOpen={isRestaurantOpen} etaMinutes={etaMinutes} className="mt-3" />
               ) : null}
               {promoDiscountRate > 0 ? (
                 <p className="mt-2 text-xs font-bold uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
-                  {profile.automation?.promoLabel || "Promo activa"}: -{Math.round(promoDiscountRate * 100)}% en franja horaria
+                  {tdv(profile.automation?.promoLabel, tx("Promo activa", "Active promo"))}: -{Math.round(promoDiscountRate * 100)}% {tx("en franja horaria", "in active time slot")}
                 </p>
               ) : null}
               {profile.bio && (
                 <p className="mt-3 text-sm md:text-base" style={{ color: textPalette.muted }}>
-                  {renderBioWithGoldKeywords(profile.bio)}
+                  {renderBioWithGoldKeywords(tdv(profile.bio, ""))}
                 </p>
               )}
             </div>
@@ -1640,8 +1677,8 @@ export default function PublicBioPage() {
                       color: brandStyle.color,
                       boxShadow: "0 8px 18px -14px rgba(15,23,42,0.9)",
                     }}
-                    aria-label={link.title || link.type}
-                    title={link.title || link.type}
+                    aria-label={tdv(link.title, link.type)}
+                    title={tdv(link.title, link.type)}
                   >
                     <Icon className="h-5 w-5" />
                   </a>
@@ -1658,10 +1695,10 @@ export default function PublicBioPage() {
               style={{ borderColor: "var(--carta-border)", background: "transparent", boxShadow: "none", backdropFilter: "none" }}
             >
               <h2 className="text-2xl font-black md:hidden" style={{ color: accentWordColor }}>
-                {profile.sectionLabels.contact}
+                {contactLabel}
               </h2>
               <p className="mt-1 text-sm md:hidden" style={{ color: textPalette.muted }}>
-                Atiende clientes directo desde tu canal favorito.
+                {tx("Atiende clientes directo desde tu canal favorito.", "Serve customers directly from your favorite channel.")}
               </p>
 
               <div className="mt-4 grid grid-cols-1 gap-3 md:mt-5 md:grid-cols-2 md:items-stretch md:gap-4">
@@ -1672,7 +1709,7 @@ export default function PublicBioPage() {
                     style={contactActionStyle}
                   >
                     <Phone className="h-4 w-4" />
-                    Llamar ahora
+                    {tx("Llamar ahora", "Call now")}
                   </a>
                 )}
                 {whatsappHref && (
@@ -1691,14 +1728,14 @@ export default function PublicBioPage() {
                     style={contactActionStyle}
                   >
                     <MessageCircleIcon className="h-4 w-4" />
-                    Escribir ahora
+                    {tx("Escribir ahora", "Write now")}
                   </a>
                 )}
               </div>
               {proTestimonials.length > 0 ? (
                 <div className="mt-4 rounded-2xl border p-3 md:mt-5 md:p-4" style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
                   <p className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: accentWordColor }}>
-                    Testimonios reales
+                    {tx("Testimonios reales", "Real testimonials")}
                   </p>
                   <div className="relative mt-2 min-h-[108px]">
                     {proTestimonials.map((testimonial, index) => {
@@ -1715,10 +1752,10 @@ export default function PublicBioPage() {
                           }}
                         >
                           <p className="text-sm font-semibold leading-relaxed" style={{ color: textPalette.heading }}>
-                            “{testimonial.quote}”
+                            "{tdv(testimonial.quote, "")}"
                           </p>
                           <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: textPalette.muted }}>
-                            {testimonial.author} · {testimonial.role || "Cliente"}
+                            {tdv(testimonial.author, "")} · {tdv(testimonial.role, tx("Cliente", "Customer"))}
                           </p>
                           <p className="mt-1 text-xs" style={{ color: accentWordColor }}>
                             {"★".repeat(Math.max(1, Math.min(5, Number(testimonial.rating) || 5)))}
@@ -1781,8 +1818,8 @@ export default function PublicBioPage() {
                   <StickyCategoryBar
                     categories={categorySections.map((category) => ({
                       id: category.id,
-                      name: category.name,
-                      emoji: category.emoji,
+                      name: category.localizedName,
+                      emoji: category.localizedEmoji,
                     }))}
                     activeId={selectedCategoryId}
                     onSelect={scrollToCategory}
@@ -1795,7 +1832,7 @@ export default function PublicBioPage() {
 
                 {categorySections.length === 0 && (
                   <div className="rounded-2xl border border-dashed p-4 text-sm" style={{ borderColor: "var(--carta-border)", color: textPalette.muted }}>
-                    No hay productos para el filtro actual.
+                    {tx("No hay productos para el filtro actual.", "There are no products for the current filter.")}
                   </div>
                 )}
 
@@ -1809,7 +1846,7 @@ export default function PublicBioPage() {
                       className="scroll-mt-24"
                     >
                       <h3 className="text-3xl md:text-2xl font-black tracking-tight" style={{ color: accentWordColor }}>
-                        {section.name}
+                        {section.localizedName}
                       </h3>
                       <div className="mt-3 space-y-3">
                         {section.items.map((item) => {
@@ -1828,26 +1865,29 @@ export default function PublicBioPage() {
                                 })();
                           const promoBadge =
                             promoDiscountRate > 0
-                              ? `${profile.automation?.promoLabel || "Promo"} -${Math.round(promoDiscountRate * 100)}%`
+                              ? `${tdv(profile.automation?.promoLabel, tx("Promo", "Promo"))} -${Math.round(promoDiscountRate * 100)}%`
                               : "";
                           return (
                             <ProductCard
                               key={item.id}
                               className={cardClass}
-                              title={item.title}
-                              description={item.description}
-                              salesCopy={proFeaturesEnabled ? item.salesCopy : undefined}
+                              title={item.localizedTitle}
+                              description={item.localizedDescription}
+                              salesCopy={proFeaturesEnabled ? item.localizedSalesCopy : undefined}
                               imageUrl={item.imageUrl}
                               galleryImageUrls={proFeaturesEnabled ? item.galleryImageUrls : []}
                               oldPrice={displayOldPrice}
                               price={displayPrice}
-                              badge={(promoBadge || "").trim() || undefined}
+                              badge={(tdv(promoBadge, "").trim() || item.localizedBadge || "").trim() || undefined}
                               priorityBadge={resolvePriorityBadge((promoBadge || "").trim())}
-                              emojiFallback={section.emoji || (profile.businessType === "restaurant" ? "🍽️" : "🛍️")}
-                              onAdd={() => addItemToCart(item, section.name)}
+                              emojiFallback={section.localizedEmoji || (profile.businessType === "restaurant" ? "🍽️" : "🛍️")}
+                              onAdd={() => addItemToCart(item, section.localizedName)}
                               quantity={cartQtyById.get(item.id) || 0}
-                              onIncrement={() => addItemToCart(item, section.name)}
+                              onIncrement={() => addItemToCart(item, section.localizedName)}
                               onDecrement={() => patchCartItemQuantity(item.id, (cartQtyById.get(item.id) || 0) - 1)}
+                              addButtonLabel={tx("Agregar", "Add")}
+                              removeUnitAriaLabel={tx(`Quitar una unidad de ${item.localizedTitle}`, `Remove one unit of ${item.localizedTitle}`)}
+                              addUnitAriaLabel={tx(`Agregar una unidad de ${item.localizedTitle}`, `Add one unit of ${item.localizedTitle}`)}
                             />
                           );
                         })}
@@ -1862,13 +1902,13 @@ export default function PublicBioPage() {
           {activeTab === "location" && (
             <section className={`h-full overflow-hidden rounded-[1.9rem] border p-4 ${cardClass}`} style={{ borderColor: "var(--carta-border)", ...cardSurfaceStyle }}>
               <h2 className="hidden md:block text-2xl font-black" style={{ color: accentWordColor }}>
-                {profile.sectionLabels.location}
+                {locationLabel}
               </h2>
 
               <div className="mt-4 overflow-hidden rounded-2xl border" style={{ borderColor: "var(--carta-border)" }}>
                 {profile.location.mapEmbedUrl ? (
                   <iframe
-                    title={`Mapa de ${profile.displayName}`}
+                    title={tx(`Mapa de ${businessName}`, `Map of ${businessName}`)}
                     src={profile.location.mapEmbedUrl}
                     className="h-64 w-full"
                     loading="lazy"
@@ -1884,7 +1924,7 @@ export default function PublicBioPage() {
               {profile.location.address && (
                 <div className="mt-4">
                   <h3 className="text-3xl font-black leading-tight" style={{ color: textPalette.heading }}>
-                    {profile.location.address}
+                    {tdv(profile.location.address, "")}
                   </h3>
                 </div>
               )}
@@ -1894,7 +1934,7 @@ export default function PublicBioPage() {
                   <p className="text-2xl font-black" style={{ color: accentWordColor }}>{tx("Horarios", "Hours")}</p>
                   <div className="mt-2 space-y-2 text-sm" style={{ color: textPalette.muted }}>
                     {profile.location.scheduleLines.map((line, index) => (
-                      <p key={`${line}-${index}`}>{line}</p>
+                      <p key={`${line}-${index}`}>{tdv(line, "")}</p>
                     ))}
                   </div>
                 </div>
@@ -1909,7 +1949,7 @@ export default function PublicBioPage() {
                   style={interactiveStyle}
                 >
                   <MapPin className="h-4 w-4" />
-                  {profile.location.ctaLabel || tx("Ir ahora", "Go now")}
+                  {tdv(profile.location.ctaLabel, tx("Ir ahora", "Go now"))}
                 </a>
               )}
 
@@ -1955,10 +1995,10 @@ export default function PublicBioPage() {
 
               <div className="mt-4">
                 <h2 className="text-2xl font-black md:text-3xl" style={{ color: accentWordColor }}>
-                  {profile.reservation.title || tx("Reserva premium", "Premium booking")}
+                  {tdv(profile.reservation.title, tx("Reserva premium", "Premium booking"))}
                 </h2>
                 <p className="mt-1 text-sm md:text-base" style={{ color: textPalette.muted }}>
-                  {profile.reservation.subtitle || tx("Agenda tu mesa y te confirmamos por WhatsApp.", "Book your table and we'll confirm via WhatsApp.")}
+                  {tdv(profile.reservation.subtitle, tx("Agenda tu mesa y te confirmamos por WhatsApp.", "Book your table and we'll confirm via WhatsApp."))}
                 </p>
                 {reservationHasDepositDetails ? (
                   <div
@@ -1975,7 +2015,7 @@ export default function PublicBioPage() {
                       </p>
                     ) : null}
                     {reservationDepositInstructions ? (
-                      <p className={reservationDepositAmount ? "mt-1" : undefined}>{reservationDepositInstructions}</p>
+                      <p className={reservationDepositAmount ? "mt-1" : undefined}>{tdv(reservationDepositInstructions, "")}</p>
                     ) : null}
                   </div>
                 ) : null}
@@ -2066,7 +2106,7 @@ export default function PublicBioPage() {
                   >
                     {(reservationSlots.length > 0 ? reservationSlots : [tx("Por coordinar", "To be confirmed")]).map((slot) => (
                       <option key={slot} value={slot}>
-                        {slot}
+                        {tdv(slot, tx("Por coordinar", "To be confirmed"))}
                       </option>
                     ))}
                   </select>
@@ -2093,7 +2133,7 @@ export default function PublicBioPage() {
                     rows={3}
                     value={reservationNote}
                     onChange={(event) => setReservationNote(event.target.value)}
-                    placeholder={profile.reservation.notePlaceholder || tx("Celebracion, alergias o zona preferida.", "Celebration, allergies, or preferred area.")}
+                    placeholder={tdv(profile.reservation.notePlaceholder, tx("Celebracion, alergias o zona preferida.", "Celebration, allergies, or preferred area."))}
                     className={`w-full rounded-xl border px-3 py-2.5 text-sm resize-none ${buttonRadiusClass}`}
                     style={checkoutInputStyle}
                   />
@@ -2118,7 +2158,7 @@ export default function PublicBioPage() {
                 style={interactiveStyle}
               >
                 <CalendarDays className="h-4 w-4" />
-                {profile.reservation.ctaLabel || tx("Enviar reserva", "Send booking")}
+                {tdv(profile.reservation.ctaLabel, tx("Enviar reserva", "Send booking"))}
               </button>
               <p className="mt-2 text-[11px]" style={{ color: textPalette.soft }}>
                 {tx("Confirmamos por WhatsApp segun disponibilidad real del restaurante.", "We confirm via WhatsApp based on real-time restaurant availability.")}
@@ -2155,7 +2195,7 @@ export default function PublicBioPage() {
               <div className="mx-auto mb-1 h-4 w-4">
                 <Phone className="h-4 w-4" />
               </div>
-              <span className="block truncate">{profile.sectionLabels.contact}</span>
+              <span className="block truncate">{contactLabel}</span>
             </button>
 
             <button
@@ -2189,7 +2229,7 @@ export default function PublicBioPage() {
               <div className="mx-auto mb-1 h-4 w-4">
                 <MapPin className="h-4 w-4" />
               </div>
-              <span className="block truncate">{profile.sectionLabels.location}</span>
+              <span className="block truncate">{locationLabel}</span>
             </button>
             {reservationEnabled ? (
               <button
@@ -2222,7 +2262,7 @@ export default function PublicBioPage() {
                     {checkoutStep === "cart" ? tx("Mi Pedido", "My Order") : tx("Completa tu pedido", "Complete your order")}
                   </p>
                   <p className="text-sm" style={{ color: textPalette.muted }}>
-                    {profile.displayName}
+                    {businessName}
                   </p>
                 </div>
                 <button
@@ -2264,7 +2304,7 @@ export default function PublicBioPage() {
                           >
                             <div className="flex gap-3">
                               {item.imageUrl ? (
-                                <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-xl object-cover" />
+                                <img src={item.imageUrl} alt={tdv(item.title, tx("Producto", "Product"))} className="h-20 w-20 rounded-xl object-cover" />
                               ) : (
                                 <div className="h-20 w-20 rounded-xl border flex items-center justify-center text-xs font-bold" style={{ borderColor: "var(--carta-chip-border)" }}>
                                   ITEM
@@ -2273,7 +2313,7 @@ export default function PublicBioPage() {
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-start justify-between gap-2">
                                   <h4 className="text-xl font-extrabold leading-tight" style={{ color: textPalette.heading }}>
-                                    {item.title}
+                                    {tdv(item.title, tx("Producto", "Product"))}
                                   </h4>
                                   <button
                                     type="button"
@@ -2335,8 +2375,8 @@ export default function PublicBioPage() {
                           }}
                         >
                           {amountToAutoDiscount > 0
-                            ? tx(`🎁 ¡Agrega ${formatSoles(amountToAutoDiscount)} mas para obtener 5% de descuento!`, `🎁 Add ${formatSoles(amountToAutoDiscount)} more to unlock a 5% discount!`)
-                            : tx("🎉 ¡Excelente! Ya tienes 5% de descuento por monto acumulado.", "🎉 Great! You already unlocked a 5% discount by total amount.")}
+                            ? tx(`ðŸŽ Â¡Agrega ${formatSoles(amountToAutoDiscount)} mas para obtener 5% de descuento!`, `ðŸŽ Add ${formatSoles(amountToAutoDiscount)} more to unlock a 5% discount!`)
+                            : tx("ðŸŽ‰ Â¡Excelente! Ya tienes 5% de descuento por monto acumulado.", "ðŸŽ‰ Great! You already unlocked a 5% discount by total amount.")}
                         </div>
                         <div className="mt-3 border-t pt-3 text-3xl font-black" style={{ borderColor: "var(--carta-border)", color: textPalette.heading }}>
                           {tx("Total", "Total")}: {formatSoles(cartTotal)}
@@ -2386,7 +2426,7 @@ export default function PublicBioPage() {
                     className="text-sm font-semibold"
                     style={{ color: textPalette.muted }}
                   >
-                    {tx("← Regresar al carrito", "← Back to cart")}
+                    {tx("â† Regresar al carrito", "â† Back to cart")}
                   </button>
 
                   <div className="space-y-3">
@@ -2444,7 +2484,7 @@ export default function PublicBioPage() {
 
                     <div className="space-y-1">
                       <span className="text-sm font-semibold" style={{ color: textPalette.heading }}>
-                        {tx("¿Tienes un cupon de descuento?", "Do you have a discount coupon?")}
+                        {tx("Â¿Tienes un cupon de descuento?", "Do you have a discount coupon?")}
                       </span>
                       <div className="flex gap-2">
                         <input
@@ -2475,8 +2515,8 @@ export default function PublicBioPage() {
                         }}
                       >
                         {amountToAutoDiscount > 0
-                          ? tx(`🎁 ¡Estas cerca! Te faltan ${formatSoles(amountToAutoDiscount)} para obtener 5% de descuento`, `🎁 You're close! You need ${formatSoles(amountToAutoDiscount)} more to unlock a 5% discount`)
-                          : tx("🎉 Descuento de 5% activado por monto acumulado.", "🎉 5% discount activated by total amount.")}
+                          ? tx(`ðŸŽ Â¡Estas cerca! Te faltan ${formatSoles(amountToAutoDiscount)} para obtener 5% de descuento`, `ðŸŽ You're close! You need ${formatSoles(amountToAutoDiscount)} more to unlock a 5% discount`)
+                          : tx("ðŸŽ‰ Descuento de 5% activado por monto acumulado.", "ðŸŽ‰ 5% discount activated by total amount.")}
                       </div>
                       <div className="mt-3 space-y-1 text-sm" style={{ color: textPalette.muted }}>
                         <div className="flex items-center justify-between">
@@ -2526,7 +2566,7 @@ export default function PublicBioPage() {
                     </label>
 
                     <div className="rounded-xl border-l-2 px-3 py-2 text-xs" style={{ borderColor: "var(--carta-accent)", color: textPalette.muted }}>
-                      {tx("ℹ️ Importante: al enviar este pedido, se abrirá WhatsApp con el mensaje listo para confirmar.", "ℹ️ Important: when sending this order, WhatsApp opens with the message ready to confirm.")}
+                      {tx("â„¹ï¸ Importante: al enviar este pedido, se abrirÃ¡ WhatsApp con el mensaje listo para confirmar.", "â„¹ï¸ Important: when sending this order, WhatsApp opens with the message ready to confirm.")}
                     </div>
 
                     {cartFeedback && (
@@ -2558,3 +2598,5 @@ export default function PublicBioPage() {
     </CartaThemeProvider>
   );
 }
+
+

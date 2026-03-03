@@ -17,9 +17,15 @@ import {
   verticalToSignupHref,
 } from "@/lib/vertical";
 import { resolveThemeById, themeToCssVars } from "@/lib/themes";
+import { useLanguage } from "@/context/LanguageContext";
+import { localizeDynamicText } from "@/lib/autoI18n";
 
 export default function DemoExperience({ demo }: { demo: DemoData }) {
   const { user } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const isEn = language === "en";
+  const tx = (es: string, en: string) => (isEn ? en : es);
+  const td = (value: string) => localizeDynamicText(value, language);
   const router = useRouter();
   const [themeId, setThemeId] = useState(demo.themeId);
 
@@ -59,25 +65,33 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
         className="min-h-screen bg-[var(--fp-bg)] px-3 pb-28 pt-16 text-[var(--fp-text)] md:px-6 md:pt-20 lg:px-8"
       >
         <div className="mx-auto w-full max-w-7xl">
-          <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <button
               type="button"
               onClick={handleBackClick}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
             >
-              {"\u2190"} Retroceder
+              {"\u2190"} {tx("Retroceder", "Back")}
             </button>
             <Link
               href="/"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
             >
-              {"\u2190"} Volver al inicio
+              {"\u2190"} {tx("Volver al inicio", "Back to home")}
             </Link>
+            <button
+              type="button"
+              onClick={() => setLanguage(language === "en" ? "es" : "en")}
+              className="inline-flex items-center justify-center rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
+              aria-label={tx("Cambiar idioma", "Change language")}
+            >
+              {language === "en" ? "ES" : "EN"}
+            </button>
             <Link
               href={createHref}
-              className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-amber-100 sm:col-span-1"
+              className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-amber-100 sm:col-span-2"
             >
-              Crear mi version gratis
+              {tx("Crear mi version gratis", "Create my free version")}
             </Link>
           </div>
           <RestaurantDemo demo={demo} />
@@ -93,33 +107,41 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     >
       <div className="mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0 space-y-4">
-          <div className="grid gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3 sm:grid-cols-3">
+          <div className="grid gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3 sm:grid-cols-4">
             <button
               type="button"
               onClick={handleBackClick}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
             >
-              {"\u2190"} Retroceder
+              {"\u2190"} {tx("Retroceder", "Back")}
             </button>
             <Link
               href="/"
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] sm:justify-start"
             >
-              {"\u2190"} Volver al inicio
+              {"\u2190"} {tx("Volver al inicio", "Back to home")}
             </Link>
+            <button
+              type="button"
+              onClick={() => setLanguage(language === "en" ? "es" : "en")}
+              className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
+              aria-label={tx("Cambiar idioma", "Change language")}
+            >
+              {language === "en" ? "ES" : "EN"}
+            </button>
             <Link
               href={createHref}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-amber-100 sm:justify-end"
             >
-              Crear mi version gratis
+              {tx("Crear mi version gratis", "Create my free version")}
             </Link>
           </div>
           <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--fp-muted)]">
-              Demo {demo.mode === "real" ? "real" : "preview"} / {demo.vertical}
+              {tx("Demo", "Demo")} {demo.mode === "real" ? tx("real", "real") : tx("preview", "preview")} / {td(demo.vertical)}
             </p>
-            <h1 className="mt-2 text-2xl font-black md:text-4xl">{demo.title}</h1>
-            <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{demo.subtitle}</p>
+            <h1 className="mt-2 text-2xl font-black md:text-4xl">{td(demo.title)}</h1>
+            <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{td(demo.subtitle)}</p>
           </div>
           {demo.vertical === "ecommerce" ? <EcommerceDemo demo={demo} /> : null}
           {demo.vertical === "services" ? <ServicesDemo demo={demo} /> : null}
