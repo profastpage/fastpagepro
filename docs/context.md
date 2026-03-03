@@ -125,3 +125,9 @@
 - Editor de clonado (`/editor/[id]`) mejora carga de imagenes:
   - al tocar una imagen en modo edicion ahora abre selector de archivo para subir desde dispositivo.
   - mantiene fallback a URL manual si no se selecciona archivo.
+- Stripe real en suscripciones (`/dashboard/billing` + `/settings`):
+  - se agrego flujo de pago Stripe con APIs dedicadas: `POST /api/payments/stripe/checkout` y `POST /api/payments/stripe/confirm`.
+  - el flujo replica la activacion automatica de plan al confirmar pago exitoso, usando almacenamiento de tracking en Firestore (`subscription_stripe_payments`).
+  - `Billing` ahora soporta metodo `STRIPE` con checkout seguro, confirmacion al retorno y mensajes en ES/EN.
+  - en `Configuracion > Plan` se agrego acceso directo a `Billing` con Stripe preseleccionado.
+  - se documentaron variables de entorno nuevas: `STRIPE_MODE` y `STRIPE_SECRET_KEY`.

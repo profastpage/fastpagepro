@@ -467,6 +467,15 @@ export default function SettingsPage() {
     router.push("/auth");
   };
 
+  const openBillingWithStripe = () => {
+    const normalizedPlan = String(formData.plan || "")
+      .trim()
+      .toUpperCase();
+    const planQuery =
+      normalizedPlan === "PRO" ? "pro" : normalizedPlan === "BUSINESS" ? "business" : "free";
+    router.push(`/dashboard/billing?plan=${planQuery}&paymentMethod=STRIPE`);
+  };
+
   const tabs = useMemo(() => [
     { id: "profile", label: t("settings.tabs.profile"), icon: <User className="w-5 h-5" />, desc: t("settings.tabs.profile.desc") },
     { id: "account", label: t("settings.tabs.account"), icon: <Smartphone className="w-5 h-5" />, desc: t("settings.tabs.account.desc") },
@@ -955,6 +964,13 @@ export default function SettingsPage() {
                     </div>
                     <button className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-white font-black uppercase tracking-widest text-xs transition-all active:scale-95">
                       {t("settings.plan.manage")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={openBillingWithStripe}
+                      className="w-full sm:w-auto px-8 py-4 bg-emerald-500/15 border border-emerald-300/35 hover:bg-emerald-500/25 rounded-2xl text-emerald-100 font-black uppercase tracking-widest text-xs transition-all active:scale-95"
+                    >
+                      {language === "en" ? "Pay with Stripe" : "Pagar con Stripe"}
                     </button>
                   </div>
                 </SettingSection>

@@ -17,7 +17,7 @@ import {
   type PlanType,
 } from "@/lib/subscription/plans";
 
-type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA" | "IZIPAY";
+type PaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA" | "IZIPAY" | "STRIPE";
 type CopiedAccountKey = "bcp_soles" | "bcp_cci";
 type BillingCycle = "MONTHLY" | "ANNUAL";
 type ThemeMarketplacePaymentMethod = "YAPE" | "PLIN" | "TRANSFERENCIA" | "IZIPAY";
@@ -62,6 +62,7 @@ const PAYMENT_INSTRUCTIONS_ES: Record<PaymentMethod, string> = {
   PLIN: "Plin al 906431630. En el detalle incluye el plan que deseas activar.",
   TRANSFERENCIA: "Transferencia a BCP en soles y adjunta comprobante para validacion.",
   IZIPAY: "Paga con tarjeta o billetera en Izipay y activamos el plan automaticamente.",
+  STRIPE: "Paga con tarjeta en Stripe y activamos el plan automaticamente.",
 };
 
 const PAYMENT_INSTRUCTIONS_EN: Record<PaymentMethod, string> = {
@@ -69,6 +70,7 @@ const PAYMENT_INSTRUCTIONS_EN: Record<PaymentMethod, string> = {
   PLIN: "Plin to 906431630. Add the target plan in the detail.",
   TRANSFERENCIA: "Transfer in soles to BCP and attach payment proof for validation.",
   IZIPAY: "Pay with card or wallet on Izipay and we activate your plan automatically.",
+  STRIPE: "Pay with card on Stripe and we activate your plan automatically.",
 };
 
 const BANK_ACCOUNTS_ES = [
@@ -111,6 +113,22 @@ function normalizePlanIntent(rawValue: string | null): PlanType | null {
   return null;
 }
 
+function normalizePaymentMethodIntent(rawValue: string | null): PaymentMethod | null {
+  const normalized = String(rawValue || "")
+    .trim()
+    .toUpperCase();
+  if (
+    normalized === "YAPE" ||
+    normalized === "PLIN" ||
+    normalized === "TRANSFERENCIA" ||
+    normalized === "IZIPAY" ||
+    normalized === "STRIPE"
+  ) {
+    return normalized;
+  }
+  return null;
+}
+
 function PaymentBrandLogo({ brand }: { brand: "YAPE" | "BCP" }) {
   const styles: Record<typeof brand, string> = {
     YAPE: "from-violet-500 to-fuchsia-600 text-white",
@@ -146,6 +164,7 @@ export default function BillingPage() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [confirmingIzipay, setConfirmingIzipay] = useState(false);
+  const [confirmingStripe, setConfirmingStripe] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [referralSummary, setReferralSummary] = useState<ReferralSummaryResponse | null>(null);
   const [loadingReferralSummary, setLoadingReferralSummary] = useState(false);
@@ -156,7 +175,9 @@ export default function BillingPage() {
   const pricingPlansRef = useRef<HTMLElement | null>(null);
   const paymentFormRef = useRef<HTMLFormElement | null>(null);
   const hasAppliedQueryPlanRef = useRef(false);
+  const hasAppliedQueryPaymentMethodRef = useRef(false);
   const hasProcessedIzipayQueryRef = useRef(false);
+  const hasProcessedStripeQueryRef = useRef(false);
   const hasProcessedMarketplaceQueryRef = useRef(false);
   const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim() || DEFAULT_YAPE_QR_URL;
 
@@ -206,6 +227,7 @@ export default function BillingPage() {
             submitBusiness: "Activate 14-day trial",
             submitPaid: "Submit payment request",
             submitIzipay: "Pay with Izipay",
+            submitStripe: "Pay with Stripe",
             usageTitle: "Current usage and limits",
             projects: "Published projects",
             products: "Products in largest project",
@@ -246,6 +268,11 @@ export default function BillingPage() {
             izipayConfirming: "Confirming Izipay payment...",
             izipayPaidSuccess: "Izipay payment confirmed. Your plan is active.",
             izipayPending: "Your Izipay payment is still pending confirmation.",
+            stripeSecure: "Secure online payment (Stripe)",
+            stripeRedirecting: "Opening secure Stripe checkout...",
+            stripeConfirming: "Confirming Stripe payment...",
+            stripePaidSuccess: "Stripe payment confirmed. Your plan is active.",
+            stripePending: "Your Stripe payment is still pending confirmation.",
             referralsTitle: "Referral program",
             referralsSubtitle: "Share your code and earn commission for each paid activation.",
             referralCode: "Referral code",
@@ -297,6 +324,7 @@ export default function BillingPage() {
             submitBusiness: "Activar prueba de 14 dias",
             submitPaid: "Enviar solicitud de pago",
             submitIzipay: "Pagar con Izipay",
+            submitStripe: "Pagar con Stripe",
             usageTitle: "Uso actual y limites",
             projects: "Proyectos publicados",
             products: "Productos en proyecto mas grande",
@@ -337,6 +365,11 @@ export default function BillingPage() {
             izipayConfirming: "Confirmando pago Izipay...",
             izipayPaidSuccess: "Pago Izipay confirmado. Tu plan ya esta activo.",
             izipayPending: "Tu pago Izipay sigue pendiente de confirmacion.",
+            stripeSecure: "Pago seguro online (Stripe)",
+            stripeRedirecting: "Abriendo checkout seguro de Stripe...",
+            stripeConfirming: "Confirmando pago Stripe...",
+            stripePaidSuccess: "Pago Stripe confirmado. Tu plan ya esta activo.",
+            stripePending: "Tu pago Stripe sigue pendiente de confirmacion.",
             referralsTitle: "Programa de referidos",
             referralsSubtitle: "Comparte tu codigo y gana comision por cada activacion pagada.",
             referralCode: "Codigo de referido",
@@ -398,9 +431,14 @@ export default function BillingPage() {
     const params = new URLSearchParams(window.location.search);
     setRequiredFeature(String(params.get("requiredFeature") || "").trim());
     const querySelectedPlan = normalizePlanIntent(params.get("plan"));
+    const queryPaymentMethod = normalizePaymentMethodIntent(params.get("paymentMethod"));
     if (querySelectedPlan && !hasAppliedQueryPlanRef.current) {
       setSelectedPlan(querySelectedPlan);
       hasAppliedQueryPlanRef.current = true;
+    }
+    if (queryPaymentMethod && !hasAppliedQueryPaymentMethodRef.current) {
+      setPaymentMethod(queryPaymentMethod);
+      hasAppliedQueryPaymentMethodRef.current = true;
     }
   }, []);
 
@@ -482,7 +520,9 @@ export default function BillingPage() {
 
     const params = new URLSearchParams(window.location.search);
     const izipayResult = String(params.get("izipayResult") || "").trim().toLowerCase();
+    const stripeResult = String(params.get("stripeResult") || "").trim().toLowerCase();
     const paymentId = String(params.get("paymentId") || "").trim();
+    const sessionId = String(params.get("session_id") || "").trim();
     const marketplaceResult = String(params.get("marketplaceResult") || "").trim().toLowerCase();
     const orderId = String(params.get("orderId") || "").trim();
 
@@ -522,6 +562,42 @@ export default function BillingPage() {
       })();
     }
 
+    if (stripeResult === "success" && paymentId && !hasProcessedStripeQueryRef.current) {
+      hasProcessedStripeQueryRef.current = true;
+      setConfirmingStripe(true);
+      setFeedback({ type: "success", text: i18n.stripeConfirming });
+      (async () => {
+        try {
+          const token = await auth.currentUser?.getIdToken(true);
+          if (!token) throw new Error("UNAUTHORIZED");
+          const response = await fetch("/api/payments/stripe/confirm", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ paymentId, sessionId }),
+          });
+          const payload = (await response.json().catch(() => ({}))) as { paid?: boolean; error?: string };
+          if (!response.ok) {
+            throw new Error(payload.error || "No se pudo confirmar.");
+          }
+          setFeedback({
+            type: payload.paid ? "success" : "error",
+            text: payload.paid ? i18n.stripePaidSuccess : i18n.stripePending,
+          });
+          await reload();
+        } catch (error) {
+          setFeedback({
+            type: "error",
+            text: String((error as { message?: string })?.message || "No se pudo confirmar Stripe."),
+          });
+        } finally {
+          setConfirmingStripe(false);
+        }
+      })();
+    }
+
     if (marketplaceResult === "success" && orderId && !hasProcessedMarketplaceQueryRef.current) {
       hasProcessedMarketplaceQueryRef.current = true;
       (async () => {
@@ -555,7 +631,16 @@ export default function BillingPage() {
         }
       })();
     }
-  }, [i18n.izipayConfirming, i18n.izipayPaidSuccess, i18n.izipayPending, reload, user?.uid]);
+  }, [
+    i18n.izipayConfirming,
+    i18n.izipayPaidSuccess,
+    i18n.izipayPending,
+    i18n.stripeConfirming,
+    i18n.stripePaidSuccess,
+    i18n.stripePending,
+    reload,
+    user?.uid,
+  ]);
 
   const purchaseThemePack = async (packId: string, method: ThemeMarketplacePaymentMethod) => {
     if (!user?.uid) return;
@@ -726,8 +811,10 @@ export default function BillingPage() {
         );
       }
 
-      if (showPaymentFlow && paymentMethod === "IZIPAY") {
-        const response = await fetch("/api/payments/izipay/checkout", {
+      if (showPaymentFlow && (paymentMethod === "IZIPAY" || paymentMethod === "STRIPE")) {
+        const checkoutPath =
+          paymentMethod === "STRIPE" ? "/api/payments/stripe/checkout" : "/api/payments/izipay/checkout";
+        const response = await fetch(checkoutPath, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -745,10 +832,20 @@ export default function BillingPage() {
         };
         if (!response.ok || !data.checkoutUrl) {
           throw new Error(
-            data?.error || (isEnglish ? "Could not start Izipay checkout." : "No se pudo iniciar Izipay."),
+            data?.error ||
+              (paymentMethod === "STRIPE"
+                ? isEnglish
+                  ? "Could not start Stripe checkout."
+                  : "No se pudo iniciar Stripe."
+                : isEnglish
+                  ? "Could not start Izipay checkout."
+                  : "No se pudo iniciar Izipay."),
           );
         }
-        setFeedback({ type: "success", text: i18n.izipayRedirecting });
+        setFeedback({
+          type: "success",
+          text: paymentMethod === "STRIPE" ? i18n.stripeRedirecting : i18n.izipayRedirecting,
+        });
         window.location.href = data.checkoutUrl;
         return;
       }
@@ -1006,8 +1103,8 @@ export default function BillingPage() {
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
                   {i18n.paymentMethod}
                 </span>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                  {(["YAPE", "PLIN", "TRANSFERENCIA", "IZIPAY"] as PaymentMethod[]).map((method) => (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+                  {(["YAPE", "PLIN", "TRANSFERENCIA", "IZIPAY", "STRIPE"] as PaymentMethod[]).map((method) => (
                     <button
                       key={method}
                       type="button"
@@ -1035,10 +1132,12 @@ export default function BillingPage() {
               <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100">
                 {i18n.trialBlock}
               </div>
-            ) : paymentMethod === "IZIPAY" ? (
+            ) : paymentMethod === "IZIPAY" || paymentMethod === "STRIPE" ? (
               <div className="space-y-2 rounded-xl border border-amber-300/35 bg-amber-500/10 px-3 py-3 text-sm text-amber-100">
                 <p className="font-semibold">{paymentInstructions[paymentMethod]}</p>
-                <p className="text-xs text-amber-100/90">{i18n.izipaySecure}</p>
+                <p className="text-xs text-amber-100/90">
+                  {paymentMethod === "STRIPE" ? i18n.stripeSecure : i18n.izipaySecure}
+                </p>
               </div>
             ) : (
               <div className="space-y-3 rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-3 text-sm text-cyan-100">
@@ -1164,7 +1263,7 @@ export default function BillingPage() {
               </div>
             )}
 
-            {showPaymentFlow && paymentMethod !== "IZIPAY" ? (
+            {showPaymentFlow && paymentMethod !== "IZIPAY" && paymentMethod !== "STRIPE" ? (
               <label className="block space-y-2">
                 <span className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">
                   {i18n.uploadProof}
@@ -1211,17 +1310,19 @@ export default function BillingPage() {
 
             <button
               type="submit"
-              disabled={submitting || confirmingIzipay || loading || permissions.loading}
+              disabled={submitting || confirmingIzipay || confirmingStripe || loading || permissions.loading}
               className="inline-flex items-center gap-2 rounded-xl border border-amber-300/45 bg-amber-400/10 px-4 py-2 text-sm font-bold text-amber-100 disabled:opacity-60"
             >
-              {submitting || confirmingIzipay ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {submitting || confirmingIzipay
+              {submitting || confirmingIzipay || confirmingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {submitting || confirmingIzipay || confirmingStripe
                 ? i18n.processing
                 : isBusinessTrial
                   ? i18n.submitBusiness
                   : paymentMethod === "IZIPAY"
                     ? i18n.submitIzipay
-                  : i18n.submitPaid}
+                    : paymentMethod === "STRIPE"
+                      ? i18n.submitStripe
+                      : i18n.submitPaid}
             </button>
           </form>
 
