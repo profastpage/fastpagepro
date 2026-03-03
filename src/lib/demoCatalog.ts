@@ -44,6 +44,14 @@ export const DEMO_CATALOG: DemoCatalogItem[] = [
   },
   {
     vertical: "restaurant",
+    slug: "dolce-bella",
+    title: "Dolce Bella",
+    subtitle: "Postres premium con pedidos y reservas por WhatsApp",
+    coverImage:
+      "https://images.unsplash.com/photo-1464306076886-da185f6a9d05?q=80&w=1400&auto=format&fit=crop",
+  },
+  {
+    vertical: "restaurant",
     slug: "pizza-norte",
     title: "Pizza Norte",
     subtitle: "Pizzeria con promos y pedidos rapidos por WhatsApp",
