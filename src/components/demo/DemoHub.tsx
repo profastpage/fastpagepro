@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import DemoCard from "@/components/demo/DemoCard";
 import VerticalSelector from "@/components/demo/VerticalSelector";
 import { DEMO_CATALOG } from "@/lib/demoCatalog";
@@ -19,6 +20,7 @@ type DemoHubProps = {
 };
 
 export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps) {
+  const router = useRouter();
   const [vertical, setVertical] = useState<BusinessVertical>(defaultVertical);
 
   useEffect(() => {
@@ -38,6 +40,13 @@ export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps
     () => DEMO_CATALOG.filter((item) => item.vertical === vertical),
     [vertical],
   );
+  const handleBackClick = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  };
 
   return (
     <main className="relative min-h-screen overflow-x-hidden px-4 pb-24 pt-24 sm:px-6 md:pt-28 lg:px-8">
@@ -67,6 +76,13 @@ export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps
             />
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleBackClick}
+              className="rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-bold uppercase tracking-[0.12em] text-white"
+            >
+              Retroceder
+            </button>
             <Link
               href={verticalToSignupHref(vertical)}
               onClick={() =>

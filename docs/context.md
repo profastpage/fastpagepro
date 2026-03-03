@@ -68,6 +68,9 @@
 - Contraste en demos sin registro (`RestaurantDemo`):
   - al activar fondo blanco, el contenedor principal ahora fuerza `text-[var(--fp-text)]` para evitar heredar texto claro del tema.
   - los estados informativos de reserva (nudge, error y feedback) cambian a texto oscuro en modo blanco, evitando texto casi blanco sobre fondos claros.
+- Navegacion en landing/demo:
+  - se agrego boton `Retroceder` (1 accion por clic usando historial del navegador) junto a `Volver al inicio` en la experiencia de demos (`DemoExperience`) para restaurante, ecommerce y servicios.
+  - el hub de demos (`DemoHub`) tambien incluye `Retroceder`; si no existe historial previo, hace fallback seguro a `/`.
 - Metricas PRO (`/metrics`):
   - cada apertura de enlace ahora suma `Clicks Totales` (+1 por page_view).
   - `Visitas` cambia a visitante unico por dispositivo/navegador (dedupe por `visitorId` persistente) en lugar de sumar cada apertura repetida.

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ThemePicker from "@/components/demo/ThemePicker";
 import StickyCTA from "@/components/demo/StickyCTA";
 import RestaurantDemo from "@/components/demo/RestaurantDemo";
@@ -19,6 +20,7 @@ import { resolveThemeById, themeToCssVars } from "@/lib/themes";
 
 export default function DemoExperience({ demo }: { demo: DemoData }) {
   const { user } = useAuth();
+  const router = useRouter();
   const [themeId, setThemeId] = useState(demo.themeId);
 
   useEffect(() => {
@@ -42,6 +44,14 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     ? verticalToCreateHref(demo.vertical, { demoSlug: demo.slug, demoTheme: themeId })
     : verticalToSignupHref(demo.vertical, { demoSlug: demo.slug, demoTheme: themeId });
 
+  const handleBackClick = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/");
+  };
+
   if (demo.vertical === "restaurant") {
     return (
       <main
@@ -49,18 +59,25 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
         className="min-h-screen bg-[var(--fp-bg)] px-3 pb-28 pt-16 text-[var(--fp-text)] md:px-6 md:pt-20 lg:px-8"
       >
         <div className="mx-auto w-full max-w-7xl">
-          <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={handleBackClick}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
+            >
+              {"\u2190"} Retroceder
+            </button>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2 text-xs font-black uppercase tracking-[0.08em]"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
             >
-              ← Volver al inicio
+              {"\u2190"} Volver al inicio
             </Link>
             <Link
               href={createHref}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-xs font-black uppercase tracking-[0.08em] text-amber-100"
+              className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-amber-100 sm:col-span-1"
             >
-              🚀 Crear mi versión gratis
+              Crear mi version gratis
             </Link>
           </div>
           <RestaurantDemo demo={demo} />
@@ -76,18 +93,25 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     >
       <div className="mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0 space-y-4">
-          <div className="grid gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3 sm:grid-cols-2">
+          <div className="grid gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={handleBackClick}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
+            >
+              {"\u2190"} Retroceder
+            </button>
             <Link
               href="/"
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] sm:justify-start"
             >
-              ← Volver al inicio
+              {"\u2190"} Volver al inicio
             </Link>
             <Link
               href={createHref}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-amber-100 sm:justify-end"
             >
-              🚀 Crear mi versión gratis
+              Crear mi version gratis
             </Link>
           </div>
           <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
