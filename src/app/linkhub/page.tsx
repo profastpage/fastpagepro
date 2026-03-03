@@ -421,6 +421,11 @@ type OptimizeImageOptions = {
 
 type StoragePlanTier = "FREE" | "BUSINESS" | "PRO";
 type ProfileImageKind = "avatar" | "cover" | "reservation" | "item" | "gallery";
+const IMAGE_OPTIMIZE_TIMEOUT_MS = 35_000;
+const STORAGE_UPLOAD_TIMEOUT_MS = 45_000;
+const STORAGE_URL_TIMEOUT_MS = 20_000;
+const PROFILE_COMPACT_TIMEOUT_MS = 70_000;
+const PROFILE_SAVE_TIMEOUT_MS = 35_000;
 
 function isInlineImageDataUrl(value: string): boolean {
   return /^data:image\//i.test(String(value || "").trim());
@@ -552,7 +557,11 @@ async function optimizeImageFile(
   options?: OptimizeImageOptions,
 ): Promise<string> {
   const source = await readFileAsDataUrl(file);
-  return optimizeImageDataUrl(source, options);
+  return withOperationTimeout(
+    optimizeImageDataUrl(source, options),
+    IMAGE_OPTIMIZE_TIMEOUT_MS,
+    "image_optimize",
+  );
 }
 
 type CompactProfileResult = {
@@ -578,6 +587,36 @@ function formatBytes(value: number): string {
   if (kb < 1024) return `${kb.toFixed(1)} KB`;
   const mb = kb / 1024;
   return `${mb.toFixed(2)} MB`;
+}
+
+function withOperationTimeout<T>(task: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      reject(new Error(`OPERATION_TIMEOUT:${label}:${timeoutMs}`));
+    }, Math.max(1_000, timeoutMs));
+
+    task
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
+function isOperationTimeoutError(error: unknown): boolean {
+  const rawMessage = String((error as { message?: string })?.message || "").toLowerCase();
+  return rawMessage.includes("operation_timeout:");
 }
 
 function mergeUniqueStrings(values: string[], limit?: number): string[] {
@@ -723,20 +762,32 @@ async function offloadProfileInlineImagesToStorage(
     if (!isInlineImageDataUrl(source)) return source;
     const cached = cache.get(source);
     if (cached) return cached;
-
-    const mimeType = getDataUrlMimeType(source);
-    const extension = getMimeExtension(mimeType);
-    const fileName = `${Date.now()}-${createClientUuid()}.${extension}`;
-    const objectPath = `linkhub-images/${options.userId}/${options.profileId}/${pathSegment}/${fileName}`;
-    const blob = await dataUrlToBlob(source, mimeType);
-    const uploadRef = storageRef(storage, objectPath);
-    await uploadBytes(uploadRef, blob, {
-      cacheControl: "public,max-age=31536000,immutable",
-      contentType: mimeType,
-    });
-    const downloadUrl = await getDownloadURL(uploadRef);
-    cache.set(source, downloadUrl);
-    return downloadUrl;
+    try {
+      const mimeType = getDataUrlMimeType(source);
+      const extension = getMimeExtension(mimeType);
+      const fileName = `${Date.now()}-${createClientUuid()}.${extension}`;
+      const objectPath = `linkhub-images/${options.userId}/${options.profileId}/${pathSegment}/${fileName}`;
+      const blob = await dataUrlToBlob(source, mimeType);
+      const uploadRef = storageRef(storage, objectPath);
+      await withOperationTimeout(
+        uploadBytes(uploadRef, blob, {
+          cacheControl: "public,max-age=31536000,immutable",
+          contentType: mimeType,
+        }),
+        STORAGE_UPLOAD_TIMEOUT_MS,
+        "storage_upload",
+      );
+      const downloadUrl = await withOperationTimeout(
+        getDownloadURL(uploadRef),
+        STORAGE_URL_TIMEOUT_MS,
+        "storage_get_url",
+      );
+      cache.set(source, downloadUrl);
+      return downloadUrl;
+    } catch (error) {
+      console.warn("[LinkHub] Storage offload skipped for image:", error);
+      return source;
+    }
   };
 
   const coverSources = mergeUniqueStrings(
@@ -3796,13 +3847,21 @@ export default function LinkHubPage() {
         user,
       );
 
-      const compactedProfileResult = await compactProfileImagesByPlan(normalizedNextProfile, storagePlanTier);
+      const compactedProfileResult = await withOperationTimeout(
+        compactProfileImagesByPlan(normalizedNextProfile, storagePlanTier),
+        PROFILE_COMPACT_TIMEOUT_MS,
+        "profile_compaction",
+      );
       let nextProfile = compactedProfileResult.profile;
       try {
-        nextProfile = await offloadProfileInlineImagesToStorage(nextProfile, {
-          userId: user.uid,
-          profileId: targetProfileId,
-        });
+        nextProfile = await withOperationTimeout(
+          offloadProfileInlineImagesToStorage(nextProfile, {
+            userId: user.uid,
+            profileId: targetProfileId,
+          }),
+          PROFILE_COMPACT_TIMEOUT_MS,
+          "storage_offload",
+        );
       } catch (storageError) {
         console.error("[LinkHub] Storage offload warning:", storageError);
       }
@@ -3819,7 +3878,11 @@ export default function LinkHubPage() {
       let fallbackSlugAdjusted = false;
 
       try {
-        savedProfileId = await saveLinkHubProfileForUser(user.uid, persistedProfile, targetProfileId);
+        savedProfileId = await withOperationTimeout(
+          saveLinkHubProfileForUser(user.uid, persistedProfile, targetProfileId),
+          PROFILE_SAVE_TIMEOUT_MS,
+          "profile_write",
+        );
       } catch (saveError) {
         if (!isFirestorePermissionDenied(saveError) || targetProfileId === user.uid) {
           throw saveError;
@@ -3855,7 +3918,11 @@ export default function LinkHubPage() {
           user,
         );
         finalSlug = fallbackSlug;
-        savedProfileId = await saveLinkHubProfileForUser(user.uid, persistedProfile, fallbackProfileId);
+        savedProfileId = await withOperationTimeout(
+          saveLinkHubProfileForUser(user.uid, persistedProfile, fallbackProfileId),
+          PROFILE_SAVE_TIMEOUT_MS,
+          "profile_write_fallback",
+        );
         usedPermissionFallback = true;
       }
 
@@ -3899,6 +3966,11 @@ export default function LinkHubPage() {
         setMessage({
           type: "error",
           text: `No se pudo guardar: tu perfil supera el limite del plan ${planLabel} (${formatBytes(currentBytes)} de ${formatBytes(budgetBytes)}). Ya comprimimos automaticamente, pero necesitas reducir imagenes o subir de plan.`,
+        });
+      } else if (isOperationTimeoutError(error)) {
+        setMessage({
+          type: "error",
+          text: "La operacion tardo demasiado y se cancelo para evitar bucle. Revisa tu conexion e intenta nuevamente.",
         });
       } else if (rawMessage.includes("unsupported field value: undefined")) {
         setMessage({

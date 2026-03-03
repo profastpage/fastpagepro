@@ -47,6 +47,8 @@
   - nueva compresion progresiva por plan (`FREE/BUSINESS/PRO`) en todas las subidas (avatar, portada, reserva, items y galeria), con compactacion global adicional justo antes de guardar.
   - se aplican presupuestos de payload por plan para Firestore y un mensaje de error mas claro con tamano actual vs limite del plan cuando todavia excede.
   - para evitar el error recurrente por tamano de documento, al guardar se migran automaticamente las imagenes inline (`data:image/...`) a Firebase Storage y en Firestore se persisten solo URLs, reduciendo drasticamente el peso del perfil.
+  - se agregaron timeouts de seguridad en compresion/subida/guardado para evitar ciclos de espera infinita al guardar o publicar con muchas imagenes.
+  - la subida a Storage ahora tiene fallback por imagen: si una foto falla o demora demasiado, no bloquea todo el proceso; continua con las demas y devuelve error controlado si excede limites.
 - Mensaje WhatsApp de reservas (`/bio/[slug]`):
   - se reformateo el texto de redireccion al enviar reserva con bloques separados por espacios: titulo, intro, `Datos de reserva`, bloque de anticipo opcional y bloque `Solicitud enviada`.
   - se unifico listado con bullets `·` para mejor lectura en WhatsApp.
