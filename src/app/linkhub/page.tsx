@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
-import { auth } from "@/lib/firebase";
+import { auth, storage } from "@/lib/firebase";
 import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import { requestPublishTarget } from "@/lib/subscription/publishClient";
 import { buildWhatsappSendUrl } from "@/lib/whatsapp";
@@ -103,6 +103,7 @@ import {
   Lock,
   X,
 } from "lucide-react";
+import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 
 type SaveMode = "draft" | "publish";
 type EditorSectionKey =
@@ -683,6 +684,102 @@ async function compactProfileImagesByPlan(
   }
 
   return { profile, bytes: estimateJsonBytes(profile), budget };
+}
+
+function getDataUrlMimeType(dataUrl: string): string {
+  const source = String(dataUrl || "").trim();
+  const match = source.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/i);
+  return match?.[1]?.toLowerCase() || "image/jpeg";
+}
+
+function getMimeExtension(mimeType: string): string {
+  const normalized = String(mimeType || "").toLowerCase();
+  if (normalized === "image/png") return "png";
+  if (normalized === "image/webp") return "webp";
+  if (normalized === "image/gif") return "gif";
+  return "jpg";
+}
+
+async function dataUrlToBlob(dataUrl: string, mimeType: string): Promise<Blob> {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return blob.type ? blob : new Blob([blob], { type: mimeType });
+}
+
+type OffloadImageOptions = {
+  userId: string;
+  profileId: string;
+};
+
+async function offloadProfileInlineImagesToStorage(
+  input: LinkHubProfile,
+  options: OffloadImageOptions,
+): Promise<LinkHubProfile> {
+  const cache = new Map<string, string>();
+
+  const uploadInlineImage = async (value: string, pathSegment: string): Promise<string> => {
+    const source = String(value || "").trim();
+    if (!source) return "";
+    if (!isInlineImageDataUrl(source)) return source;
+    const cached = cache.get(source);
+    if (cached) return cached;
+
+    const mimeType = getDataUrlMimeType(source);
+    const extension = getMimeExtension(mimeType);
+    const fileName = `${Date.now()}-${createClientUuid()}.${extension}`;
+    const objectPath = `linkhub-images/${options.userId}/${options.profileId}/${pathSegment}/${fileName}`;
+    const blob = await dataUrlToBlob(source, mimeType);
+    const uploadRef = storageRef(storage, objectPath);
+    await uploadBytes(uploadRef, blob, {
+      cacheControl: "public,max-age=31536000,immutable",
+      contentType: mimeType,
+    });
+    const downloadUrl = await getDownloadURL(uploadRef);
+    cache.set(source, downloadUrl);
+    return downloadUrl;
+  };
+
+  const coverSources = mergeUniqueStrings(
+    [...(input.coverImageUrls || []), input.coverImageUrl],
+    MAX_LINK_HUB_COVER_IMAGES,
+  );
+  const offloadedCovers: string[] = [];
+  for (let index = 0; index < coverSources.length; index += 1) {
+    offloadedCovers.push(await uploadInlineImage(coverSources[index], `cover-${index + 1}`));
+  }
+
+  const offloadedItems: LinkHubCatalogItem[] = [];
+  for (const item of input.catalogItems || []) {
+    const offloadedPrimary = await uploadInlineImage(item.imageUrl, `item/${item.id}/primary`);
+    const gallerySources = mergeGalleryImages(item.galleryImageUrls || []);
+    const offloadedGallery: string[] = [];
+    for (let index = 0; index < gallerySources.length; index += 1) {
+      offloadedGallery.push(
+        await uploadInlineImage(gallerySources[index], `item/${item.id}/gallery-${index + 1}`),
+      );
+    }
+    offloadedItems.push({
+      ...item,
+      imageUrl: offloadedPrimary,
+      galleryImageUrls: mergeGalleryImages(
+        offloadedGallery.filter((image) => image.trim() !== offloadedPrimary.trim()),
+      ),
+    });
+  }
+
+  const normalizedCoverImages = mergeUniqueStrings(offloadedCovers, MAX_LINK_HUB_COVER_IMAGES);
+
+  return {
+    ...input,
+    avatarUrl: await uploadInlineImage(input.avatarUrl, "avatar"),
+    coverImageUrls: normalizedCoverImages,
+    coverImageUrl: normalizedCoverImages[0] || "",
+    reservation: {
+      ...input.reservation,
+      heroImageUrl: await uploadInlineImage(input.reservation?.heroImageUrl || "", "reservation"),
+    },
+    catalogItems: offloadedItems,
+  };
 }
 
 function sanitizeDemoParam(value: string | null) {
@@ -3702,12 +3799,21 @@ export default function LinkHubPage() {
       );
 
       const compactedProfileResult = await compactProfileImagesByPlan(normalizedNextProfile, storagePlanTier);
-      if (compactedProfileResult.bytes > compactedProfileResult.budget) {
+      let nextProfile = compactedProfileResult.profile;
+      try {
+        nextProfile = await offloadProfileInlineImagesToStorage(nextProfile, {
+          userId: user.uid,
+          profileId: targetProfileId,
+        });
+      } catch (storageError) {
+        console.error("[LinkHub] Storage offload warning:", storageError);
+      }
+      const nextProfileBytes = estimateJsonBytes(nextProfile);
+      if (nextProfileBytes > compactedProfileResult.budget) {
         throw new Error(
-          `PROFILE_PAYLOAD_TOO_LARGE:${compactedProfileResult.bytes}:${compactedProfileResult.budget}:${storagePlanTier}`,
+          `PROFILE_PAYLOAD_TOO_LARGE:${nextProfileBytes}:${compactedProfileResult.budget}:${storagePlanTier}`,
         );
       }
-      const nextProfile = compactedProfileResult.profile;
 
       let savedProfileId = "";
       let persistedProfile = nextProfile;
