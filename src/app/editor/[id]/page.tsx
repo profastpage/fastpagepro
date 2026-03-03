@@ -181,18 +181,52 @@ function EditorPageContent() {
     });
 
     // 4. Manejo de imágenes
+    const pickImageFileAsDataUrl = (): Promise<string | null> =>
+      new Promise((resolve) => {
+        const input = doc.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.style.display = "none";
+        doc.body.appendChild(input);
+        input.onchange = () => {
+          const file = input.files?.[0];
+          if (!file) {
+            input.remove();
+            resolve(null);
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => {
+            input.remove();
+            resolve(typeof reader.result === "string" ? reader.result : null);
+          };
+          reader.onerror = () => {
+            input.remove();
+            resolve(null);
+          };
+          reader.readAsDataURL(file);
+        };
+        input.click();
+      });
+
     doc.querySelectorAll("img").forEach(img => {
       const newImg = img.cloneNode(true) as HTMLImageElement;
       img.parentNode?.replaceChild(newImg, img);
 
-      newImg.addEventListener("click", (e) => {
+      newImg.addEventListener("click", async (e) => {
         if (!isPreviewMode && isVisualEditActive) {
           e.preventDefault();
           e.stopPropagation();
           selectElement(newImg);
+          const uploadedDataUrl = await pickImageFileAsDataUrl();
+          if (uploadedDataUrl) {
+            newImg.src = uploadedDataUrl;
+            markAsDirty();
+            return;
+          }
           const newUrl = prompt("URL de la imagen:", newImg.src);
-          if (newUrl) {
-            newImg.src = newUrl;
+          if (newUrl && newUrl.trim()) {
+            newImg.src = newUrl.trim();
             markAsDirty();
           }
         }

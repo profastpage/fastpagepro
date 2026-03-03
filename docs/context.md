@@ -118,3 +118,10 @@
   - el cuerpo del preview es desplazable (`overflow-y`) para navegar listas largas sin cortar la UI en mobile/desktop.
   - la barra inferior de secciones (`Contacto`, `Carta`, `Ubicacion`, `Reserva`) permanece visible en el preview para cambiar y editar secciones desde el mismo panel.
   - se agrego boton rapido `Crear nuevo item` dentro del tab Carta del preview para insertar producto sin salir del preview.
+- Clonador web con registro (`/cloner/web`) ahora guarda plantilla limpia sin datos reales:
+  - al importar una URL y pasar a editor, el HTML se transforma a modo plantilla: textos reemplazados por `(edita aqui)` y enlaces externos neutralizados.
+  - imagenes reales del sitio clonado se reemplazan por placeholders visuales para evitar copiar activos originales.
+  - se mantienen estructura HTML, estilos, colores y layout para editar rapidamente sin arrastrar contenido real del sitio fuente.
+- Editor de clonado (`/editor/[id]`) mejora carga de imagenes:
+  - al tocar una imagen en modo edicion ahora abre selector de archivo para subir desde dispositivo.
+  - mantiene fallback a URL manual si no se selecciona archivo.

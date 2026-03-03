@@ -29,6 +29,153 @@ function normalizeUrl(input: string) {
   return `https://${value}`;
 }
 
+const EDITABLE_TEXT_PLACEHOLDER = "(edita aqui)";
+const IMAGE_PLACEHOLDER_DATA_URL = `data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+    <rect width="640" height="640" fill="#0f172a"/>
+    <rect x="32" y="32" width="576" height="576" rx="28" fill="none" stroke="#64748b" stroke-width="8" stroke-dasharray="20 14"/>
+    <g fill="#cbd5e1">
+      <circle cx="320" cy="270" r="76"/>
+      <rect x="205" y="390" width="230" height="26" rx="13"/>
+    </g>
+    <text x="320" y="470" text-anchor="middle" fill="#e2e8f0" font-size="40" font-family="Arial, sans-serif" font-weight="700">Sube imagen</text>
+  </svg>`,
+)}`;
+
+function scrubCssImageUrls(input: string): string {
+  return String(input || "").replace(/url\(\s*(['"]?)(?!data:)([^)'"]+)\1\s*\)/gi, "none");
+}
+
+function replaceTextContent(value: string): string {
+  const source = String(value || "");
+  if (!source.trim()) return source;
+  const leading = source.match(/^\s*/)?.[0] || "";
+  const trailing = source.match(/\s*$/)?.[0] || "";
+  return `${leading}${EDITABLE_TEXT_PLACEHOLDER}${trailing}`;
+}
+
+function toEditableTemplateHtml(rawHtml: string): string {
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return rawHtml;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(rawHtml, "text/html");
+  const skipTextTag = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "SVG", "TITLE"]);
+
+  doc.querySelectorAll("script").forEach((node) => node.remove());
+  if (doc.title) doc.title = EDITABLE_TEXT_PLACEHOLDER;
+
+  doc.querySelectorAll("*").forEach((el) => {
+    const element = el as HTMLElement;
+    const tag = element.tagName;
+
+    Array.from(element.attributes).forEach((attr) => {
+      if (attr.name.toLowerCase().startsWith("on")) {
+        element.removeAttribute(attr.name);
+      }
+    });
+
+    const styleValue = element.getAttribute("style");
+    if (styleValue) {
+      element.setAttribute("style", scrubCssImageUrls(styleValue));
+    }
+
+    if (tag === "STYLE") {
+      element.textContent = scrubCssImageUrls(element.textContent || "");
+      return;
+    }
+
+    if (tag === "IMG") {
+      const image = element as HTMLImageElement;
+      image.setAttribute("src", IMAGE_PLACEHOLDER_DATA_URL);
+      image.removeAttribute("srcset");
+      image.removeAttribute("data-src");
+      image.removeAttribute("data-srcset");
+      image.removeAttribute("data-original");
+      image.setAttribute("alt", EDITABLE_TEXT_PLACEHOLDER);
+      image.setAttribute("data-fp-placeholder", "image");
+      image.setAttribute("data-fp-upload-hint", "1");
+    }
+
+    if (tag === "VIDEO" || tag === "AUDIO" || tag === "SOURCE" || tag === "TRACK") {
+      element.removeAttribute("src");
+      element.removeAttribute("srcset");
+    }
+
+    if (tag === "IFRAME") {
+      element.setAttribute("src", "about:blank");
+    }
+
+    if (tag === "A") {
+      const href = String(element.getAttribute("href") || "").trim();
+      if (href && !href.startsWith("#")) {
+        element.setAttribute("href", "#");
+      }
+    }
+
+    if (tag === "FORM") {
+      element.setAttribute("action", "#");
+    }
+
+    if (tag === "INPUT") {
+      const input = element as HTMLInputElement;
+      const type = String(input.getAttribute("type") || "text").toLowerCase();
+      const textLike = new Set(["text", "search", "email", "tel", "url", "number", "password"]);
+      if (textLike.has(type)) {
+        input.setAttribute("value", EDITABLE_TEXT_PLACEHOLDER);
+        input.setAttribute("placeholder", EDITABLE_TEXT_PLACEHOLDER);
+      } else if (type === "submit" || type === "button") {
+        input.setAttribute("value", EDITABLE_TEXT_PLACEHOLDER);
+      }
+    }
+
+    if (tag === "TEXTAREA") {
+      const textarea = element as HTMLTextAreaElement;
+      textarea.value = EDITABLE_TEXT_PLACEHOLDER;
+      textarea.textContent = EDITABLE_TEXT_PLACEHOLDER;
+      textarea.setAttribute("placeholder", EDITABLE_TEXT_PLACEHOLDER);
+    }
+
+    const textAttrs = ["alt", "title", "aria-label", "placeholder"];
+    textAttrs.forEach((name) => {
+      const value = element.getAttribute(name);
+      if (value && value.trim()) {
+        element.setAttribute(name, EDITABLE_TEXT_PLACEHOLDER);
+      }
+    });
+  });
+
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode as Text);
+  }
+  textNodes.forEach((node) => {
+    const parentTag = node.parentElement?.tagName || "";
+    if (skipTextTag.has(parentTag)) return;
+    const value = node.textContent || "";
+    if (!value.trim()) return;
+    node.textContent = replaceTextContent(value);
+  });
+
+  if (!doc.getElementById("fp-template-clone-style")) {
+    const style = doc.createElement("style");
+    style.id = "fp-template-clone-style";
+    style.textContent = `
+      img[data-fp-placeholder="image"]{
+        background:#0f172a !important;
+        border:1.5px dashed #64748b !important;
+        border-radius:12px;
+        object-fit:cover;
+      }
+    `;
+    doc.head.appendChild(style);
+  }
+
+  return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
+}
+
 export default function WebClonerPage() {
   const { user, loading: authLoading } = useAuth(true);
   const { t } = useLanguage();
@@ -97,10 +244,11 @@ export default function WebClonerPage() {
         typeof crypto !== "undefined" && crypto.randomUUID
           ? crypto.randomUUID().slice(0, 8)
           : Math.random().toString(36).slice(2, 10);
+      const templatedHtml = toEditableTemplateHtml(html);
 
       const sitePayload = {
         id: siteId,
-        html,
+        html: templatedHtml,
         url: debouncedUrl,
         userId: user.uid,
         createdAt: Date.now(),
