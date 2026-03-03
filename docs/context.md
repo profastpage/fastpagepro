@@ -158,3 +158,9 @@
   - `LanguageProvider` ahora usa ingles (`en`) como idioma por defecto global para `fastpagepro.com`.
   - el idioma seleccionado se persiste en `localStorage` y el `lang` del documento se sincroniza dinamicamente.
   - se mantiene cambio inmediato a espanol con un clic desde los toggles EN/ES existentes.
+- Migracion de imagenes de Carta Digital a Cloudinary (`/linkhub`):
+  - `POST /api/linkhub/storage/offload` ahora sube activos a Cloudinary (server-side) y deja de escribir en Firebase Storage.
+  - el guardado en editor Carta Digital elimina fallback al SDK cliente de Firebase para evitar bloqueos CORS/intermitencias de subida.
+  - durante guardado se migran automaticamente URLs antiguas (no-Cloudinary) hacia Cloudinary en avatar, portadas, reserva y catalogo.
+  - si la subida a Cloudinary falla, el guardado detiene el flujo con error explicito (`No se pudo subir imagenes a Cloudinary`) para evitar bucles silenciosos.
+  - nuevas variables de entorno requeridas en servidor: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (o `CLOUDINARY_URL`).

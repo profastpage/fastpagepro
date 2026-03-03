@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePlanPermissions } from "@/hooks/usePlanPermissions";
 import { useLanguage } from "@/context/LanguageContext";
-import { auth, storage } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { fetchCurrentSubscriptionSummary } from "@/lib/subscription/client";
 import { requestPublishTarget } from "@/lib/subscription/publishClient";
 import { buildWhatsappSendUrl } from "@/lib/whatsapp";
@@ -104,7 +104,6 @@ import {
   Lock,
   X,
 } from "lucide-react";
-import { getDownloadURL, ref as storageRef, uploadBytes } from "firebase/storage";
 
 type SaveMode = "draft" | "publish";
 type EditorSectionKey =
@@ -436,12 +435,25 @@ type StoragePlanTier = "FREE" | "BUSINESS" | "PRO";
 type ProfileImageKind = "avatar" | "cover" | "reservation" | "item" | "gallery";
 const IMAGE_OPTIMIZE_TIMEOUT_MS = 35_000;
 const STORAGE_UPLOAD_TIMEOUT_MS = 45_000;
-const STORAGE_URL_TIMEOUT_MS = 20_000;
 const PROFILE_COMPACT_TIMEOUT_MS = 70_000;
 const PROFILE_SAVE_TIMEOUT_MS = 35_000;
 
 function isInlineImageDataUrl(value: string): boolean {
   return /^data:image\//i.test(String(value || "").trim());
+}
+
+function isCloudinaryAssetUrl(value: string): boolean {
+  const source = String(value || "").trim();
+  if (!source) return false;
+  try {
+    const parsed = new URL(source);
+    return (
+      parsed.hostname === "res.cloudinary.com" ||
+      parsed.hostname.endsWith(".res.cloudinary.com")
+    );
+  } catch {
+    return false;
+  }
 }
 
 function estimateDataUrlBytes(dataUrl: string): number {
@@ -738,33 +750,13 @@ async function compactProfileImagesByPlan(
   return { profile, bytes: estimateJsonBytes(profile), budget };
 }
 
-function getDataUrlMimeType(dataUrl: string): string {
-  const source = String(dataUrl || "").trim();
-  const match = source.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/i);
-  return match?.[1]?.toLowerCase() || "image/jpeg";
-}
-
-function getMimeExtension(mimeType: string): string {
-  const normalized = String(mimeType || "").toLowerCase();
-  if (normalized === "image/png") return "png";
-  if (normalized === "image/webp") return "webp";
-  if (normalized === "image/gif") return "gif";
-  return "jpg";
-}
-
-async function dataUrlToBlob(dataUrl: string, mimeType: string): Promise<Blob> {
-  const response = await fetch(dataUrl);
-  const blob = await response.blob();
-  return blob.type ? blob : new Blob([blob], { type: mimeType });
-}
-
 type OffloadImageOptions = {
   userId: string;
   profileId: string;
   idToken?: string;
 };
 
-async function uploadInlineImageViaServer(
+async function uploadImageViaServer(
   source: string,
   pathSegment: string,
   options: OffloadImageOptions,
@@ -784,7 +776,7 @@ async function uploadInlineImageViaServer(
       body: JSON.stringify({
         profileId: options.profileId,
         pathSegment,
-        dataUrl: source,
+        source,
       }),
     }),
     STORAGE_UPLOAD_TIMEOUT_MS,
@@ -811,53 +803,32 @@ async function uploadInlineImageViaServer(
   return url;
 }
 
-async function offloadProfileInlineImagesToStorage(
+async function offloadProfileImagesToCloudinary(
   input: LinkHubProfile,
   options: OffloadImageOptions,
 ): Promise<LinkHubProfile> {
   const cache = new Map<string, string>();
 
-  const uploadInlineImage = async (value: string, pathSegment: string): Promise<string> => {
+  const uploadImage = async (value: string, pathSegment: string): Promise<string> => {
     const source = String(value || "").trim();
     if (!source) return "";
-    if (!isInlineImageDataUrl(source)) return source;
+    const isInline = isInlineImageDataUrl(source);
+    const isExternalUrl = isValidExternalUrl(source);
+    if (isCloudinaryAssetUrl(source)) return source;
+    if (!isInline && !isExternalUrl) return source;
     const cached = cache.get(source);
     if (cached) return cached;
 
-    if (options.idToken) {
-      try {
-        const serverUrl = await uploadInlineImageViaServer(source, pathSegment, options);
-        cache.set(source, serverUrl);
-        return serverUrl;
-      } catch (serverError) {
-        console.warn("[LinkHub] Server upload fallback to client SDK:", serverError);
-      }
-    }
-
     try {
-      const mimeType = getDataUrlMimeType(source);
-      const extension = getMimeExtension(mimeType);
-      const fileName = `${Date.now()}-${createClientUuid()}.${extension}`;
-      const objectPath = `linkhub-images/${options.userId}/${options.profileId}/${pathSegment}/${fileName}`;
-      const blob = await dataUrlToBlob(source, mimeType);
-      const uploadRef = storageRef(storage, objectPath);
-      await withOperationTimeout(
-        uploadBytes(uploadRef, blob, {
-          cacheControl: "public,max-age=31536000,immutable",
-          contentType: mimeType,
-        }),
-        STORAGE_UPLOAD_TIMEOUT_MS,
-        "storage_upload",
-      );
-      const downloadUrl = await withOperationTimeout(
-        getDownloadURL(uploadRef),
-        STORAGE_URL_TIMEOUT_MS,
-        "storage_get_url",
-      );
-      cache.set(source, downloadUrl);
-      return downloadUrl;
-    } catch (error) {
-      console.warn("[LinkHub] Storage offload skipped for image:", error);
+      const serverUrl = await uploadImageViaServer(source, pathSegment, options);
+      cache.set(source, serverUrl);
+      return serverUrl;
+    } catch (serverError) {
+      if (isInline) {
+        throw serverError;
+      }
+      // Remote URL migration to Cloudinary is best-effort; keep source URL if migration fails.
+      console.warn("[LinkHub] Cloudinary URL migration skipped:", serverError);
       return source;
     }
   };
@@ -868,17 +839,17 @@ async function offloadProfileInlineImagesToStorage(
   );
   const offloadedCovers: string[] = [];
   for (let index = 0; index < coverSources.length; index += 1) {
-    offloadedCovers.push(await uploadInlineImage(coverSources[index], `cover-${index + 1}`));
+    offloadedCovers.push(await uploadImage(coverSources[index], `cover-${index + 1}`));
   }
 
   const offloadedItems: LinkHubCatalogItem[] = [];
   for (const item of input.catalogItems || []) {
-    const offloadedPrimary = await uploadInlineImage(item.imageUrl, `item/${item.id}/primary`);
+    const offloadedPrimary = await uploadImage(item.imageUrl, `item/${item.id}/primary`);
     const gallerySources = mergeGalleryImages(item.galleryImageUrls || []);
     const offloadedGallery: string[] = [];
     for (let index = 0; index < gallerySources.length; index += 1) {
       offloadedGallery.push(
-        await uploadInlineImage(gallerySources[index], `item/${item.id}/gallery-${index + 1}`),
+        await uploadImage(gallerySources[index], `item/${item.id}/gallery-${index + 1}`),
       );
     }
     offloadedItems.push({
@@ -894,12 +865,12 @@ async function offloadProfileInlineImagesToStorage(
 
   return {
     ...input,
-    avatarUrl: await uploadInlineImage(input.avatarUrl, "avatar"),
+    avatarUrl: await uploadImage(input.avatarUrl, "avatar"),
     coverImageUrls: normalizedCoverImages,
     coverImageUrl: normalizedCoverImages[0] || "",
     reservation: {
       ...input.reservation,
-      heroImageUrl: await uploadInlineImage(input.reservation?.heroImageUrl || "", "reservation"),
+      heroImageUrl: await uploadImage(input.reservation?.heroImageUrl || "", "reservation"),
     },
     catalogItems: offloadedItems,
   };
@@ -3943,16 +3914,18 @@ export default function LinkHubPage() {
       }
       try {
         nextProfile = await withOperationTimeout(
-          offloadProfileInlineImagesToStorage(nextProfile, {
+          offloadProfileImagesToCloudinary(nextProfile, {
             userId: user.uid,
             profileId: targetProfileId,
             idToken: storageUploadToken,
           }),
           PROFILE_COMPACT_TIMEOUT_MS,
-          "storage_offload",
+          "cloudinary_offload",
         );
       } catch (storageError) {
-        console.error("[LinkHub] Storage offload warning:", storageError);
+        console.error("[LinkHub] Cloudinary offload error:", storageError);
+        const reason = String((storageError as { message?: string })?.message || "unknown");
+        throw new Error(`CLOUDINARY_OFFLOAD_FAILED:${reason}`);
       }
       const nextProfileBytes = estimateJsonBytes(nextProfile);
       if (nextProfileBytes > compactedProfileResult.budget) {
@@ -4060,6 +4033,11 @@ export default function LinkHubPage() {
         setMessage({
           type: "error",
           text: "La operacion tardo demasiado y se cancelo para evitar bucle. Revisa tu conexion e intenta nuevamente.",
+        });
+      } else if (rawMessage.includes("cloudinary_offload_failed")) {
+        setMessage({
+          type: "error",
+          text: "No se pudo subir imagenes a Cloudinary. Verifica configuracion del servidor y vuelve a intentar.",
         });
       } else if (rawMessage.includes("unsupported field value: undefined")) {
         setMessage({

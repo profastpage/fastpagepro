@@ -1,29 +1,11 @@
 import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { adminStorage } from "@/lib/firebaseAdmin";
+import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 
 export const runtime = "nodejs";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-
-function resolveStorageBucketNames(): string[] {
-  const names = new Set<string>();
-  const fromEnv = String(
-    process.env.FIREBASE_STORAGE_BUCKET ||
-      process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-      "",
-  ).trim();
-  if (fromEnv) names.add(fromEnv);
-  const projectId = String(
-    process.env.FIREBASE_PROJECT_ID ||
-      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
-      "fastpage-7ceb3",
-  ).trim();
-  names.add(`${projectId}.firebasestorage.app`);
-  names.add(`${projectId}.appspot.com`);
-  return Array.from(names).filter(Boolean);
-}
 
 function parseDataUrlImage(dataUrl: string): { mimeType: string; buffer: Buffer } {
   const source = String(dataUrl || "").trim();
@@ -41,13 +23,6 @@ function parseDataUrlImage(dataUrl: string): { mimeType: string; buffer: Buffer 
     throw new Error("IMAGE_TOO_LARGE");
   }
   return { mimeType, buffer };
-}
-
-function mimeToExtension(mimeType: string): string {
-  if (mimeType === "image/png") return "png";
-  if (mimeType === "image/webp") return "webp";
-  if (mimeType === "image/gif") return "gif";
-  return "jpg";
 }
 
 function sanitizePathSegment(input: string): string {
@@ -68,69 +43,59 @@ function sanitizeProfileId(input: string): string {
 export async function POST(request: NextRequest) {
   try {
     const user = await requireFirebaseUser(request);
-    if (!adminStorage) {
-      throw new Error("SERVICE_UNAVAILABLE: firebase storage admin unavailable");
-    }
 
     const body = (await request.json().catch(() => ({}))) as {
       profileId?: string;
       pathSegment?: string;
+      source?: string;
       dataUrl?: string;
+      sourceUrl?: string;
     };
 
     const profileId = sanitizeProfileId(body.profileId || "");
     const pathSegment = sanitizePathSegment(body.pathSegment || "");
-    const dataUrl = String(body.dataUrl || "").trim();
+    const source = String(body.source || body.dataUrl || body.sourceUrl || "").trim();
 
-    if (!profileId || !pathSegment || !dataUrl) {
+    if (!profileId || !pathSegment || !source) {
       return NextResponse.json(
         { error: "Faltan datos para subir la imagen" },
         { status: 400 },
       );
     }
 
-    const { mimeType, buffer } = parseDataUrlImage(dataUrl);
-    const extension = mimeToExtension(mimeType);
-    const downloadToken = randomUUID();
-    const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
-    const objectPath = `linkhub-images/${user.uid}/${profileId}/${pathSegment}/${fileName}`;
-    const bucketCandidates = resolveStorageBucketNames();
-    let uploadedBucketName = "";
-    let lastUploadError: unknown = null;
-    for (const bucketName of bucketCandidates) {
+    let normalizedSource = source;
+    let mimeType = "image/jpeg";
+
+    if (/^data:image\//i.test(source)) {
+      const parsed = parseDataUrlImage(source);
+      mimeType = parsed.mimeType;
+      normalizedSource = source;
+    } else {
       try {
-        const bucket = adminStorage.bucket(bucketName);
-        const file = bucket.file(objectPath);
-        await file.save(buffer, {
-          resumable: false,
-          metadata: {
-            contentType: mimeType,
-            cacheControl: "public,max-age=31536000,immutable",
-            metadata: {
-              firebaseStorageDownloadTokens: downloadToken,
-            },
-          },
-        });
-        uploadedBucketName = bucket.name;
-        break;
-      } catch (uploadError) {
-        lastUploadError = uploadError;
+        const parsed = new URL(source);
+        if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+          throw new Error("INVALID_IMAGE_SOURCE_URL");
+        }
+      } catch {
+        throw new Error("INVALID_IMAGE_SOURCE_URL");
       }
     }
 
-    if (!uploadedBucketName) {
-      throw lastUploadError || new Error("STORAGE_UPLOAD_FAILED");
-    }
-
-    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(
-      uploadedBucketName,
-    )}/o/${encodeURIComponent(objectPath)}?alt=media&token=${downloadToken}`;
+    const fileName = `img-${Date.now()}-${randomUUID().slice(0, 8)}`;
+    const folder = `fastpage/linkhub/${user.uid}/${profileId}/${pathSegment}`;
+    const uploaded = await uploadImageToCloudinary({
+      source: normalizedSource,
+      folder,
+      publicId: fileName,
+    });
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
-      path: objectPath,
-      bucket: uploadedBucketName,
+      url: uploaded.secureUrl,
+      publicId: uploaded.publicId,
+      provider: "cloudinary",
+      mimeType,
+      bytes: uploaded.bytes,
     });
   } catch (error: any) {
     const message = String(error?.message || "");
@@ -149,15 +114,21 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (message.includes("INVALID_IMAGE_SOURCE_URL")) {
+      return NextResponse.json(
+        { error: "URL de imagen no valida para migrar" },
+        { status: 400 },
+      );
+    }
     if (message.includes("IMAGE_TOO_LARGE")) {
       return NextResponse.json(
         { error: "Imagen demasiado pesada para subir" },
         { status: 413 },
       );
     }
-    if (message.startsWith("SERVICE_UNAVAILABLE")) {
+    if (message.includes("CLOUDINARY_NOT_CONFIGURED")) {
       return NextResponse.json(
-        { error: "Servicio de almacenamiento no disponible" },
+        { error: "Cloudinary no configurado en el servidor" },
         { status: 503 },
       );
     }
