@@ -108,3 +108,8 @@
   - se precarga el panel de reserva en `idle` para evitar latencia al primer clic.
   - se hace prefetch de la imagen hero de reservas para abrir con contenido visual inmediato.
   - se mantiene el panel montado en segundo plano (`hidden`) y se muestra al instante cuando el usuario toca `Reserva`.
+- Referidos (`/api/referrals/profile`) y Firebase Admin:
+  - se forzo `projectId` en la inicializacion de Firebase Admin con fallback (`fastpage-7ceb3`) para evitar fallos de Firestore por `Unable to detect a Project Id in the current environment`.
+  - se agrego resolucion robusta de `storageBucket` para mantener consistencia en servicios server-side.
+  - la lectura de service account ahora completa `projectId` faltante desde variables de entorno/fallback para no dejar inicializaciones parciales.
+  - el endpoint `PATCH /api/referrals/profile` ahora detecta errores de `projectId` faltante y responde `503` controlado en lugar de `500`.

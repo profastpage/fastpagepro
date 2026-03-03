@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 
 let isInitialized = false;
 let initWarningShown = false;
+const DEFAULT_FIREBASE_PROJECT_ID = "fastpage-7ceb3";
 
 type ServiceAccountLike = {
   project_id?: string;
@@ -11,6 +12,32 @@ type ServiceAccountLike = {
   private_key?: string;
   privateKey?: string;
 };
+
+function resolveFirebaseProjectId(): string {
+  return normalizeSecret(
+    String(
+      process.env.FIREBASE_PROJECT_ID ||
+        process.env.FIREBASE_ADMIN_PROJECT_ID ||
+        process.env.GCLOUD_PROJECT ||
+        process.env.GOOGLE_CLOUD_PROJECT ||
+        process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+        DEFAULT_FIREBASE_PROJECT_ID,
+    ),
+  );
+}
+
+function resolveFirebaseStorageBucket(projectId: string): string {
+  const fromEnv = normalizeSecret(
+    String(
+      process.env.FIREBASE_STORAGE_BUCKET ||
+        process.env.FIREBASE_ADMIN_STORAGE_BUCKET ||
+        process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+        "",
+    ),
+  );
+  if (fromEnv) return fromEnv;
+  return projectId ? `${projectId}.firebasestorage.app` : "";
+}
 
 function unwrapQuoted(raw: string): string {
   const trimmed = String(raw || "").trim();
@@ -42,7 +69,7 @@ function normalizeServiceAccountJson(raw: string): string {
 }
 
 function toAdminServiceAccount(input: Partial<ServiceAccountLike> | null | undefined): admin.ServiceAccount | null {
-  const projectId = String(input?.project_id || input?.projectId || "").trim();
+  const projectId = String(input?.project_id || input?.projectId || resolveFirebaseProjectId()).trim();
   const clientEmail = String(input?.client_email || input?.clientEmail || "").trim();
   const privateKey = normalizeSecret(String(input?.private_key || input?.privateKey || ""));
 
@@ -92,16 +119,7 @@ function buildServiceAccountFromEnv(): admin.ServiceAccount | null {
     return parseServiceAccount(serviceAccountKey);
   }
 
-  const projectId = normalizeSecret(
-    String(
-      process.env.FIREBASE_PROJECT_ID ||
-        process.env.FIREBASE_ADMIN_PROJECT_ID ||
-        process.env.GCLOUD_PROJECT ||
-        process.env.GOOGLE_CLOUD_PROJECT ||
-        process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
-        "",
-    ),
-  );
+  const projectId = resolveFirebaseProjectId();
   const clientEmail = normalizeSecret(
     String(
       process.env.FIREBASE_CLIENT_EMAIL ||
@@ -133,22 +151,15 @@ function buildServiceAccountFromEnv(): admin.ServiceAccount | null {
 if (!admin.apps.length) {
   try {
     const serviceAccount = buildServiceAccountFromEnv();
+    const projectId = resolveFirebaseProjectId();
+    const storageBucket = resolveFirebaseStorageBucket(projectId);
 
     if (!serviceAccount) {
-      const fallbackProjectId = normalizeSecret(
-        String(
-          process.env.FIREBASE_PROJECT_ID ||
-            process.env.GCLOUD_PROJECT ||
-            process.env.GOOGLE_CLOUD_PROJECT ||
-            process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
-            "",
-        ),
-      );
-
       try {
         admin.initializeApp({
           credential: admin.credential.applicationDefault(),
-          ...(fallbackProjectId ? { projectId: fallbackProjectId } : {}),
+          projectId,
+          ...(storageBucket ? { storageBucket } : {}),
         });
         isInitialized = true;
         console.log("[FirebaseAdmin] Initialized with application default credentials");
@@ -161,7 +172,8 @@ if (!admin.apps.length) {
     } else {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.projectId || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        projectId: serviceAccount.projectId || projectId,
+        ...(storageBucket ? { storageBucket } : {}),
       });
       isInitialized = true;
       console.log("[FirebaseAdmin] Initialized");

@@ -28,6 +28,13 @@ export async function PATCH(request: NextRequest) {
     if (message.startsWith("UNAUTHORIZED")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
+    if (
+      message.includes("Unable to detect a Project Id") ||
+      message.includes("missing-project-id") ||
+      message.includes("PROJECT_ID")
+    ) {
+      return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
+    }
     if (message.startsWith("SERVICE_UNAVAILABLE")) {
       return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
     }
