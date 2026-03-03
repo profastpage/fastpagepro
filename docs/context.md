@@ -58,6 +58,7 @@
   - liquidacion de comisiones por pago con registros `payout` para soportar pago mensual recurrente e idempotencia por `paymentRef`.
   - personalizacion de alias de afiliado y regeneracion de enlace unico desde API (`PATCH /api/referrals/profile`).
   - nueva ruta publica `/afiliados/[alias]` para redirigir a signup con el codigo de referido.
+  - se robustecio la inicializacion de Firebase Admin para evitar falsos `SERVICE_UNAVAILABLE` en referidos: parser de credenciales JSON/base64 sin romper `\\n`, soporte de llaves `snake_case` y `camelCase`, aliases adicionales de variables de entorno y fallback a `applicationDefault` cuando aplique.
 - Referidos en ajustes (`/settings`):
   - nueva pestana `Referidos` con dashboard: alias editable, boton para actualizar enlace, link compartible y metricas por niveles.
   - listado visible de clientes en nivel 1 y nivel 2 con estado y comision acumulada.
