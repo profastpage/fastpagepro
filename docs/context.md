@@ -154,3 +154,7 @@
   - se agrego `src/lib/autoI18n.ts` con localizacion bidireccional ES/EN por frases y palabras para contenido dinamico ingresado por usuario.
   - se conecto en carta y tienda publicadas para nombre de negocio, etiquetas de seccion, categorias, productos, FAQ/testimonios, reservas y copy configurable.
   - `ProductCard` ahora acepta labels/aria parametrizables para no dejar acciones fijas en un solo idioma.
+- Idioma nativo de plataforma:
+  - `LanguageProvider` ahora usa ingles (`en`) como idioma por defecto global para `fastpagepro.com`.
+  - el idioma seleccionado se persiste en `localStorage` y el `lang` del documento se sincroniza dinamicamente.
+  - se mantiene cambio inmediato a espanol con un clic desde los toggles EN/ES existentes.

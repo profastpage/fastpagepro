@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 type Language = "es" | "en" | "pt";
+const DEFAULT_LANGUAGE: Language = "en";
 
 interface LanguageContextType {
   language: Language;
@@ -553,14 +554,23 @@ const translations: Record<string, Record<Language, string>> = {
 };
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("es");
-  const [mounted, setMounted] = useState(false);
+  const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
+
+  const isSupportedLanguage = (value: string): value is Language =>
+    value === "es" || value === "en" || value === "pt";
 
   useEffect(() => {
-    setMounted(true);
-    const savedLang = localStorage.getItem("language") as Language;
-    if (savedLang) setLanguage(savedLang);
+    const savedRaw = localStorage.getItem("language");
+    if (savedRaw && isSupportedLanguage(savedRaw)) {
+      setLanguage(savedRaw);
+      return;
+    }
+    localStorage.setItem("language", DEFAULT_LANGUAGE);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const handleSetLanguage = (lang: Language) => {
     setLanguage(lang);
@@ -572,8 +582,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     return fixMojibake(value);
   };
 
-  // Avoid hydration mismatch by rendering children directly but language might toggle on client
-  // or just use "es" default for initial server render matching
+  // Default language is English for the full platform and can be switched in one click.
   return (
     <LanguageContext.Provider
       value={{ language, setLanguage: handleSetLanguage, t }}
