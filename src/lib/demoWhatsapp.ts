@@ -70,13 +70,9 @@ export function buildRestaurantReservationDemoMessage(input: {
   slot: string;
   contact?: string;
   note?: string;
-  requiresDeposit?: boolean;
-  depositAmount?: string;
-  depositInstructions?: string;
 }): string[] {
   const contact = String(input.contact || "").trim();
   const note = String(input.note || "").trim();
-  const requiresDeposit = Boolean(input.requiresDeposit);
   const dateStamp = new Date();
 
   const reservationLines = [
@@ -88,15 +84,6 @@ export function buildRestaurantReservationDemoMessage(input: {
     note ? `\u00B7 Nota: ${note}` : "",
   ].filter(Boolean);
 
-  const depositLines = requiresDeposit
-    ? [
-        "\u{1F4B3} *Anticipo para confirmar*",
-        "",
-        `\u00B7 Monto sugerido: ${String(input.depositAmount || "").trim() || "A coordinar por WhatsApp"}`,
-        `\u00B7 Instrucciones: ${String(input.depositInstructions || "").trim() || "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar."}`,
-      ]
-    : [];
-
   return [
     `\u{1F37D}\u{FE0F} *Solicitud de reserva para ${input.title}*`,
     "",
@@ -105,7 +92,6 @@ export function buildRestaurantReservationDemoMessage(input: {
     "\u{1F4CB} *Datos de reserva:*",
     "",
     ...reservationLines,
-    ...(depositLines.length > 0 ? ["", ...depositLines] : []),
     "",
     `\u{1F552} *Solicitud enviada:* ${dateStamp.toLocaleDateString()} ${dateStamp.toLocaleTimeString()}`,
     "",

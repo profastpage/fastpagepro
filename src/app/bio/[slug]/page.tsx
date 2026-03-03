@@ -45,6 +45,7 @@ import {
   Facebook,
   Fish,
   Globe,
+  Palette,
   MapPin,
   Minus,
   Menu,
@@ -53,6 +54,7 @@ import {
   Search,
   Shirt,
   Store,
+  SunMedium,
   Trash2,
   XCircle,
   Youtube,
@@ -440,8 +442,7 @@ export default function PublicBioPage() {
         if (!normalizedSearch) return true;
         return (
           item.title.toLowerCase().includes(normalizedSearch) ||
-          item.description.toLowerCase().includes(normalizedSearch) ||
-          (item.badge || "").toLowerCase().includes(normalizedSearch)
+          item.description.toLowerCase().includes(normalizedSearch)
         );
       });
       return { ...category, items };
@@ -1317,7 +1318,7 @@ export default function PublicBioPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div
-                  className="inline-flex h-10 items-center rounded-lg border p-1"
+                  className="inline-flex h-10 items-center gap-1 rounded-xl border p-1"
                   style={{
                     borderColor: "var(--carta-chip-border)",
                     background: "var(--carta-button-secondary-bg)",
@@ -1326,32 +1327,52 @@ export default function PublicBioPage() {
                   <button
                     type="button"
                     onClick={() => setBackgroundMode("theme")}
-                    className="rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border transition md:h-8 md:w-auto md:px-2.5"
                     style={
                       backgroundMode === "theme"
                         ? {
+                            borderColor: "transparent",
                             background: "var(--carta-nav-active-bg)",
                             color: "var(--carta-nav-active-text)",
+                            boxShadow: useWhiteCartaBackground
+                              ? "0 10px 20px -14px rgba(15,23,42,0.35)"
+                              : "var(--carta-shadow)",
                           }
-                        : { color: "var(--carta-nav-text)" }
+                        : {
+                            borderColor: "transparent",
+                            color: "var(--carta-nav-text)",
+                          }
                     }
+                    aria-label="Usar fondo del tema"
+                    title="Modo tema"
                   >
-                    Tema
+                    <Palette className="h-4 w-4" />
+                    <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">Tema</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setBackgroundMode("white")}
-                    className="rounded-md px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border transition md:h-8 md:w-auto md:px-2.5"
                     style={
                       backgroundMode === "white"
                         ? {
+                            borderColor: "transparent",
                             background: "var(--carta-nav-active-bg)",
                             color: "var(--carta-nav-active-text)",
+                            boxShadow: useWhiteCartaBackground
+                              ? "0 10px 20px -14px rgba(15,23,42,0.35)"
+                              : "var(--carta-shadow)",
                           }
-                        : { color: "var(--carta-nav-text)" }
+                        : {
+                            borderColor: "transparent",
+                            color: "var(--carta-nav-text)",
+                          }
                     }
+                    aria-label="Usar fondo claro"
+                    title="Modo claro"
                   >
-                    Claro
+                    <SunMedium className="h-4 w-4" />
+                    <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">Claro</span>
                   </button>
                 </div>
                 <button
@@ -1751,9 +1772,9 @@ export default function PublicBioPage() {
                               galleryImageUrls={proFeaturesEnabled ? item.galleryImageUrls : []}
                               oldPrice={displayOldPrice}
                               price={displayPrice}
-                              badge={(promoBadge || item.badge || "").trim() || undefined}
-                              priorityBadge={resolvePriorityBadge((promoBadge || item.badge || "").trim())}
-                              emojiFallback={item.emoji || (profile.businessType === "restaurant" ? "menu" : "item")}
+                              badge={(promoBadge || "").trim() || undefined}
+                              priorityBadge={resolvePriorityBadge((promoBadge || "").trim())}
+                              emojiFallback={section.emoji || (profile.businessType === "restaurant" ? "🍽️" : "🛍️")}
                               onAdd={() => addItemToCart(item, section.name)}
                               quantity={cartQtyById.get(item.id) || 0}
                               onIncrement={() => addItemToCart(item, section.name)}

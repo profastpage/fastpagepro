@@ -191,6 +191,7 @@ export async function GET(request: NextRequest) {
         name: String(site.name || site.url || `Proyecto ${site.id}`),
         type: String(site.type || "Clonador"),
         visits,
+        clicks,
         conversion: `${conversionRate.toFixed(1)}%`,
         bounceRate: `${bounceRate.toFixed(1)}%`,
         loadTime: `${avgLoadTimeSec.toFixed(1)}s`,

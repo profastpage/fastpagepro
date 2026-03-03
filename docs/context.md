@@ -21,9 +21,17 @@
   - ajuste fino adicional: badge mas compacto y stepper tipo pildora mas corto para acercar la UI al layout de referencia (imagen 2).
   - ajuste adicional: precios reducidos en tarjetas de carta para demo sin registro y carta publicada con registro.
   - ajuste extra: precios aun mas pequenos y imagenes de producto significativamente mas grandes en desktop (tambien ajustadas en mobile).
+  - en editor de items (`/linkhub`), el boton `Duplicar` se reemplazo por `Crear nuevo`: inserta un item debajo del actual, limpia busqueda y hace scroll/focus directo al nuevo para editar.
+  - se retiro `Emoji` y `Badge` a nivel item en el editor; ahora el emoji del item se sincroniza automaticamente con la categoria y el badge manual se fuerza vacio al guardar.
+  - en carta publicada (`/bio/[slug]`), los badges manuales de item ya no se usan; solo se muestran badges de promo automatica cuando aplica.
+  - en `Etiqueta del rubro` (editor `/linkhub`) se habilito emoji automatico al inicio del rubro, incluyendo cuando se escribe un rubro nuevo; se agrego tambien la opcion `Parrilla`.
+  - para cuentas registradas, si el catalogo tiene menos de 5 items se autocompleta con platos base del rubro actual; y al confirmar cambio de rubro se cargan 5 platos predefinidos del rubro (titulo, descripcion, precio y emoji referencial).
 - Tema de carta en editor LinkHub (`/linkhub`):
   - al cambiar tema (sugerido por rubro, tema oficial o RGB) ya no se fuerza `cartaBackgroundMode: "white"`; ahora respeta el modo activo elegido por el usuario.
   - en modo `theme`, el preview aplica fallback de texto oscuro cuando detecta fondos de tema claros, para evitar texto blanco sin contraste.
+  - se agregaron `8` temas premium nuevos de Carta Digital y quedaron disponibles desde plan `BUSINESS` (tambien `PRO`), manteniendo bloqueo en `FREE`.
+  - el Creador RGB de Carta Digital ahora incluye `8` presets adicionales (12 en total) para aplicar variantes visuales rapido con un clic.
+  - en modo movil de la carta publicada (`/bio/[slug]`) y demo (`RestaurantDemo`), el selector `Tema/Claro` ahora usa botones con iconos (`paleta` y `sol`) y estilo visual mas premium; en desktop mantiene etiqueta textual junto al icono.
 - Reservas (editor + carta publicada):
   - el rango de configuracion de personas para reserva se amplio de `1..60` a `1..99` en saneamiento y UI del editor (`/linkhub`).
   - en la carta publicada (`/bio/[slug]`), la seleccion de personas en reserva dejo de usar input numerico libre y ahora usa control con botones de flecha (`-1` / `+1`) respetando min/max del restaurante.
@@ -36,6 +44,8 @@
   - se redujo compresion objetivo de imagenes (portada, reservas y catalogo) para disminuir peso del documento y mejorar exito de guardado.
   - al guardar, se eliminan duplicados entre `imageUrl` y `galleryImageUrls` en items para evitar inflar tamano del perfil.
   - se agrego mensaje de error explicito cuando Firestore rechaza por tamano de documento.
+  - nueva compresion progresiva por plan (`FREE/BUSINESS/PRO`) en todas las subidas (avatar, portada, reserva, items y galeria), con compactacion global adicional justo antes de guardar.
+  - se aplican presupuestos de payload por plan para Firestore y un mensaje de error mas claro con tamano actual vs limite del plan cuando todavia excede.
 - Mensaje WhatsApp de reservas (`/bio/[slug]`):
   - se reformateo el texto de redireccion al enviar reserva con bloques separados por espacios: titulo, intro, `Datos de reserva`, bloque de anticipo opcional y bloque `Solicitud enviada`.
   - se unifico listado con bullets `·` para mejor lectura en WhatsApp.
@@ -47,3 +57,11 @@
 - Referidos en ajustes (`/settings`):
   - nueva pestana `Referidos` con dashboard: alias editable, boton para actualizar enlace, link compartible y metricas por niveles.
   - listado visible de clientes en nivel 1 y nivel 2 con estado y comision acumulada.
+- Reservas en demo sin registro (`RestaurantDemo`):
+  - se elimino el bloque de "Anticipo sugerido" en la UI de reserva de demos publicas.
+  - se reemplazo por el texto opcional: "??? Asegura tu experiencia con reserva anticipada (opcional)."
+  - el mensaje de WhatsApp de reserva en demo tambien elimina el bloque de anticipo para mantener consistencia.
+- Metricas PRO (`/metrics`):
+  - cada apertura de enlace ahora suma `Clicks Totales` (+1 por page_view).
+  - `Visitas` cambia a visitante unico por dispositivo/navegador (dedupe por `visitorId` persistente) en lugar de sumar cada apertura repetida.
+  - la tabla inferior `Rendimiento por Proyecto` ahora incluye columna dinamica de `Clicks` por proyecto.

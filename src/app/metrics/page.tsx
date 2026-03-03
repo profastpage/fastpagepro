@@ -327,6 +327,7 @@ export default function MetricsPage() {
                         <th className="pb-4">Proyecto</th>
                         <th className="pb-4">Tipo</th>
                         <th className="pb-4">Visitas</th>
+                        <th className="pb-4">Clicks</th>
                         <th className="pb-4">Conv.</th>
                         <th className="pb-4">Rebote</th>
                         <th className="pb-4">Estado</th>
@@ -350,6 +351,7 @@ export default function MetricsPage() {
                             </span>
                           </td>
                           <td className="py-4 text-white font-medium">{project.visits.toLocaleString()}</td>
+                          <td className="py-4 text-white font-medium">{Number(project.clicks || 0).toLocaleString()}</td>
                           <td className="py-4">
                             <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
                               {project.conversion}
@@ -370,7 +372,7 @@ export default function MetricsPage() {
                         </tr>
                       )) : (
                         <tr>
-                          <td colSpan={7} className="py-12 text-center text-zinc-500 font-medium">
+                          <td colSpan={8} className="py-12 text-center text-zinc-500 font-medium">
                             No se encontraron proyectos para este filtro.
                           </td>
                         </tr>

@@ -17,13 +17,39 @@ export function injectMetricsTracking(html: string, siteId: string): string {
     var endpoint = "/api/metrics/event";
     var startedAt = Date.now();
     var ended = false;
+    var visitorStorageKey = "__fp_metrics_visitor_id_v1";
+    var visitorId = "";
+
+    function createId() {
+      try {
+        if (window.crypto && typeof window.crypto.randomUUID === "function") {
+          return window.crypto.randomUUID();
+        }
+      } catch (e) {}
+      return "v-" + Math.random().toString(36).slice(2, 10) + "-" + Date.now().toString(36);
+    }
+
+    function getVisitorId() {
+      try {
+        var saved = window.localStorage.getItem(visitorStorageKey);
+        if (saved) return String(saved);
+        var next = createId();
+        window.localStorage.setItem(visitorStorageKey, next);
+        return next;
+      } catch (e) {
+        return createId();
+      }
+    }
+
+    visitorId = getVisitorId();
 
     function send(type, extra) {
       try {
         var payload = JSON.stringify(Object.assign({
           siteId: siteId,
           type: type,
-          ts: Date.now()
+          ts: Date.now(),
+          visitorId: visitorId
         }, extra || {}));
 
         if (navigator.sendBeacon && (type === "session_end" || type === "page_view")) {

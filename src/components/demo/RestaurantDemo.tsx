@@ -8,11 +8,13 @@ import {
   MapPin,
   Menu,
   Minus,
+  Palette,
   Phone,
   Plus,
   Search,
   Share2,
   ShoppingCart,
+  SunMedium,
 } from "lucide-react";
 import type { RestaurantMenuData, RestaurantMenuItem } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
@@ -92,10 +94,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
       slotOptions: slots.length > 0 ? slots : ["Por coordinar"],
       minPartySize: minParty,
       maxPartySize: maxParty,
-      requiresDeposit: demo.reservation?.requiresDeposit ?? true,
-      depositAmount: demo.reservation?.depositAmount || "40",
-      depositInstructions:
-        demo.reservation?.depositInstructions || "Opcional: puedes solicitar anticipo por Yape o Plin para confirmar.",
+      reservationNudge:
+        demo.reservation?.depositInstructions || "🍽️ Asegura tu experiencia con reserva anticipada (opcional).",
       ctaLabel: demo.reservation?.ctaLabel || "Enviar reserva",
       notePlaceholder: demo.reservation?.notePlaceholder || "Celebracion, alergias o zona preferida.",
     };
@@ -286,9 +286,6 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
       slot: reservationSlot || reservationConfig.slotOptions[0] || "Por coordinar",
       contact: reservationContact.trim(),
       note: reservationNote.trim(),
-      requiresDeposit: reservationConfig.requiresDeposit,
-      depositAmount: reservationConfig.depositAmount,
-      depositInstructions: reservationConfig.depositInstructions,
     });
     const href = buildOfficialDemoWhatsappUrl(lines);
     window.open(href, "_blank", "noopener,noreferrer");
@@ -328,30 +325,44 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               <p className="truncate text-sm font-semibold">{demo.title}</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="inline-flex h-10 items-center rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-1">
+              <div className="inline-flex h-10 items-center gap-1 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-1">
                 <button
                   type="button"
                   onClick={() => setBackgroundMode("theme")}
-                  className="rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent transition md:h-8 md:w-auto md:px-2.5"
                   style={
                     backgroundMode === "theme"
-                      ? { background: "var(--fp-primary)", color: "#fff" }
+                      ? {
+                          background: "var(--fp-primary)",
+                          color: "#fff",
+                          boxShadow: "0 10px 20px -14px rgba(15,23,42,0.4)",
+                        }
                       : { color: "var(--fp-muted)" }
                   }
+                  aria-label="Usar fondo del tema"
+                  title="Modo tema"
                 >
-                  Tema
+                  <Palette className="h-4 w-4" />
+                  <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">Tema</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setBackgroundMode("white")}
-                  className="rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.09em] transition"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-transparent transition md:h-8 md:w-auto md:px-2.5"
                   style={
                     backgroundMode === "white"
-                      ? { background: "var(--fp-primary)", color: "#fff" }
+                      ? {
+                          background: "var(--fp-primary)",
+                          color: "#fff",
+                          boxShadow: "0 10px 20px -14px rgba(15,23,42,0.4)",
+                        }
                       : { color: "var(--fp-muted)" }
                   }
+                  aria-label="Usar fondo claro"
+                  title="Modo claro"
                 >
-                  Claro
+                  <SunMedium className="h-4 w-4" />
+                  <span className="hidden pl-1 text-[10px] font-black uppercase tracking-[0.09em] md:inline">Claro</span>
                 </button>
               </div>
               <button
@@ -614,12 +625,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   {reservationConfig.title}
                 </h3>
                 <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{reservationConfig.subtitle}</p>
-                {reservationConfig.requiresDeposit ? (
-                  <div className="mt-3 rounded-2xl border border-emerald-400/35 bg-emerald-400/10 p-3 text-sm text-emerald-100">
-                    <p className="font-black">Anticipo sugerido: {reservationConfig.depositAmount || "A coordinar"}</p>
-                    <p className="mt-1">{reservationConfig.depositInstructions}</p>
-                  </div>
-                ) : null}
+                <div className="mt-3 rounded-2xl border border-emerald-400/35 bg-emerald-400/10 p-3 text-sm text-emerald-100">
+                  <p className="font-black">{reservationConfig.reservationNudge}</p>
+                </div>
 
                 <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                   <label className="space-y-1.5 md:col-span-2">

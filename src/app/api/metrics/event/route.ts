@@ -25,6 +25,14 @@ function normalizeLabel(value: unknown) {
     .slice(0, 120);
 }
 
+function normalizeVisitorId(value: unknown) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, "")
+    .slice(0, 120);
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!adminDb) {
@@ -39,6 +47,7 @@ export async function POST(request: NextRequest) {
     const siteId = String(body?.siteId || "").trim();
     const type = String(body?.type || "").trim().toLowerCase();
     const label = normalizeLabel(body?.label);
+    const visitorId = normalizeVisitorId(body?.visitorId);
 
     if (!siteId) {
       return NextResponse.json({ error: "siteId es requerido" }, { status: 400 });
@@ -65,10 +74,48 @@ export async function POST(request: NextRequest) {
     const now = Date.now();
     const dateKey = new Date(now).toISOString().slice(0, 10);
 
-    const visitsInc = type === "page_view" ? 1 : 0;
-    const clicksInc = type === "click" ? 1 : 0;
+    let uniqueVisitInc = 0;
+    if (type === "page_view" && visitorId) {
+      const visitorRef = db.collection("site_metrics_visitors").doc(`${siteId}_${visitorId}`);
+      try {
+        await visitorRef.create({
+          siteId,
+          userId,
+          visitorId,
+          firstSeenAt: now,
+          lastSeenAt: now,
+          lastDateKey: dateKey,
+          views: 1,
+          updatedAt: now,
+        });
+        uniqueVisitInc = 1;
+      } catch (error: any) {
+        const message = String(error?.message || "").toLowerCase();
+        const code = String(error?.code || "").toLowerCase();
+        if (message.includes("already exists") || code.includes("already-exists")) {
+          await visitorRef.set(
+            {
+              siteId,
+              userId,
+              visitorId,
+              lastSeenAt: now,
+              lastDateKey: dateKey,
+              views: admin.firestore.FieldValue.increment(1),
+              updatedAt: now,
+            },
+            { merge: true },
+          );
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    const visitsInc = type === "page_view" ? (visitorId ? uniqueVisitInc : 1) : 0;
+    const clicksInc = (type === "click" ? 1 : 0) + (type === "page_view" ? 1 : 0);
     const conversionsInc = type === "conversion" ? 1 : 0;
     const durationInc = type === "session_end" ? clampDuration(body?.durationMs) : 0;
+    const sessionsInc = type === "page_view" ? 1 : 0;
 
     const inc = admin.firestore.FieldValue.increment;
 
@@ -104,9 +151,13 @@ export async function POST(request: NextRequest) {
     }
     if (visitsInc) {
       totalsPatch.visits = inc(visitsInc);
-      totalsPatch.sessions = inc(visitsInc);
+      totalsPatch.uniqueVisitors = inc(visitsInc);
       dailyPatch.visits = inc(visitsInc);
-      dailyPatch.sessions = inc(visitsInc);
+      dailyPatch.uniqueVisitors = inc(visitsInc);
+    }
+    if (sessionsInc) {
+      totalsPatch.sessions = inc(sessionsInc);
+      dailyPatch.sessions = inc(sessionsInc);
     }
     if (clicksInc) {
       totalsPatch.clicks = inc(clicksInc);

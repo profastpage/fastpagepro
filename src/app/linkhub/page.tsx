@@ -159,6 +159,7 @@ const RESTAURANT_SUBCATEGORY_OPTIONS = [
   "Cafeteria",
   "Pizzeria",
   "Restobar",
+  "Parrilla",
   "Panaderia",
   "Cevicheria",
   "Polleria",
@@ -169,6 +170,109 @@ const RESTAURANT_SUBCATEGORY_OPTIONS = [
   "Comida saludable",
   "Comida rapida",
 ];
+
+type RestaurantDishSeed = {
+  title: string;
+  description: string;
+  price: string;
+  compareAtPrice?: string;
+};
+
+const DEFAULT_RESTAURANT_RUBRO = "Cafeteria";
+
+const RESTAURANT_DISH_SEEDS_BY_RUBRO: Record<string, RestaurantDishSeed[]> = {
+  cafeteria: [
+    { title: "Capuccino clasico", description: "Cafe espresso con espuma cremosa y canela.", price: "12.00", compareAtPrice: "14.00" },
+    { title: "Latte vainilla", description: "Leche vaporizada, espresso doble y toque de vainilla.", price: "13.00", compareAtPrice: "15.00" },
+    { title: "Croissant mantequilla", description: "Horneado del dia, dorado y crujiente.", price: "9.00", compareAtPrice: "10.00" },
+    { title: "Sandwich mixto", description: "Pan brioche, jamon artesanal y queso fundido.", price: "14.00", compareAtPrice: "16.00" },
+    { title: "Cheesecake de frutos", description: "Porcion casera con topping de frutos rojos.", price: "15.00", compareAtPrice: "18.00" },
+  ],
+  pizzeria: [
+    { title: "Pizza margarita", description: "Salsa de tomate, mozzarella fresca y albahaca.", price: "29.00", compareAtPrice: "33.00" },
+    { title: "Pizza pepperoni", description: "Pepperoni crocante, queso extra y oregano.", price: "34.00", compareAtPrice: "38.00" },
+    { title: "Pizza hawaiana", description: "Jamón ahumado, piña caramelizada y mozzarella.", price: "35.00", compareAtPrice: "39.00" },
+    { title: "Pizza cuatro quesos", description: "Mozzarella, parmesano, azul y provolone.", price: "38.00", compareAtPrice: "43.00" },
+    { title: "Pizza suprema", description: "Mix de carnes, pimientos y aceitunas negras.", price: "42.00", compareAtPrice: "46.00" },
+  ],
+  restobar: [
+    { title: "Alitas bbq premium", description: "Alitas glaseadas con salsa bbq de la casa.", price: "27.00", compareAtPrice: "31.00" },
+    { title: "Nachos loaded", description: "Totopos, queso fundido, guacamole y pico de gallo.", price: "25.00", compareAtPrice: "29.00" },
+    { title: "Burger restobar", description: "Blend de res, cebolla crispy y salsa especial.", price: "32.00", compareAtPrice: "36.00" },
+    { title: "Piqueo marino", description: "Mix de mariscos crispy con salsas de autor.", price: "39.00", compareAtPrice: "44.00" },
+    { title: "Tacos crispy", description: "Tres tacos crocantes con carne y crema chipotle.", price: "29.00", compareAtPrice: "33.00" },
+  ],
+  parrilla: [
+    { title: "Parrillada especial", description: "Corte de res, chorizo, pollo y papas doradas.", price: "56.00", compareAtPrice: "63.00" },
+    { title: "Lomo a la parrilla", description: "Lomo fino al punto con chimichurri artesanal.", price: "49.00", compareAtPrice: "55.00" },
+    { title: "Costillas bbq", description: "Costillas ahumadas con salsa bbq intensa.", price: "45.00", compareAtPrice: "51.00" },
+    { title: "Anticuchos mixtos", description: "Corazon, pollo y chorizo con papa y choclo.", price: "32.00", compareAtPrice: "36.00" },
+    { title: "Brochetas andinas", description: "Brochetas de carne y verduras al carbon.", price: "34.00", compareAtPrice: "38.00" },
+  ],
+  panaderia: [
+    { title: "Pan campesino", description: "Masa madre horneada al dia, corteza crocante.", price: "8.00", compareAtPrice: "9.00" },
+    { title: "Pan ciabatta", description: "Pan artesanal ideal para sandwich o piqueo.", price: "9.00", compareAtPrice: "10.00" },
+    { title: "Empanada de pollo", description: "Masa hojaldrada con relleno casero jugoso.", price: "7.00", compareAtPrice: "8.00" },
+    { title: "Roll de canela", description: "Suave y glaseado, recien horneado.", price: "10.00", compareAtPrice: "12.00" },
+    { title: "Pan con queso", description: "Pan caliente con centro de queso fundido.", price: "6.00", compareAtPrice: "7.00" },
+  ],
+  cevicheria: [
+    { title: "Ceviche clasico", description: "Pescado fresco, leche de tigre y camote glaseado.", price: "27.00", compareAtPrice: "31.00" },
+    { title: "Ceviche mixto", description: "Pescado y mariscos con limon y aji limo.", price: "34.00", compareAtPrice: "38.00" },
+    { title: "Arroz con mariscos", description: "Arroz meloso con mariscos salteados.", price: "36.00", compareAtPrice: "40.00" },
+    { title: "Jalea marina", description: "Fritura de mariscos con salsa criolla.", price: "39.00", compareAtPrice: "44.00" },
+    { title: "Leche de tigre", description: "Copa concentrada y picante al gusto.", price: "18.00", compareAtPrice: "21.00" },
+  ],
+  polleria: [
+    { title: "1/4 pollo a la brasa", description: "Pollo dorado con papas fritas y ensalada.", price: "22.00", compareAtPrice: "25.00" },
+    { title: "1/2 pollo a la brasa", description: "Porcion familiar con cremas especiales.", price: "39.00", compareAtPrice: "44.00" },
+    { title: "Mostrito broaster", description: "Arroz chaufa con pieza broaster crocante.", price: "24.00", compareAtPrice: "28.00" },
+    { title: "Alitas anticucheras", description: "Alitas grill con aderezo anticuchero.", price: "26.00", compareAtPrice: "30.00" },
+    { title: "Parrilla pollera", description: "Mix de pollo y chorizo con papas nativas.", price: "32.00", compareAtPrice: "36.00" },
+  ],
+  hamburgueseria: [
+    { title: "Burger clasica", description: "Carne angus, queso cheddar y salsa de la casa.", price: "24.00", compareAtPrice: "28.00" },
+    { title: "Burger doble smash", description: "Doble carne smash con cebolla grill.", price: "29.00", compareAtPrice: "33.00" },
+    { title: "Burger crispy chicken", description: "Pollo crispy, pepinillos y mayo spicy.", price: "26.00", compareAtPrice: "30.00" },
+    { title: "Burger bbq bacon", description: "Tocino crocante, bbq y aros de cebolla.", price: "31.00", compareAtPrice: "35.00" },
+    { title: "Burger premium", description: "Blend especial, queso azul y cebolla caramelizada.", price: "34.00", compareAtPrice: "39.00" },
+  ],
+  pasteleria: [
+    { title: "Torta de chocolate", description: "Bizcocho humedo con fudge artesanal.", price: "16.00", compareAtPrice: "18.00" },
+    { title: "Cheesecake frutos rojos", description: "Base crocante y topping de frutos del bosque.", price: "17.00", compareAtPrice: "19.00" },
+    { title: "Tres leches", description: "Suave, cremosa y con canela al punto.", price: "14.00", compareAtPrice: "16.00" },
+    { title: "Tarta de limon", description: "Crema de limon y merengue tostado.", price: "15.00", compareAtPrice: "17.00" },
+    { title: "Brownie premium", description: "Chocolate intenso con nueces tostadas.", price: "12.00", compareAtPrice: "14.00" },
+  ],
+  sangucheria: [
+    { title: "Sanguche de chicharron", description: "Pan frances, camote y salsa criolla.", price: "17.00", compareAtPrice: "19.00" },
+    { title: "Sanguche de lomo", description: "Lomo saltado en pan artesanal.", price: "19.00", compareAtPrice: "22.00" },
+    { title: "Sanguche de pollo", description: "Pollo deshilachado, mayonesa casera y lechuga.", price: "15.00", compareAtPrice: "17.00" },
+    { title: "Sanguche criollo", description: "Panceta, salsa de aji amarillo y cebolla.", price: "18.00", compareAtPrice: "21.00" },
+    { title: "Sanguche mixto premium", description: "Jamón, queso y tocino con pan brioche.", price: "20.00", compareAtPrice: "23.00" },
+  ],
+  "comida criolla": [
+    { title: "Lomo saltado", description: "Res salteada con cebolla, tomate y papas.", price: "28.00", compareAtPrice: "32.00" },
+    { title: "Aji de gallina", description: "Crema de aji amarillo con pollo y papa.", price: "24.00", compareAtPrice: "28.00" },
+    { title: "Seco de res", description: "Guiso de culantro con frejoles y arroz.", price: "27.00", compareAtPrice: "31.00" },
+    { title: "Arroz con pollo", description: "Arroz verde tradicional con presa dorada.", price: "23.00", compareAtPrice: "26.00" },
+    { title: "Tallarines rojos", description: "Pasta en salsa criolla con carne guisada.", price: "22.00", compareAtPrice: "25.00" },
+  ],
+  "comida saludable": [
+    { title: "Bowl proteico", description: "Quinua, pollo grill y vegetales frescos.", price: "24.00", compareAtPrice: "27.00" },
+    { title: "Ensalada fit", description: "Mix verde, palta, semillas y aderezo light.", price: "21.00", compareAtPrice: "24.00" },
+    { title: "Wrap integral", description: "Tortilla integral con pollo y vegetales.", price: "20.00", compareAtPrice: "23.00" },
+    { title: "Salmon grill", description: "Salmon a la plancha con pure de coliflor.", price: "34.00", compareAtPrice: "39.00" },
+    { title: "Jugo detox", description: "Blend natural de pina, pepino y limon.", price: "13.00", compareAtPrice: "15.00" },
+  ],
+  "comida rapida": [
+    { title: "Combo clasico", description: "Hamburguesa, papas y bebida personal.", price: "22.00", compareAtPrice: "25.00" },
+    { title: "Salchipapa especial", description: "Papas fritas, salchicha y salsas mixtas.", price: "18.00", compareAtPrice: "21.00" },
+    { title: "Hot dog supremo", description: "Pan brioche, salchicha jumbo y toppings.", price: "16.00", compareAtPrice: "18.00" },
+    { title: "Nuggets crispy", description: "Porcion de nuggets con dip de la casa.", price: "17.00", compareAtPrice: "20.00" },
+    { title: "Papas loaded", description: "Papas con cheddar, tocino y cebollin.", price: "19.00", compareAtPrice: "22.00" },
+  ],
+};
 
 const CARTA_CUSTOM_STYLE_OPTIONS: Array<{
   value: CartaCustomStyle;
@@ -192,6 +296,14 @@ const CARTA_RGB_PRESET_OPTIONS: Array<{
   { id: "ocean_soft", label: "Oceano premium", primary: "#0e7490", secondary: "#f8fafc", accent: "#2563eb", style: "soft" },
   { id: "brasa_luxe", label: "Brasa deluxe", primary: "#d97706", secondary: "#111827", accent: "#dc2626", style: "luxe" },
   { id: "neon_night", label: "Neon night", primary: "#6366f1", secondary: "#020617", accent: "#22d3ee", style: "neon" },
+  { id: "mint_soft", label: "Mint fresh", primary: "#15803d", secondary: "#f8fafc", accent: "#0f766e", style: "soft" },
+  { id: "sunset_luxe", label: "Sunset luxe", primary: "#f97316", secondary: "#1e1b4b", accent: "#facc15", style: "luxe" },
+  { id: "berry_neon", label: "Berry neon", primary: "#be123c", secondary: "#111827", accent: "#ec4899", style: "neon" },
+  { id: "sky_soft", label: "Sky soft", primary: "#1d4ed8", secondary: "#f8fafc", accent: "#0ea5e9", style: "soft" },
+  { id: "forest_luxe", label: "Forest luxe", primary: "#166534", secondary: "#0b1120", accent: "#84cc16", style: "luxe" },
+  { id: "cobre_luxe", label: "Cobre urbano", primary: "#b45309", secondary: "#1f2937", accent: "#fb7185", style: "luxe" },
+  { id: "aqua_neon", label: "Aqua neon", primary: "#0f766e", secondary: "#111827", accent: "#22d3ee", style: "neon" },
+  { id: "violet_luxe", label: "Violet luxe", primary: "#7c3aed", secondary: "#111827", accent: "#f43f5e", style: "luxe" },
 ];
 
 const LINK_TYPE_ICON: Record<LinkHubLinkType, ComponentType<{ className?: string }>> = {
@@ -296,33 +408,281 @@ function loadImageFromDataUrl(dataUrl: string): Promise<HTMLImageElement> {
   });
 }
 
-async function optimizeImageFile(
-  file: File,
-  options?: { maxSize?: number; quality?: number; heavyQuality?: number; heavyThreshold?: number },
+type OptimizeImageOptions = {
+  maxSize?: number;
+  quality?: number;
+  minQuality?: number;
+  qualityStep?: number;
+  maxBytes?: number;
+  scaleStep?: number;
+  maxIterations?: number;
+};
+
+type StoragePlanTier = "FREE" | "BUSINESS" | "PRO";
+type ProfileImageKind = "avatar" | "cover" | "reservation" | "item" | "gallery";
+
+function isInlineImageDataUrl(value: string): boolean {
+  return /^data:image\//i.test(String(value || "").trim());
+}
+
+function estimateDataUrlBytes(dataUrl: string): number {
+  const raw = String(dataUrl || "");
+  const commaIndex = raw.indexOf(",");
+  if (commaIndex < 0) return 0;
+  const payload = raw.slice(commaIndex + 1);
+  const padding = payload.endsWith("==") ? 2 : payload.endsWith("=") ? 1 : 0;
+  return Math.max(0, Math.floor((payload.length * 3) / 4) - padding);
+}
+
+function estimateJsonBytes(value: unknown): number {
+  try {
+    const serialized = JSON.stringify(value);
+    return new Blob([serialized]).size;
+  } catch {
+    return Number.MAX_SAFE_INTEGER;
+  }
+}
+
+function getStoragePlanTier(plan: string): StoragePlanTier {
+  const normalized = String(plan || "").trim().toUpperCase();
+  if (normalized === "PRO") return "PRO";
+  if (normalized === "BUSINESS") return "BUSINESS";
+  return "FREE";
+}
+
+function getImagePresetByPlan(plan: StoragePlanTier, kind: ProfileImageKind): OptimizeImageOptions {
+  const baseByKind: Record<ProfileImageKind, OptimizeImageOptions> = {
+    avatar: { maxSize: 420, quality: 0.8, minQuality: 0.5, maxBytes: 55_000 },
+    cover: { maxSize: 920, quality: 0.8, minQuality: 0.45, maxBytes: 95_000 },
+    reservation: { maxSize: 860, quality: 0.8, minQuality: 0.45, maxBytes: 90_000 },
+    item: { maxSize: 680, quality: 0.78, minQuality: 0.45, maxBytes: 62_000 },
+    gallery: { maxSize: 620, quality: 0.74, minQuality: 0.42, maxBytes: 48_000 },
+  };
+
+  const preset = baseByKind[kind];
+  if (plan === "PRO") return preset;
+  if (plan === "BUSINESS") {
+    return {
+      ...preset,
+      maxSize: Math.round((preset.maxSize || 600) * 0.94),
+      quality: Math.max(0.42, (preset.quality || 0.78) - 0.04),
+      maxBytes: Math.round((preset.maxBytes || 55_000) * 0.88),
+    };
+  }
+  return {
+    ...preset,
+    maxSize: Math.round((preset.maxSize || 600) * 0.86),
+    quality: Math.max(0.38, (preset.quality || 0.78) - 0.1),
+    maxBytes: Math.round((preset.maxBytes || 55_000) * 0.72),
+  };
+}
+
+function withStricterPreset(base: OptimizeImageOptions, level: number): OptimizeImageOptions {
+  if (level <= 1) return base;
+  const ratio = Math.pow(0.84, level - 1);
+  return {
+    ...base,
+    maxSize: Math.max(180, Math.round((base.maxSize || 700) * ratio)),
+    quality: Math.max(0.26, (base.quality || 0.75) * ratio),
+    minQuality: Math.max(0.22, (base.minQuality || 0.45) * ratio),
+    maxBytes: Math.max(9_000, Math.round((base.maxBytes || 50_000) * ratio)),
+  };
+}
+
+async function optimizeImageDataUrl(
+  source: string,
+  options?: OptimizeImageOptions,
 ): Promise<string> {
-  const source = await readFileAsDataUrl(file);
   const image = await loadImageFromDataUrl(source);
 
-  const maxSize = options?.maxSize ?? 512;
+  const maxSize = Math.max(160, options?.maxSize ?? 640);
   const ratio = Math.min(maxSize / image.width, maxSize / image.height, 1);
-  const width = Math.max(1, Math.round(image.width * ratio));
-  const height = Math.max(1, Math.round(image.height * ratio));
+  let width = Math.max(1, Math.round(image.width * ratio));
+  let height = Math.max(1, Math.round(image.height * ratio));
+
+  const minQuality = Math.max(0.2, Math.min(0.95, options?.minQuality ?? 0.42));
+  let quality = Math.max(minQuality, Math.min(0.95, options?.quality ?? 0.78));
+  const qualityStep = Math.max(0.02, Math.min(0.18, options?.qualityStep ?? 0.06));
+  const scaleStep = Math.max(0.72, Math.min(0.96, options?.scaleStep ?? 0.9));
+  const maxIterations = Math.max(3, Math.min(18, options?.maxIterations ?? 11));
+  const maxBytes = Math.max(8_000, options?.maxBytes ?? 72_000);
 
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("No se pudo preparar el avatar.");
+  if (!context) throw new Error("No se pudo preparar la imagen.");
 
-  context.drawImage(image, 0, 0, width, height);
+  let best = source;
+  let bestBytes = estimateDataUrlBytes(source);
 
-  let encoded = canvas.toDataURL("image/jpeg", options?.quality ?? 0.9);
-  if (encoded.length > (options?.heavyThreshold ?? 780_000)) {
-    encoded = canvas.toDataURL("image/jpeg", options?.heavyQuality ?? 0.75);
+  for (let attempt = 0; attempt < maxIterations; attempt += 1) {
+    canvas.width = width;
+    canvas.height = height;
+    context.clearRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const encoded = canvas.toDataURL("image/jpeg", quality);
+    const bytes = estimateDataUrlBytes(encoded);
+    if (bytes < bestBytes) {
+      best = encoded;
+      bestBytes = bytes;
+    }
+    if (bytes <= maxBytes) {
+      return encoded;
+    }
+
+    if (quality > minQuality + 0.01) {
+      quality = Math.max(minQuality, quality - qualityStep);
+      continue;
+    }
+
+    const nextWidth = Math.max(140, Math.round(width * scaleStep));
+    const nextHeight = Math.max(140, Math.round(height * scaleStep));
+    if (nextWidth === width && nextHeight === height) break;
+    width = nextWidth;
+    height = nextHeight;
+    quality = Math.max(minQuality, quality - qualityStep / 2);
   }
 
-  return encoded;
+  return best;
+}
+
+async function optimizeImageFile(
+  file: File,
+  options?: OptimizeImageOptions,
+): Promise<string> {
+  const source = await readFileAsDataUrl(file);
+  return optimizeImageDataUrl(source, options);
+}
+
+type CompactProfileResult = {
+  profile: LinkHubProfile;
+  bytes: number;
+  budget: number;
+};
+
+const IMAGE_PAYLOAD_BUDGET_BY_PLAN: Record<StoragePlanTier, number> = {
+  FREE: 610_000,
+  BUSINESS: 760_000,
+  PRO: 900_000,
+};
+
+function getImagePayloadBudgetByPlan(plan: StoragePlanTier): number {
+  return IMAGE_PAYLOAD_BUDGET_BY_PLAN[plan];
+}
+
+function formatBytes(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "0 B";
+  if (value < 1024) return `${Math.round(value)} B`;
+  const kb = value / 1024;
+  if (kb < 1024) return `${kb.toFixed(1)} KB`;
+  const mb = kb / 1024;
+  return `${mb.toFixed(2)} MB`;
+}
+
+function mergeUniqueStrings(values: string[], limit?: number): string[] {
+  const merged = values
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .filter((value, index, source) => source.indexOf(value) === index);
+  if (typeof limit !== "number" || !Number.isFinite(limit) || limit <= 0) {
+    return merged;
+  }
+  return merged.slice(0, limit);
+}
+
+async function compactInlineDataUrl(
+  value: string,
+  kind: ProfileImageKind,
+  plan: StoragePlanTier,
+  pass: number,
+): Promise<string> {
+  const normalized = String(value || "").trim();
+  if (!normalized) return "";
+  if (!isInlineImageDataUrl(normalized)) return normalized;
+  try {
+    const preset = withStricterPreset(getImagePresetByPlan(plan, kind), pass);
+    return await optimizeImageDataUrl(normalized, preset);
+  } catch {
+    return normalized;
+  }
+}
+
+async function compactProfileImagesByPlan(
+  input: LinkHubProfile,
+  plan: StoragePlanTier,
+): Promise<CompactProfileResult> {
+  const budget = getImagePayloadBudgetByPlan(plan);
+  const maxPasses = 7;
+  let profile = JSON.parse(JSON.stringify(input)) as LinkHubProfile;
+  let previousBytes = estimateJsonBytes(profile);
+
+  for (let pass = 1; pass <= maxPasses; pass += 1) {
+    const compactedAvatar = await compactInlineDataUrl(profile.avatarUrl, "avatar", plan, pass);
+    const compactedCovers: string[] = [];
+    const coverSources = mergeUniqueStrings(
+      [...(profile.coverImageUrls || []), profile.coverImageUrl],
+      MAX_LINK_HUB_COVER_IMAGES,
+    );
+    for (const image of coverSources) {
+      compactedCovers.push(await compactInlineDataUrl(image, "cover", plan, pass));
+    }
+    const normalizedCoverImages = mergeUniqueStrings(compactedCovers, MAX_LINK_HUB_COVER_IMAGES);
+    const compactedReservationHero = await compactInlineDataUrl(
+      profile.reservation?.heroImageUrl || "",
+      "reservation",
+      plan,
+      pass,
+    );
+
+    const compactedItems: LinkHubCatalogItem[] = [];
+    for (const item of profile.catalogItems || []) {
+      const compactedPrimaryImage = await compactInlineDataUrl(item.imageUrl, "item", plan, pass);
+      const gallerySources = mergeUniqueStrings(
+        (item.galleryImageUrls || []).filter(
+          (image) => String(image || "").trim() !== String(item.imageUrl || "").trim(),
+        ),
+        MAX_LINK_HUB_ITEM_GALLERY_IMAGES,
+      );
+      const compactedGallery: string[] = [];
+      for (const image of gallerySources) {
+        compactedGallery.push(await compactInlineDataUrl(image, "gallery", plan, pass));
+      }
+      compactedItems.push({
+        ...item,
+        imageUrl: compactedPrimaryImage,
+        galleryImageUrls: mergeUniqueStrings(
+          compactedGallery.filter(
+            (image) => String(image || "").trim() !== String(compactedPrimaryImage || "").trim(),
+          ),
+          MAX_LINK_HUB_ITEM_GALLERY_IMAGES,
+        ),
+      });
+    }
+
+    profile = {
+      ...profile,
+      avatarUrl: compactedAvatar,
+      coverImageUrls: normalizedCoverImages,
+      coverImageUrl: normalizedCoverImages[0] || "",
+      reservation: {
+        ...profile.reservation,
+        heroImageUrl: compactedReservationHero,
+      },
+      catalogItems: compactedItems,
+    };
+
+    const bytes = estimateJsonBytes(profile);
+    if (bytes <= budget) {
+      return { profile, bytes, budget };
+    }
+    const shrinkDelta = previousBytes - bytes;
+    previousBytes = bytes;
+    if (pass >= 4 && shrinkDelta < 1_500) {
+      break;
+    }
+  }
+
+  return { profile, bytes: estimateJsonBytes(profile), budget };
 }
 
 function sanitizeDemoParam(value: string | null) {
@@ -583,6 +943,124 @@ function buildCatalogDescriptionSuggestion(
   return `${primaryEmoji} ${starter}: ${productName}. ${hook}. ${supportEmoji} ${closer}`;
 }
 
+function normalizeCategoryEmojiKeyword(value: string): string {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .trim();
+}
+
+function inferCatalogCategoryEmoji(categoryName: string, businessType: LinkHubBusinessType): string {
+  const keyword = normalizeCategoryEmojiKeyword(categoryName);
+  if (!keyword) return businessType === "restaurant" ? "🍽️" : "🛍️";
+  if (/(ceviche|marisc|pescad|jalea|parihuela|langost|concha|marino|sudado)/.test(keyword)) return "🐟";
+  if (/(hamburg|burger|sanguch|sandwich|wrap)/.test(keyword)) return "🍔";
+  if (/(pollo|parrilla|brasa|carne|bbq|alita)/.test(keyword)) return "🍗";
+  if (/(pizza|pastel|lasana|lasagna)/.test(keyword)) return "🍕";
+  if (/(bebida|jugo|coctel|cocktail|bar|drink|refresco)/.test(keyword)) return "🥤";
+  if (/(caf|coffee|postre|helad|dulce|pasteler)/.test(keyword)) return "☕";
+  if (/(veg|healthy|salud|ensalada)/.test(keyword)) return "🥗";
+  return businessType === "restaurant" ? "🍽️" : "🛍️";
+}
+
+function resolveCatalogItemEmojiByCategory(
+  categoryId: string,
+  categories: LinkHubProfile["catalogCategories"],
+  businessType: LinkHubBusinessType,
+): string {
+  const category = categories.find((entry) => entry.id === categoryId);
+  const explicitEmoji = String(category?.emoji || "").trim();
+  if (explicitEmoji) return explicitEmoji;
+  return inferCatalogCategoryEmoji(category?.name || "", businessType);
+}
+
+function normalizeRubroKeyword(value: string): string {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .trim();
+}
+
+function stripRubroEmojiPrefix(value: string): string {
+  return String(value || "")
+    .trim()
+    .replace(/^[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ]+/g, "")
+    .trim();
+}
+
+function inferRubroEmoji(value: string): string {
+  const keyword = normalizeRubroKeyword(stripRubroEmojiPrefix(value));
+  if (!keyword) return "🍽️";
+  if (/(ceviche|marisc|pescad|marino|jalea|parihuela)/.test(keyword)) return "🐟";
+  if (/(pollo|polleria|broaster|brasa)/.test(keyword)) return "🍗";
+  if (/(pizza|pizzeria)/.test(keyword)) return "🍕";
+  if (/(caf|cafeteria|coffee|panader)/.test(keyword)) return "☕";
+  if (/(hamburg|burger|comida rapida|fast)/.test(keyword)) return "🍔";
+  if (/(parrilla|grill|asado|carne)/.test(keyword)) return "🥩";
+  if (/(pasteler|postre|dulce|helad)/.test(keyword)) return "🍰";
+  if (/(sanguch|sandwich)/.test(keyword)) return "🥪";
+  if (/(crioll|peruan)/.test(keyword)) return "🍲";
+  if (/(salud|healthy|veg|ensalad)/.test(keyword)) return "🥗";
+  if (/(restobar|bar|coctel|cocktail|trago|bebida)/.test(keyword)) return "🍸";
+  return "🍽️";
+}
+
+function formatRubroLabelWithEmoji(value: string): string {
+  const clean = stripRubroEmojiPrefix(value) || DEFAULT_RESTAURANT_RUBRO;
+  return `${inferRubroEmoji(clean)} ${clean}`;
+}
+
+function resolveRestaurantDishSeedsByRubro(value: string): RestaurantDishSeed[] {
+  const keyword = normalizeRubroKeyword(stripRubroEmojiPrefix(value));
+  if (!keyword) return RESTAURANT_DISH_SEEDS_BY_RUBRO.cafeteria;
+  const directKey = Object.keys(RESTAURANT_DISH_SEEDS_BY_RUBRO).find((key) => keyword === key);
+  if (directKey) return RESTAURANT_DISH_SEEDS_BY_RUBRO[directKey];
+  if (keyword.includes("pizza")) return RESTAURANT_DISH_SEEDS_BY_RUBRO.pizzeria;
+  if (keyword.includes("parrilla")) return RESTAURANT_DISH_SEEDS_BY_RUBRO.parrilla;
+  if (keyword.includes("pollo")) return RESTAURANT_DISH_SEEDS_BY_RUBRO.polleria;
+  if (keyword.includes("ceviche") || keyword.includes("marisc") || keyword.includes("pescad")) {
+    return RESTAURANT_DISH_SEEDS_BY_RUBRO.cevicheria;
+  }
+  if (keyword.includes("hamburg") || keyword.includes("burger")) {
+    return RESTAURANT_DISH_SEEDS_BY_RUBRO.hamburgueseria;
+  }
+  if (keyword.includes("pastel") || keyword.includes("postre")) {
+    return RESTAURANT_DISH_SEEDS_BY_RUBRO.pasteleria;
+  }
+  if (keyword.includes("sanguch") || keyword.includes("sandwich")) {
+    return RESTAURANT_DISH_SEEDS_BY_RUBRO.sangucheria;
+  }
+  if (keyword.includes("crioll")) return RESTAURANT_DISH_SEEDS_BY_RUBRO["comida criolla"];
+  if (keyword.includes("salud") || keyword.includes("healthy") || keyword.includes("veg")) {
+    return RESTAURANT_DISH_SEEDS_BY_RUBRO["comida saludable"];
+  }
+  if (keyword.includes("rapida") || keyword.includes("fast")) {
+    return RESTAURANT_DISH_SEEDS_BY_RUBRO["comida rapida"];
+  }
+  if (keyword.includes("panader")) return RESTAURANT_DISH_SEEDS_BY_RUBRO.panaderia;
+  if (keyword.includes("restobar") || keyword.includes("bar")) return RESTAURANT_DISH_SEEDS_BY_RUBRO.restobar;
+  return RESTAURANT_DISH_SEEDS_BY_RUBRO.cafeteria;
+}
+
+function buildRestaurantStarterItems(
+  rubroLabel: string,
+  categories: LinkHubProfile["catalogCategories"],
+): LinkHubCatalogItem[] {
+  const baseCategoryId = categories[0]?.id || "";
+  const seeds = resolveRestaurantDishSeedsByRubro(rubroLabel).slice(0, 5);
+  return seeds.map((seed) => ({
+    ...createLinkHubCatalogItem(baseCategoryId),
+    title: seed.title,
+    description: seed.description,
+    price: seed.price,
+    compareAtPrice: seed.compareAtPrice || "",
+  }));
+}
+
 export default function LinkHubPage() {
   const { user, loading } = useAuth(true);
   const { summary: subscriptionSummary, reload: reloadSubscription } = useSubscription(Boolean(user?.uid));
@@ -619,6 +1097,7 @@ export default function LinkHubPage() {
   const [mobileEditMenuOpen, setMobileEditMenuOpen] = useState(false);
   const [mobileEditMenuMode, setMobileEditMenuMode] = useState<"sections" | "editor">("sections");
   const [mobileEditorSection, setMobileEditorSection] = useState<EditorSectionKey>("identity");
+  const [pendingCatalogEditorItemId, setPendingCatalogEditorItemId] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const descriptionSeedRef = useRef<number>(Date.now());
   const [demoSlugIntent, setDemoSlugIntent] = useState("");
@@ -636,8 +1115,12 @@ export default function LinkHubPage() {
   const publishChecklistEditorSectionRef = useRef<HTMLDivElement | null>(null);
   const proTrialBannerRef = useRef<HTMLDivElement | null>(null);
   const mobileTopDockRef = useRef<HTMLDivElement | null>(null);
+  const catalogEditorItemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const activePlan = subscriptionSummary?.plan || "FREE";
+  const storagePlanTier = useMemo(() => getStoragePlanTier(activePlan), [activePlan]);
+  const resolveImagePreset = (kind: ProfileImageKind, strictLevel = 1) =>
+    withStricterPreset(getImagePresetByPlan(storagePlanTier, kind), strictLevel);
   const isProPlan = activePlan === "PRO";
   const canUsePremiumThemes = activePlan === "BUSINESS" || activePlan === "PRO";
   const canUseReservations = activePlan === "BUSINESS" || activePlan === "PRO";
@@ -668,6 +1151,20 @@ export default function LinkHubPage() {
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!pendingCatalogEditorItemId) return;
+    const timer = window.setTimeout(() => {
+      const target = catalogEditorItemRefs.current[pendingCatalogEditorItemId];
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      const titleInput = target.querySelector<HTMLInputElement>('input[data-catalog-item-title="true"]');
+      titleInput?.focus();
+      titleInput?.select();
+      setPendingCatalogEditorItemId("");
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [pendingCatalogEditorItemId, profile?.catalogItems.length]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -934,21 +1431,14 @@ export default function LinkHubPage() {
 
   useEffect(() => {
     if (!profile) return;
-    const nextLabel =
-      profile.categoryLabel && profile.categoryLabel.trim().length > 0
-        ? profile.categoryLabel.trim()
-        : "Cafeteria";
+    const nextLabel = formatRubroLabelWithEmoji(profile.categoryLabel || DEFAULT_RESTAURANT_RUBRO);
     const needsRestaurantType = profile.businessType !== "restaurant";
-    const needsLabelFix =
-      !profile.categoryLabel || !RESTAURANT_SUBCATEGORY_OPTIONS.includes(nextLabel);
+    const needsLabelFix = profile.categoryLabel !== nextLabel;
     if (!needsRestaurantType && !needsLabelFix) return;
 
     setProfile((prev) => {
       if (!prev) return prev;
-      const safeLabel =
-        prev.categoryLabel && RESTAURANT_SUBCATEGORY_OPTIONS.includes(prev.categoryLabel)
-          ? prev.categoryLabel
-          : "Cafeteria";
+      const safeLabel = formatRubroLabelWithEmoji(prev.categoryLabel || DEFAULT_RESTAURANT_RUBRO);
       if (prev.businessType === "restaurant" && prev.categoryLabel === safeLabel) return prev;
       return {
         ...prev,
@@ -957,6 +1447,52 @@ export default function LinkHubPage() {
       };
     });
   }, [profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+    if (profile.businessType !== "restaurant") return;
+    const meaningfulItems = profile.catalogItems.filter((item) => item.title.trim().length > 0).length;
+    if (meaningfulItems >= 5) return;
+
+    setProfile((prev) => {
+      if (!prev || prev.businessType !== "restaurant") return prev;
+      const currentMeaningful = prev.catalogItems.filter((item) => item.title.trim().length > 0).length;
+      if (currentMeaningful >= 5) return prev;
+
+      const cleanLabel = stripRubroEmojiPrefix(prev.categoryLabel || DEFAULT_RESTAURANT_RUBRO);
+      const formattedLabel = formatRubroLabelWithEmoji(cleanLabel);
+      const rubroEmoji = inferRubroEmoji(cleanLabel);
+      const categories =
+        prev.catalogCategories.length > 0
+          ? prev.catalogCategories.map((category, index) =>
+              index === 0 ? { ...category, emoji: rubroEmoji, name: cleanLabel || category.name } : category,
+            )
+          : [createLinkHubCatalogCategory(cleanLabel || DEFAULT_RESTAURANT_RUBRO, rubroEmoji)];
+      const categoryId = categories[0]?.id || "";
+      const normalizedExisting = prev.catalogItems.map((item) =>
+        applyCatalogItemVisualRules({ ...item, categoryId: item.categoryId || categoryId }, categories, "restaurant"),
+      );
+      const existingTitles = new Set(
+        normalizedExisting.map((item) => item.title.trim().toLowerCase()).filter(Boolean),
+      );
+      const starterCandidates = buildRestaurantStarterItems(cleanLabel, categories)
+        .map((item) => applyCatalogItemVisualRules({ ...item, categoryId }, categories, "restaurant"))
+        .filter((item) => !existingTitles.has(item.title.trim().toLowerCase()));
+
+      const nextItems = [...normalizedExisting];
+      for (const starter of starterCandidates) {
+        if (nextItems.filter((item) => item.title.trim().length > 0).length >= 5) break;
+        nextItems.push(starter);
+      }
+
+      return {
+        ...prev,
+        categoryLabel: formattedLabel,
+        catalogCategories: categories,
+        catalogItems: nextItems.slice(0, MAX_LINK_HUB_CATALOG_ITEMS),
+      };
+    });
+  }, [profile?.businessType, profile?.categoryLabel, profile?.catalogCategories.length, profile?.catalogItems.length]);
 
   const publicUrl = useMemo(() => {
     if (!profile?.slug || !origin) return "";
@@ -989,7 +1525,7 @@ export default function LinkHubPage() {
   const previewReservationEnabled = Boolean(profile?.reservation?.enabled);
 
   const resolvedCartaThemeId = useMemo(() => {
-    const rubroHint = profile?.categoryLabel || "Restaurante / Cafeteria";
+    const rubroHint = stripRubroEmojiPrefix(profile?.categoryLabel || "Restaurante / Cafeteria");
     return getSafeCartaThemeId(profile?.cartaThemeId || recommendCartaThemeIdByRubro(rubroHint));
   }, [profile?.cartaThemeId, profile?.categoryLabel]);
 
@@ -1042,11 +1578,13 @@ export default function LinkHubPage() {
     return profile.catalogItems.filter((item) => {
       const byCategory = previewCategoryId ? item.categoryId === previewCategoryId : true;
       const term = previewSearch.trim().toLowerCase();
+      const categoryName =
+        profile.catalogCategories.find((category) => category.id === item.categoryId)?.name.toLowerCase() || "";
       const bySearch =
         !term ||
         item.title.toLowerCase().includes(term) ||
         item.description.toLowerCase().includes(term) ||
-        item.badge?.toLowerCase().includes(term);
+        categoryName.includes(term);
       return byCategory && bySearch;
     });
   }, [previewCategoryId, previewSearch, profile]);
@@ -1056,11 +1594,13 @@ export default function LinkHubPage() {
     const term = editorItemSearch.trim().toLowerCase();
     if (!term) return profile.catalogItems;
     return profile.catalogItems.filter((item) => {
+      const categoryName =
+        profile.catalogCategories.find((category) => category.id === item.categoryId)?.name.toLowerCase() || "";
       return (
         item.title.toLowerCase().includes(term) ||
         item.description.toLowerCase().includes(term) ||
         (item.salesCopy || "").toLowerCase().includes(term) ||
-        (item.badge || "").toLowerCase().includes(term) ||
+        categoryName.includes(term) ||
         (item.price || "").toLowerCase().includes(term)
       );
     });
@@ -1568,10 +2108,7 @@ export default function LinkHubPage() {
       const baseNext = {
         ...prev,
         businessType: safeType,
-        categoryLabel:
-          prev.categoryLabel && prev.categoryLabel.trim().length > 0
-            ? prev.categoryLabel
-            : "Cafeteria",
+        categoryLabel: formatRubroLabelWithEmoji(prev.categoryLabel || DEFAULT_RESTAURANT_RUBRO),
         cartaThemeId: prev.cartaThemeId || recommendedCartaThemeId,
         themeCategory: nextThemeCategory,
         sectionLabels: {
@@ -1610,11 +2147,20 @@ export default function LinkHubPage() {
   ) {
     setProfile((prev) => {
       if (!prev) return prev;
+      const nextCategories = prev.catalogCategories.map((category) =>
+        category.id === categoryId ? { ...category, ...patch } : category,
+      );
+      const shouldResyncItems = "emoji" in patch || "name" in patch;
       return {
         ...prev,
-        catalogCategories: prev.catalogCategories.map((category) =>
-          category.id === categoryId ? { ...category, ...patch } : category,
-        ),
+        catalogCategories: nextCategories,
+        catalogItems: shouldResyncItems
+          ? prev.catalogItems.map((item) =>
+              item.categoryId === categoryId
+                ? applyCatalogItemVisualRules(item, nextCategories, prev.businessType)
+                : item,
+            )
+          : prev.catalogItems,
       };
     });
   }
@@ -1645,6 +2191,70 @@ export default function LinkHubPage() {
     return categories[0]?.id || "";
   }
 
+  function handleRestaurantRubroChange(nextRawValue: string) {
+    const formattedLabel = formatRubroLabelWithEmoji(nextRawValue || DEFAULT_RESTAURANT_RUBRO);
+    const cleanLabel = stripRubroEmojiPrefix(formattedLabel);
+    const rubroEmoji = inferRubroEmoji(cleanLabel);
+    let nextPrimaryCategoryId = "";
+
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const ensuredCategories =
+        prev.catalogCategories.length > 0
+          ? prev.catalogCategories
+          : [createLinkHubCatalogCategory("Especialidades", rubroEmoji)];
+      const nextCategories = ensuredCategories.map((category, index) =>
+        index === 0
+          ? {
+              ...category,
+              name: cleanLabel || category.name || DEFAULT_RESTAURANT_RUBRO,
+              emoji: rubroEmoji,
+            }
+          : category,
+      );
+      const categoryId = nextCategories[0]?.id || "";
+      nextPrimaryCategoryId = categoryId;
+      const starterItems = buildRestaurantStarterItems(cleanLabel, nextCategories).map((item) =>
+        applyCatalogItemVisualRules(
+          { ...item, categoryId },
+          nextCategories,
+          "restaurant",
+        ),
+      );
+
+      return {
+        ...prev,
+        businessType: "restaurant",
+        categoryLabel: formattedLabel,
+        cartaThemeId: recommendCartaThemeIdByRubro(cleanLabel),
+        catalogCategories: nextCategories,
+        catalogItems: starterItems,
+      };
+    });
+
+    if (nextPrimaryCategoryId) {
+      setPreviewCategoryId(nextPrimaryCategoryId);
+    }
+    setMessage({
+      type: "success",
+      text: `Rubro actualizado a ${formattedLabel}. Se cargaron 5 platos base para ese rubro.`,
+    });
+  }
+
+  function applyCatalogItemVisualRules(
+    item: LinkHubCatalogItem,
+    categories: LinkHubProfile["catalogCategories"],
+    businessType: LinkHubBusinessType,
+  ): LinkHubCatalogItem {
+    const categoryId = resolveValidCategoryId(categories, item.categoryId);
+    return {
+      ...item,
+      categoryId,
+      emoji: resolveCatalogItemEmojiByCategory(categoryId, categories, businessType),
+      badge: "",
+    };
+  }
+
   function getNextDescriptionSeed(extra = 0): number {
     const randomBump = Math.floor(Math.random() * 17) + 1;
     descriptionSeedRef.current += randomBump + extra;
@@ -1656,9 +2266,14 @@ export default function LinkHubPage() {
       if (!prev) return prev;
       if (prev.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS) return prev;
       const baseCategoryId = prev.catalogCategories[0]?.id || "";
+      const nextItem = applyCatalogItemVisualRules(
+        createLinkHubCatalogItem(baseCategoryId),
+        prev.catalogCategories,
+        prev.businessType,
+      );
       return {
         ...prev,
-        catalogItems: [...prev.catalogItems, createLinkHubCatalogItem(baseCategoryId)],
+        catalogItems: [...prev.catalogItems, nextItem],
       };
     });
   }
@@ -1666,15 +2281,16 @@ export default function LinkHubPage() {
   function patchCatalogItem(itemId: string, patch: Partial<LinkHubCatalogItem>) {
     setProfile((prev) => {
       if (!prev) return prev;
-      const normalizedPatch =
-        typeof patch.categoryId === "string"
-          ? { ...patch, categoryId: resolveValidCategoryId(prev.catalogCategories, patch.categoryId) }
-          : patch;
       return {
         ...prev,
-        catalogItems: prev.catalogItems.map((item) =>
-          item.id === itemId ? { ...item, ...normalizedPatch } : item,
-        ),
+        catalogItems: prev.catalogItems.map((item) => {
+          if (item.id !== itemId) return item;
+          const next = {
+            ...item,
+            ...patch,
+          };
+          return applyCatalogItemVisualRules(next, prev.catalogCategories, prev.businessType);
+        }),
       };
     });
   }
@@ -2133,33 +2749,63 @@ export default function LinkHubPage() {
     setProfile((prev) => {
       if (!prev) return prev;
       const nextItems = prev.catalogItems.filter((item) => item.id !== itemId);
+      const fallbackItem = applyCatalogItemVisualRules(
+        createLinkHubCatalogItem(prev.catalogCategories[0]?.id || ""),
+        prev.catalogCategories,
+        prev.businessType,
+      );
       return {
         ...prev,
-        catalogItems: nextItems.length > 0 ? nextItems : [createLinkHubCatalogItem(prev.catalogCategories[0]?.id || "")],
+        catalogItems: nextItems.length > 0 ? nextItems : [fallbackItem],
       };
     });
   }
 
-  function duplicateCatalogItem(itemId: string) {
+  function createCatalogItemBelow(itemId: string) {
+    if (!profile) return;
+    if (profile.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS) {
+      setMessage({
+        type: "error",
+        text: `Limite alcanzado. Solo puedes tener ${MAX_LINK_HUB_CATALOG_ITEMS} items.`,
+      });
+      return;
+    }
+    let createdItemId = "";
     setProfile((prev) => {
       if (!prev) return prev;
       const source = prev.catalogItems.find((item) => item.id === itemId);
-      if (!source) return prev;
-      if (prev.catalogItems.length >= MAX_LINK_HUB_CATALOG_ITEMS) return prev;
-
-      const duplicated = {
-        ...source,
-        id: createClientUuid(),
-        title: source.title ? `${source.title} copia` : "",
-      };
+      const targetCategoryId = resolveValidCategoryId(
+        prev.catalogCategories,
+        source?.categoryId || prev.catalogCategories[0]?.id || "",
+      );
+      const created = applyCatalogItemVisualRules(
+        createLinkHubCatalogItem(targetCategoryId),
+        prev.catalogCategories,
+        prev.businessType,
+      );
+      createdItemId = created.id;
       const index = prev.catalogItems.findIndex((item) => item.id === itemId);
+      if (index < 0) {
+        return {
+          ...prev,
+          catalogItems: [...prev.catalogItems, created],
+        };
+      }
       const nextItems = [...prev.catalogItems];
-      nextItems.splice(index + 1, 0, duplicated);
+      nextItems.splice(index + 1, 0, created);
       return {
         ...prev,
         catalogItems: nextItems,
       };
     });
+    if (createdItemId) {
+      setEditorItemSearch("");
+      setPendingCatalogEditorItemId(createdItemId);
+      setMessage({
+        type: "success",
+        text: "Nuevo item creado debajo. Ya puedes editarlo.",
+      });
+    }
   }
 
   function moveCatalogItem(itemId: string, direction: "up" | "down") {
@@ -2211,10 +2857,17 @@ export default function LinkHubPage() {
         categoryId: nextCategoryId,
         title: item.title ? `${item.title} copia` : "Item copia",
       }));
+      const normalizedClonedItems = clonedItems.map((item) =>
+        applyCatalogItemVisualRules(
+          item,
+          [...prev.catalogCategories, clonedCategory],
+          prev.businessType,
+        ),
+      );
       return {
         ...prev,
         catalogCategories: [...prev.catalogCategories, clonedCategory],
-        catalogItems: [...prev.catalogItems, ...clonedItems],
+        catalogItems: [...prev.catalogItems, ...normalizedClonedItems],
       };
     });
 
@@ -2376,7 +3029,7 @@ export default function LinkHubPage() {
 
     setIsUploadingAvatar(true);
     try {
-      const optimized = await optimizeImageFile(file, { maxSize: 512, quality: 0.9, heavyQuality: 0.75 });
+      const optimized = await optimizeImageFile(file, resolveImagePreset("avatar"));
       patchProfile("avatarUrl", optimized);
       setMessage({ type: "success", text: "Avatar cargado correctamente." });
     } catch (error) {
@@ -2420,12 +3073,7 @@ export default function LinkHubPage() {
     try {
       const optimizedImages: string[] = [];
       for (const file of validFiles) {
-        const optimized = await optimizeImageFile(file, {
-          maxSize: 960,
-          quality: 0.82,
-          heavyQuality: 0.64,
-          heavyThreshold: 520_000,
-        });
+        const optimized = await optimizeImageFile(file, resolveImagePreset("cover"));
         optimizedImages.push(optimized);
       }
 
@@ -2472,12 +3120,7 @@ export default function LinkHubPage() {
 
     setUploadingCatalogItemId(itemId);
     try {
-      const optimized = await optimizeImageFile(file, {
-        maxSize: 760,
-        quality: 0.82,
-        heavyQuality: 0.64,
-        heavyThreshold: 420_000,
-      });
+      const optimized = await optimizeImageFile(file, resolveImagePreset("item"));
       setProfile((prev) => {
         if (!prev) return prev;
         return {
@@ -2525,12 +3168,7 @@ export default function LinkHubPage() {
 
     setUploadingCatalogItemId(itemId);
     try {
-      const optimized = await optimizeImageFile(file, {
-        maxSize: 760,
-        quality: 0.82,
-        heavyQuality: 0.64,
-        heavyThreshold: 420_000,
-      });
+      const optimized = await optimizeImageFile(file, resolveImagePreset("gallery"));
       appendCatalogGalleryImage(itemId, optimized);
       setMessage({ type: "success", text: "Foto agregada a la galeria PRO." });
     } catch (error) {
@@ -2558,12 +3196,7 @@ export default function LinkHubPage() {
 
     setIsUploadingReservationImage(true);
     try {
-      const optimized = await optimizeImageFile(file, {
-        maxSize: 960,
-        quality: 0.82,
-        heavyQuality: 0.64,
-        heavyThreshold: 520_000,
-      });
+      const optimized = await optimizeImageFile(file, resolveImagePreset("reservation"));
       patchReservation("heroImageUrl", optimized);
       setMessage({ type: "success", text: "Imagen de reservas cargada correctamente." });
     } catch (error) {
@@ -2613,12 +3246,7 @@ export default function LinkHubPage() {
     try {
       const optimizedBatch: string[] = [];
       for (const file of selectedFiles) {
-        const optimized = await optimizeImageFile(file, {
-          maxSize: 760,
-          quality: 0.82,
-          heavyQuality: 0.64,
-          heavyThreshold: 420_000,
-        });
+        const optimized = await optimizeImageFile(file, resolveImagePreset("gallery"));
         optimizedBatch.push(optimized);
       }
       setProfile((prev) => {
@@ -2695,12 +3323,7 @@ export default function LinkHubPage() {
     try {
       const optimizedBatch: Array<{ itemId: string; imageUrl: string }> = [];
       for (let index = 0; index < assignCount; index += 1) {
-        const optimized = await optimizeImageFile(selectedFiles[index], {
-          maxSize: 760,
-          quality: 0.82,
-          heavyQuality: 0.64,
-          heavyThreshold: 420_000,
-        });
+        const optimized = await optimizeImageFile(selectedFiles[index], resolveImagePreset("item"));
         optimizedBatch.push({ itemId: targetItems[index].id, imageUrl: optimized });
       }
       const updates = new Map(optimizedBatch.map((entry) => [entry.itemId, entry.imageUrl]));
@@ -2781,20 +3404,30 @@ export default function LinkHubPage() {
     const categoryIds = new Set(cleanedCategories.map((category) => category.id));
     const fallbackCategoryId = cleanedCategories[0].id;
     const cleanedItems = profile.catalogItems
-      .map((item) => ({
-        ...item,
-        categoryId: categoryIds.has(item.categoryId) ? item.categoryId : fallbackCategoryId,
-        title: item.title.trim(),
-        description: item.description.trim(),
-        salesCopy: (item.salesCopy || "").trim(),
-        imageUrl: item.imageUrl.trim(),
-        galleryImageUrls: mergeGalleryImages((item.galleryImageUrls || []).filter((image) => image.trim() !== item.imageUrl.trim())),
-        price: item.price.trim(),
-        compareAtPrice: (item.compareAtPrice || "").trim(),
-        badge: (item.badge || "").trim(),
-        emoji: (item.emoji || "").trim(),
-        outOfStock: Boolean(item.outOfStock),
-      }))
+      .map((item) => {
+        const normalizedCategoryId = categoryIds.has(item.categoryId) ? item.categoryId : fallbackCategoryId;
+        const normalizedImageUrl = item.imageUrl.trim();
+        return {
+          ...item,
+          categoryId: normalizedCategoryId,
+          title: item.title.trim(),
+          description: item.description.trim(),
+          salesCopy: (item.salesCopy || "").trim(),
+          imageUrl: normalizedImageUrl,
+          galleryImageUrls: mergeGalleryImages(
+            (item.galleryImageUrls || []).filter((image) => image.trim() !== normalizedImageUrl),
+          ),
+          price: item.price.trim(),
+          compareAtPrice: (item.compareAtPrice || "").trim(),
+          badge: "",
+          emoji: resolveCatalogItemEmojiByCategory(
+            normalizedCategoryId,
+            cleanedCategories,
+            profile.businessType,
+          ),
+          outOfStock: Boolean(item.outOfStock),
+        };
+      })
       .filter((item) => item.title || item.description || item.price || item.imageUrl)
       .slice(0, MAX_LINK_HUB_CATALOG_ITEMS);
 
@@ -3015,7 +3648,7 @@ export default function LinkHubPage() {
         profile.location.address.trim(),
       );
 
-      const nextProfile = normalizeLinkHubProfile(
+      const normalizedNextProfile = normalizeLinkHubProfile(
         {
           ...profile,
           userId: user.uid,
@@ -3025,7 +3658,7 @@ export default function LinkHubPage() {
           avatarUrl: profile.avatarUrl.trim(),
           coverImageUrl: cleanedCoverImageUrls[0] || "",
           coverImageUrls: cleanedCoverImageUrls,
-          categoryLabel: profile.categoryLabel.trim(),
+          categoryLabel: formatRubroLabelWithEmoji(profile.categoryLabel.trim() || DEFAULT_RESTAURANT_RUBRO),
           phoneNumber: profile.phoneNumber.trim(),
           whatsappNumber: profile.whatsappNumber.trim(),
           theme: safeTheme,
@@ -3067,6 +3700,14 @@ export default function LinkHubPage() {
         },
         user,
       );
+
+      const compactedProfileResult = await compactProfileImagesByPlan(normalizedNextProfile, storagePlanTier);
+      if (compactedProfileResult.bytes > compactedProfileResult.budget) {
+        throw new Error(
+          `PROFILE_PAYLOAD_TOO_LARGE:${compactedProfileResult.bytes}:${compactedProfileResult.budget}:${storagePlanTier}`,
+        );
+      }
+      const nextProfile = compactedProfileResult.profile;
 
       let savedProfileId = "";
       let persistedProfile = nextProfile;
@@ -3146,7 +3787,16 @@ export default function LinkHubPage() {
     } catch (error) {
       console.error("[LinkHub] Save error:", error);
       const rawMessage = String((error as { message?: string })?.message || "").toLowerCase();
-      if (rawMessage.includes("unsupported field value: undefined")) {
+      const payloadLimitMatch = rawMessage.match(/profile_payload_too_large:(\d+):(\d+):(free|business|pro)/i);
+      if (payloadLimitMatch) {
+        const currentBytes = Number(payloadLimitMatch[1] || 0);
+        const budgetBytes = Number(payloadLimitMatch[2] || 0);
+        const planLabel = String(payloadLimitMatch[3] || activePlan).toUpperCase();
+        setMessage({
+          type: "error",
+          text: `No se pudo guardar: tu perfil supera el limite del plan ${planLabel} (${formatBytes(currentBytes)} de ${formatBytes(budgetBytes)}). Ya comprimimos automaticamente, pero necesitas reducir imagenes o subir de plan.`,
+        });
+      } else if (rawMessage.includes("unsupported field value: undefined")) {
         setMessage({
           type: "error",
           text: "No se pudo guardar por un dato invalido en el perfil. Actualiza e intenta nuevamente.",
@@ -3485,20 +4135,29 @@ export default function LinkHubPage() {
                 </label>
                 <label className="space-y-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Etiqueta del rubro</span>
-                  <select
+                  <input
+                    list="restaurant-rubro-options"
                     className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-400/40"
                     value={profile.categoryLabel}
-                    onChange={(event) => patchProfile("categoryLabel", event.target.value)}
-                  >
-                    {!RESTAURANT_SUBCATEGORY_OPTIONS.includes(profile.categoryLabel) ? (
-                      <option value={profile.categoryLabel}>{profile.categoryLabel || "Cafeteria"}</option>
-                    ) : null}
+                    onChange={(event) => patchProfile("categoryLabel", formatRubroLabelWithEmoji(event.target.value))}
+                    onBlur={(event) => handleRestaurantRubroChange(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      handleRestaurantRubroChange((event.target as HTMLInputElement).value);
+                    }}
+                    placeholder="🍽️ Cafeteria"
+                  />
+                  <datalist id="restaurant-rubro-options">
                     {RESTAURANT_SUBCATEGORY_OPTIONS.map((subcategory) => (
-                      <option key={subcategory} value={subcategory}>
-                        {subcategory}
+                      <option key={subcategory} value={formatRubroLabelWithEmoji(subcategory)}>
+                        {formatRubroLabelWithEmoji(subcategory)}
                       </option>
                     ))}
-                  </select>
+                  </datalist>
+                  <p className="text-[11px] text-zinc-400">
+                    Emoji automatico detectado: <span className="font-bold text-zinc-200">{inferRubroEmoji(profile.categoryLabel)}</span>
+                  </p>
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">Foto de perfil</span>
@@ -3903,7 +4562,7 @@ export default function LinkHubPage() {
                     className="w-full bg-transparent text-sm text-white placeholder:text-zinc-500 focus:outline-none"
                     value={editorItemSearch}
                     onChange={(event) => setEditorItemSearch(event.target.value)}
-                    placeholder="Buscar item por nombre, descripcion, copy, categoria, precio o badge..."
+                    placeholder="Buscar item por nombre, descripcion, copy, categoria o precio..."
                   />
                 </label>
                 <div className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-200">
@@ -3980,7 +4639,13 @@ export default function LinkHubPage() {
                   </div>
                 )}
                 {filteredEditorItems.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                  <div
+                    key={item.id}
+                    ref={(node) => {
+                      catalogEditorItemRefs.current[item.id] = node;
+                    }}
+                    className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                  >
                     <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-sm font-bold text-white">Item</p>
                       <div className="flex flex-wrap items-center gap-2">
@@ -4007,10 +4672,11 @@ export default function LinkHubPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => duplicateCatalogItem(item.id)}
-                          className="rounded-xl border border-sky-300/30 bg-sky-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-100 sm:px-3 sm:text-[11px]"
+                          onClick={() => createCatalogItemBelow(item.id)}
+                          className="inline-flex items-center gap-1 rounded-xl border border-sky-300/30 bg-sky-400/10 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-sky-100 sm:px-3 sm:text-[11px]"
                         >
-                          Duplicar
+                          <Plus className="h-3.5 w-3.5" />
+                          Crear nuevo
                         </button>
                         <button
                           type="button"
@@ -4169,6 +4835,7 @@ export default function LinkHubPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <input
+                        data-catalog-item-title="true"
                         className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
                         value={item.title}
                         onChange={(event) => patchCatalogItem(item.id, { title: event.target.value })}
@@ -4192,12 +4859,6 @@ export default function LinkHubPage() {
                       </label>
                       <input
                         className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={item.emoji || ""}
-                        onChange={(event) => patchCatalogItem(item.id, { emoji: event.target.value })}
-                        placeholder="Emoji"
-                      />
-                      <input
-                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
                         value={item.price}
                         onChange={(event) => patchCatalogItem(item.id, { price: event.target.value })}
                         placeholder="Precio"
@@ -4207,12 +4868,6 @@ export default function LinkHubPage() {
                         value={item.compareAtPrice || ""}
                         onChange={(event) => patchCatalogItem(item.id, { compareAtPrice: event.target.value })}
                         placeholder="Precio referencial"
-                      />
-                      <input
-                        className="rounded-xl border border-white/10 bg-zinc-900/80 px-3 py-2 text-sm text-white"
-                        value={item.badge || ""}
-                        onChange={(event) => patchCatalogItem(item.id, { badge: event.target.value })}
-                        placeholder="Badge"
                       />
                       <label className="space-y-2 md:col-span-2">
                         <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
