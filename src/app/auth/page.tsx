@@ -44,7 +44,6 @@ const AUTH_ALIAS_HOSTS = (
 const RECOMMENDED_FIREBASE_AUTH_DOMAINS = Array.from(
   new Set([CANONICAL_AUTH_HOST, ...AUTH_ALIAS_HOSTS].filter(Boolean)),
 );
-const GOOGLE_AUTH_PENDING_KEY = "fp_google_auth_pending";
 const GOOGLE_AUTH_INTENT_KEY = "fp_google_auth_intent";
 
 type LandingPlanIntent = "FREE" | "BUSINESS" | "PRO";
@@ -223,7 +222,6 @@ function AuthContent() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const isPostAuthProcessingRef = useRef(false);
-  const googleRedirectAutoStartRef = useRef(false);
   const googleIntentRef = useRef<"login" | "register">("login");
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
   const planIntent = normalizePlanIntent(searchParams.get("plan"));
@@ -256,7 +254,6 @@ function AuthContent() {
 
   const clearGoogleIntent = () => {
     if (typeof window === "undefined") return;
-    window.sessionStorage.removeItem(GOOGLE_AUTH_PENDING_KEY);
     window.sessionStorage.removeItem(GOOGLE_AUTH_INTENT_KEY);
   };
 
@@ -309,9 +306,6 @@ function AuthContent() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     persistGoogleIntent(intent);
-    if (typeof window !== "undefined") {
-      window.sessionStorage.setItem(GOOGLE_AUTH_PENDING_KEY, "1");
-    }
     showToast(i18n.redirectGoogle);
     await signInWithRedirect(auth, provider);
   };
@@ -620,13 +614,6 @@ function AuthContent() {
           await runPostAuthFlow(result.user, "redirect");
           return;
         }
-        if (typeof window !== "undefined") {
-          const wasPending = window.sessionStorage.getItem(GOOGLE_AUTH_PENDING_KEY) === "1";
-          if (wasPending) {
-            // Redirect finished but Firebase returned no result (cancelled/blocked); clear stale state.
-            clearGoogleIntent();
-          }
-        }
       } catch (error: any) {
         console.error("Redirect Error:", error);
         clearGoogleIntent();
@@ -637,31 +624,11 @@ function AuthContent() {
     return () => unsubscribe();
   }, [demoSlugIntent, demoThemeIntent, i18n.loginError, i18n.unknownError, planIntent, preferredVertical, router, tab, trialIntent]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (googleRedirectAutoStartRef.current) return;
-    if (isCanonicalRedirectNeeded()) return;
-    const pending = window.sessionStorage.getItem(GOOGLE_AUTH_PENDING_KEY) === "1";
-    if (!pending) return;
-    googleRedirectAutoStartRef.current = true;
-    const intent = readGoogleIntent();
-    setIsGoogleLoading(true);
-    void startGoogleRedirect(intent).catch((error: any) => {
-      console.error("Google AutoStart Error:", error);
-      clearGoogleIntent();
-      setIsGoogleLoading(false);
-      showToast(`${i18n.loginError} ${error?.message || i18n.unknownError}`);
-    });
-  }, [i18n.loginError, i18n.unknownError, tab]);
-
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
 
     if (isCanonicalRedirectNeeded()) {
       persistGoogleIntent(tab);
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem(GOOGLE_AUTH_PENDING_KEY, "1");
-      }
       showToast(i18n.redirectingSecure + " " + CANONICAL_AUTH_HOST);
       setTimeout(() => redirectToCanonicalAuthHost(), 500);
       return;
