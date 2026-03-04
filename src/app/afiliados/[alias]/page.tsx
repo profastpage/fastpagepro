@@ -5,13 +5,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: {
+  params:
+    | {
+        alias: string;
+      }
+    | Promise<{
     alias: string;
-  };
+      }>;
 };
 
 export default async function AffiliateAliasPage({ params }: PageProps) {
-  const alias = String(params?.alias || "").trim();
+  const resolvedParams = await Promise.resolve(params);
+  const alias = String(resolvedParams?.alias || "").trim();
   if (!alias) {
     redirect("/signup");
   }
