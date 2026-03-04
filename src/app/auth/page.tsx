@@ -9,6 +9,7 @@ import {
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   sendPasswordResetEmail,
@@ -464,7 +465,10 @@ function AuthContent() {
     }
   };
 
-  const runPostAuthFlow = async (firebaseUser: any, source: "auth_state" | "redirect") => {
+  const runPostAuthFlow = async (
+    firebaseUser: any,
+    source: "auth_state" | "redirect" | "popup",
+  ) => {
     if (!firebaseUser?.uid) return;
     if (isPostAuthProcessingRef.current) return;
     isPostAuthProcessingRef.current = true;
@@ -481,7 +485,7 @@ function AuthContent() {
         if (intent === "register") {
           void trackGrowthEvent("signup_complete", {
             vertical: preferredVertical,
-            location: "auth_google_redirect",
+            location: source === "popup" ? "auth_google_popup" : "auth_google_redirect",
           });
         }
         clearGoogleIntent();
@@ -624,6 +628,15 @@ function AuthContent() {
     return () => unsubscribe();
   }, [demoSlugIntent, demoThemeIntent, i18n.loginError, i18n.unknownError, planIntent, preferredVertical, router, tab, trialIntent]);
 
+  const shouldUseGooglePopup = () => {
+    if (typeof window === "undefined") return false;
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isMobile =
+      /android|iphone|ipad|ipod|mobile|opera mini|iemobile|webos/.test(ua) ||
+      isStandaloneMode();
+    return !isMobile;
+  };
+
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
 
@@ -636,6 +649,32 @@ function AuthContent() {
 
     setIsGoogleLoading(true);
     try {
+      if (shouldUseGooglePopup()) {
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+        try {
+          const result = await signInWithPopup(auth, provider);
+          if (result?.user) {
+            persistGoogleIntent(tab);
+            await runPostAuthFlow(result.user, "popup");
+            return;
+          }
+        } catch (popupError: any) {
+          const popupCode = String(popupError?.code || "");
+          const popupMessage = String(popupError?.message || "");
+          const shouldFallback =
+            popupCode === "auth/popup-blocked" ||
+            popupCode === "auth/popup-closed-by-user" ||
+            popupCode === "auth/cancelled-popup-request" ||
+            popupCode === "auth/operation-not-supported-in-this-environment" ||
+            /popup/i.test(popupMessage);
+          if (!shouldFallback) {
+            throw popupError;
+          }
+          console.warn("[Auth] Popup no disponible, fallback a redirect", popupError);
+        }
+      }
+
       await startGoogleRedirect(tab);
     } catch (error: any) {
       console.error("Google Login Error:", error);
