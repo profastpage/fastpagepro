@@ -9,7 +9,6 @@ import {
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   sendPasswordResetEmail,
@@ -595,15 +594,6 @@ function AuthContent() {
     return () => unsubscribe();
   }, [demoSlugIntent, demoThemeIntent, i18n.loginError, i18n.unknownError, planIntent, preferredVertical, router, tab, trialIntent]);
 
-  const shouldPreferRedirectForGoogle = () => {
-    if (typeof window === "undefined") return true;
-    const ua = window.navigator.userAgent.toLowerCase();
-    const isMobileLike =
-      /android|iphone|ipad|ipod|mobile|opera mini|iemobile|webos/.test(ua) ||
-      isStandaloneMode();
-    return isMobileLike;
-  };
-
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
 
@@ -617,31 +607,6 @@ function AuthContent() {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
-
-      if (!shouldPreferRedirectForGoogle()) {
-        try {
-          const popupResult = await signInWithPopup(auth, provider);
-          if (popupResult?.user) {
-            await runPostAuthFlow(popupResult.user, "popup");
-            return;
-          }
-        } catch (popupError: any) {
-          const popupCode = String(popupError?.code || "");
-          const popupMessage = String(popupError?.message || "");
-          const canFallbackToRedirect =
-            popupCode === "auth/popup-blocked" ||
-            popupCode === "auth/popup-closed-by-user" ||
-            popupCode === "auth/cancelled-popup-request" ||
-            popupCode === "auth/operation-not-supported-in-this-environment" ||
-            /popup/i.test(popupMessage);
-
-          if (!canFallbackToRedirect) {
-            throw popupError;
-          }
-          console.warn("[Auth] Popup Google no disponible, fallback a redirect.", popupError);
-        }
-      }
-
       showToast(i18n.redirectGoogle);
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
