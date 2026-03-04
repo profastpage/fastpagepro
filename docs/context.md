@@ -240,3 +240,9 @@
   - se detecto causa real de `500` en `/api/referrals/summary` y `/api/referrals/profile`: Firebase Admin se inicializaba con `applicationDefault()` sin credenciales validas en Vercel.
   - se agregaron variables de entorno Admin en Vercel (`FIREBASE_SERVICE_ACCOUNT_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`) para habilitar Firestore server-side.
   - `src/lib/firebaseAdmin.ts` ahora evita usar ADC por defecto en runtimes no-Google y solo lo habilita con opt-in (`FIREBASE_ADMIN_USE_APPLICATION_DEFAULT=1`) o contexto GCP explicito.
+- Referidos listos para uso real (guardar alias, regenerar enlace y copiar):
+  - se agrego helper `src/lib/server/firebaseError.ts` y se conecto en `api/referrals/*` + `api/linkhub/metrics/summary` para mapear fallos de credenciales Firebase Admin a `503` controlado (sin `500` generico).
+  - `settings` (`/settings`, tab Referidos) mejora UX operativa:
+    - fallback de copiado con `execCommand("copy")` cuando `navigator.clipboard` no esta disponible (caso comun en algunos moviles/PWA/webview).
+    - mensaje explicito de sesion expirada si falta ID token al guardar/cargar referidos.
+    - alias normalizado en cliente (`trim + lowercase`) antes de enviar al backend para consistencia.

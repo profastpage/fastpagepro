@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { requireFirebaseUserId } from "@/lib/server/requireFirebaseUser";
+import { isFirebaseAdminCredentialError } from "@/lib/server/firebaseError";
 
 export const runtime = "nodejs";
 
@@ -188,11 +189,10 @@ export async function GET(request: NextRequest) {
     if (message.startsWith("UNAUTHORIZED")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    if (message.startsWith("SERVICE_UNAVAILABLE")) {
+    if (message.startsWith("SERVICE_UNAVAILABLE") || isFirebaseAdminCredentialError(error)) {
       return NextResponse.json({ error: "Servicio de autenticacion no disponible" }, { status: 503 });
     }
     console.error("[LinkHub Metrics Summary] Error:", error);
     return NextResponse.json({ error: "No se pudo cargar metricas." }, { status: 500 });
   }
 }
-

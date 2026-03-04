@@ -221,7 +221,10 @@ export default function SettingsPage() {
     setLoadingReferral(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) return;
+      if (!token) {
+        setMessage({ type: "error", text: "Sesion expirada. Vuelve a iniciar sesion." });
+        return;
+      }
       const response = await fetch("/api/referrals/summary", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -248,9 +251,18 @@ export default function SettingsPage() {
           };
         };
       };
-      if (!response.ok) return;
+      if (!response.ok) {
+        setMessage({
+          type: "error",
+          text: String((payload as { error?: string })?.error || "No se pudo actualizar referidos."),
+        });
+        return;
+      }
       const summary = payload.summary;
-      if (!summary?.profile?.referralCode || !summary?.referralLink) return;
+      if (!summary?.profile?.referralCode || !summary?.referralLink) {
+        setMessage({ type: "error", text: "No se pudo generar tu enlace de referido." });
+        return;
+      }
       const nextReferralData: ReferralData = {
         code: String(summary.profile.referralCode || "").trim(),
         alias: String(summary.profile.customAlias || "").trim(),
@@ -281,16 +293,48 @@ export default function SettingsPage() {
     void loadReferralSummary();
   }, [authUser?.uid, loadReferralSummary]);
 
+  const fallbackCopyText = (value: string): boolean => {
+    if (typeof document === "undefined") return false;
+    const text = String(value || "").trim();
+    if (!text) return false;
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "true");
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    let copied = false;
+    try {
+      copied = document.execCommand("copy");
+    } catch {
+      copied = false;
+    }
+    document.body.removeChild(textArea);
+    return copied;
+  };
+
   const copyText = async (value: string, successText: string) => {
     const text = String(value || "").trim();
     if (!text) return;
+    let copied = false;
     try {
       if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
-        setMessage({ type: "success", text: successText });
+        copied = true;
+      } else {
+        copied = fallbackCopyText(text);
       }
     } catch (error) {
       console.error("Error copying text:", error);
+      copied = fallbackCopyText(text);
+    }
+
+    if (copied) {
+      setMessage({ type: "success", text: successText });
+    } else {
       setMessage({ type: "error", text: "No se pudo copiar. Intenta nuevamente." });
     }
   };
@@ -318,7 +362,11 @@ export default function SettingsPage() {
     setSavingReferralConfig(true);
     try {
       const token = await auth.currentUser?.getIdToken();
-      if (!token) return;
+      if (!token) {
+        setMessage({ type: "error", text: "Sesion expirada. Vuelve a iniciar sesion." });
+        return;
+      }
+      const normalizedAlias = String(referralAliasInput || "").trim().toLowerCase();
       const response = await fetch("/api/referrals/profile", {
         method: "PATCH",
         headers: {
@@ -326,7 +374,7 @@ export default function SettingsPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          customAlias: referralAliasInput,
+          customAlias: normalizedAlias,
           regenerateCode: Boolean(options?.regenerateCode),
         }),
       });

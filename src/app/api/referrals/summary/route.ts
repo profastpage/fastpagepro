@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
 import { buildReferralSummary } from "@/lib/referrals/service";
+import { isFirebaseAdminCredentialError } from "@/lib/server/firebaseError";
 
 export const runtime = "nodejs";
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     if (message.startsWith("UNAUTHORIZED")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    if (message.startsWith("SERVICE_UNAVAILABLE")) {
+    if (message.startsWith("SERVICE_UNAVAILABLE") || isFirebaseAdminCredentialError(error)) {
       return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
     }
     console.error("[Referrals Summary] Error:", error);

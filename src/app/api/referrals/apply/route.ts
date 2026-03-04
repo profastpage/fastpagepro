@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
 import { applyReferralCode } from "@/lib/referrals/service";
+import { isFirebaseAdminCredentialError } from "@/lib/server/firebaseError";
 
 export const runtime = "nodejs";
 
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (message.startsWith("UNAUTHORIZED")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    if (message.startsWith("SERVICE_UNAVAILABLE")) {
+    if (message.startsWith("SERVICE_UNAVAILABLE") || isFirebaseAdminCredentialError(error)) {
       return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
     }
     if (message.includes("REFERRAL_CODE_NOT_FOUND")) {

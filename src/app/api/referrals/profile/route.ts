@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
 import { updateReferralProfileSettings } from "@/lib/referrals/service";
+import { isFirebaseAdminCredentialError, isFirebaseProjectConfigError } from "@/lib/server/firebaseError";
 
 export const runtime = "nodejs";
 const referralProfilePatchSchema = z
@@ -52,14 +53,10 @@ export async function PATCH(request: NextRequest) {
     if (message.startsWith("UNAUTHORIZED")) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    if (
-      message.includes("Unable to detect a Project Id") ||
-      message.includes("missing-project-id") ||
-      message.includes("PROJECT_ID")
-    ) {
+    if (isFirebaseProjectConfigError(error)) {
       return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
     }
-    if (message.startsWith("SERVICE_UNAVAILABLE")) {
+    if (message.startsWith("SERVICE_UNAVAILABLE") || isFirebaseAdminCredentialError(error)) {
       return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
     }
     if (message.includes("REFERRAL_ALIAS_TAKEN")) {
