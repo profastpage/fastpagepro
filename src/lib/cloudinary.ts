@@ -1,10 +1,19 @@
 import { createHash } from "crypto";
 
-type CloudinaryConfig = {
+type CloudinarySignedConfig = {
+  mode: "signed";
   cloudName: string;
   apiKey: string;
   apiSecret: string;
 };
+
+type CloudinaryUnsignedConfig = {
+  mode: "unsigned";
+  cloudName: string;
+  uploadPreset: string;
+};
+
+type CloudinaryConfig = CloudinarySignedConfig | CloudinaryUnsignedConfig;
 
 export type CloudinaryUploadResult = {
   secureUrl: string;
@@ -15,7 +24,13 @@ export type CloudinaryUploadResult = {
   height?: number;
 };
 
-function parseCloudinaryUrl(raw: string): Partial<CloudinaryConfig> {
+type CloudinaryUrlConfig = {
+  cloudName: string;
+  apiKey: string;
+  apiSecret: string;
+};
+
+function parseCloudinaryUrl(raw: string): Partial<CloudinaryUrlConfig> {
   const value = String(raw || "").trim();
   if (!value) return {};
   const match = value.match(/^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/i);
@@ -27,21 +42,64 @@ function parseCloudinaryUrl(raw: string): Partial<CloudinaryConfig> {
   };
 }
 
+function pickFirstNonEmpty(...values: Array<string | undefined>): string {
+  for (const value of values) {
+    const normalized = String(value || "").trim();
+    if (normalized) return normalized;
+  }
+  return "";
+}
+
 export function getCloudinaryConfig(): CloudinaryConfig | null {
   const fromUrl = parseCloudinaryUrl(process.env.CLOUDINARY_URL || "");
-  const cloudName = String(
-    process.env.CLOUDINARY_CLOUD_NAME || fromUrl.cloudName || "",
-  ).trim();
-  const apiKey = String(process.env.CLOUDINARY_API_KEY || fromUrl.apiKey || "").trim();
-  const apiSecret = String(
-    process.env.CLOUDINARY_API_SECRET || fromUrl.apiSecret || "",
-  ).trim();
 
-  if (!cloudName || !apiKey || !apiSecret) {
+  const cloudName = pickFirstNonEmpty(
+    process.env.CLOUDINARY_CLOUD_NAME,
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    process.env.VITE_CLOUDINARY_CLOUD_NAME,
+    fromUrl.cloudName,
+  );
+
+  const apiKey = pickFirstNonEmpty(
+    process.env.CLOUDINARY_API_KEY,
+    process.env.CLOUDINARY_KEY,
+    fromUrl.apiKey,
+  );
+
+  const apiSecret = pickFirstNonEmpty(
+    process.env.CLOUDINARY_API_SECRET,
+    process.env.CLOUDINARY_SECRET,
+    fromUrl.apiSecret,
+  );
+
+  const uploadPreset = pickFirstNonEmpty(
+    process.env.CLOUDINARY_UPLOAD_PRESET,
+    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET,
+    process.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+  );
+
+  if (!cloudName) {
     return null;
   }
 
-  return { cloudName, apiKey, apiSecret };
+  if (apiKey && apiSecret) {
+    return {
+      mode: "signed",
+      cloudName,
+      apiKey,
+      apiSecret,
+    };
+  }
+
+  if (uploadPreset) {
+    return {
+      mode: "unsigned",
+      cloudName,
+      uploadPreset,
+    };
+  }
+
+  return null;
 }
 
 function sanitizeFolderSegment(input: string): string {
@@ -106,24 +164,31 @@ export async function uploadImageToCloudinary(input: {
     throw new Error("CLOUDINARY_INVALID_UPLOAD_INPUT");
   }
 
-  const timestamp = Math.floor(Date.now() / 1000).toString();
-  const signature = buildSignature(
-    {
-      folder,
-      public_id: publicId,
-      timestamp,
-    },
-    config.apiSecret,
-  );
-
   const formData = new FormData();
   formData.append("file", source);
-  formData.append("api_key", config.apiKey);
-  formData.append("timestamp", timestamp);
-  formData.append("folder", folder);
-  formData.append("public_id", publicId);
-  formData.append("signature", signature);
-  formData.append("overwrite", "false");
+
+  if (config.mode === "signed") {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const signature = buildSignature(
+      {
+        folder,
+        public_id: publicId,
+        timestamp,
+      },
+      config.apiSecret,
+    );
+
+    formData.append("api_key", config.apiKey);
+    formData.append("timestamp", timestamp);
+    formData.append("folder", folder);
+    formData.append("public_id", publicId);
+    formData.append("signature", signature);
+    formData.append("overwrite", "false");
+  } else {
+    formData.append("upload_preset", config.uploadPreset);
+    formData.append("folder", folder);
+    formData.append("overwrite", "false");
+  }
 
   const endpoint = `https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudName)}/image/upload`;
   const response = await fetch(endpoint, {

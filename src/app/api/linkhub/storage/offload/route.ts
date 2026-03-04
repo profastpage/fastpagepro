@@ -313,7 +313,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Cloudinary no configurado en el servidor. Configura CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en Vercel.",
+            "Cloudinary no configurado en el servidor. Configura CLOUDINARY_CLOUD_NAME y (CLOUDINARY_API_KEY+CLOUDINARY_API_SECRET o CLOUDINARY_UPLOAD_PRESET) en Vercel.",
         },
         { status: 503 },
       );
