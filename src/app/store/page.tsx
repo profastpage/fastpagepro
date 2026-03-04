@@ -66,14 +66,27 @@ import {
   X,
 } from "lucide-react";
 
+function resolveFirebaseAuthDomain(): string {
+  const fallback = "fastpage-7ceb3.firebaseapp.com";
+  const raw = String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "").trim();
+  if (!raw) return fallback;
+
+  const normalized = raw.toLowerCase();
+  const isFirebaseManaged =
+    normalized.endsWith(".firebaseapp.com") ||
+    normalized.endsWith(".web.app") ||
+    normalized.startsWith("localhost") ||
+    normalized.startsWith("127.0.0.1");
+
+  if (!isFirebaseManaged) return fallback;
+  return raw;
+}
+
 const FIREBASE_PUBLIC_CONFIG = {
   apiKey:
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
     "AIzaSyAkb9GtjFXt2NPjuM_-M41Srd6aUK7Ch2Y",
-  authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    process.env.NEXT_PUBLIC_AUTH_CANONICAL_HOST ||
-    "www.fastpagepro.com",
+  authDomain: resolveFirebaseAuthDomain(),
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "fastpage-7ceb3",
   storageBucket:
     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
