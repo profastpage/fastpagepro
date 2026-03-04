@@ -60,7 +60,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
     }
     if (message.includes("REFERRAL_ALIAS_TAKEN")) {
-      return NextResponse.json({ error: "Ese alias ya esta en uso" }, { status: 409 });
+      return NextResponse.json({ error: "Ya utilizado, por favor elige otro." }, { status: 409 });
+    }
+    if (message.includes("REFERRAL_CODE_TAKEN")) {
+      return NextResponse.json({ error: "Ya utilizado, por favor elige otro." }, { status: 409 });
     }
     if (message.includes("REFERRAL_ALIAS_GENERATION_FAILED")) {
       return NextResponse.json({ error: "No se pudo reservar ese alias. Prueba otro." }, { status: 409 });

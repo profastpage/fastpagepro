@@ -104,7 +104,7 @@ const REFERRAL_EVENTS_COLLECTION = "referral_events";
 const REFERRAL_ALIASES_COLLECTION = "referral_aliases";
 const REFERRAL_PAYOUTS_COLLECTION = "referral_payouts";
 const DEFAULT_APP_URL = "https://www.fastpagepro.com";
-const MAX_REFERRAL_CODE_LEN = 20;
+const MAX_REFERRAL_CODE_LEN = 32;
 const MAX_ALIAS_LEN = 32;
 const MAX_ALIASES_PER_PROFILE = 3;
 const MAX_PAYMENT_REF_LEN = 120;
@@ -145,7 +145,9 @@ function roundMoney(value: number): number {
 function normalizeReferralCode(rawCode: unknown): string {
   return sanitizeText(rawCode, MAX_REFERRAL_CODE_LEN)
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
+    .replace(/[^A-Z0-9-]/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "")
     .slice(0, MAX_REFERRAL_CODE_LEN);
 }
 
@@ -376,6 +378,51 @@ async function reserveReferralCode(userId: string, email: string): Promise<strin
   }
 
   throw new Error("REFERRAL_CODE_GENERATION_FAILED");
+}
+
+async function reserveExactReferralCode(input: {
+  userId: string;
+  email?: string;
+  code: string;
+  customAlias?: string;
+}): Promise<string> {
+  const db = assertReferralsStorage();
+  const userId = sanitizeText(input.userId, 120);
+  const email = sanitizeText(input.email, 180);
+  const code = normalizeReferralCode(input.code);
+  const customAlias = normalizeReferralAlias(input.customAlias);
+
+  if (!userId || !code) {
+    throw new Error("INVALID_REFERRAL_CODE");
+  }
+
+  const codeRef = db.collection(REFERRAL_CODES_COLLECTION).doc(code);
+  const now = Date.now();
+
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(codeRef);
+    const payload = (snapshot.data() || {}) as Record<string, unknown>;
+    const ownerUserId = sanitizeText(payload.userId, 120);
+    if (snapshot.exists && ownerUserId !== userId) {
+      throw new Error("REFERRAL_CODE_TAKEN");
+    }
+
+    tx.set(
+      codeRef,
+      {
+        code,
+        userId,
+        email,
+        customAlias,
+        active: true,
+        createdAt: snapshot.exists ? toNumber(payload.createdAt, now) : now,
+        updatedAt: now,
+      },
+      { merge: true },
+    );
+  });
+
+  return code;
 }
 
 async function deactivateReferralCode(code: string) {
@@ -641,11 +688,12 @@ export async function updateReferralProfileSettings(input: {
     if (!normalizedInputAlias || normalizedInputAlias.length < 3 || RESERVED_ALIASES.has(normalizedInputAlias)) {
       throw new Error("INVALID_REFERRAL_ALIAS");
     }
+    let reservedAlias = normalizedInputAlias;
     if (!nextAliases.includes(normalizedInputAlias)) {
       if (nextAliases.length >= MAX_ALIASES_PER_PROFILE) {
         throw new Error("ALIAS_LIMIT_REACHED");
       }
-      const reservedAlias = await reserveReferralAlias({
+      reservedAlias = await reserveReferralAlias({
         userId,
         email: nextEmail,
         alias: normalizedInputAlias,
@@ -653,7 +701,17 @@ export async function updateReferralProfileSettings(input: {
       });
       nextAliases = [reservedAlias, ...nextAliases].slice(0, MAX_ALIASES_PER_PROFILE);
     }
-    nextAlias = normalizedInputAlias;
+    const aliasAsCode = normalizeReferralCode(reservedAlias);
+    if (!aliasAsCode) {
+      throw new Error("INVALID_REFERRAL_ALIAS");
+    }
+    nextCode = await reserveExactReferralCode({
+      userId,
+      email: nextEmail,
+      code: aliasAsCode,
+      customAlias: reservedAlias,
+    });
+    nextAlias = reservedAlias;
   }
 
   nextAliases = normalizeAliasList(nextAliases, nextAlias);

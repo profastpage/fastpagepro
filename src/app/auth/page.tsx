@@ -223,10 +223,12 @@ function AuthContent() {
   const [toast, setToast] = useState<string>("");
   const [isStandalonePwa, setIsStandalonePwa] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
-  const referralCodeIntentFromUrl = normalizeReferralInput(searchParams.get("ref"));
+  const referralAliasIntentFromUrl = normalizeReferralInput(searchParams.get("af"));
+  const referralCodeIntentFromUrl =
+    normalizeReferralInput(searchParams.get("ref")) || referralAliasIntentFromUrl;
   const referralLockedFromUrl =
     String(searchParams.get("lockRef") || "").trim() === "1" ||
-    Boolean(String(searchParams.get("af") || "").trim());
+    (Boolean(referralAliasIntentFromUrl) && Boolean(referralCodeIntentFromUrl));
   const [registerReferralCode, setRegisterReferralCode] = useState(referralCodeIntentFromUrl);
   const [referralLockIntent, setReferralLockIntent] = useState(referralLockedFromUrl);
   const referralInputLocked = referralLockIntent && Boolean(registerReferralCode);

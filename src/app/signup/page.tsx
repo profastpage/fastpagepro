@@ -54,8 +54,12 @@ export default function SignupPage() {
     const incomingDemoTheme = String(params?.get("demoTheme") || "")
       .trim()
       .replace(/[^\w-]/g, "");
-    const incomingReferralCode = normalizeReferralInput(params?.get("ref") || null);
-    const incomingReferralLocked = String(params?.get("lockRef") || "").trim() === "1";
+    const incomingAffiliateAlias = normalizeReferralInput(params?.get("af") || null);
+    const incomingReferralCode =
+      normalizeReferralInput(params?.get("ref") || null) || incomingAffiliateAlias;
+    const incomingReferralLocked =
+      String(params?.get("lockRef") || "").trim() === "1" ||
+      (Boolean(incomingAffiliateAlias) && Boolean(incomingReferralCode));
     setVertical(resolved);
     setSelectedPlan(planIntent);
     setDemoSlug(incomingDemoSlug);
@@ -81,6 +85,7 @@ export default function SignupPage() {
     if (demoSlug) params.set("demoSlug", demoSlug);
     if (demoTheme) params.set("demoTheme", demoTheme);
     if (referralCode) params.set("ref", referralCode);
+    if (referralCode) params.set("af", referralCode);
     if (referralLocked) params.set("lockRef", "1");
     return `/auth?${params.toString()}`;
   }, [demoSlug, demoTheme, referralCode, referralLocked, selectedPlan, vertical]);
@@ -90,6 +95,7 @@ export default function SignupPage() {
     if (demoSlug) params.set("demoSlug", demoSlug);
     if (demoTheme) params.set("demoTheme", demoTheme);
     if (referralCode) params.set("ref", referralCode);
+    if (referralCode) params.set("af", referralCode);
     if (referralLocked) params.set("lockRef", "1");
     return `/auth?${params.toString()}`;
   }, [demoSlug, demoTheme, referralCode, referralLocked, selectedPlan, vertical]);
