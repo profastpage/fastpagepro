@@ -94,6 +94,13 @@
   - nuevo helper compartido `src/lib/cloudinaryDelivery.ts` para aplicar transformaciones de entrega en URL (`f_auto,q_auto,dpr_auto,c_limit,w_*`) sin alterar originales.
   - aplicado en carta publicada (`/bio/[slug]`), tarjetas de producto (`ProductCard`) y preview/editor (`/linkhub`) para avatar, portadas, items, galeria y hero de reservas.
   - resultado: las imagenes ya subidas en Cloudinary se sirven automaticamente en formato y calidad optimos por navegador/dispositivo.
+- Login con Google (Firebase Auth redirect) recuperado:
+  - se detecto causa real en Hosting de Firebase: `__/firebase/init.json` devolvia `404` en `fastpage-7ceb3.firebaseapp.com`, lo que dejaba en blanco el `__/auth/handler`.
+  - se agrego configuracion `hosting` en `firebase.json` con `site: fastpage-7ceb3` y `appAssociation: AUTO`.
+  - se agrego `public/index.html` minimo para bootstrap de Hosting.
+  - se ejecuto deploy de Hosting y se verifico `200` en:
+    - `https://fastpage-7ceb3.firebaseapp.com/__/firebase/init.json`
+    - `https://fastpage-7ceb3.web.app/__/firebase/init.json`
 
 - Demo sin registro `fuente-soda-flow` (restaurant):
   - se actualizo branding visible a `Naranja Social Cafe`.
