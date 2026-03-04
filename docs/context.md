@@ -257,3 +257,6 @@
   - `LanguageContext` ahora normaliza mojibake con decodificacion UTF-8 + mapeo CP1252 para corregir strings rotos y mostrar texto legible en UI.
   - se corrigieron textos visibles en `/settings` y `/auth` con tildes correctas (`sesion`, `seccion`, `codigo`, `comision`, etc.).
   - en `settings` (tab Referidos) se eliminaron los dos avisos rojos duplicados de `Sesion expirada...` para no repetir alerta cuando ya existe el boton superior de `Cerrar sesion`.
+- Carta Digital (`/linkhub`) con limites de proyectos:
+  - actualizar/publicar un proyecto existente ahora sigue permitido aun cuando el usuario este en tope de plan (ej. `5/5`), conservando estado `published` al guardar borrador.
+  - intento de publicar proyecto nuevo con limite alcanzado muestra bloqueo explicito (`candado`) y redirige a `Billing` para subir de plan.

@@ -3913,7 +3913,7 @@ export default function LinkHubPage() {
     let publishTargetMode: "existing" | "new" = "existing";
 
     if (mode === "publish") {
-      const alreadyPublished = Boolean(profile.published);
+      const alreadyPublished = Boolean(profile.published || Number(profile.publishedAt || 0) > 0);
       const publishTarget = requestPublishTarget({
         hasExistingProject: alreadyPublished,
         entityLabel: "carta digital",
@@ -3950,9 +3950,12 @@ export default function LinkHubPage() {
       }
 
       if (maxProjects != null && nextProjects > maxProjects) {
+        const newProjectBlocked = publishTargetMode === "new";
         setMessage({
           type: "error",
-          text: `Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Renueva o sube de plan en Billing.`,
+          text: newProjectBlocked
+            ? `🔒 Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Para publicar un proyecto nuevo, sube a un plan superior en Billing.`
+            : `Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Renueva o sube de plan en Billing.`,
         });
         router.push("/dashboard/billing?requiredFeature=limit");
         return;
@@ -4039,6 +4042,7 @@ export default function LinkHubPage() {
         profile.location.address.trim(),
       );
 
+      const keepPublishedStatus = Boolean(profile.published || Number(profile.publishedAt || 0) > 0);
       const normalizedNextProfile = normalizeLinkHubProfile(
         {
           ...profile,
@@ -4086,7 +4090,7 @@ export default function LinkHubPage() {
             subtitle: profile.pricing.subtitle.trim(),
             plans: cleanedPlans,
           },
-          published: mode === "publish",
+          published: mode === "publish" ? true : keepPublishedStatus,
           ...(typeof profile.publishedAt === "number" ? { publishedAt: profile.publishedAt } : {}),
           ...(mode === "publish" ? { publishedAt: now } : {}),
           updatedAt: now,
