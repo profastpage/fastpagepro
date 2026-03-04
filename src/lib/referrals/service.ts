@@ -177,6 +177,36 @@ function normalizeAliasList(rawAliases: unknown, fallbackAlias = ""): string[] {
   return unique;
 }
 
+async function listActiveAliasesForUser(userId: string): Promise<string[]> {
+  const db = assertReferralsStorage();
+  const normalizedUserId = sanitizeText(userId, 120);
+  if (!normalizedUserId) return [];
+
+  const snapshot = await db
+    .collection(REFERRAL_ALIASES_COLLECTION)
+    .where("userId", "==", normalizedUserId)
+    .limit(50)
+    .get();
+
+  const aliases = snapshot.docs
+    .map((docSnapshot) => {
+      const payload = (docSnapshot.data() || {}) as Record<string, unknown>;
+      const active = payload.active !== false;
+      if (!active) return null;
+      const alias = normalizeReferralAlias(payload.alias || docSnapshot.id);
+      if (!alias || alias.length < 3) return null;
+      const updatedAt = Math.max(0, Math.floor(toNumber(payload.updatedAt, 0)));
+      return { alias, updatedAt };
+    })
+    .filter((entry): entry is { alias: string; updatedAt: number } => Boolean(entry))
+    .sort((a, b) => {
+      if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt;
+      return a.alias.localeCompare(b.alias);
+    });
+
+  return Array.from(new Set(aliases.map((entry) => entry.alias))).slice(0, MAX_ALIASES_PER_PROFILE);
+}
+
 function getPrimaryAlias(profile: ReferralProfileRecord): string {
   const fromCustomAlias = normalizeReferralAlias(profile.customAlias);
   if (fromCustomAlias) return fromCustomAlias;
@@ -568,7 +598,11 @@ export async function ensureReferralProfile(input: {
     const payload = (existing.data() || {}) as Record<string, unknown>;
     const mapped = mapProfile(userId, payload);
     const updates: Record<string, unknown> = {};
-    const normalizedAliases = normalizeAliasList(mapped.customAliases, mapped.customAlias);
+    const activeAliases = await listActiveAliasesForUser(userId).catch(() => []);
+    const normalizedAliases = normalizeAliasList(
+      [...activeAliases, ...mapped.customAliases],
+      mapped.customAlias,
+    );
     let nextProfile: ReferralProfileRecord = {
       ...mapped,
       customAliases: normalizedAliases,
@@ -726,6 +760,12 @@ export async function updateReferralProfileSettings(input: {
       alias,
       referralCode: nextCode,
     });
+  }
+
+  const activeAliases = await listActiveAliasesForUser(userId).catch(() => []);
+  nextAliases = normalizeAliasList([...activeAliases, ...nextAliases], nextAlias);
+  if (!nextAlias && nextAliases.length > 0) {
+    nextAlias = nextAliases[0];
   }
 
   await db
