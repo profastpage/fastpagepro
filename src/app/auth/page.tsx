@@ -287,18 +287,35 @@ function AuthContent() {
     setTimeout(() => setToast(""), 3000);
   };
 
+  const fetchWithTimeout = async (
+    input: RequestInfo | URL,
+    init: RequestInit = {},
+    timeoutMs = 6000,
+  ) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(input, {
+        ...init,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
   const activateBusinessTrial = async (firebaseUser: any) => {
     if (!firebaseUser?.uid) return;
 
     try {
       const token = await firebaseUser.getIdToken();
-      await fetch("/api/subscription/session", {
+      await fetchWithTimeout("/api/subscription/session", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      await fetch("/api/subscription/current", {
+      await fetchWithTimeout("/api/subscription/current", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -311,14 +328,14 @@ function AuthContent() {
         formData.append("plan", "BUSINESS");
         formData.append("trial", "true");
         formData.append("paymentMethod", "TRANSFERENCIA");
-        await fetch("/api/subscription/request", {
+        await fetchWithTimeout("/api/subscription/request", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
           },
           body: formData,
         }).catch(() => undefined);
-        await fetch("/api/subscription/session", {
+        await fetchWithTimeout("/api/subscription/session", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -427,22 +444,24 @@ function AuthContent() {
     if (isPostAuthProcessingRef.current) return;
     isPostAuthProcessingRef.current = true;
 
-    try {
-      await syncUserToFirestore(firebaseUser, preferredVertical);
-      await applyReferralCodeAfterAuth(firebaseUser, tab === "register");
-      await activateBusinessTrial(firebaseUser);
-      if (tab === "register") {
-        void trackGrowthEvent("signup_complete", {
-          vertical: preferredVertical,
-          location: source === "popup" ? "auth_google_popup" : "auth_google_redirect",
-        });
+    const target = resolvePostAuthTarget(firebaseUser.email);
+    router.push(target);
+
+    void (async () => {
+      try {
+        await syncUserToFirestore(firebaseUser, preferredVertical);
+        await applyReferralCodeAfterAuth(firebaseUser, tab === "register");
+        await activateBusinessTrial(firebaseUser);
+        if (tab === "register") {
+          void trackGrowthEvent("signup_complete", {
+            vertical: preferredVertical,
+            location: source === "popup" ? "auth_google_popup" : "auth_google_redirect",
+          });
+        }
+      } catch (error: any) {
+        console.error("[Auth] Error en flujo post login Google:", error);
       }
-      router.push(resolvePostAuthTarget(firebaseUser.email));
-    } catch (error: any) {
-      console.error("[Auth] Error en flujo post login Google:", error);
-      isPostAuthProcessingRef.current = false;
-      throw error;
-    }
+    })();
   };
 
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
