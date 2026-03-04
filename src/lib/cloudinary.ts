@@ -30,8 +30,19 @@ type CloudinaryUrlConfig = {
   apiSecret: string;
 };
 
-function parseCloudinaryUrl(raw: string): Partial<CloudinaryUrlConfig> {
+function normalizeEnvValue(raw: string | undefined): string {
   const value = String(raw || "").trim();
+  if (!value) return "";
+  const wrappedWithDoubleQuotes = value.startsWith('"') && value.endsWith('"');
+  const wrappedWithSingleQuotes = value.startsWith("'") && value.endsWith("'");
+  if (wrappedWithDoubleQuotes || wrappedWithSingleQuotes) {
+    return value.slice(1, -1).trim();
+  }
+  return value;
+}
+
+function parseCloudinaryUrl(raw: string): Partial<CloudinaryUrlConfig> {
+  const value = normalizeEnvValue(raw);
   if (!value) return {};
   const match = value.match(/^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/i);
   if (!match) return {};
@@ -44,7 +55,7 @@ function parseCloudinaryUrl(raw: string): Partial<CloudinaryUrlConfig> {
 
 function pickFirstNonEmpty(...values: Array<string | undefined>): string {
   for (const value of values) {
-    const normalized = String(value || "").trim();
+    const normalized = normalizeEnvValue(value);
     if (normalized) return normalized;
   }
   return "";
@@ -169,11 +180,13 @@ export async function uploadImageToCloudinary(input: {
 
   if (config.mode === "signed") {
     const timestamp = Math.floor(Date.now() / 1000).toString();
+    const overwrite = "false";
     const signature = buildSignature(
       {
         folder,
         public_id: publicId,
         timestamp,
+        overwrite,
       },
       config.apiSecret,
     );
@@ -183,7 +196,7 @@ export async function uploadImageToCloudinary(input: {
     formData.append("folder", folder);
     formData.append("public_id", publicId);
     formData.append("signature", signature);
-    formData.append("overwrite", "false");
+    formData.append("overwrite", overwrite);
   } else {
     formData.append("upload_preset", config.uploadPreset);
     formData.append("folder", folder);
