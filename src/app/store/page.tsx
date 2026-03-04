@@ -72,7 +72,8 @@ const FIREBASE_PUBLIC_CONFIG = {
     "AIzaSyAkb9GtjFXt2NPjuM_-M41Srd6aUK7Ch2Y",
   authDomain:
     process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    "fastpage-7ceb3.firebaseapp.com",
+    process.env.NEXT_PUBLIC_AUTH_CANONICAL_HOST ||
+    "www.fastpagepro.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "fastpage-7ceb3",
   storageBucket:
     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||

@@ -22,6 +22,10 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   icons: {
+    icon: [
+      { url: "/icon", type: "image/png" },
+    ],
+    shortcut: ["/icon"],
     apple: "/pwa/icon-192.svg",
   },
 };
