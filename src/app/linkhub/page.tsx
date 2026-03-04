@@ -4214,7 +4214,14 @@ export default function LinkHubPage() {
               : "Borrador guardado correctamente.",
       });
       if (mode === "publish") {
-        router.push(`/published?highlight=${encodeURIComponent(savedProfileId)}&kind=linkhub`);
+        const publishedTarget = `/published?highlight=${encodeURIComponent(savedProfileId)}&kind=linkhub`;
+        try {
+          router.replace(publishedTarget);
+        } catch {
+          if (typeof window !== "undefined") {
+            window.location.href = publishedTarget;
+          }
+        }
       }
     } catch (error) {
       console.error("[LinkHub] Save error:", error);
