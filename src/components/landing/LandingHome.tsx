@@ -1169,7 +1169,7 @@ export default function LandingHome() {
               transition={{ duration: 5.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
               className="absolute -right-6 -top-6 h-28 w-28 rounded-full border border-amber-300/20 bg-amber-300/10 blur-xl"
             />
-            <div className="relative mb-4">
+            <div className="relative mb-4 hidden md:block">
               {enableHero3D ? (
                 <HeroOrbScene />
               ) : (
