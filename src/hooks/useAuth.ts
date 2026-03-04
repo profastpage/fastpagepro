@@ -18,6 +18,7 @@ const SESSION_STORAGE_KEY = 'fp_session';
 const USER_DOC_TIMEOUT_MS = 3500;
 const USER_DOC_CACHE_TTL_MS = 2 * 60 * 1000;
 const SUBSCRIPTION_SYNC_TTL_MS = 2 * 60 * 1000;
+const AUTH_NULL_REDIRECT_DELAY_MS = 1800;
 
 type AuthUserDoc = {
   status?: User['status'];
@@ -174,10 +175,16 @@ export function useAuth(requireAuth = false) {
     }
 
     // 2. Listen to Firebase Auth state changes
+    let nullRedirectTimer: ReturnType<typeof setTimeout> | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (!active) return;
 
       if (firebaseUser) {
+        if (nullRedirectTimer) {
+          clearTimeout(nullRedirectTimer);
+          nullRedirectTimer = null;
+        }
         const optimisticUser: User = {
           email: firebaseUser.email || '',
           name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Usuario',
@@ -218,7 +225,13 @@ export function useAuth(requireAuth = false) {
         if (!localStorage.getItem(SESSION_STORAGE_KEY)) {
           setUser(null);
           if (requireAuth) {
-            router.push('/auth');
+            if (nullRedirectTimer) clearTimeout(nullRedirectTimer);
+            nullRedirectTimer = setTimeout(() => {
+              if (!active) return;
+              if (auth.currentUser) return;
+              if (localStorage.getItem(SESSION_STORAGE_KEY)) return;
+              router.push('/auth');
+            }, AUTH_NULL_REDIRECT_DELAY_MS);
           }
         }
         setLoading(false);
@@ -227,6 +240,9 @@ export function useAuth(requireAuth = false) {
 
     return () => {
       active = false;
+      if (nullRedirectTimer) {
+        clearTimeout(nullRedirectTimer);
+      }
       unsubscribe();
     };
   }, [requireAuth, router]);
