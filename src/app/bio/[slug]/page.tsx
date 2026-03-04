@@ -399,6 +399,7 @@ export default function PublicBioPage() {
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const categoryChipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const categorySyncPauseUntilRef = useRef(0);
+  const reservationDateInputRef = useRef<HTMLInputElement | null>(null);
 
   const slug = useMemo(() => sanitizeSlug(params?.slug || ""), [params?.slug]);
 
@@ -817,6 +818,17 @@ export default function PublicBioPage() {
       const top = window.scrollY + anchor.getBoundingClientRect().top - offset;
       window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     });
+  };
+  const openReservationDatePicker = () => {
+    const input = reservationDateInputRef.current;
+    if (!input) return;
+    const dateInput = input as HTMLInputElement & { showPicker?: () => void };
+    if (typeof dateInput.showPicker === "function") {
+      dateInput.showPicker();
+      return;
+    }
+    input.focus();
+    input.click();
   };
   const socialLinks = profile.links
     .filter((link) => isValidExternalUrl(link.url))
@@ -2150,13 +2162,26 @@ export default function PublicBioPage() {
                   <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: accentWordColor }}>
                     {tx("Fecha", "Date")}
                   </span>
-                  <input
-                    type="date"
-                    value={reservationDate}
-                    onChange={(event) => setReservationDate(event.target.value)}
-                    className={`w-full rounded-xl border px-3 py-2.5 text-sm ${buttonRadiusClass}`}
-                    style={checkoutInputStyle}
-                  />
+                  <div className="relative">
+                    <input
+                      ref={reservationDateInputRef}
+                      type="date"
+                      value={reservationDate}
+                      onChange={(event) => setReservationDate(event.target.value)}
+                      onFocus={openReservationDatePicker}
+                      className={`w-full rounded-xl border px-3 py-2.5 pr-12 text-sm ${buttonRadiusClass}`}
+                      style={checkoutInputStyle}
+                    />
+                    <button
+                      type="button"
+                      onClick={openReservationDatePicker}
+                      className={`absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border ${buttonRadiusClass}`}
+                      style={checkoutInputStyle}
+                      aria-label={tx("Abrir calendario", "Open calendar")}
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                    </button>
+                  </div>
                 </label>
 
                 <label className="space-y-1.5">

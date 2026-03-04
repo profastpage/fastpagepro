@@ -102,6 +102,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const tabContentAnchorRef = useRef<HTMLDivElement | null>(null);
   const menuStickyRef = useRef<HTMLDivElement | null>(null);
   const menuStartRef = useRef<HTMLDivElement | null>(null);
+  const reservationDateInputRef = useRef<HTMLInputElement | null>(null);
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
@@ -414,6 +415,18 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     } catch {
       // no-op: localStorage can be blocked in some browsers
     }
+  };
+
+  const openReservationDatePicker = () => {
+    const input = reservationDateInputRef.current;
+    if (!input) return;
+    const dateInput = input as HTMLInputElement & { showPicker?: () => void };
+    if (typeof dateInput.showPicker === "function") {
+      dateInput.showPicker();
+      return;
+    }
+    input.focus();
+    input.click();
   };
 
   return (
@@ -868,17 +881,29 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                     </p>
                   </label>
 
-                  <label className="space-y-1.5">
-                    <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
-                      Fecha
-                    </span>
+                <label className="space-y-1.5">
+                  <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
+                    Fecha
+                  </span>
+                  <div className="relative">
                     <input
+                      ref={reservationDateInputRef}
                       type="date"
                       value={reservationDate}
                       onChange={(event) => setReservationDate(event.target.value)}
-                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                      onFocus={openReservationDatePicker}
+                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 pr-12 text-sm outline-none"
                     />
-                  </label>
+                    <button
+                      type="button"
+                      onClick={openReservationDatePicker}
+                      className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                      aria-label="Abrir calendario"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                    </button>
+                  </div>
+                </label>
 
                   <label className="space-y-1.5">
                     <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>

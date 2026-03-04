@@ -274,3 +274,7 @@
   - ahora prioriza volver al `referrer` mismo dominio cuando existe; si no, usa `history.back()`.
   - se agrega fallback forzado por timeout para webview/PWA donde `history.back()` no cambia URL.
   - fallback final garantizado: `/` en Demo Hub y `/demo?vertical=<vertical>` en Demo Experience.
+- Reserva con calendario nativo restaurado (mobile + desktop):
+  - en demo restaurante (`src/components/demo/RestaurantDemo.tsx`) el campo `Fecha` ahora incluye apertura explicita del date picker nativo (`showPicker` con fallback `focus/click`) y boton visual de calendario.
+  - en carta publicada (`src/app/bio/[slug]/page.tsx`) se aplica el mismo comportamiento para asegurar seleccion por calendario en PC y movil.
+  - se mantiene compatibilidad para navegadores sin `showPicker` usando fallback no destructivo.
