@@ -65,6 +65,9 @@ export async function PATCH(request: NextRequest) {
     if (message.includes("REFERRAL_ALIAS_GENERATION_FAILED")) {
       return NextResponse.json({ error: "No se pudo reservar ese alias. Prueba otro." }, { status: 409 });
     }
+    if (message.includes("ALIAS_LIMIT_REACHED")) {
+      return NextResponse.json({ error: "Llegaste al maximo de 3 aliases por cuenta." }, { status: 409 });
+    }
     if (message.includes("INVALID_REFERRAL_ALIAS")) {
       return NextResponse.json({ error: "Alias invalido. Usa letras, numeros y guion." }, { status: 400 });
     }

@@ -46,6 +46,8 @@ const RECOMMENDED_FIREBASE_AUTH_DOMAINS = Array.from(
   new Set([CANONICAL_AUTH_HOST, ...AUTH_ALIAS_HOSTS].filter(Boolean)),
 );
 const GOOGLE_AUTH_INTENT_KEY = "fp_google_auth_intent";
+const REFERRAL_INTENT_CODE_KEY = "fp_referral_code_intent";
+const REFERRAL_INTENT_LOCK_KEY = "fp_referral_lock_intent";
 const FORCE_GOOGLE_REDIRECT =
   String(process.env.NEXT_PUBLIC_GOOGLE_AUTH_FORCE_REDIRECT || "0")
     .trim()
@@ -70,12 +72,12 @@ function isPwaAuthContext() {
   }
 }
 
-function normalizeReferralCode(rawValue: string | null): string {
+function normalizeReferralInput(rawValue: string | null): string {
   return String(rawValue || "")
     .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 20);
+    .replace(/\s+/g, "")
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .slice(0, 32);
 }
 
 export default function AuthPage() {
@@ -116,10 +118,11 @@ function AuthContent() {
             labelName: "Name",
             labelEmail: "Email",
             labelPassword: "Password",
-            labelReferral: "Referral code (optional)",
+            labelReferral: "Referral code or alias (optional)",
             placeholderName: "Your name",
             placeholderEmail: "you@domain.com",
-            placeholderReferral: "Example: FASTAB12",
+            placeholderReferral: "Example: FASTAB12 or gozustrike",
+            referralLockedHint: "Referral locked from invitation link.",
             forgotPassword: "Forgot your password?",
             submitLogin: "Enter",
             submitRegister: "Create account",
@@ -168,10 +171,11 @@ function AuthContent() {
             labelName: "Nombre",
             labelEmail: "Email",
             labelPassword: "Contrasena",
-            labelReferral: "Codigo de referido (opcional)",
+            labelReferral: "Codigo o alias de referido (opcional)",
             placeholderName: "Tu nombre",
             placeholderEmail: "tucorreo@dominio.com",
-            placeholderReferral: "Ejemplo: FASTAB12",
+            placeholderReferral: "Ejemplo: FASTAB12 o gozustrike",
+            referralLockedHint: "Referido bloqueado desde enlace de invitacion.",
             forgotPassword: "Olvidaste tu contrasena?",
             submitLogin: "Entrar",
             submitRegister: "Crear cuenta",
@@ -219,8 +223,13 @@ function AuthContent() {
   const [toast, setToast] = useState<string>("");
   const [isStandalonePwa, setIsStandalonePwa] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
-  const referralCodeIntent = normalizeReferralCode(searchParams.get("ref"));
-  const [registerReferralCode, setRegisterReferralCode] = useState(referralCodeIntent);
+  const referralCodeIntentFromUrl = normalizeReferralInput(searchParams.get("ref"));
+  const referralLockedFromUrl =
+    String(searchParams.get("lockRef") || "").trim() === "1" ||
+    Boolean(String(searchParams.get("af") || "").trim());
+  const [registerReferralCode, setRegisterReferralCode] = useState(referralCodeIntentFromUrl);
+  const [referralLockIntent, setReferralLockIntent] = useState(referralLockedFromUrl);
+  const referralInputLocked = referralLockIntent && Boolean(registerReferralCode);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleError, setIsGoogleError] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -231,9 +240,39 @@ function AuthContent() {
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
 
   useEffect(() => {
-    if (!referralCodeIntent) return;
-    setRegisterReferralCode((current) => current || referralCodeIntent);
-  }, [referralCodeIntent]);
+    if (typeof window === "undefined") return;
+
+    const hasReferralParamsInUrl = Boolean(referralCodeIntentFromUrl) || referralLockedFromUrl;
+    let resolvedCode = referralCodeIntentFromUrl;
+    let resolvedLock = referralLockedFromUrl;
+
+    try {
+      if (hasReferralParamsInUrl) {
+        if (resolvedCode) {
+          window.sessionStorage.setItem(REFERRAL_INTENT_CODE_KEY, resolvedCode);
+        }
+        if (resolvedLock) {
+          window.sessionStorage.setItem(REFERRAL_INTENT_LOCK_KEY, "1");
+        }
+      } else {
+        const storedCode = normalizeReferralInput(window.sessionStorage.getItem(REFERRAL_INTENT_CODE_KEY));
+        const storedLock = String(window.sessionStorage.getItem(REFERRAL_INTENT_LOCK_KEY) || "").trim() === "1";
+        if (!resolvedCode && storedCode) {
+          resolvedCode = storedCode;
+        }
+        if (!resolvedLock && storedLock) {
+          resolvedLock = true;
+        }
+      }
+    } catch (error) {
+      console.warn("[Auth] No se pudo sincronizar intent de referido en sessionStorage:", error);
+    }
+
+    if (resolvedCode) {
+      setRegisterReferralCode((current) => current || resolvedCode);
+    }
+    setReferralLockIntent(resolvedLock);
+  }, [referralCodeIntentFromUrl, referralLockedFromUrl]);
 
   const persistGoogleIntent = (intent: "login" | "register") => {
     if (typeof window === "undefined") return;
@@ -269,6 +308,26 @@ function AuthContent() {
       window.sessionStorage.removeItem(GOOGLE_AUTH_INTENT_KEY);
     } catch (error) {
       console.warn("[Auth] No se pudo limpiar intent de sessionStorage:", error);
+    }
+  };
+
+  const readReferralCodeIntent = (): string => {
+    if (typeof window === "undefined") return "";
+    try {
+      return normalizeReferralInput(window.sessionStorage.getItem(REFERRAL_INTENT_CODE_KEY));
+    } catch (error) {
+      console.warn("[Auth] No se pudo leer codigo de referido en sessionStorage:", error);
+      return "";
+    }
+  };
+
+  const clearReferralIntent = () => {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.removeItem(REFERRAL_INTENT_CODE_KEY);
+      window.sessionStorage.removeItem(REFERRAL_INTENT_LOCK_KEY);
+    } catch (error) {
+      console.warn("[Auth] No se pudo limpiar intent de referido en sessionStorage:", error);
     }
   };
 
@@ -371,14 +430,14 @@ function AuthContent() {
   };
 
   const applyReferralCodeAfterAuth = async (firebaseUser: any, forceApply = false) => {
-    const code = normalizeReferralCode(registerReferralCode || referralCodeIntent);
+    const code = normalizeReferralInput(registerReferralCode || referralCodeIntentFromUrl || readReferralCodeIntent());
     if (!code) return;
     if (!forceApply && tab !== "register") return;
     if (!firebaseUser?.uid) return;
 
     try {
       const token = await firebaseUser.getIdToken();
-      await fetch("/api/referrals/apply", {
+      const response = await fetch("/api/referrals/apply", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -386,6 +445,9 @@ function AuthContent() {
         },
         body: JSON.stringify({ code }),
       });
+      if (response.ok) {
+        clearReferralIntent();
+      }
     } catch (error) {
       console.warn("[Auth] No se pudo aplicar codigo de referido.", error);
     }
@@ -948,9 +1010,14 @@ function AuthContent() {
                     autoComplete="off"
                     placeholder={i18n.placeholderReferral}
                     value={registerReferralCode}
-                    onChange={(event) => setRegisterReferralCode(normalizeReferralCode(event.target.value))}
-                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white uppercase placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none"
+                    onChange={(event) => setRegisterReferralCode(normalizeReferralInput(event.target.value))}
+                    disabled={referralInputLocked}
+                    readOnly={referralInputLocked}
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/20 focus:border-yellow-500/50 focus:ring-1 focus:ring-yellow-500/50 transition-all outline-none disabled:cursor-not-allowed disabled:opacity-80"
                   />
+                  {referralInputLocked ? (
+                    <p className="text-xs text-amber-200">{i18n.referralLockedHint}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300 ml-1">

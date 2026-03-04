@@ -25,12 +25,12 @@ function normalizePlanIntent(rawValue: string | null): LandingPlanIntent | null 
   return null;
 }
 
-function normalizeReferralCode(rawValue: string | null): string {
+function normalizeReferralInput(rawValue: string | null): string {
   return String(rawValue || "")
     .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, "")
-    .slice(0, 20);
+    .replace(/\s+/g, "")
+    .replace(/[^a-zA-Z0-9-]/g, "")
+    .slice(0, 32);
 }
 
 export default function SignupPage() {
@@ -41,6 +41,7 @@ export default function SignupPage() {
   const [demoSlug, setDemoSlug] = useState("");
   const [demoTheme, setDemoTheme] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [referralLocked, setReferralLocked] = useState(false);
 
   useEffect(() => {
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
@@ -53,12 +54,14 @@ export default function SignupPage() {
     const incomingDemoTheme = String(params?.get("demoTheme") || "")
       .trim()
       .replace(/[^\w-]/g, "");
-    const incomingReferralCode = normalizeReferralCode(params?.get("ref") || null);
+    const incomingReferralCode = normalizeReferralInput(params?.get("ref") || null);
+    const incomingReferralLocked = String(params?.get("lockRef") || "").trim() === "1";
     setVertical(resolved);
     setSelectedPlan(planIntent);
     setDemoSlug(incomingDemoSlug);
     setDemoTheme(incomingDemoTheme);
     setReferralCode(incomingReferralCode);
+    setReferralLocked(incomingReferralLocked);
     persistVerticalChoice(resolved);
     void trackGrowthEvent("start_signup", {
       vertical: resolved,
@@ -78,16 +81,18 @@ export default function SignupPage() {
     if (demoSlug) params.set("demoSlug", demoSlug);
     if (demoTheme) params.set("demoTheme", demoTheme);
     if (referralCode) params.set("ref", referralCode);
+    if (referralLocked) params.set("lockRef", "1");
     return `/auth?${params.toString()}`;
-  }, [demoSlug, demoTheme, referralCode, selectedPlan, vertical]);
+  }, [demoSlug, demoTheme, referralCode, referralLocked, selectedPlan, vertical]);
   const loginHref = useMemo(() => {
     const params = new URLSearchParams({ tab: "login", vertical });
     if (selectedPlan) params.set("plan", selectedPlan);
     if (demoSlug) params.set("demoSlug", demoSlug);
     if (demoTheme) params.set("demoTheme", demoTheme);
     if (referralCode) params.set("ref", referralCode);
+    if (referralLocked) params.set("lockRef", "1");
     return `/auth?${params.toString()}`;
-  }, [demoSlug, demoTheme, referralCode, selectedPlan, vertical]);
+  }, [demoSlug, demoTheme, referralCode, referralLocked, selectedPlan, vertical]);
   const returnDemoHref = useMemo(() => {
     if (demoSlug) return `/demo/${vertical}/${demoSlug}`;
     return `/demo?vertical=${vertical}`;

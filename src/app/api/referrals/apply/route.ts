@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 const applyBodySchema = z
   .object({
-    code: z.string().trim().min(3).max(20),
+    code: z.string().trim().min(3).max(32),
   })
   .passthrough();
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     const rawBody = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const parsedBody = applyBodySchema.safeParse(rawBody);
     if (!parsedBody.success) {
-      return NextResponse.json({ error: "Codigo de referido requerido" }, { status: 400 });
+      return NextResponse.json({ error: "Codigo o alias de referido requerido" }, { status: 400 });
     }
 
     const result = await applyReferralCode({

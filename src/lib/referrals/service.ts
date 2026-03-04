@@ -16,6 +16,7 @@ export interface ReferralProfileRecord {
   email: string;
   referralCode: string;
   customAlias: string;
+  customAliases: string[];
   invitedCount: number;
   convertedCount: number;
   totalCommissionSoles: number;
@@ -105,6 +106,7 @@ const REFERRAL_PAYOUTS_COLLECTION = "referral_payouts";
 const DEFAULT_APP_URL = "https://www.fastpagepro.com";
 const MAX_REFERRAL_CODE_LEN = 20;
 const MAX_ALIAS_LEN = 32;
+const MAX_ALIASES_PER_PROFILE = 3;
 const MAX_PAYMENT_REF_LEN = 120;
 const REFERRAL_CODE_SUFFIX = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 4);
 const RESERVED_ALIASES = new Set([
@@ -156,6 +158,29 @@ function normalizeReferralAlias(rawAlias: unknown): string {
     .slice(0, MAX_ALIAS_LEN);
 }
 
+function normalizeAliasList(rawAliases: unknown, fallbackAlias = ""): string[] {
+  const normalizedFallback = normalizeReferralAlias(fallbackAlias);
+  const source = Array.isArray(rawAliases) ? rawAliases : [];
+  const merged = [...source, normalizedFallback]
+    .map((entry) => normalizeReferralAlias(entry))
+    .filter((entry) => entry.length >= 3)
+    .slice(0, 20);
+
+  const unique: string[] = [];
+  for (const entry of merged) {
+    if (!entry || unique.includes(entry)) continue;
+    unique.push(entry);
+    if (unique.length >= MAX_ALIASES_PER_PROFILE) break;
+  }
+  return unique;
+}
+
+function getPrimaryAlias(profile: ReferralProfileRecord): string {
+  const fromCustomAlias = normalizeReferralAlias(profile.customAlias);
+  if (fromCustomAlias) return fromCustomAlias;
+  return normalizeReferralAlias(profile.customAliases[0] || "");
+}
+
 function sanitizePaymentRef(rawPaymentRef: unknown): string {
   return sanitizeText(rawPaymentRef, MAX_PAYMENT_REF_LEN)
     .replace(/[^a-zA-Z0-9:_-]/g, "-")
@@ -200,16 +225,17 @@ function getAffiliatesBaseUrl(): string {
 }
 
 function buildReferralLink(profile: ReferralProfileRecord): string {
-  if (profile.customAlias) {
+  const primaryAlias = getPrimaryAlias(profile);
+  if (primaryAlias) {
     const affiliatesDomain = getAffiliatesDomain();
     if (affiliatesDomain) {
-      return `https://${profile.customAlias}.${affiliatesDomain}`;
+      return `https://${primaryAlias}.${affiliatesDomain}`;
     }
     const affiliatesBaseUrl = getAffiliatesBaseUrl();
     if (affiliatesBaseUrl) {
-      return `${affiliatesBaseUrl}/${profile.customAlias}`;
+      return `${affiliatesBaseUrl}/${primaryAlias}`;
     }
-    return `${getAppUrl()}/afiliados/${profile.customAlias}`;
+    return `${getAppUrl()}/afiliados/${primaryAlias}`;
   }
   return `${getAppUrl()}/signup?ref=${profile.referralCode}`;
 }
@@ -249,11 +275,14 @@ function assertReferralsStorage() {
 }
 
 function mapProfile(userId: string, payload: Record<string, unknown>): ReferralProfileRecord {
+  const customAlias = normalizeReferralAlias(payload.customAlias);
+  const customAliases = normalizeAliasList(payload.customAliases, customAlias);
   return {
     userId,
     email: sanitizeText(payload.email, 180),
     referralCode: normalizeReferralCode(payload.referralCode),
-    customAlias: normalizeReferralAlias(payload.customAlias),
+    customAlias: customAlias || customAliases[0] || "",
+    customAliases,
     invitedCount: Math.max(0, Math.floor(toNumber(payload.invitedCount, 0))),
     convertedCount: Math.max(0, Math.floor(toNumber(payload.convertedCount, 0))),
     totalCommissionSoles: roundMoney(toNumber(payload.totalCommissionSoles, 0)),
@@ -492,7 +521,12 @@ export async function ensureReferralProfile(input: {
     const payload = (existing.data() || {}) as Record<string, unknown>;
     const mapped = mapProfile(userId, payload);
     const updates: Record<string, unknown> = {};
-    let nextProfile = mapped;
+    const normalizedAliases = normalizeAliasList(mapped.customAliases, mapped.customAlias);
+    let nextProfile: ReferralProfileRecord = {
+      ...mapped,
+      customAliases: normalizedAliases,
+      customAlias: normalizeReferralAlias(mapped.customAlias) || normalizedAliases[0] || "",
+    };
 
     if (!mapped.referralCode) {
       const generatedCode = await reserveReferralCode(userId, email || mapped.email || userId);
@@ -511,6 +545,14 @@ export async function ensureReferralProfile(input: {
       updates.email = email;
     }
 
+    if (
+      nextProfile.customAlias !== mapped.customAlias ||
+      JSON.stringify(nextProfile.customAliases) !== JSON.stringify(mapped.customAliases)
+    ) {
+      updates.customAlias = nextProfile.customAlias;
+      updates.customAliases = nextProfile.customAliases;
+    }
+
     if (Object.keys(updates).length > 0) {
       const now = Date.now();
       updates.updatedAt = now;
@@ -518,11 +560,11 @@ export async function ensureReferralProfile(input: {
       nextProfile.updatedAt = now;
     }
 
-    if (nextProfile.customAlias) {
+    for (const alias of nextProfile.customAliases) {
       await reserveReferralAlias({
         userId,
         email: nextProfile.email,
-        alias: nextProfile.customAlias,
+        alias,
         referralCode: nextProfile.referralCode,
       }).catch(() => undefined);
     }
@@ -544,6 +586,7 @@ export async function ensureReferralProfile(input: {
     email,
     referralCode: code,
     customAlias: "",
+    customAliases: [],
     invitedCount: 0,
     convertedCount: 0,
     totalCommissionSoles: 0,
@@ -582,7 +625,8 @@ export async function updateReferralProfileSettings(input: {
 
   const nextEmail = email || currentProfile.email;
   let nextCode = currentProfile.referralCode;
-  let nextAlias = currentProfile.customAlias;
+  let nextAliases = normalizeAliasList(currentProfile.customAliases, currentProfile.customAlias);
+  let nextAlias = normalizeReferralAlias(currentProfile.customAlias) || nextAliases[0] || "";
   const now = Date.now();
 
   if (input.regenerateCode) {
@@ -594,30 +638,34 @@ export async function updateReferralProfileSettings(input: {
 
   if (typeof input.customAlias === "string") {
     const normalizedInputAlias = normalizeReferralAlias(input.customAlias);
-    if (!normalizedInputAlias) {
-      if (currentProfile.customAlias) {
-        await releaseReferralAlias(currentProfile.customAlias, userId);
+    if (!normalizedInputAlias || normalizedInputAlias.length < 3 || RESERVED_ALIASES.has(normalizedInputAlias)) {
+      throw new Error("INVALID_REFERRAL_ALIAS");
+    }
+    if (!nextAliases.includes(normalizedInputAlias)) {
+      if (nextAliases.length >= MAX_ALIASES_PER_PROFILE) {
+        throw new Error("ALIAS_LIMIT_REACHED");
       }
-      nextAlias = "";
-    } else {
-      if (normalizedInputAlias.length < 3 || RESERVED_ALIASES.has(normalizedInputAlias)) {
-        throw new Error("INVALID_REFERRAL_ALIAS");
-      }
-      nextAlias = await reserveReferralAlias({
+      const reservedAlias = await reserveReferralAlias({
         userId,
         email: nextEmail,
         alias: normalizedInputAlias,
         referralCode: nextCode,
       });
-      if (currentProfile.customAlias && currentProfile.customAlias !== nextAlias) {
-        await releaseReferralAlias(currentProfile.customAlias, userId);
-      }
+      nextAliases = [reservedAlias, ...nextAliases].slice(0, MAX_ALIASES_PER_PROFILE);
     }
-  } else if (nextAlias) {
+    nextAlias = normalizedInputAlias;
+  }
+
+  nextAliases = normalizeAliasList(nextAliases, nextAlias);
+  if (!nextAlias && nextAliases.length > 0) {
+    nextAlias = nextAliases[0];
+  }
+
+  for (const alias of nextAliases) {
     await reserveReferralAlias({
       userId,
       email: nextEmail,
-      alias: nextAlias,
+      alias,
       referralCode: nextCode,
     });
   }
@@ -631,6 +679,7 @@ export async function updateReferralProfileSettings(input: {
         email: nextEmail,
         referralCode: nextCode,
         customAlias: nextAlias,
+        customAliases: nextAliases,
         updatedAt: now,
       },
       { merge: true },
@@ -657,12 +706,12 @@ export async function applyReferralCode(input: {
   const db = assertReferralsStorage();
   const invitedUserId = sanitizeText(input.invitedUserId, 120);
   const invitedEmail = sanitizeText(input.invitedEmail, 180);
-  const code = normalizeReferralCode(input.code);
+  const referralInput = sanitizeText(input.code, MAX_ALIAS_LEN);
 
   if (!invitedUserId) {
     throw new Error("USER_ID_REQUIRED");
   }
-  if (!code) {
+  if (!referralInput) {
     throw new Error("INVALID_REFERRAL_CODE");
   }
 
@@ -679,18 +728,56 @@ export async function applyReferralCode(input: {
     };
   }
 
-  const codeRef = db.collection(REFERRAL_CODES_COLLECTION).doc(code);
-  const codeSnapshot = await codeRef.get();
-  if (!codeSnapshot.exists) {
-    throw new Error("REFERRAL_CODE_NOT_FOUND");
+  let inviterUserId = "";
+  let resolvedCode = normalizeReferralCode(referralInput);
+
+  if (resolvedCode) {
+    const codeRef = db.collection(REFERRAL_CODES_COLLECTION).doc(resolvedCode);
+    const codeSnapshot = await codeRef.get();
+    if (codeSnapshot.exists) {
+      const codePayload = (codeSnapshot.data() || {}) as Record<string, unknown>;
+      const active = codePayload.active !== false;
+      const owner = sanitizeText(codePayload.userId, 120);
+      if (active && owner) {
+        inviterUserId = owner;
+      }
+    }
   }
 
-  const codePayload = (codeSnapshot.data() || {}) as Record<string, unknown>;
-  const inviterUserId = sanitizeText(codePayload.userId, 120);
-  const active = codePayload.active !== false;
-  if (!active || !inviterUserId) {
-    throw new Error("REFERRAL_CODE_NOT_FOUND");
+  if (!inviterUserId) {
+    const normalizedAlias = normalizeReferralAlias(referralInput);
+    if (!normalizedAlias) {
+      throw new Error("REFERRAL_CODE_NOT_FOUND");
+    }
+
+    const aliasSnapshot = await db.collection(REFERRAL_ALIASES_COLLECTION).doc(normalizedAlias).get();
+    if (!aliasSnapshot.exists) {
+      throw new Error("REFERRAL_CODE_NOT_FOUND");
+    }
+    const aliasPayload = (aliasSnapshot.data() || {}) as Record<string, unknown>;
+    const aliasActive = aliasPayload.active !== false;
+    const aliasOwner = sanitizeText(aliasPayload.userId, 120);
+    if (!aliasActive || !aliasOwner) {
+      throw new Error("REFERRAL_CODE_NOT_FOUND");
+    }
+    inviterUserId = aliasOwner;
+
+    const aliasCode = normalizeReferralCode(aliasPayload.referralCode);
+    if (aliasCode) {
+      resolvedCode = aliasCode;
+    } else {
+      const inviterProfileSnapshot = await db.collection(REFERRAL_PROFILES_COLLECTION).doc(aliasOwner).get();
+      if (!inviterProfileSnapshot.exists) {
+        throw new Error("REFERRAL_CODE_NOT_FOUND");
+      }
+      const inviterProfilePayload = (inviterProfileSnapshot.data() || {}) as Record<string, unknown>;
+      resolvedCode = normalizeReferralCode(inviterProfilePayload.referralCode);
+      if (!resolvedCode) {
+        throw new Error("REFERRAL_CODE_NOT_FOUND");
+      }
+    }
   }
+
   if (inviterUserId === invitedUserId) {
     throw new Error("SELF_REFERRAL_NOT_ALLOWED");
   }
@@ -702,7 +789,7 @@ export async function applyReferralCode(input: {
     eventRef,
     {
       inviterUserId,
-      inviterCode: code,
+      inviterCode: resolvedCode,
       invitedUserId,
       invitedEmail,
       status: "REGISTERED",
@@ -730,7 +817,7 @@ export async function applyReferralCode(input: {
     applied: true,
     alreadyLinked: false,
     inviterUserId,
-    code,
+    code: resolvedCode,
     status: "REGISTERED" as const,
   };
 }

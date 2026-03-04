@@ -246,3 +246,10 @@
     - fallback de copiado con `execCommand("copy")` cuando `navigator.clipboard` no esta disponible (caso comun en algunos moviles/PWA/webview).
     - mensaje explicito de sesion expirada si falta ID token al guardar/cargar referidos.
     - alias normalizado en cliente (`trim + lowercase`) antes de enviar al backend para consistencia.
+- Referidos con persistencia avanzada de alias y bloqueo de invitacion:
+  - `referral_profiles` ahora soporta `customAliases` (maximo 3) manteniendo compatibilidad con `customAlias` como alias primario.
+  - guardar alias ya no reemplaza ni libera aliases anteriores; se mantienen activos para siempre en la cuenta hasta llegar al limite.
+  - `PATCH /api/referrals/profile` devuelve `409` con `ALIAS_LIMIT_REACHED` cuando una cuenta intenta registrar mas de 3 aliases.
+  - `GET /afiliados/[alias]` redirige a signup con `ref=<alias>&lockRef=1` para bloquear el referido desde enlace de invitacion.
+  - `/signup` y `/auth` propagan `lockRef=1`; en registro el campo de referido queda de solo lectura cuando llega bloqueado por URL.
+  - `POST /api/referrals/apply` y `applyReferralCode` aceptan codigo o alias (hasta 32 chars), resolviendo alias activo a codigo interno para vincular la red en registro manual o Google.

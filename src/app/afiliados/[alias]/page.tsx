@@ -18,9 +18,9 @@ export default async function AffiliateAliasPage({ params }: PageProps) {
 
   try {
     const resolved = await resolveReferralAlias(alias);
-    if (resolved?.referralCode) {
+    if (resolved?.alias) {
       redirect(
-        `/signup?ref=${encodeURIComponent(resolved.referralCode)}&af=${encodeURIComponent(resolved.alias)}`,
+        `/signup?ref=${encodeURIComponent(resolved.alias)}&af=${encodeURIComponent(resolved.alias)}&lockRef=1`,
       );
     }
   } catch {

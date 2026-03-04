@@ -117,6 +117,7 @@ type ReferralNetworkItem = {
 type ReferralData = {
   code: string;
   alias: string;
+  aliases: string[];
   link: string;
   invited: number;
   converted: number;
@@ -232,7 +233,7 @@ export default function SettingsPage() {
       });
       const payload = (await response.json().catch(() => ({}))) as {
         summary?: {
-          profile?: { referralCode?: string; customAlias?: string };
+          profile?: { referralCode?: string; customAlias?: string; customAliases?: string[] };
           referralLink?: string;
           network?: {
             level1?: ReferralNetworkItem[];
@@ -266,6 +267,16 @@ export default function SettingsPage() {
       const nextReferralData: ReferralData = {
         code: String(summary.profile.referralCode || "").trim(),
         alias: String(summary.profile.customAlias || "").trim(),
+        aliases: Array.from(
+          new Set(
+            [
+              ...(Array.isArray(summary.profile.customAliases) ? summary.profile.customAliases : []),
+              String(summary.profile.customAlias || ""),
+            ]
+              .map((entry) => String(entry || "").trim())
+              .filter(Boolean),
+          ),
+        ).slice(0, 3),
         link: String(summary.referralLink || "").trim(),
         invited: Math.max(0, Number(summary.stats?.invited || 0)),
         converted: Math.max(0, Number(summary.stats?.converted || 0)),
@@ -280,7 +291,7 @@ export default function SettingsPage() {
         networkLevel2: Array.isArray(summary.network?.level2) ? summary.network?.level2 || [] : [],
       };
       setReferralData(nextReferralData);
-      setReferralAliasInput(nextReferralData.alias);
+      setReferralAliasInput("");
     } catch (error) {
       console.error("Error loading referrals:", error);
     } finally {
@@ -339,6 +350,15 @@ export default function SettingsPage() {
     }
   };
 
+  const buildReferralAliasLink = (alias: string): string => {
+    const normalizedAlias = String(alias || "").trim().toLowerCase();
+    if (!normalizedAlias) return "";
+    if (typeof window !== "undefined" && window.location?.origin) {
+      return `${window.location.origin}/afiliados/${encodeURIComponent(normalizedAlias)}`;
+    }
+    return `https://www.fastpagepro.com/afiliados/${encodeURIComponent(normalizedAlias)}`;
+  };
+
   const shareReferralLink = async () => {
     const link = String(referralData?.link || "").trim();
     if (!link) return;
@@ -367,21 +387,29 @@ export default function SettingsPage() {
         return;
       }
       const normalizedAlias = String(referralAliasInput || "").trim().toLowerCase();
+      const requestBody: { customAlias?: string; regenerateCode?: boolean } = {
+        regenerateCode: Boolean(options?.regenerateCode),
+      };
+
+      if (normalizedAlias) {
+        requestBody.customAlias = normalizedAlias;
+      } else if (!options?.regenerateCode) {
+        setMessage({ type: "error", text: "Ingresa un alias valido para guardarlo." });
+        return;
+      }
+
       const response = await fetch("/api/referrals/profile", {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          customAlias: normalizedAlias,
-          regenerateCode: Boolean(options?.regenerateCode),
-        }),
+        body: JSON.stringify(requestBody),
       });
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
         summary?: {
-          profile?: { referralCode?: string; customAlias?: string };
+          profile?: { referralCode?: string; customAlias?: string; customAliases?: string[] };
           referralLink?: string;
           network?: {
             level1?: ReferralNetworkItem[];
@@ -413,6 +441,16 @@ export default function SettingsPage() {
       const nextReferralData: ReferralData = {
         code: String(profile.referralCode || "").trim(),
         alias: String(profile.customAlias || "").trim(),
+        aliases: Array.from(
+          new Set(
+            [
+              ...(Array.isArray(profile.customAliases) ? profile.customAliases : []),
+              String(profile.customAlias || ""),
+            ]
+              .map((entry) => String(entry || "").trim())
+              .filter(Boolean),
+          ),
+        ).slice(0, 3),
         link: String(summary.referralLink || "").trim(),
         invited: Math.max(0, Number(summary.stats?.invited || 0)),
         converted: Math.max(0, Number(summary.stats?.converted || 0)),
@@ -428,12 +466,12 @@ export default function SettingsPage() {
       };
 
       setReferralData(nextReferralData);
-      setReferralAliasInput(nextReferralData.alias);
+      setReferralAliasInput("");
       setMessage({
         type: "success",
         text: options?.regenerateCode
           ? "Enlace de referido regenerado."
-          : "Alias de referido actualizado.",
+          : "Alias guardado para esta cuenta.",
       });
     } catch (error) {
       console.error("Error updating referral settings:", error);
@@ -777,7 +815,7 @@ export default function SettingsPage() {
               {activeTab === "referrals" && (
                 <SettingSection
                   title="Dashboard de referidos"
-                  desc="Crea tu enlace unico, personaliza alias y revisa comisiones por nivel."
+                  desc="Crea tu enlace unico, guarda hasta 3 aliases permanentes y revisa comisiones por nivel."
                 >
                   <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/5 p-6 sm:p-8">
                     <div className="flex flex-col gap-6">
@@ -796,7 +834,7 @@ export default function SettingsPage() {
                           type="text"
                           value={referralAliasInput}
                           onChange={(event) => setReferralAliasInput(event.target.value)}
-                          placeholder="tu-alias"
+                          placeholder="agrega-un-alias"
                           className="w-full rounded-2xl border border-white/15 bg-black/30 px-4 py-3 text-white outline-none transition focus:border-amber-400/40"
                         />
                         <button
@@ -818,6 +856,9 @@ export default function SettingsPage() {
                           Actualizar enlace
                         </button>
                       </div>
+                      <p className="text-xs text-zinc-400">
+                        Puedes guardar hasta 3 aliases por cuenta. Todos quedan activos y siguen sumando referidos.
+                      </p>
                     </div>
 
                     {referralData ? (
@@ -840,6 +881,27 @@ export default function SettingsPage() {
                           <p className="mt-3 text-xs text-zinc-400">
                             Alias: <span className="font-bold text-zinc-200">{referralData.alias || "sin-alias"}</span>
                           </p>
+                          <p className="mt-2 text-xs text-zinc-400">
+                            Aliases activos: <span className="font-bold text-zinc-200">{(referralData.aliases || []).length}/3</span>
+                          </p>
+                          {(referralData.aliases || []).length > 0 ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {(referralData.aliases || []).map((alias) => {
+                                const aliasLink = buildReferralAliasLink(alias);
+                                return (
+                                  <button
+                                    key={alias}
+                                    type="button"
+                                    onClick={() => copyText(aliasLink, `Enlace ${alias} copiado.`)}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-amber-300/30 bg-amber-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-amber-100"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                    {alias}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                         </div>
 
                         <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
