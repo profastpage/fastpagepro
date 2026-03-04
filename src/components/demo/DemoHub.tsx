@@ -8,6 +8,7 @@ import { DEMO_CATALOG } from "@/lib/demoCatalog";
 import { persistUtmFromUrl, trackGrowthEvent } from "@/lib/analytics";
 import { navigateBackWithFallback } from "@/lib/navigation";
 import {
+  BUSINESS_VERTICALS,
   getVerticalCopy,
   normalizeVertical,
   persistVerticalChoice,
@@ -19,15 +20,76 @@ type DemoHubProps = {
   defaultVertical?: BusinessVertical;
 };
 
+const DEMO_VERTICAL_HISTORY_KEY = "fp_demo_vertical_history";
+
+function readVerticalHistoryFromSession(): BusinessVertical[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.sessionStorage.getItem(DEMO_VERTICAL_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((entry) => normalizeVertical(entry))
+      .filter((entry): entry is BusinessVertical => BUSINESS_VERTICALS.includes(entry));
+  } catch {
+    return [];
+  }
+}
+
+function writeVerticalHistoryToSession(values: BusinessVertical[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(DEMO_VERTICAL_HISTORY_KEY, JSON.stringify(values.slice(-12)));
+  } catch {
+    // ignore sessionStorage restrictions
+  }
+}
+
 export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps) {
   const [vertical, setVertical] = useState<BusinessVertical>(defaultVertical);
+
+  const syncVerticalInUrl = (nextVertical: BusinessVertical) => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("vertical", nextVertical);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}?${url.searchParams.toString()}${url.hash}`,
+    );
+  };
+
+  const registerVerticalInHistory = (nextVertical: BusinessVertical) => {
+    const current = readVerticalHistoryFromSession();
+    if (current[current.length - 1] === nextVertical) return;
+    writeVerticalHistoryToSession([...current, nextVertical]);
+  };
+
+  const applyVertical = (nextVertical: BusinessVertical) => {
+    setVertical(nextVertical);
+    persistVerticalChoice(nextVertical);
+    syncVerticalInUrl(nextVertical);
+    registerVerticalInHistory(nextVertical);
+  };
+
+  const resolvePreviousVertical = (currentVertical: BusinessVertical): BusinessVertical | null => {
+    const stack = readVerticalHistoryFromSession();
+    if (stack.length === 0) return null;
+    const nextStack = [...stack];
+    if (nextStack[nextStack.length - 1] === currentVertical) {
+      nextStack.pop();
+    }
+    const previous = nextStack[nextStack.length - 1] || null;
+    writeVerticalHistoryToSession(nextStack);
+    return previous;
+  };
 
   useEffect(() => {
     const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
     persistUtmFromUrl(params || undefined);
     const fromQuery = normalizeVertical(params?.get("vertical") || defaultVertical);
-    setVertical(fromQuery);
-    persistVerticalChoice(fromQuery);
+    applyVertical(fromQuery);
     void trackGrowthEvent("page_view", {
       page: "demo_hub",
       vertical: fromQuery,
@@ -40,6 +102,17 @@ export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps
     [vertical],
   );
   const handleBackClick = () => {
+    const previousVertical = resolvePreviousVertical(vertical);
+    if (previousVertical && previousVertical !== vertical) {
+      setVertical(previousVertical);
+      persistVerticalChoice(previousVertical);
+      syncVerticalInUrl(previousVertical);
+      void trackGrowthEvent("view_demo", {
+        vertical: previousVertical,
+        slug: "hub_back_tab",
+      });
+      return;
+    }
     navigateBackWithFallback("/");
   };
 
@@ -61,8 +134,7 @@ export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps
             <VerticalSelector
               value={vertical}
               onChange={(nextVertical) => {
-                setVertical(nextVertical);
-                persistVerticalChoice(nextVertical);
+                applyVertical(nextVertical);
                 void trackGrowthEvent("view_demo", {
                   vertical: nextVertical,
                   slug: "hub",

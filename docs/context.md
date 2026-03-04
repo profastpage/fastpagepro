@@ -278,3 +278,7 @@
   - en demo restaurante (`src/components/demo/RestaurantDemo.tsx`) el campo `Fecha` ahora incluye apertura explicita del date picker nativo (`showPicker` con fallback `focus/click`) y boton visual de calendario.
   - en carta publicada (`src/app/bio/[slug]/page.tsx`) se aplica el mismo comportamiento para asegurar seleccion por calendario en PC y movil.
   - se mantiene compatibilidad para navegadores sin `showPicker` usando fallback no destructivo.
+- Demo Hub (`/demo`) retroceder por pestana anterior:
+  - el boton `Retroceder` ahora prioriza volver a la vertical/pestana previa dentro del hub (`restaurant`, `ecommerce`, `services`) antes de salir de la pagina.
+  - se implemento historial de pestañas en `sessionStorage` (`fp_demo_vertical_history`) y sincronizacion del query param `?vertical=...`.
+  - si no existe pestana previa, mantiene fallback de navegacion segura al flujo anterior (`navigateBackWithFallback`).
