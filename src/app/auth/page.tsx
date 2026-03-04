@@ -797,15 +797,15 @@ function AuthContent() {
             </button>
           </div>
 
-          <div className="min-h-[560px] px-6 pb-8">
-            <div className="relative min-h-[360px]">
+          <div className="px-6 pb-8">
+            <div className="min-h-[320px]">
               <form
                 onSubmit={handleLogin}
                 aria-hidden={tab !== "login"}
-                className={`absolute inset-0 flex min-h-[360px] flex-col gap-5 transition-opacity duration-200 ${
+                className={`flex flex-col gap-5 transition-opacity duration-200 ${
                   tab === "login"
                     ? "pointer-events-auto opacity-100"
-                    : "pointer-events-none opacity-0"
+                    : "pointer-events-none hidden opacity-0"
                 }`}
               >
                 <div className="space-y-2">
@@ -896,10 +896,10 @@ function AuthContent() {
               <form
                 onSubmit={handleRegister}
                 aria-hidden={tab !== "register"}
-                className={`absolute inset-0 flex min-h-[360px] flex-col gap-5 transition-opacity duration-200 ${
+                className={`flex flex-col gap-5 transition-opacity duration-200 ${
                   tab === "register"
                     ? "pointer-events-auto opacity-100"
-                    : "pointer-events-none opacity-0"
+                    : "pointer-events-none hidden opacity-0"
                 }`}
               >
                 <div className="space-y-2">
