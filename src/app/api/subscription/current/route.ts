@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildSubscriptionSummary, getPendingRequestsByUser } from "@/lib/subscription/service";
 import { requireFirebaseUserId } from "@/lib/server/requireFirebaseUser";
-import { canAccessFeature, getPlanLimits, type SubscriptionFeature } from "@/lib/permissions";
+import { getPlanLimits, type SubscriptionFeature } from "@/lib/permissions";
 
 const ALL_FEATURES: SubscriptionFeature[] = [
   "premiumThemes",
@@ -54,10 +54,10 @@ export async function GET(request: NextRequest) {
 
     if (userId) {
       const now = new Date();
-      const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+      const endDate = new Date(now.getTime());
       const features = ALL_FEATURES.reduce<Record<SubscriptionFeature, boolean>>(
         (acc, feature) => {
-          acc[feature] = canAccessFeature("BUSINESS", feature);
+          acc[feature] = false;
           return acc;
         },
         {} as Record<SubscriptionFeature, boolean>,
@@ -68,17 +68,17 @@ export async function GET(request: NextRequest) {
           degraded: true,
           summary: {
             userId,
-            plan: "BUSINESS",
-            status: "ACTIVE",
+            plan: "FREE",
+            status: "EXPIRED",
             startDate: now.toISOString(),
             endDate: endDate.toISOString(),
             expiringSoon: false,
-            daysRemaining: 14,
-            isBusinessTrial: true,
-            trialDaysRemaining: 14,
-            trialDaysTotal: 14,
+            daysRemaining: 0,
+            isBusinessTrial: false,
+            trialDaysRemaining: 0,
+            trialDaysTotal: 0,
             trialExpired: false,
-            limits: getPlanLimits("BUSINESS"),
+            limits: getPlanLimits("FREE"),
             usage: {
               publishedPages: 0,
             },
@@ -91,10 +91,10 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date();
-    const endDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const endDate = new Date(now.getTime());
     const features = ALL_FEATURES.reduce<Record<SubscriptionFeature, boolean>>(
       (acc, feature) => {
-        acc[feature] = canAccessFeature("BUSINESS", feature);
+        acc[feature] = false;
         return acc;
       },
       {} as Record<SubscriptionFeature, boolean>,
@@ -105,17 +105,17 @@ export async function GET(request: NextRequest) {
         degraded: true,
         summary: {
           userId: userId || "unknown",
-          plan: "BUSINESS",
-          status: "ACTIVE",
+          plan: "FREE",
+          status: "EXPIRED",
           startDate: now.toISOString(),
           endDate: endDate.toISOString(),
           expiringSoon: false,
-          daysRemaining: 14,
-          isBusinessTrial: true,
-          trialDaysRemaining: 14,
-          trialDaysTotal: 14,
+          daysRemaining: 0,
+          isBusinessTrial: false,
+          trialDaysRemaining: 0,
+          trialDaysTotal: 0,
           trialExpired: false,
-          limits: getPlanLimits("BUSINESS"),
+          limits: getPlanLimits("FREE"),
           usage: {
             publishedPages: 0,
           },

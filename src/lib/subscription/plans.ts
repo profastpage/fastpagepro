@@ -10,10 +10,9 @@ export interface PlanDefinition {
   annualDiscountPercent: number;
   subtitle: string;
   ctaLabel: string;
-  billingFlow: "direct" | "trial";
+  billingFlow: "direct";
   badgeLabel?: string;
   note?: string;
-  trialDays?: number;
   features: SubscriptionFeature[];
   bulletPoints: string[];
   highlighted?: boolean;
@@ -26,7 +25,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     monthlyPriceLabel: "S/ 29 / mes",
     monthlyPriceSoles: 29,
     annualDiscountPercent: 10,
-    subtitle: "Pago directo mensual. Sin trial.",
+    subtitle: "Pago directo mensual. Ideal para empezar y validar tu negocio.",
     ctaLabel: "Empezar ahora",
     billingFlow: "direct",
     features: [],
@@ -46,12 +45,11 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     monthlyPriceLabel: "S/ 59 / mes",
     monthlyPriceSoles: 59,
     annualDiscountPercent: 20,
-    subtitle: "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.",
-    ctaLabel: "Probar 14 dias gratis",
-    billingFlow: "trial",
+    subtitle: "Crea tu negocio digital hoy con soporte y funciones clave para vender.",
+    ctaLabel: "Activar Business",
+    billingFlow: "direct",
     badgeLabel: "Mas elegido",
-    note: "Sin compromiso.",
-    trialDays: 14,
+    note: "Activacion inmediata tras pago.",
     features: [
       "premiumThemes",
       "categoryThemes",
@@ -81,7 +79,7 @@ export const PLAN_DEFINITIONS: PlanDefinition[] = [
     monthlyPriceLabel: "S/ 99 / mes",
     monthlyPriceSoles: 99,
     annualDiscountPercent: 30,
-    subtitle: "Pago directo mensual para escalar en serio. Sin trial.",
+    subtitle: "Pago directo mensual para escalar en serio con todo desbloqueado.",
     ctaLabel: "Comprar ahora",
     billingFlow: "direct",
     features: [

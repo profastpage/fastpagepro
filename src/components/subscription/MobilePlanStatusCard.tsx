@@ -27,21 +27,19 @@ export default function MobilePlanStatusCard({ userId, className }: MobilePlanSt
     permissions.maxProjects == null
       ? `${permissions.usage.publishedProjects}`
       : `${permissions.usage.publishedProjects}/${permissions.maxProjects}`;
-  const computedPlanDays = summary?.isBusinessTrial ? summary?.trialDaysRemaining : summary?.daysRemaining;
-  const planDaysRemaining = summary?.status === "ACTIVE" ? Math.max(0, Number(computedPlanDays || 0)) : 0;
+  const planDaysRemaining =
+    summary?.status === "ACTIVE" ? Math.max(0, Number(summary?.daysRemaining || 0)) : 0;
 
   const copy = isEnglish
     ? {
         plan: "Plan:",
         projects: "Projects:",
         days: "Days left:",
-        trial: (days: number) => `Business trial: ${days} days left.`,
       }
     : {
         plan: "Plan:",
         projects: "Proyectos:",
         days: "Dias restantes:",
-        trial: (days: number) => `Prueba Business: ${days} dias restantes.`,
       };
 
   return (
@@ -64,11 +62,6 @@ export default function MobilePlanStatusCard({ userId, className }: MobilePlanSt
           {copy.days} {planDaysRemaining}
         </span>
       </div>
-      {summary?.isBusinessTrial ? (
-        <p className="mt-2 text-[11px] font-semibold text-amber-200">
-          {copy.trial(Math.max(0, Number(summary?.trialDaysRemaining || 0)))}
-        </p>
-      ) : null}
     </div>
   );
 }

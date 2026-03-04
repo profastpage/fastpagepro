@@ -962,9 +962,9 @@ export default function SettingsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {[
-                      { id: "Starter", price: "29", desc: "Pago directo mensual", features: ["1 proyecto activo", "Hasta 10 productos", "Sin soporte", "🔒 Dominio e IA"] },
-                      { id: "Business", price: "59", desc: "14 dias gratis", features: ["Hasta 5 proyectos", "Hasta 50 productos", "📧 Soporte por correo max. 24h", "Metricas y tienda completa"] },
-                      { id: "Pro", price: "99", desc: "Escala con todo desbloqueado", features: ["Hasta 20 proyectos", "Productos ilimitados", "💬 Soporte en vivo por WhatsApp", "Clonador + IA avanzada"] }
+                      { id: "Starter", price: "29", desc: "Pago directo mensual", features: ["1 proyecto activo", "Hasta 10 productos", "Sin soporte", "?? Dominio e IA"] },
+                      { id: "Business", price: "59", desc: "Crea tu negocio digital hoy", features: ["Hasta 5 proyectos", "Hasta 50 productos", "?? Soporte por correo max. 24h", "Metricas y tienda completa"] },
+                      { id: "Pro", price: "99", desc: "Escala con todo desbloqueado", features: ["Hasta 20 proyectos", "Productos ilimitados", "?? Soporte en vivo por WhatsApp", "Clonador + IA avanzada"] }
                     ].map((plan) => (
                       <button
                         key={plan.id}
@@ -1100,5 +1100,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+
 
 

@@ -182,12 +182,7 @@ export default function BillingPage() {
   const yapeQrUrl = String(process.env.NEXT_PUBLIC_YAPE_QR_URL || "").trim() || DEFAULT_YAPE_QR_URL;
 
   const activePlan = summary?.plan || "FREE";
-  const isBusinessTrial =
-    selectedPlan === "BUSINESS" && activePlan === "FREE" && !Boolean(summary?.trialExpired);
-  const showPaymentFlow = !isBusinessTrial;
-  const isCurrentBusinessTrialActive = Boolean(
-    summary?.isBusinessTrial && summary?.status === "ACTIVE",
-  );
+  const showPaymentFlow = true;
   const i18n = useMemo(
     () =>
       isEnglish
@@ -195,19 +190,19 @@ export default function BillingPage() {
             saasBilling: "SaaS Billing",
             title: "Fast Page official plans",
             subtitle:
-              "Starter S/29 without support, Business with 14-day free trial + email support, and Pro S/99 with testimonials, sales copy, gallery, and live support.",
+              "Starter S/29 to launch, Business S/59 to grow with support, and Pro S/99 with advanced conversion tools.",
             activePlan: "Active plan:",
             trialExpired:
-              "Your 14-day trial ended (0 days left). Activate Starter, Business, or Pro to reactivate features and pages.",
+              "Your access period ended. Activate Starter, Business, or Pro to reactivate features and pages.",
             updateTitle: "Request plan upgrade",
             updateSubtitle:
-              "Business activates 14-day trial. Starter and Pro are direct monthly payment.",
+              "All plans activate by direct payment. Choose your plan and billing cycle.",
             requestedPlan: "Requested plan",
             paymentMethod: "Payment method",
             trialBlock:
-              "14-day free trial. Then S/59/month. Cancel anytime. No commitment.",
+              "Business S/59/month with immediate activation after payment.",
             trialActive:
-              "Your Business trial is already active. When it reaches 0 days, renew to keep access.",
+              "Business is active. Renew before expiration to keep all features available.",
             uploadProof: "Upload payment proof",
             uploadPlaceholder: "Attach PNG, JPG, WEBP or PDF (optional)",
             paymentDestinationsTitle: "Payment destinations",
@@ -224,7 +219,7 @@ export default function BillingPage() {
             copied: "Copied",
             notes: "Notes",
             notesPlaceholder: "Add any extra details for the admin team.",
-            submitBusiness: "Activate 14-day trial",
+            submitBusiness: "Activate Business",
             submitPaid: "Submit payment request",
             submitIzipay: "Pay with Izipay",
             submitStripe: "Pay with Stripe",
@@ -246,7 +241,7 @@ export default function BillingPage() {
             pendingCreated: "Created",
             processing: "Processing...",
             planDaysLeft: "Plan days left",
-            trialDaysLeft: "Trial days left",
+            trialDaysLeft: "Days left",
             renewalAlert: "5-day renewal alert active. Renew now to avoid lock.",
             billingCycle: "Billing cycle",
             cycleMonthly: "Monthly",
@@ -292,19 +287,19 @@ export default function BillingPage() {
             saasBilling: "Facturacion SaaS",
             title: "Planes oficiales Fast Page",
             subtitle:
-              "Starter S/29 sin soporte, Business con 14 dias gratis + soporte por correo y Pro S/99 con testimonios, copys de venta, galeria y soporte en vivo.",
+              "Starter S/29 para empezar, Business S/59 para crecer con soporte y Pro S/99 con herramientas avanzadas de conversion.",
             activePlan: "Plan activo:",
             trialExpired:
-              "Tu prueba de 14 dias finalizo (0 dias restantes). Activa Starter, Business o Pro para reactivar funciones y paginas.",
+              "Tu periodo de acceso finalizo. Activa Starter, Business o Pro para reactivar funciones y paginas.",
             updateTitle: "Solicitar actualizacion de plan",
             updateSubtitle:
-              "Business activa prueba de 14 dias. Starter y Pro aplican pago directo mensual.",
+              "Todos los planes se activan con pago directo. Elige plan y ciclo.",
             requestedPlan: "Plan solicitado",
             paymentMethod: "Metodo de pago",
             trialBlock:
-              "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras. Sin compromiso.",
+              "Business S/59/mes con activacion inmediata tras pago.",
             trialActive:
-              "Tu prueba Business ya esta activa. Cuando llegue a 0 dias, renueva para mantener acceso.",
+              "Business activo. Renueva antes del vencimiento para mantener todas las funciones.",
             uploadProof: "Subir comprobante",
             uploadPlaceholder: "Adjuntar PNG, JPG, WEBP o PDF (opcional)",
             paymentDestinationsTitle: "Destinos de pago",
@@ -321,7 +316,7 @@ export default function BillingPage() {
             copied: "Copiado",
             notes: "Notas",
             notesPlaceholder: "Agrega detalles extra para el equipo admin.",
-            submitBusiness: "Activar prueba de 14 dias",
+            submitBusiness: "Activar Business",
             submitPaid: "Enviar solicitud de pago",
             submitIzipay: "Pagar con Izipay",
             submitStripe: "Pagar con Stripe",
@@ -343,7 +338,7 @@ export default function BillingPage() {
             pendingCreated: "Creado",
             processing: "Procesando...",
             planDaysLeft: "Dias restantes del plan",
-            trialDaysLeft: "Dias restantes de prueba",
+            trialDaysLeft: "Dias restantes",
             renewalAlert: "Alerta de renovacion en 5 dias. Renueva ahora para evitar bloqueo.",
             billingCycle: "Ciclo de cobro",
             cycleMonthly: "Mensual",
@@ -394,12 +389,12 @@ export default function BillingPage() {
       isEnglish
         ? {
             FREE: { price: "S/ 29 / month", cta: "Buy now" },
-            BUSINESS: { price: "S/ 59 / month", cta: "Try 14 days free" },
+            BUSINESS: { price: "S/ 59 / month", cta: "Activate Business" },
             PRO: { price: "S/ 99 / month", cta: "Buy now" },
           }
         : {
             FREE: { price: "S/ 29 / mes", cta: "Comprar ahora" },
-            BUSINESS: { price: "S/ 59 / mes", cta: "Probar 14 dias gratis" },
+            BUSINESS: { price: "S/ 59 / mes", cta: "Activar Business" },
             PRO: { price: "S/ 99 / mes", cta: "Comprar ahora" },
           },
     [isEnglish],
@@ -423,8 +418,7 @@ export default function BillingPage() {
   );
   const selectedPlanMaxAnnualDiscount = selectedPlanDefinition.annualDiscountPercent;
   const daysRemaining = Math.max(0, Number(summary?.daysRemaining || 0));
-  const showRenewalAlert =
-    summary?.status === "ACTIVE" && !summary?.isBusinessTrial && daysRemaining > 0 && daysRemaining <= 5;
+  const showRenewalAlert = summary?.status === "ACTIVE" && daysRemaining > 0 && daysRemaining <= 5;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -853,7 +847,6 @@ export default function BillingPage() {
       const formData = new FormData();
       formData.append("plan", selectedPlan);
       formData.append("paymentMethod", paymentMethod);
-      formData.append("trial", isBusinessTrial ? "true" : "false");
       formData.append("notes", notes);
       formData.append("billingCycle", billingCycle);
       formData.append("durationMonths", String(effectiveDurationMonths));
@@ -883,13 +876,9 @@ export default function BillingPage() {
 
       setFeedback({
         type: "success",
-        text: isBusinessTrial
-          ? isEnglish
-            ? "Business trial active for 14 days. Then you can renew monthly."
-            : "Business activo en prueba de 14 dias. Luego podras renovar mensual."
-          : isEnglish
-            ? "Request sent. It is pending admin validation."
-            : "Solicitud enviada. Quedo en estado pendiente hasta validacion admin.",
+        text: isEnglish
+          ? "Request sent. It is pending admin validation."
+          : "Solicitud enviada. Quedo en estado pendiente hasta validacion admin.",
       });
       setProofFile(null);
       setNotes("");
@@ -937,12 +926,12 @@ export default function BillingPage() {
             <SubscriptionExpiryBanner
               visible={Boolean(summary?.expiringSoon)}
               daysRemaining={summary?.daysRemaining || 0}
-              isBusinessTrial={Boolean(summary?.isBusinessTrial)}
+              isBusinessTrial={false}
             />
           </div>
           <div className="mt-3 hidden md:flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-zinc-200">
-              {summary?.isBusinessTrial ? i18n.trialDaysLeft : i18n.planDaysLeft}: {daysRemaining}
+              {i18n.planDaysLeft}: {daysRemaining}
             </span>
             {showRenewalAlert ? (
               <span className="rounded-full border border-amber-300/35 bg-amber-400/10 px-3 py-1 text-xs font-semibold text-amber-100">
@@ -950,12 +939,6 @@ export default function BillingPage() {
               </span>
             ) : null}
           </div>
-
-          {summary?.trialExpired ? (
-            <p className="mt-3 rounded-xl border border-red-400/35 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-100">
-              {i18n.trialExpired}
-            </p>
-          ) : null}
 
           {error && (
             <p className="mt-4 rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
@@ -1122,17 +1105,7 @@ export default function BillingPage() {
               </label>
             ) : null}
 
-            {isCurrentBusinessTrialActive && selectedPlan === "BUSINESS" ? (
-              <div className="rounded-xl border border-amber-300/35 bg-amber-500/10 px-3 py-3 text-sm text-amber-100">
-                {i18n.trialActive}
-              </div>
-            ) : null}
-
-            {isBusinessTrial ? (
-              <div className="rounded-xl border border-emerald-300/30 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100">
-                {i18n.trialBlock}
-              </div>
-            ) : paymentMethod === "IZIPAY" || paymentMethod === "STRIPE" ? (
+            {paymentMethod === "IZIPAY" || paymentMethod === "STRIPE" ? (
               <div className="space-y-2 rounded-xl border border-amber-300/35 bg-amber-500/10 px-3 py-3 text-sm text-amber-100">
                 <p className="font-semibold">{paymentInstructions[paymentMethod]}</p>
                 <p className="text-xs text-amber-100/90">
@@ -1316,13 +1289,11 @@ export default function BillingPage() {
               {submitting || confirmingIzipay || confirmingStripe ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {submitting || confirmingIzipay || confirmingStripe
                 ? i18n.processing
-                : isBusinessTrial
-                  ? i18n.submitBusiness
-                  : paymentMethod === "IZIPAY"
-                    ? i18n.submitIzipay
-                    : paymentMethod === "STRIPE"
-                      ? i18n.submitStripe
-                      : i18n.submitPaid}
+                : paymentMethod === "IZIPAY"
+                  ? i18n.submitIzipay
+                  : paymentMethod === "STRIPE"
+                    ? i18n.submitStripe
+                    : i18n.submitPaid}
             </button>
           </form>
 

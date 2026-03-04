@@ -51,8 +51,6 @@ const FORCE_GOOGLE_REDIRECT =
     .trim()
     .toLowerCase() !== "0";
 
-type LandingPlanIntent = "FREE" | "BUSINESS" | "PRO";
-
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
   return (
@@ -70,16 +68,6 @@ function isPwaAuthContext() {
   } catch {
     return false;
   }
-}
-
-function normalizePlanIntent(rawValue: string | null): LandingPlanIntent | null {
-  const normalized = String(rawValue || "")
-    .trim()
-    .toUpperCase();
-  if (normalized === "FREE" || normalized === "STARTER" || normalized === "29") return "FREE";
-  if (normalized === "BUSINESS" || normalized === "59") return "BUSINESS";
-  if (normalized === "PRO" || normalized === "99") return "PRO";
-  return null;
 }
 
 function normalizeReferralCode(rawValue: string | null): string {
@@ -241,14 +229,6 @@ function AuthContent() {
   const googleIntentMemoryRef = useRef<"login" | "register" | null>(null);
   const googleIntentRef = useRef<"login" | "register">("login");
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
-  const planIntent = normalizePlanIntent(searchParams.get("plan"));
-  const trialIntent = String(searchParams.get("trial") || "").trim().toLowerCase();
-  const demoSlugIntent = String(searchParams.get("demoSlug") || "")
-    .trim()
-    .replace(/[^\w-]/g, "");
-  const demoThemeIntent = String(searchParams.get("demoTheme") || "")
-    .trim()
-    .replace(/[^\w-]/g, "");
 
   useEffect(() => {
     if (!referralCodeIntent) return;
@@ -368,7 +348,7 @@ function AuthContent() {
     }
   };
 
-  const activateBusinessTrial = async (firebaseUser: any) => {
+  const syncSubscriptionSession = async (firebaseUser: any) => {
     if (!firebaseUser?.uid) return;
 
     try {
@@ -385,29 +365,8 @@ function AuthContent() {
           Authorization: `Bearer ${token}`,
         },
       }).catch(() => undefined);
-
-      const shouldStartTrial = planIntent === "BUSINESS" || trialIntent === "business14";
-      if (shouldStartTrial) {
-        const formData = new FormData();
-        formData.append("plan", "BUSINESS");
-        formData.append("trial", "true");
-        formData.append("paymentMethod", "TRANSFERENCIA");
-        await fetchWithTimeout("/api/subscription/request", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }).catch(() => undefined);
-        await fetchWithTimeout("/api/subscription/session", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }).catch(() => undefined);
-      }
     } catch (error) {
-      console.warn("[Auth] No se pudo activar trial Business automaticamente.", error);
+      console.warn("[Auth] No se pudo sincronizar la sesion de suscripcion.", error);
     }
   };
 
@@ -434,22 +393,7 @@ function AuthContent() {
 
   const resolvePostAuthTarget = (email?: string | null) => {
     if (email === "afiliadosprobusiness@gmail.com") return "/admin";
-    if (planIntent) {
-      const params = new URLSearchParams({ plan: planIntent });
-      if (trialIntent) {
-        params.set("trial", trialIntent);
-      }
-      return `/dashboard/billing?${params.toString()}`;
-    }
-    const fromQuery = searchParams.get("vertical");
-    const hasStoredVertical =
-      typeof window !== "undefined" && Boolean(window.localStorage.getItem("fp_vertical"));
-    if (!fromQuery && !hasStoredVertical) return "/hub";
-    const resolvedVertical = normalizeVertical(fromQuery || readVerticalFromClient());
-    const params = new URLSearchParams({ vertical: resolvedVertical });
-    if (demoSlugIntent) params.set("demoSlug", demoSlugIntent);
-    if (demoThemeIntent) params.set("demoTheme", demoThemeIntent);
-    return `/app/new?${params.toString()}`;
+    return "/hub";
   };
 
   // Funcion centralizada para sincronizar usuario con Firestore
@@ -516,7 +460,7 @@ function AuthContent() {
         const intent = readGoogleIntent();
         await syncUserToFirestore(firebaseUser, preferredVertical);
         await applyReferralCodeAfterAuth(firebaseUser, intent === "register");
-        await activateBusinessTrial(firebaseUser);
+        await syncSubscriptionSession(firebaseUser);
         if (intent === "register") {
           void trackGrowthEvent("signup_complete", {
             vertical: preferredVertical,
@@ -559,7 +503,7 @@ function AuthContent() {
       // 3. Sincronizar con Firestore - Esperar a que se complete para asegurar que el Admin lo vea
       await syncUserToFirestore(user, preferredVertical);
       await applyReferralCodeAfterAuth(user, true);
-      await activateBusinessTrial(user);
+      await syncSubscriptionSession(user);
 
       showToast(i18n.accountCreated);
       
@@ -607,7 +551,7 @@ function AuthContent() {
 
       // Sincronizacion prioritaria antes de redireccionar
       await syncUserToFirestore(user, preferredVertical);
-      await activateBusinessTrial(user);
+      await syncSubscriptionSession(user);
 
       router.push(resolvePostAuthTarget(user.email));
     } catch (error: any) {
@@ -661,7 +605,7 @@ function AuthContent() {
     };
     checkRedirect();
     return () => unsubscribe();
-  }, [demoSlugIntent, demoThemeIntent, i18n.loginError, i18n.unknownError, planIntent, preferredVertical, router, tab, trialIntent]);
+  }, [i18n.loginError, i18n.unknownError, preferredVertical, router, tab]);
 
   const shouldUseGooglePopup = () => {
     if (isPwaAuthContext()) return true;

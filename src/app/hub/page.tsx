@@ -39,32 +39,24 @@ export default function HubPage() {
         ? {
             billingTitle: "Billing",
             billingDesc:
-              "Manage Starter S/29, Business 14-day trial, Pro S/99, and support by plan.",
+              "Manage Starter S/29, Business S/59, Pro S/99, and activate your plan.",
             billingAction: "Open Billing",
             lockExpired: "Your active period ended. Renew in Billing to reactivate panels.",
             lockPro: "Available only on PRO plan.",
             lockBusiness: "Available on Business or Pro.",
             planLabel: "Plan:",
-            trialRemaining: (days: number) => `Business trial: ${days} days left.`,
-            trialZero: "Business trial: 0 days left.",
-            trialExpired:
-              "Trial ended: features and pages are locked until you renew in Billing.",
             adminPanel: "Administration Panel",
           }
         : {
             billingTitle: "Billing",
             billingDesc:
-              "Gestiona Starter S/29, Business 14 dias gratis, Pro S/99 y soporte por plan.",
+              "Gestiona Starter S/29, Business S/59, Pro S/99 y activa tu plan.",
             billingAction: "Abrir Facturacion",
             lockExpired:
               "Tu periodo activo termino. Renueva en Billing para reactivar paneles.",
             lockPro: "Disponible solo en plan PRO.",
             lockBusiness: "Disponible en Business o Pro.",
             planLabel: "Plan:",
-            trialRemaining: (days: number) => `Prueba Business: ${days} dias restantes.`,
-            trialZero: "Prueba Business: 0 dias restantes.",
-            trialExpired:
-              "Prueba finalizada: funciones y paginas bloqueadas hasta renovar en Billing.",
             adminPanel: "Panel de Administracion",
           },
     [isEnglish],
@@ -186,7 +178,7 @@ export default function HubPage() {
 
   const starterUnlocked = new Set(["linkhub", "published", "billing", "settings"]);
   const businessUnlocked = new Set(["linkhub", "store", "metrics", "published", "billing", "settings"]);
-  const expiredUnlocked = new Set(["billing", "settings"]);
+  const expiredUnlocked = new Set(["billing"]);
 
   const starterPriority: Record<string, number> = {
     linkhub: 1,
@@ -212,14 +204,14 @@ export default function HubPage() {
   };
   const expiredPriority: Record<string, number> = {
     billing: 1,
-    settings: 2,
     linkhub: 10,
     published: 11,
     store: 12,
     metrics: 13,
-    builder: 14,
-    templates: 15,
-    cloner: 16,
+    settings: 14,
+    builder: 15,
+    templates: 16,
+    cloner: 17,
   };
 
   const panels = [...basePanels]
@@ -289,24 +281,6 @@ export default function HubPage() {
                   Dias restantes: {planDaysRemaining}
                 </span>
               </div>
-              {subscriptionSummary?.isBusinessTrial ? (
-                <p
-                  className={`mt-2 hidden md:block text-xs font-bold ${
-                    subscriptionSummary?.trialExpired || (subscriptionSummary?.trialDaysRemaining || 0) <= 3
-                      ? "text-red-300"
-                      : "text-amber-200"
-                  }`}
-                >
-                  {subscriptionSummary?.trialExpired
-                    ? hubCopy.trialZero
-                    : hubCopy.trialRemaining(subscriptionSummary?.trialDaysRemaining || 0)}
-                </p>
-              ) : null}
-              {subscriptionSummary?.trialExpired ? (
-                <p className="mt-2 hidden md:block text-xs font-bold text-red-300">
-                  {hubCopy.trialExpired}
-                </p>
-              ) : null}
             </div>
           </div>
 
@@ -314,7 +288,7 @@ export default function HubPage() {
             <SubscriptionExpiryBanner
               visible={Boolean(subscriptionSummary?.expiringSoon)}
               daysRemaining={subscriptionSummary?.daysRemaining || 0}
-              isBusinessTrial={Boolean(subscriptionSummary?.isBusinessTrial)}
+              isBusinessTrial={false}
             />
           </div>
 

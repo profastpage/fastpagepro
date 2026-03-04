@@ -97,12 +97,9 @@ function buildSummaryFromFirestore(
     expiredByDate && rawStatus === "ACTIVE" ? "EXPIRED" : rawStatus;
   const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
   const expiringSoon = daysRemaining > 0 && daysRemaining <= 5;
-  const trialDaysTotal =
-    plan === "BUSINESS"
-      ? Math.max(0, Math.ceil((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)))
-      : 0;
-  const isBusinessTrial = plan === "BUSINESS" && trialDaysTotal > 0 && trialDaysTotal <= 14;
-  const trialExpired = isBusinessTrial && status === "EXPIRED";
+  const trialDaysTotal = 0;
+  const isBusinessTrial = false;
+  const trialExpired = false;
   const limits = getPlanLimits(plan);
   const features = ALL_FEATURES.reduce<Record<SubscriptionFeature, boolean>>((acc, feature) => {
     acc[feature] = status === "ACTIVE" && canAccessFeature(plan, feature);
@@ -118,8 +115,8 @@ function buildSummaryFromFirestore(
     expiringSoon,
     daysRemaining,
     isBusinessTrial,
-    trialDaysRemaining: isBusinessTrial && status === "ACTIVE" ? daysRemaining : 0,
-    trialDaysTotal: isBusinessTrial ? trialDaysTotal : 0,
+    trialDaysRemaining: 0,
+    trialDaysTotal,
     trialExpired,
     limits,
     usage: baseSummary?.usage || { publishedPages: 0 },

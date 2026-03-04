@@ -10,7 +10,6 @@ import {
   getVerticalCopy,
   normalizeVertical,
   persistVerticalChoice,
-  verticalToCreateHref,
   type BusinessVertical,
 } from "@/lib/vertical";
 
@@ -39,7 +38,6 @@ export default function SignupPage() {
   const router = useRouter();
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [selectedPlan, setSelectedPlan] = useState<LandingPlanIntent | null>(null);
-  const [trialIntent, setTrialIntent] = useState("");
   const [demoSlug, setDemoSlug] = useState("");
   const [demoTheme, setDemoTheme] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -49,7 +47,6 @@ export default function SignupPage() {
     persistUtmFromUrl(params || undefined);
     const resolved = normalizeVertical(params?.get("vertical"));
     const planIntent = params ? normalizePlanIntent(params.get("plan")) : null;
-    const incomingTrial = String(params?.get("trial") || "").trim().toLowerCase();
     const incomingDemoSlug = String(params?.get("demoSlug") || "")
       .trim()
       .replace(/[^\w-]/g, "");
@@ -59,7 +56,6 @@ export default function SignupPage() {
     const incomingReferralCode = normalizeReferralCode(params?.get("ref") || null);
     setVertical(resolved);
     setSelectedPlan(planIntent);
-    setTrialIntent(planIntent === "BUSINESS" ? incomingTrial || "business14" : incomingTrial);
     setDemoSlug(incomingDemoSlug);
     setDemoTheme(incomingDemoTheme);
     setReferralCode(incomingReferralCode);
@@ -72,34 +68,26 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (loading || !user) return;
-    if (selectedPlan) {
-      const params = new URLSearchParams({ plan: selectedPlan });
-      if (trialIntent) params.set("trial", trialIntent);
-      router.replace(`/dashboard/billing?${params.toString()}`);
-      return;
-    }
-    router.replace(verticalToCreateHref(vertical, { demoSlug, demoTheme }));
-  }, [demoSlug, demoTheme, loading, router, selectedPlan, trialIntent, user, vertical]);
+    router.replace("/hub");
+  }, [loading, router, user]);
 
   const copy = useMemo(() => getVerticalCopy(vertical), [vertical]);
   const registerHref = useMemo(() => {
     const params = new URLSearchParams({ tab: "register", vertical });
     if (selectedPlan) params.set("plan", selectedPlan);
-    if (trialIntent) params.set("trial", trialIntent);
     if (demoSlug) params.set("demoSlug", demoSlug);
     if (demoTheme) params.set("demoTheme", demoTheme);
     if (referralCode) params.set("ref", referralCode);
     return `/auth?${params.toString()}`;
-  }, [demoSlug, demoTheme, referralCode, selectedPlan, trialIntent, vertical]);
+  }, [demoSlug, demoTheme, referralCode, selectedPlan, vertical]);
   const loginHref = useMemo(() => {
     const params = new URLSearchParams({ tab: "login", vertical });
     if (selectedPlan) params.set("plan", selectedPlan);
-    if (trialIntent) params.set("trial", trialIntent);
     if (demoSlug) params.set("demoSlug", demoSlug);
     if (demoTheme) params.set("demoTheme", demoTheme);
     if (referralCode) params.set("ref", referralCode);
     return `/auth?${params.toString()}`;
-  }, [demoSlug, demoTheme, referralCode, selectedPlan, trialIntent, vertical]);
+  }, [demoSlug, demoTheme, referralCode, selectedPlan, vertical]);
   const returnDemoHref = useMemo(() => {
     if (demoSlug) return `/demo/${vertical}/${demoSlug}`;
     return `/demo?vertical=${vertical}`;

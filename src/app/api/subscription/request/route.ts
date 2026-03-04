@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PaymentMethod, PlanType } from "@prisma/client";
-import { createSubscriptionRequest, startBusinessTrial } from "@/lib/subscription/service";
+import { createSubscriptionRequest } from "@/lib/subscription/service";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
 import { calculateSubscriptionAmountSoles, type PlanType as BillingPlanType } from "@/lib/subscription/plans";
 
@@ -62,40 +62,6 @@ function buildNotificationDocumentId(userId: string, requestType: string, create
   return `${sanitizeText(userId, 120)}-${sanitizeText(requestType, 24).toLowerCase()}-${createdAtMs}-${randomPart}`;
 }
 
-function parseFirestoreBool(input: any): boolean {
-  if (!input || typeof input !== "object") return false;
-  if (typeof input.booleanValue === "boolean") return input.booleanValue;
-  if (typeof input.stringValue === "string") {
-    return input.stringValue.toLowerCase() === "true";
-  }
-  return false;
-}
-
-async function readFirestoreUserDocWithToken(userId: string, idToken: string) {
-  const projectId = resolveFirestoreProjectId();
-  const endpoint = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/users/${encodeURIComponent(userId)}`;
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-    },
-    cache: "no-store",
-  });
-
-  if (response.status === 404) return null;
-  if (response.status === 401) {
-    throw new Error("UNAUTHORIZED: invalid bearer token");
-  }
-  if (response.status === 403) {
-    throw new Error("FORBIDDEN: firestore rules denied read access (users)");
-  }
-  if (!response.ok) {
-    throw new Error("SERVICE_UNAVAILABLE: firestore user read failed");
-  }
-
-  return response.json().catch(() => null);
-}
-
 async function patchFirestoreDocWithToken(input: {
   collection: "users" | "link_profiles" | "subscription_notifications";
   documentId: string;
@@ -136,8 +102,8 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
   userId: string;
   email: string;
   requestedPlan: PlanType;
-  requestType: "TRIAL" | "PAYMENT" | "FREE";
-  requestStatus: "PENDING" | "TRIAL_ACTIVE" | "RECEIVED";
+  requestType: "PAYMENT" | "FREE";
+  requestStatus: "PENDING" | "RECEIVED";
   paymentMethod: PaymentMethod | "";
   notes: string;
   requestId?: string;
@@ -238,60 +204,6 @@ async function writeSubscriptionAdminNotificationViaFirestoreToken(input: {
   };
 }
 
-async function startBusinessTrialViaFirestoreToken(userId: string, idToken: string, userEmail: string) {
-  const existing = await readFirestoreUserDocWithToken(userId, idToken);
-  const existingFields = (existing as any)?.fields || {};
-  const trialUsed = parseFirestoreBool(existingFields.businessTrialUsed);
-  if (trialUsed) {
-    throw new Error("BUSINESS_TRIAL_ALREADY_USED");
-  }
-
-  const now = Date.now();
-  const endDate = now + 14 * 24 * 60 * 60 * 1000;
-  const userFields = {
-    ...buildUserIdentityFields(userId, userEmail),
-    plan: firestoreString("business"),
-    subscriptionPlan: firestoreString("BUSINESS"),
-    subscriptionStatus: firestoreString("ACTIVE"),
-    subscriptionPaymentMethod: firestoreString("TRANSFERENCIA"),
-    subscriptionStartAt: firestoreInt(now),
-    subscriptionEndAt: firestoreInt(endDate),
-    subscriptionCreatedAt: firestoreInt(now),
-    subscriptionUpdatedAt: firestoreInt(now),
-    businessTrialUsed: firestoreBool(true),
-    businessTrialUsedAt: firestoreInt(now),
-  };
-
-  await patchFirestoreDocWithToken({
-    collection: "users",
-    documentId: userId,
-    idToken,
-    fields: userFields,
-  });
-
-  await patchFirestoreDocWithToken({
-    collection: "link_profiles",
-    documentId: userId,
-    idToken,
-    fields: {
-      userId: firestoreString(userId),
-      subscriptionBlocked: firestoreBool(false),
-      subscriptionPlan: firestoreString("BUSINESS"),
-      subscriptionStatus: firestoreString("ACTIVE"),
-      subscriptionEndAt: firestoreInt(endDate),
-      subscriptionUpdatedAt: firestoreInt(now),
-    },
-  }).catch(() => undefined);
-
-  return {
-    id: `firestore-rest-${userId}-${now}`,
-    plan: "BUSINESS" as const,
-    status: "ACTIVE" as const,
-    startDate: new Date(now),
-    endDate: new Date(endDate),
-  };
-}
-
 function toPlanType(value: string): PlanType | null {
   const normalized = value.toUpperCase().trim();
   if (normalized === "FREE" || normalized === "BUSINESS" || normalized === "PRO") return normalized;
@@ -328,8 +240,6 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const plan = toPlanType(String(formData.get("plan") || ""));
     const paymentMethod = toPaymentMethod(String(formData.get("paymentMethod") || ""));
-    const trialRaw = String(formData.get("trial") || "").trim().toLowerCase();
-    const isBusinessTrial = plan === "BUSINESS" && (trialRaw === "true" || trialRaw === "1" || trialRaw === "yes");
     const notes = String(formData.get("notes") || "");
     const billingCycle = toBillingCycle(String(formData.get("billingCycle") || ""));
     const durationMonths = toDurationMonths(String(formData.get("durationMonths") || ""), billingCycle);
@@ -354,61 +264,7 @@ export async function POST(request: NextRequest) {
       900,
     );
 
-    if (isBusinessTrial) {
-      let trialSubscription;
-      try {
-        trialSubscription = await startBusinessTrial(userId);
-      } catch (trialError: any) {
-        const trialMessage = String(trialError?.message || "");
-        if (!trialMessage.includes("subscription storage unavailable")) {
-          throw trialError;
-        }
-
-        const fallbackIdToken = getBearerToken(request);
-        if (!fallbackIdToken) {
-          throw trialError;
-        }
-
-        trialSubscription = await startBusinessTrialViaFirestoreToken(userId, fallbackIdToken, userEmail);
-      }
-
-      if (idToken) {
-        await writeSubscriptionAdminNotificationViaFirestoreToken({
-          idToken,
-          userId,
-          email: userEmail,
-          requestedPlan: "BUSINESS",
-          requestType: "TRIAL",
-          requestStatus: "TRIAL_ACTIVE",
-          paymentMethod: "TRANSFERENCIA",
-          notes: notesWithDuration,
-          requestId: trialSubscription.id,
-          trialDays: 14,
-          billingCycle: "MONTHLY",
-          durationMonths: 0,
-          durationDays: 14,
-          discountPercent: 0,
-          amountSoles: 0,
-          createdAtMs: Date.now(),
-        }).catch((notificationError) => {
-          console.error("[Subscription Request] trial notification warning:", notificationError);
-        });
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: "Prueba Business activada por 14 dias.",
-        subscription: {
-          id: trialSubscription.id,
-          plan: trialSubscription.plan,
-          status: trialSubscription.status,
-          startDate: trialSubscription.startDate.toISOString(),
-          endDate: trialSubscription.endDate.toISOString(),
-        },
-      });
-    }
-
-    if (!paymentMethod && plan !== "FREE") {
+    if (!paymentMethod) {
       return NextResponse.json({ error: "Metodo de pago invalido." }, { status: 400 });
     }
 
@@ -431,35 +287,6 @@ export async function POST(request: NextRequest) {
       proofBase64 = Buffer.from(bytes).toString("base64");
       proofFileName = proof.name;
       proofMimeType = proof.type;
-    }
-
-    if (plan === "FREE") {
-      if (!idToken) {
-        throw new Error("UNAUTHORIZED: missing bearer token");
-      }
-
-      const freeNotification = await writeSubscriptionAdminNotificationViaFirestoreToken({
-        idToken,
-        userId,
-        email: userEmail,
-        requestedPlan: "FREE",
-        requestType: "FREE",
-        requestStatus: "RECEIVED",
-        paymentMethod: "",
-        notes: notesWithDuration,
-        requestId: `free-${userId}-${Date.now()}`,
-        billingCycle,
-        durationMonths,
-        durationDays,
-        discountPercent,
-        amountSoles,
-      });
-
-      return NextResponse.json({
-        success: true,
-        requestId: freeNotification.requestId,
-        message: "Solicitud FREE registrada y enviada al panel admin.",
-      });
     }
 
     let createdRequestId = "";
@@ -538,12 +365,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Permisos de Firestore insuficientes para registrar la solicitud." },
         { status: 403 },
-      );
-    }
-    if (message.startsWith("BUSINESS_TRIAL_ALREADY_USED")) {
-      return NextResponse.json(
-        { error: "La prueba de 14 dias de Business ya fue usada en esta cuenta." },
-        { status: 400 },
       );
     }
     if (message.includes("subscription storage unavailable")) {

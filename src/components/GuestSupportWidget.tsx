@@ -21,16 +21,16 @@ const BUSINESS_WHATSAPP = "51919662011";
 
 const SUPPORT_FAQ: SupportFaq[] = [
   {
-    id: "trial",
-    quickEs: "Prueba 14 dias",
-    quickEn: "14-day trial",
-    questionEs: "Como funciona la prueba de 14 dias?",
-    questionEn: "How does the 14-day trial work?",
+    id: "plans",
+    quickEs: "Planes y pagos",
+    quickEn: "Plans and billing",
+    questionEs: "Como activo mi plan y empiezo hoy?",
+    questionEn: "How do I activate my plan and start today?",
     answerEs:
-      "Activas Business por 14 dias y puedes crear/publicar rapido. Al finalizar, renuevas desde Billing.",
+      "Elige Starter, Business o Pro en Billing, realiza el pago y se activa para publicar y vender.",
     answerEn:
-      "You can activate Business for 14 days and publish quickly. After that, renew from Billing.",
-    keywords: ["trial", "prueba", "14", "dias", "days", "business"],
+      "Choose Starter, Business, or Pro in Billing, complete payment, and activate to publish and sell.",
+    keywords: ["plan", "billing", "pago", "payment", "business", "pro", "starter"],
   },
   {
     id: "speed",

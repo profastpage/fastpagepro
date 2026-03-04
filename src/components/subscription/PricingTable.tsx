@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Fragment, useMemo } from "react";
 import { Check, Lock } from "lucide-react";
@@ -31,8 +31,8 @@ interface PricingTableProps {
 function isLockedBullet(item: string): boolean {
   const text = item.toLowerCase();
   return (
-    item.includes("🔒") ||
-    item.includes("❌") ||
+    item.includes("ðŸ”’") ||
+    item.includes("âŒ") ||
     text.includes("sin soporte") ||
     text.includes("no support") ||
     text.includes("business o pro") ||
@@ -90,7 +90,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "Custom domain",
               values: {
-                FREE: "🔒 Business/Pro only",
+                FREE: "ðŸ”’ Business/Pro only",
                 BUSINESS: "Allowed (client buys domain)",
                 PRO: "Allowed",
               },
@@ -98,7 +98,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "AI",
               values: {
-                FREE: "🔒 Business/Pro only",
+                FREE: "ðŸ”’ Business/Pro only",
                 BUSINESS: "Basic AI",
                 PRO: "Advanced AI",
               },
@@ -106,9 +106,9 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "Support",
               values: {
-                FREE: "❌ No support",
-                BUSINESS: "📧 Email (max. 24h)",
-                PRO: "💬 Live on WhatsApp",
+                FREE: "âŒ No support",
+                BUSINESS: "ðŸ“§ Email (max. 24h)",
+                PRO: "ðŸ’¬ Live on WhatsApp",
               },
             },
             {
@@ -122,8 +122,8 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "PRO sales stack",
               values: {
-                FREE: "🔒 Locked",
-                BUSINESS: "🔒 Locked",
+                FREE: "ðŸ”’ Locked",
+                BUSINESS: "ðŸ”’ Locked",
                 PRO: "Testimonials + sales copy + gallery + dispatch modes",
               },
             },
@@ -164,7 +164,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "Dominio propio",
               values: {
-                FREE: "🔒 Solo Business/Pro",
+                FREE: "ðŸ”’ Solo Business/Pro",
                 BUSINESS: "Permitido (cliente compra dominio)",
                 PRO: "Permitido",
               },
@@ -172,7 +172,7 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "IA",
               values: {
-                FREE: "🔒 Solo Business/Pro",
+                FREE: "ðŸ”’ Solo Business/Pro",
                 BUSINESS: "IA basica",
                 PRO: "IA avanzada",
               },
@@ -180,9 +180,9 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "Soporte",
               values: {
-                FREE: "❌ Sin soporte",
-                BUSINESS: "📧 Correo (max. 24h)",
-                PRO: "💬 En vivo por WhatsApp",
+                FREE: "âŒ Sin soporte",
+                BUSINESS: "ðŸ“§ Correo (max. 24h)",
+                PRO: "ðŸ’¬ En vivo por WhatsApp",
               },
             },
             {
@@ -196,8 +196,8 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
             {
               label: "Stack de ventas PRO",
               values: {
-                FREE: "🔒 Bloqueado",
-                BUSINESS: "🔒 Bloqueado",
+                FREE: "ðŸ”’ Bloqueado",
+                BUSINESS: "ðŸ”’ Bloqueado",
                 PRO: "Testimonios + copys + galeria + modos de despacho",
               },
             },
@@ -217,33 +217,33 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
       isEnglish
         ? {
             FREE: {
-              subtitle: "Direct monthly payment. No trial. ⚡",
+              subtitle: "Direct monthly payment. No trial. âš¡",
               ctaLabel: "Buy now",
             },
             BUSINESS: {
-              subtitle: "Try free for 14 days. Then S/59/month. Cancel anytime.",
-              ctaLabel: "Try 14 days free",
-              badgeLabel: "🔥 Most chosen",
-              note: "No commitment.",
+              subtitle: "Create your digital business today with support and key sales tools.",
+              ctaLabel: "Activate Business",
+              badgeLabel: "ðŸ”¥ Most chosen",
+              note: "Immediate activation after payment.",
             },
             PRO: {
-              subtitle: "Direct monthly payment to scale seriously. No trial. 🚀",
+              subtitle: "Direct monthly payment to scale seriously. No trial. ðŸš€",
               ctaLabel: "Buy now",
             },
           }
         : {
             FREE: {
-              subtitle: "Pago directo mensual. Sin trial. ⚡",
+              subtitle: "Pago directo mensual. Sin trial. âš¡",
               ctaLabel: "Comprar ahora",
             },
             BUSINESS: {
-              subtitle: "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.",
-              ctaLabel: "Probar 14 dias gratis",
-              badgeLabel: "🔥 Mas elegido",
-              note: "Sin compromiso.",
+              subtitle: "Crea tu negocio digital hoy con soporte y herramientas clave para vender.",
+              ctaLabel: "Activar Business",
+              badgeLabel: "ðŸ”¥ Mas elegido",
+              note: "Activacion inmediata tras pago.",
             },
             PRO: {
-              subtitle: "Pago directo mensual para escalar en serio. Sin trial. 🚀",
+              subtitle: "Pago directo mensual para escalar en serio. Sin trial. ðŸš€",
               ctaLabel: "Comprar ahora",
             },
           },
@@ -353,3 +353,5 @@ export default function PricingTable({ activePlan, onSelectPlan, loadingPlan }: 
     </div>
   );
 }
+
+

@@ -50,21 +50,18 @@ export default function Nav() {
     permissions.maxProjects == null
       ? `${permissions.usage.publishedProjects}`
       : `${permissions.usage.publishedProjects}/${permissions.maxProjects}`;
-  const computedPlanDays = summary?.isBusinessTrial ? summary?.trialDaysRemaining : summary?.daysRemaining;
   const planDaysRemaining =
-    summary?.status === "ACTIVE" ? Math.max(0, Number(computedPlanDays || 0)) : 0;
+    summary?.status === "ACTIVE" ? Math.max(0, Number(summary?.daysRemaining || 0)) : 0;
   const navStatusCopy = isEnglish
     ? {
         plan: "Plan:",
         projects: "Projects:",
         days: "Days left:",
-        trial: (days: number) => `Business trial: ${days} days left.`,
       }
     : {
         plan: "Plan:",
         projects: "Proyectos:",
         days: "Dias restantes:",
-        trial: (days: number) => `Prueba Business: ${days} dias restantes.`,
       };
 
   const toggleLanguage = () => {
@@ -162,7 +159,7 @@ export default function Nav() {
     const isExpired = summary?.status === "EXPIRED";
     const starterLockedRoutes = new Set(["/builder", "/templates", "/cloner/web", "/store", "/metrics"]);
     const businessLockedRoutes = new Set(["/builder", "/templates", "/cloner/web"]);
-    const expiredUnlockedRoutes = new Set(["/dashboard/billing", "/settings"]);
+    const expiredUnlockedRoutes = new Set(["/dashboard/billing"]);
 
     const resolveLockHint = (href: string) => {
       if (isExpired && !expiredUnlockedRoutes.has(href)) {
@@ -260,11 +257,6 @@ export default function Nav() {
           {navStatusCopy.days} {planDaysRemaining}
         </span>
       </div>
-      {summary?.isBusinessTrial ? (
-        <p className="mt-2 text-[11px] font-semibold text-amber-200">
-          {navStatusCopy.trial(Math.max(0, Number(summary?.trialDaysRemaining || 0)))}
-        </p>
-      ) : null}
     </div>
   ) : null;
 

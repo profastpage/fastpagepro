@@ -27,7 +27,9 @@ const GUARDS: Guard[] = [
 
 const EXCLUDED_PATHS = ["/dashboard/billing", "/api/subscription/"];
 const ACTIVE_ONLY_PATHS = [
+  /^\/cartadigital(?:\/|$)/,
   /^\/linkhub(?:\/|$)/,
+  /^\/settings(?:\/|$)/,
   /^\/published(?:\/|$)/,
   /^\/editor(?:\/|$)/,
   /^\/preview(?:\/|$)/,

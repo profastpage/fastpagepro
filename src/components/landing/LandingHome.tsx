@@ -168,13 +168,13 @@ const FLOW_STEPS_EN = [
 
 const HERO_METRICS_ES: HeroMetric[] = [
   { value: "+120", label: "Negocios activos", icon: Store },
-  { value: "14 dias", label: "Trial gratis", icon: ShieldCheck },
+  { value: "24/7", label: "Ventas activas", icon: ShieldCheck },
   { value: "0%", label: "Comision por venta", icon: BarChart3 },
 ];
 
 const HERO_METRICS_EN: HeroMetric[] = [
   { value: "+120", label: "Active businesses", icon: Store },
-  { value: "14 days", label: "Free trial", icon: ShieldCheck },
+  { value: "24/7", label: "Always selling", icon: ShieldCheck },
   { value: "0%", label: "Commission per sale", icon: BarChart3 },
 ];
 
@@ -681,7 +681,7 @@ const HERO_ITEM_VARIANTS = {
 };
 const HERO_CTA_VARIANT_ES = "B" as "A" | "B";
 const HERO_PRIMARY_CTA_LABEL_ES =
-  HERO_CTA_VARIANT_ES === "A" ? "PROBAR 14 DÍAS GRATIS" : "Probar gratis 14 días";
+  HERO_CTA_VARIANT_ES === "A" ? "CREA TU NEGOCIO DIGITAL HOY" : "Crea tu negocio digital hoy";
 
 const PRICING_FEATURES_ES = {
   starter: [
@@ -831,10 +831,10 @@ export default function LandingHome() {
             heroChecklist: [
               "Live in minutes",
               "No commissions per sale",
-              "14-day free trial",
+              "Pay and activate now",
             ],
-            ctaPrimary: "Start 14-day free trial",
-            ctaPrimaryHelper: "Then from 59 soles/month • No commissions",
+            ctaPrimary: "Create your digital business today",
+            ctaPrimaryHelper: "Plans from 29 soles/month • No commissions",
             ctaDemo: "Watch live demo",
             ctaPlans: "View plans",
             urgency: "This week is key to sell more: activate your version today.",
@@ -861,10 +861,10 @@ export default function LandingHome() {
             starterAnnualDiscount: "Up to 10% off annual plan",
             starterCta: "Start now",
             businessBadge: "⭐ Most chosen",
-            businessSubtitle: "Try free for 14 days. Then S/59/month. Cancel anytime.",
+            businessSubtitle: "Create your digital business today with support and key sales tools.",
             businessAnnualDiscount: "Up to 20% off annual plan",
-            businessNote: "No commitment.",
-            businessCta: "Try 14 days free",
+            businessNote: "Immediate activation after payment.",
+            businessCta: "Activate Business",
             proSubtitle: "Direct monthly payment to scale seriously (no trial) 🚀",
             proAnnualDiscount: "Up to 30% off annual plan",
             proCta: "Buy now",
@@ -889,10 +889,10 @@ export default function LandingHome() {
             heroChecklist: [
               "Activo en minutos",
               "Sin comisiones por venta",
-              "Prueba gratis por 14 días",
+              "Pago y activacion inmediata",
             ],
             ctaPrimary: HERO_PRIMARY_CTA_LABEL_ES,
-            ctaPrimaryHelper: "Luego desde 59 soles/mes • Sin comisiones",
+            ctaPrimaryHelper: "Planes desde 29 soles/mes • Sin comisiones",
             ctaDemo: "Ver demo en vivo",
             ctaPlans: "Ver planes",
             urgency: "Actívalo hoy y empieza a recibir pedidos.",
@@ -919,10 +919,10 @@ export default function LandingHome() {
             starterAnnualDiscount: "Hasta 10% de descuento en plan anual",
             starterCta: "Empezar ahora",
             businessBadge: "⭐ Mas elegido",
-            businessSubtitle: "Prueba gratis por 14 dias. Luego S/59/mes. Cancela cuando quieras.",
+            businessSubtitle: "Crea tu negocio digital hoy con soporte y herramientas clave para vender.",
             businessAnnualDiscount: "Hasta 20% de descuento en plan anual",
-            businessNote: "Sin compromiso.",
-            businessCta: "Probar 14 dias gratis",
+            businessNote: "Activacion inmediata tras pago.",
+            businessCta: "Activar Business",
             proSubtitle: "Pago directo mensual para escalar en serio (sin trial) 🚀",
             proAnnualDiscount: "Hasta 30% de descuento en plan anual",
             proCta: "Comprar ahora",
@@ -948,7 +948,7 @@ export default function LandingHome() {
   const verticalCopy = useMemo(() => getVerticalCopy(vertical, language), [language, vertical]);
   const heroDemoHref = useMemo(() => verticalToDemoHref(vertical), [vertical]);
   const heroSignupHref = useMemo(
-    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS&trial=business14`,
+    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS`,
     [vertical],
   );
   const starterSignupHref = useMemo(
@@ -956,7 +956,7 @@ export default function LandingHome() {
     [vertical],
   );
   const businessSignupHref = useMemo(
-    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS&trial=business14`,
+    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS`,
     [vertical],
   );
   const proSignupHref = useMemo(
