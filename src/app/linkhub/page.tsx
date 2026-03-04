@@ -3945,7 +3945,6 @@ export default function LinkHubPage() {
           type: "error",
           text: "Tu periodo activo termino. Renueva en Billing para reactivar y publicar proyectos.",
         });
-        router.push("/dashboard/billing");
         return;
       }
 
@@ -3957,7 +3956,6 @@ export default function LinkHubPage() {
             ? `🔒 Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Para publicar un proyecto nuevo, sube a un plan superior en Billing.`
             : `Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Renueva o sube de plan en Billing.`,
         });
-        router.push("/dashboard/billing?requiredFeature=limit");
         return;
       }
 

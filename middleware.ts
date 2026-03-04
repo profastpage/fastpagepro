@@ -30,7 +30,6 @@ const ACTIVE_ONLY_PATHS = [
   /^\/cartadigital(?:\/|$)/,
   /^\/linkhub(?:\/|$)/,
   /^\/settings(?:\/|$)/,
-  /^\/published(?:\/|$)/,
   /^\/editor(?:\/|$)/,
   /^\/preview(?:\/|$)/,
   /^\/app\/new(?:\/|$)/,
