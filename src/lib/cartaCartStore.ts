@@ -2,6 +2,8 @@ export type CartaCartItem = {
   id: string;
   title: string;
   imageUrl: string;
+  imagePositionX: number;
+  imagePositionY: number;
   categoryName: string;
   priceLabel: string;
   unitPrice: number;
@@ -32,4 +34,3 @@ export function patchCartItemQuantityStore(
   if (nextQty <= 0) return removeItemFromCartStore(prev, itemId);
   return prev.map((item) => (item.id === itemId ? { ...item, quantity: nextQty } : item));
 }
-

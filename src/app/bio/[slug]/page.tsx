@@ -66,6 +66,7 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 import { localizeDynamicText } from "@/lib/autoI18n";
 import { optimizeCloudinaryDeliveryUrl } from "@/lib/cloudinaryDelivery";
+import { toImageObjectPosition } from "@/lib/imagePosition";
 
 type PublicTab = "contact" | "catalog" | "location" | "reservation";
 type CheckoutStep = "cart" | "checkout";
@@ -490,11 +491,18 @@ export default function PublicBioPage() {
     ...(profile?.coverImageUrls ?? []),
     profile?.coverImageUrl || "",
   ]
-    .map((url) => String(url || "").trim())
-    .filter(Boolean)
-    .filter((url, index, source) => source.indexOf(url) === index)
+    .map((url, index) => ({
+      url: String(url || "").trim(),
+      positionX: Number(profile?.coverImagePositions?.[index]?.x ?? 50),
+      positionY: Number(profile?.coverImagePositions?.[index]?.y ?? 50),
+    }))
+    .filter((entry) => entry.url.length > 0)
+    .filter((entry, index, source) => source.findIndex((item) => item.url === entry.url) === index)
     .slice(0, 5)
-    .map((url) => optimizeCloudinaryDeliveryUrl(url, { width: 1680 }));
+    .map((entry) => ({
+      ...entry,
+      url: optimizeCloudinaryDeliveryUrl(entry.url, { width: 1680 }),
+    }));
 
   useEffect(() => {
     if (activeTab !== "catalog") return;
@@ -941,6 +949,8 @@ export default function PublicBioPage() {
         id: item.id,
         title: tdv(item.title, tx("Producto", "Product")),
         imageUrl: selectedImage,
+        imagePositionX: Number(item.imagePositionX ?? 50),
+        imagePositionY: Number(item.imagePositionY ?? 50),
         categoryName: tdv(categoryName, tx("Categoria", "Category")),
         priceLabel: normalizedPriceLabel,
         unitPrice,
@@ -1616,14 +1626,15 @@ export default function PublicBioPage() {
             <div className="relative">
               {coverImages.length > 0 ? (
                 <div className="relative h-48 md:h-72 w-full overflow-hidden">
-                  {coverImages.map((imageUrl, index) => (
+                  {coverImages.map((coverImage, index) => (
                     <img
-                      key={`${imageUrl}-${index}`}
-                      src={imageUrl}
+                      key={`${coverImage.url}-${index}`}
+                      src={coverImage.url}
                       alt={`Portada ${index + 1}`}
                       className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ease-out ${
                         index === activeCoverIndex ? "scale-100 opacity-100" : "scale-105 opacity-0"
                       }`}
+                      style={{ objectPosition: toImageObjectPosition(coverImage.positionX, coverImage.positionY) }}
                     />
                   ))}
                   {coverImages.length > 1 && (
@@ -1663,6 +1674,10 @@ export default function PublicBioPage() {
                     style={{
                       borderColor: "var(--carta-chip-border)",
                       background: avatarFallbackStyle.background,
+                      objectPosition: toImageObjectPosition(
+                        profile.avatarImagePositionX,
+                        profile.avatarImagePositionY,
+                      ),
                     }}
                   />
                 ) : (
@@ -1917,6 +1932,8 @@ export default function PublicBioPage() {
                               description={item.localizedDescription}
                               salesCopy={proFeaturesEnabled ? item.localizedSalesCopy : undefined}
                               imageUrl={item.imageUrl}
+                              imagePositionX={item.imagePositionX}
+                              imagePositionY={item.imagePositionY}
                               galleryImageUrls={proFeaturesEnabled ? item.galleryImageUrls : []}
                               oldPrice={displayOldPrice}
                               price={displayPrice}
@@ -2020,6 +2037,12 @@ export default function PublicBioPage() {
                     src={optimizeCloudinaryDeliveryUrl(profile.reservation.heroImageUrl, { width: 1480 })}
                     alt={tx("Reservas", "Bookings")}
                     className="h-40 w-full object-cover md:h-56"
+                    style={{
+                      objectPosition: toImageObjectPosition(
+                        profile.reservation.heroImagePositionX,
+                        profile.reservation.heroImagePositionY,
+                      ),
+                    }}
                   />
                 ) : (
                   <div
@@ -2350,6 +2373,12 @@ export default function PublicBioPage() {
                                   src={optimizeCloudinaryDeliveryUrl(item.imageUrl, { width: 260 })}
                                   alt={tdv(item.title, tx("Producto", "Product"))}
                                   className="h-20 w-20 rounded-xl object-cover"
+                                  style={{
+                                    objectPosition: toImageObjectPosition(
+                                      item.imagePositionX,
+                                      item.imagePositionY,
+                                    ),
+                                  }}
                                 />
                               ) : (
                                 <div className="h-20 w-20 rounded-xl border flex items-center justify-center text-xs font-bold" style={{ borderColor: "var(--carta-chip-border)" }}>

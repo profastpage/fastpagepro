@@ -39,6 +39,8 @@ import {
 import InlineEditable from "@/components/editor/InlineEditable";
 import EditorSidebar, { type EditorSidebarTab } from "@/components/editor/EditorSidebar";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
+import DraggableImagePositionEditor from "@/components/editor/DraggableImagePositionEditor";
+import { normalizeImagePosition, toImageObjectPosition } from "@/lib/imagePosition";
 import { useLanguage } from "@/context/LanguageContext";
 import {
   ArrowLeft,
@@ -224,8 +226,12 @@ const DEFAULT_CONFIG: StoreConfig = {
     businessAddress: "Edita aqui: direccion de tienda o punto de retiro",
     heroImageUrl:
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1800&auto=format&fit=crop",
+    heroImagePositionX: 50,
+    heroImagePositionY: 50,
     logoImageUrl:
       "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=600&auto=format&fit=crop",
+    logoImagePositionX: 50,
+    logoImagePositionY: 50,
     facebookUrl: "https://facebook.com/",
     instagramUrl: "https://instagram.com/",
     tiktokUrl: "https://tiktok.com/",
@@ -254,6 +260,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 19900,
     imageUrl:
       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Oferta",
     ctaLabel: "Ver producto",
@@ -269,6 +277,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 28900,
     imageUrl:
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Oferta",
     ctaLabel: "Ver oferta",
@@ -284,6 +294,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 0,
     imageUrl:
       "https://images.unsplash.com/photo-1491637639811-60e2756cc1c7?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Top",
     ctaLabel: "Ver producto",
@@ -299,6 +311,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 15900,
     imageUrl:
       "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Oferta",
     ctaLabel: "Ver producto",
@@ -314,6 +328,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 0,
     imageUrl:
       "https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Nuevo",
     ctaLabel: "Ver producto",
@@ -329,6 +345,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 39900,
     imageUrl:
       "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Oferta",
     ctaLabel: "Ver producto",
@@ -344,6 +362,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 10900,
     imageUrl:
       "https://images.unsplash.com/photo-1577803645773-f96470509666?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Oferta",
     ctaLabel: "Ver oferta",
@@ -359,6 +379,8 @@ const DEFAULT_PRODUCTS: StoreProduct[] = [
     compareAtPriceCents: 0,
     imageUrl:
       "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?q=80&w=1200&auto=format&fit=crop",
+    imagePositionX: 50,
+    imagePositionY: 50,
     active: true,
     badge: "Nuevo",
     ctaLabel: "Ver producto",
@@ -979,6 +1001,8 @@ function StoreEditorPage() {
         compareAtPriceCents: 0,
         imageUrl:
           "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop",
+        imagePositionX: 50,
+        imagePositionY: 50,
         active: true,
         badge: "Nuevo",
         ctaLabel: "Ver producto",
@@ -1488,14 +1512,44 @@ function StoreEditorPage() {
                   <input value={content.topStripText || ""} onChange={(e) => setContent({ topStripText: e.target.value })} placeholder="Edita aqui: promo principal" className="w-full bg-transparent text-center outline-none" />
                 </div>
                 <div className="relative h-[220px] md:h-[320px]">
-                  {content.heroImageUrl ? <img src={content.heroImageUrl} alt="hero" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center bg-slate-200 text-sm font-semibold text-slate-500">Sube una portada para tu tienda</div>}
-                  <label className="absolute right-3 top-3 inline-flex cursor-pointer items-center gap-1 rounded-xl bg-black/70 px-3 py-2 text-xs font-bold text-white"><Upload className="h-3.5 w-3.5" />Portada<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => setContent({ heroImageUrl: img })); e.target.value = ""; }} /></label>
+                  {content.heroImageUrl ? (
+                    <DraggableImagePositionEditor
+                      src={content.heroImageUrl}
+                      alt="hero"
+                      x={normalizeImagePosition(content.heroImagePositionX, 50)}
+                      y={normalizeImagePosition(content.heroImagePositionY, 50)}
+                      onChange={(next) =>
+                        setContent({
+                          heroImagePositionX: next.x,
+                          heroImagePositionY: next.y,
+                        })
+                      }
+                      className="h-full w-full"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center bg-slate-200 text-sm font-semibold text-slate-500">Sube una portada para tu tienda</div>
+                  )}
+                  <label className="absolute right-3 top-3 inline-flex cursor-pointer items-center gap-1 rounded-xl bg-black/70 px-3 py-2 text-xs font-bold text-white"><Upload className="h-3.5 w-3.5" />Portada<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => setContent({ heroImageUrl: img, heroImagePositionX: 50, heroImagePositionY: 50 })); e.target.value = ""; }} /></label>
                 </div>
                 <div className="relative px-4 pb-8 pt-16 md:px-8">
                   <div className="absolute -top-14 left-1/2 -translate-x-1/2">
                     <label className="relative block h-28 w-28 cursor-pointer overflow-hidden rounded-full border-4 border-white bg-white shadow-lg">
-                      {content.logoImageUrl ? <img src={content.logoImageUrl} alt="logo" className="h-full w-full object-cover" /> : null}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => setContent({ logoImageUrl: img })); e.target.value = ""; }} />
+                      {content.logoImageUrl ? (
+                        <DraggableImagePositionEditor
+                          src={content.logoImageUrl}
+                          alt="logo"
+                          x={normalizeImagePosition(content.logoImagePositionX, 50)}
+                          y={normalizeImagePosition(content.logoImagePositionY, 50)}
+                          onChange={(next) =>
+                            setContent({
+                              logoImagePositionX: next.x,
+                              logoImagePositionY: next.y,
+                            })
+                          }
+                          className="h-full w-full"
+                        />
+                      ) : null}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => setContent({ logoImageUrl: img, logoImagePositionX: 50, logoImagePositionY: 50 })); e.target.value = ""; }} />
                     </label>
                   </div>
 
@@ -1540,7 +1594,7 @@ function StoreEditorPage() {
                     >
                       {offerProducts.map((p) => (
                         <article key={`offer-${p.id}`} className={`${useOffersCarousel ? "w-full snap-start" : ""} overflow-hidden rounded-2xl border bg-white text-slate-900`} style={{ borderColor: "#edf2f7" }}>
-                          <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : null}<span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: "var(--vs-accent)" }}>{p.badge || "Oferta"}</span></div>
+                          <div className="relative h-44 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" style={{ objectPosition: toImageObjectPosition(p.imagePositionX, p.imagePositionY) }} /> : null}<span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-black uppercase text-white" style={{ background: "var(--vs-accent)" }}>{p.badge || "Oferta"}</span></div>
                           <div className="p-3"><p className="font-black">{p.name}</p><p className="mt-1 text-xl font-black" style={{ color: "var(--vs-accent)" }}>{formatMoney(p.priceCents, config.currency)}</p><button className="mt-2 h-10 w-full rounded-xl text-sm font-black text-white" style={{ background: "var(--vs-accent)" }}>{p.ctaLabel || "Ver oferta"}</button></div>
                         </article>
                       ))}
@@ -1556,7 +1610,26 @@ function StoreEditorPage() {
                   <div className={`mt-4 grid gap-3 ${viewMode === "mobile" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
                     {filteredProducts.map((p) => (
                       <article key={p.id} className="overflow-hidden rounded-2xl border bg-white text-slate-900" style={{ borderColor: "#edf2f7" }}>
-                        <div className="relative h-36 bg-slate-100">{p.imageUrl ? <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">Sube foto</div>}<label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img })); e.target.value = ""; }} /></label></div>
+                        <div className="relative h-36 bg-slate-100">
+                          {p.imageUrl ? (
+                            <DraggableImagePositionEditor
+                              src={p.imageUrl}
+                              alt={p.name}
+                              x={p.imagePositionX}
+                              y={p.imagePositionY}
+                              onChange={(next) =>
+                                updateProduct(p.id, {
+                                  imagePositionX: next.x,
+                                  imagePositionY: next.y,
+                                })
+                              }
+                              className="h-full w-full"
+                            />
+                          ) : (
+                            <div className="grid h-full w-full place-items-center text-xs font-semibold text-slate-500">Sube foto</div>
+                          )}
+                          <label className="absolute right-2 top-2 inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/70 px-2 py-1 text-[11px] font-bold text-white"><Upload className="h-3 w-3" />Foto<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; void onImage(f, (img) => updateProduct(p.id, { imageUrl: img, imagePositionX: 50, imagePositionY: 50 })); e.target.value = ""; }} /></label>
+                        </div>
                         <div className="space-y-2 p-3">
                           <input value={p.badge || ""} onChange={(e) => updateProduct(p.id, { badge: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-xs font-bold uppercase text-slate-700 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: badge" />
                           <input value={p.name} onChange={(e) => updateProduct(p.id, { name: e.target.value })} className="w-full rounded-lg border bg-white px-2 py-1 text-sm font-black text-slate-800 outline-none" style={{ borderColor: SOFT_INPUT_BORDER }} placeholder="Escribe aqui: nombre del producto" />

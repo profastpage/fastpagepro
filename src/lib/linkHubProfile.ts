@@ -17,6 +17,10 @@ import {
   getSafeCartaThemeId,
   recommendCartaThemeIdByRubro,
 } from "@/theme/cartaThemes";
+import {
+  normalizeImagePositionPair,
+  type ImagePosition,
+} from "@/lib/imagePosition";
 
 export const LINK_HUB_COLLECTION = "link_profiles";
 export const MAX_LINK_HUB_LINKS = 12;
@@ -356,6 +360,8 @@ export interface LinkHubCatalogItem {
   description: string;
   salesCopy?: string;
   imageUrl: string;
+  imagePositionX: number;
+  imagePositionY: number;
   galleryImageUrls: string[];
   price: string;
   compareAtPrice?: string;
@@ -410,6 +416,8 @@ export interface LinkHubReservationConfig {
   title: string;
   subtitle: string;
   heroImageUrl: string;
+  heroImagePositionX: number;
+  heroImagePositionY: number;
   slotOptions: string[];
   minPartySize: number;
   maxPartySize: number;
@@ -441,8 +449,11 @@ export interface LinkHubProfile {
   displayName: string;
   bio: string;
   avatarUrl: string;
+  avatarImagePositionX: number;
+  avatarImagePositionY: number;
   coverImageUrl: string;
   coverImageUrls: string[];
+  coverImagePositions: ImagePosition[];
   categoryLabel: string;
   phoneNumber: string;
   whatsappNumber: string;
@@ -570,6 +581,8 @@ export function createLinkHubCatalogItem(categoryId = ""): LinkHubCatalogItem {
     description: "",
     salesCopy: "",
     imageUrl: "",
+    imagePositionX: 50,
+    imagePositionY: 50,
     galleryImageUrls: [],
     price: "",
     compareAtPrice: "",
@@ -652,6 +665,8 @@ function createDefaultReservationConfig(): LinkHubReservationConfig {
     title: "Reserva premium",
     subtitle: "Agenda tu mesa en segundos y recibe confirmacion por WhatsApp.",
     heroImageUrl: "",
+    heroImagePositionX: 50,
+    heroImagePositionY: 50,
     slotOptions: [
       "12:00 pm",
       "12:30 pm",
@@ -1245,8 +1260,11 @@ export function buildDefaultLinkHubProfile(user: LinkHubUserSeed): LinkHubProfil
     displayName: fallbackName,
     bio: "",
     avatarUrl: safeText(user.photoURL),
+    avatarImagePositionX: 50,
+    avatarImagePositionY: 50,
     coverImageUrl: "",
     coverImageUrls: [],
+    coverImagePositions: [],
     categoryLabel: "Cafeteria",
     phoneNumber: "",
     whatsappNumber: "",
@@ -1364,6 +1382,7 @@ export function normalizeLinkHubProfile(
       const categoryId = categoryIds.has(rawCategoryId) ? rawCategoryId : firstCategoryId;
 
       const imageUrl = safeText(item?.imageUrl);
+      const imagePosition = normalizeImagePositionPair(item?.imagePositionX, item?.imagePositionY);
       return {
         id: safeText(item?.id) || createId("item"),
         categoryId,
@@ -1371,6 +1390,8 @@ export function normalizeLinkHubProfile(
         description: safeText(item?.description),
         salesCopy: safeText(item?.salesCopy),
         imageUrl,
+        imagePositionX: imagePosition.x,
+        imagePositionY: imagePosition.y,
         galleryImageUrls: (Array.isArray(item?.galleryImageUrls) ? item.galleryImageUrls : [])
           .map((image) => safeText(image))
           .filter(Boolean)
@@ -1474,6 +1495,12 @@ export function normalizeLinkHubProfile(
   const normalizedMaxParty = Number.isFinite(rawMaxPartySize)
     ? Math.max(1, Math.min(99, Math.round(rawMaxPartySize)))
     : base.reservation.maxPartySize;
+  const reservationHeroPosition = normalizeImagePositionPair(
+    rawReservation["heroImagePositionX"],
+    rawReservation["heroImagePositionY"],
+    base.reservation.heroImagePositionX,
+    base.reservation.heroImagePositionY,
+  );
   const reservation: LinkHubReservationConfig = {
     enabled:
       typeof rawReservation["enabled"] === "boolean"
@@ -1482,6 +1509,8 @@ export function normalizeLinkHubProfile(
     title: safeText(rawReservation["title"]) || base.reservation.title,
     subtitle: safeText(rawReservation["subtitle"]) || base.reservation.subtitle,
     heroImageUrl: safeText(rawReservation["heroImageUrl"]) || "",
+    heroImagePositionX: reservationHeroPosition.x,
+    heroImagePositionY: reservationHeroPosition.y,
     slotOptions: slotOptions.length > 0 ? slotOptions : base.reservation.slotOptions,
     minPartySize: Math.min(normalizedMinParty, normalizedMaxParty),
     maxPartySize: Math.max(normalizedMinParty, normalizedMaxParty),
@@ -1591,13 +1620,29 @@ export function normalizeLinkHubProfile(
   const rawCoverImageUrls = Array.isArray((input as Record<string, unknown>)["coverImageUrls"])
     ? ((input as Record<string, unknown>)["coverImageUrls"] as unknown[])
     : [];
-  const mergedCoverImageUrls = [
+  const rawCoverImageSources = [
     ...rawCoverImageUrls.map((value) => safeText(value)),
     safeText(input.coverImageUrl),
-  ]
+  ].filter(Boolean);
+  const rawCoverImagePositions = Array.isArray((input as Record<string, unknown>)["coverImagePositions"])
+    ? (((input as Record<string, unknown>)["coverImagePositions"] as unknown[]) || [])
+    : [];
+  const mergedCoverImageUrls = rawCoverImageSources
     .filter(Boolean)
     .filter((value, index, source) => source.indexOf(value) === index)
     .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+  const coverImagePositions = mergedCoverImageUrls.map((imageUrl, index) => {
+    const sourceIndex = rawCoverImageSources.findIndex((source) => source === imageUrl);
+    const rawPosition = sourceIndex >= 0 ? rawCoverImagePositions[sourceIndex] : rawCoverImagePositions[index];
+    return normalizeImagePositionPair((rawPosition as { x?: unknown })?.x, (rawPosition as { y?: unknown })?.y);
+  });
+
+  const avatarImagePosition = normalizeImagePositionPair(
+    (input as Record<string, unknown>)["avatarImagePositionX"],
+    (input as Record<string, unknown>)["avatarImagePositionY"],
+    base.avatarImagePositionX,
+    base.avatarImagePositionY,
+  );
 
   const createdAtNumber = Number(input.createdAt);
   const updatedAtNumber = Number(input.updatedAt);
@@ -1610,8 +1655,11 @@ export function normalizeLinkHubProfile(
     displayName: safeText(input.displayName) || base.displayName,
     bio: safeText(input.bio),
     avatarUrl: safeText(input.avatarUrl) || base.avatarUrl,
+    avatarImagePositionX: avatarImagePosition.x,
+    avatarImagePositionY: avatarImagePosition.y,
     coverImageUrl: mergedCoverImageUrls[0] || "",
     coverImageUrls: mergedCoverImageUrls,
+    coverImagePositions,
     categoryLabel: safeText(input.categoryLabel) || "Restaurante",
     phoneNumber: safeText(input.phoneNumber),
     whatsappNumber: safeText(input.whatsappNumber),

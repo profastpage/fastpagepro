@@ -4,6 +4,7 @@ import Image from "next/image";
 import { memo } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { optimizeCloudinaryDeliveryUrl } from "@/lib/cloudinaryDelivery";
+import { toImageObjectPosition } from "@/lib/imagePosition";
 
 export type ProductCardBadge = string;
 
@@ -12,6 +13,8 @@ type ProductCardProps = {
   description?: string;
   salesCopy?: string;
   imageUrl?: string;
+  imagePositionX?: number;
+  imagePositionY?: number;
   galleryImageUrls?: string[];
   price: string;
   oldPrice?: string;
@@ -33,6 +36,8 @@ const ProductCard = memo(function ProductCard({
   description,
   salesCopy,
   imageUrl,
+  imagePositionX = 50,
+  imagePositionY = 50,
   galleryImageUrls = [],
   price,
   oldPrice,
@@ -81,6 +86,7 @@ const ProductCard = memo(function ProductCard({
               loading="lazy"
               sizes="(max-width: 768px) 128px, 170px"
               className="object-cover"
+              style={{ objectPosition: toImageObjectPosition(imagePositionX, imagePositionY) }}
             />
           ) : (
             <div className="grid h-full w-full place-items-center text-[10px] font-black uppercase tracking-[0.08em] text-[color:var(--carta-chip-text)]">

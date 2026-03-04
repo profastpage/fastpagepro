@@ -14,6 +14,9 @@ import {
   type StoreConfig,
   type StoreProduct,
 } from "@/lib/storefrontGenerator";
+import {
+  normalizeImagePosition,
+} from "@/lib/imagePosition";
 
 export const CLONED_SITES_COLLECTION = "cloned_sites";
 export const STORE_ORDERS_COLLECTION = "store_orders";
@@ -140,6 +143,8 @@ function normalizeStoreProduct(raw: DocumentData, index: number): PublicStorePro
     priceCents: basePrice,
     description: safeText(raw.description),
     imageUrl: safeText(raw.imageUrl),
+    imagePositionX: normalizeImagePosition(raw.imagePositionX, 50),
+    imagePositionY: normalizeImagePosition(raw.imagePositionY, 50),
     active: raw.active !== false,
     badge: badge || undefined,
     sku: safeText(raw.sku) || undefined,
@@ -237,7 +242,15 @@ function normalizeStoreConfig(raw: DocumentData): StoreConfig {
     supportWhatsapp: safeText(fromDoc.supportWhatsapp || ""),
     primaryCta: safeText(fromDoc.primaryCta || "Comprar"),
     customRgb: fromDoc.customRgb || undefined,
-    content: fromDoc.content || undefined,
+    content: fromDoc.content
+      ? {
+          ...fromDoc.content,
+          heroImagePositionX: normalizeImagePosition(fromDoc.content.heroImagePositionX, 50),
+          heroImagePositionY: normalizeImagePosition(fromDoc.content.heroImagePositionY, 50),
+          logoImagePositionX: normalizeImagePosition(fromDoc.content.logoImagePositionX, 50),
+          logoImagePositionY: normalizeImagePosition(fromDoc.content.logoImagePositionY, 50),
+        }
+      : undefined,
     features: Array.isArray(fromDoc.features) ? fromDoc.features : undefined,
     ai: {
       enabled: fromDoc.ai?.enabled !== false,

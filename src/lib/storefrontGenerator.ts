@@ -40,6 +40,8 @@ export type StoreProduct = {
   priceCents: number;
   description: string;
   imageUrl: string;
+  imagePositionX: number;
+  imagePositionY: number;
   active: boolean;
   badge?: string;
   sku?: string;
@@ -114,7 +116,11 @@ export type StoreConfig = {
     footerLeftHtml?: string;
     topStripText?: string;
     heroImageUrl?: string;
+    heroImagePositionX?: number;
+    heroImagePositionY?: number;
     logoImageUrl?: string;
+    logoImagePositionX?: number;
+    logoImagePositionY?: number;
     businessSubtitle?: string;
     businessAddress?: string;
     scheduleText?: string;
@@ -672,6 +678,8 @@ export function generateStorefrontHtml(args: {
       priceCents: clamp(Number(p.priceCents || 0), 0, 999999999),
       description: String(p.description || ""),
       imageUrl: String(p.imageUrl || ""),
+      imagePositionX: clamp(Number(p.imagePositionX ?? 50), 0, 100),
+      imagePositionY: clamp(Number(p.imagePositionY ?? 50), 0, 100),
       badge: p.badge ? String(p.badge) : "",
       sku: p.sku ? String(p.sku) : "",
     }));
@@ -892,14 +900,14 @@ export function generateStorefrontHtml(args: {
         const openCheckout = () => { elCheckout.classList.add('open'); elCheckout.setAttribute('aria-hidden','false'); };
         const closeCheckout = () => { elCheckout.classList.remove('open'); elCheckout.setAttribute('aria-hidden','true'); };
         const upCount = () => { elCartCount.textContent = '(' + getCount(cart) + ')'; };
-        const addToCart = (p) => { const idx = cart.findIndex(x => x.id === p.id); if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: p.id, name: p.name, priceCents: p.priceCents, imageUrl: p.imageUrl, qty: 1 }); saveCart(cart); upCount(); };
+        const addToCart = (p) => { const idx = cart.findIndex(x => x.id === p.id); if (idx >= 0) cart[idx].qty += 1; else cart.push({ id: p.id, name: p.name, priceCents: p.priceCents, imageUrl: p.imageUrl, imagePositionX: Number(p.imagePositionX || 50), imagePositionY: Number(p.imagePositionY || 50), qty: 1 }); saveCart(cart); upCount(); };
         const renderProducts = () => { if (!elGrid) return; if (!products.length) { elGrid.innerHTML = '<div class="hero-card" style="grid-column:1/-1"><b>No hay productos activos</b><p class="notice">Vuelve al editor y agrega productos para empezar.</p></div>'; return; }
-          elGrid.innerHTML = products.map(p => { const badge = p.badge ? '<span class="badge">' + String(p.badge).replace(/</g,'&lt;') + '</span>' : ''; const img = p.imageUrl ? '<img src="' + String(p.imageUrl).replace(/"/g,'') + '" alt="" loading="lazy">' : '<div class="muted" style="font-weight:900">SIN IMAGEN</div>';
+          elGrid.innerHTML = products.map(p => { const badge = p.badge ? '<span class="badge">' + String(p.badge).replace(/</g,'&lt;') + '</span>' : ''; const img = p.imageUrl ? '<img src="' + String(p.imageUrl).replace(/"/g,'') + '" alt="" loading="lazy" style="object-position:' + Number(p.imagePositionX || 50) + '% ' + Number(p.imagePositionY || 50) + '%">' : '<div class="muted" style="font-weight:900">SIN IMAGEN</div>';
             return '<article class="prod"><div class="img">' + badge + img + '</div><div class="body"><h3>' + String(p.name).replace(/</g,'&lt;') + '</h3><p>' + String(p.description||'').replace(/</g,'&lt;') + '</p><div class="row"><span class="price">' + money(p.priceCents) + '</span><button class="btn primary" data-add="' + String(p.id).replace(/"/g,'') + '">Agregar</button></div></div></article>'; }).join('');
           elGrid.querySelectorAll('[data-add]').forEach(btn => { btn.addEventListener('click', () => { const id = btn.getAttribute('data-add'); const p = products.find(x => x.id === id); if (p) addToCart(p); }); });
         };
         const renderCart = () => { cart = loadCart(); upCount(); if (!cart.length) { elItems.innerHTML = '<div class="hero-card"><b>Tu carrito esta vacio</b><p class="notice">Agrega productos para continuar.</p></div>'; elTotal.textContent = money(0); return; }
-          elItems.innerHTML = cart.map(it => { const img = it.imageUrl ? '<img src="' + String(it.imageUrl).replace(/"/g,'') + '" alt="">' : '';
+          elItems.innerHTML = cart.map(it => { const img = it.imageUrl ? '<img src="' + String(it.imageUrl).replace(/"/g,'') + '" alt="" style="object-position:' + Number(it.imagePositionX || 50) + '% ' + Number(it.imagePositionY || 50) + '%">' : '';
             return '<div class="item"><div class="thumb">' + img + '</div><div class="meta"><b>' + String(it.name).replace(/</g,'&lt;') + '</b><small>' + money(it.priceCents) + '</small><div class="qty" data-id="' + String(it.id).replace(/"/g,'') + '"><button data-dec type="button">-</button><span>' + (it.qty||0) + '</span><button data-inc type="button">+</button></div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px"><b style="font-size:13px">' + money((it.qty||0) * (it.priceCents||0)) + '</b><button class="btn" style="padding:8px 10px" data-rm="' + String(it.id).replace(/"/g,'') + '" type="button">Quitar</button></div></div>'; }).join('');
           elItems.querySelectorAll('[data-rm]').forEach(btn => { btn.addEventListener('click', () => { const id = btn.getAttribute('data-rm'); cart = cart.filter(x => x.id !== id); saveCart(cart); renderCart(); }); });
           elItems.querySelectorAll('.qty').forEach(row => { const id = row.getAttribute('data-id'); row.querySelector('[data-dec]').addEventListener('click', () => { const idx = cart.findIndex(x => x.id === id); if (idx < 0) return; cart[idx].qty = Math.max(1, (cart[idx].qty||1) - 1); saveCart(cart); renderCart(); });

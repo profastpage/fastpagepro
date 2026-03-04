@@ -28,6 +28,7 @@ import {
 import { getVisualStoreTheme, getVisualStoreVars } from "@/lib/storeVisualTheme";
 import { useLanguage } from "@/context/LanguageContext";
 import { localizeDynamicText } from "@/lib/autoI18n";
+import { normalizeImagePosition, toImageObjectPosition } from "@/lib/imagePosition";
 
 type SortOption = "featured" | "priceAsc" | "priceDesc" | "nameAsc";
 type ShippingMethod = "delivery" | "pickup" | "instore";
@@ -37,6 +38,8 @@ type CartItem = {
   id: string;
   name: string;
   imageUrl: string;
+  imagePositionX: number;
+  imagePositionY: number;
   category: string;
   priceCents: number;
   quantity: number;
@@ -171,6 +174,8 @@ export default function PublicStorePage() {
             id: String(item?.id || ""),
             name: String(item?.name || ""),
             imageUrl: String(item?.imageUrl || ""),
+            imagePositionX: normalizeImagePosition(item?.imagePositionX, 50),
+            imagePositionY: normalizeImagePosition(item?.imagePositionY, 50),
             category: String(item?.category || tx("General", "General")),
             priceCents: Math.max(0, Number(item?.priceCents || 0)),
             quantity: clampQty(Number(item?.quantity || 1)),
@@ -398,6 +403,8 @@ export default function PublicStorePage() {
           id: product.id,
           name: product.name,
           imageUrl: product.imageUrl,
+          imagePositionX: normalizeImagePosition(product.imagePositionX, 50),
+          imagePositionY: normalizeImagePosition(product.imagePositionY, 50),
           category: String(product.category || tx("General", "General")),
           priceCents: product.displayPriceCents,
           quantity: 1,
@@ -606,7 +613,7 @@ export default function PublicStorePage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-3 py-3 md:px-6">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-10 w-10 overflow-hidden rounded-full border bg-white" style={{ borderColor: "var(--vs-border)" }}>
-              {content.logoImageUrl ? <img src={content.logoImageUrl} alt="logo" className="h-full w-full object-cover" /> : null}
+              {content.logoImageUrl ? <img src={content.logoImageUrl} alt="logo" className="h-full w-full object-cover" style={{ objectPosition: toImageObjectPosition(content.logoImagePositionX, content.logoImagePositionY) }} /> : null}
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-black md:text-base">{displayStoreName}</p>
@@ -637,11 +644,11 @@ export default function PublicStorePage() {
 
       <section className="relative mx-auto max-w-6xl overflow-hidden border-x border-b bg-white" style={{ borderColor: "var(--vs-border)" }}>
         <div className="h-[220px] md:h-[320px]">
-          {content.heroImageUrl ? <img src={content.heroImageUrl} alt="hero" className="h-full w-full object-cover" /> : null}
+          {content.heroImageUrl ? <img src={content.heroImageUrl} alt="hero" className="h-full w-full object-cover" style={{ objectPosition: toImageObjectPosition(content.heroImagePositionX, content.heroImagePositionY) }} /> : null}
         </div>
         <div className="relative px-4 pb-8 pt-16 md:px-10">
           <div className="absolute -top-14 left-1/2 -translate-x-1/2 h-28 w-28 overflow-hidden rounded-full border-4 border-white bg-white shadow-lg">
-            {content.logoImageUrl ? <img src={content.logoImageUrl} alt="logo" className="h-full w-full object-cover" /> : null}
+            {content.logoImageUrl ? <img src={content.logoImageUrl} alt="logo" className="h-full w-full object-cover" style={{ objectPosition: toImageObjectPosition(content.logoImagePositionX, content.logoImagePositionY) }} /> : null}
           </div>
           <h1 className="text-center text-4xl font-black">{displayStoreName}</h1>
           <p className="mt-3 text-center text-xl" style={{ color: "var(--vs-muted)" }}>{displayStoreTagline}</p>
@@ -661,7 +668,7 @@ export default function PublicStorePage() {
                 <article key={`offer-${product.id}`} className="min-w-[84%] snap-start overflow-hidden rounded-2xl border bg-white md:min-w-0" style={{ borderColor: "var(--vs-border)" }}>
                   <div className="relative h-56 bg-slate-100">
                     {product.imageUrl ? (
-                      <Image src={product.imageUrl} alt={tdv(product.name, tx("Producto", "Product"))} fill unoptimized sizes="(max-width: 768px) 84vw, 33vw" className="object-cover" />
+                      <Image src={product.imageUrl} alt={tdv(product.name, tx("Producto", "Product"))} fill unoptimized sizes="(max-width: 768px) 84vw, 33vw" className="object-cover" style={{ objectPosition: toImageObjectPosition(product.imagePositionX, product.imagePositionY) }} />
                     ) : null}
                     <span className="absolute left-3 top-3 rounded-full bg-red-500 px-3 py-1 text-xs font-black uppercase text-white">{tdv(product.badge, tx("Oferta", "Offer"))}</span>
                   </div>
@@ -698,7 +705,7 @@ export default function PublicStorePage() {
           {pageItems.map((product) => (
             <article key={product.id} className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: "var(--vs-border)" }}>
               <div className="relative h-44 bg-slate-100">
-                {product.imageUrl ? <Image src={product.imageUrl} alt={tdv(product.name, tx("Producto", "Product"))} fill unoptimized sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" /> : null}
+                {product.imageUrl ? <Image src={product.imageUrl} alt={tdv(product.name, tx("Producto", "Product"))} fill unoptimized sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-cover" style={{ objectPosition: toImageObjectPosition(product.imagePositionX, product.imagePositionY) }} /> : null}
                 <span className="absolute left-2 top-2 rounded-lg bg-red-500 px-2 py-1 text-[10px] font-black uppercase text-white">{tdv(product.badge, tx("Oferta", "Offer"))}</span>
               </div>
               <div className="p-3">
@@ -888,7 +895,7 @@ export default function PublicStorePage() {
                   {!cart.length ? <div className="rounded-xl border border-dashed p-4 text-sm" style={{ borderColor: "var(--vs-border)", color: "var(--vs-muted)" }}>{tx("Tu carrito esta vacio.", "Your cart is empty.")}</div> : cart.map((item) => (
                     <article key={item.id} className="mb-3 rounded-xl border p-3" style={{ borderColor: "var(--vs-border)" }}>
                       <div className="flex gap-3">
-                        <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-slate-100">{item.imageUrl ? <Image src={item.imageUrl} alt={tdv(item.name, tx("Producto", "Product"))} fill unoptimized sizes="64px" className="object-cover" /> : null}</div>
+                        <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-slate-100">{item.imageUrl ? <Image src={item.imageUrl} alt={tdv(item.name, tx("Producto", "Product"))} fill unoptimized sizes="64px" className="object-cover" style={{ objectPosition: toImageObjectPosition(item.imagePositionX, item.imagePositionY) }} /> : null}</div>
                         <div className="min-w-0 flex-1"><p className="line-clamp-1 font-black">{tdv(item.name, tx("Producto", "Product"))}</p><p className="text-xs" style={{ color: "var(--vs-muted)" }}>{tdv(item.category, tx("General", "General"))}</p><p className="font-black" style={{ color: "var(--vs-accent)" }}>{formatStoreMoney(item.priceCents, store.config.currency)}</p></div>
                       </div>
                       <div className="mt-2 flex items-center justify-between"><div className="inline-flex items-center rounded-lg border" style={{ borderColor: "var(--vs-border)" }}><button onClick={() => updateQty(item.id, -1)} className="inline-flex h-8 w-8 items-center justify-center"><Minus className="h-3.5 w-3.5" /></button><span className="w-8 text-center text-sm font-black">{item.quantity}</span><button onClick={() => updateQty(item.id, 1)} className="inline-flex h-8 w-8 items-center justify-center"><Plus className="h-3.5 w-3.5" /></button></div><button onClick={() => removeItem(item.id)} className="text-xs font-black uppercase text-red-600">{tx("Quitar", "Remove")}</button></div>

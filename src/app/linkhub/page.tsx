@@ -65,7 +65,13 @@ import {
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
+import DraggableImagePositionEditor from "@/components/editor/DraggableImagePositionEditor";
 import { isCloudinaryDeliveryUrl, optimizeCloudinaryDeliveryUrl } from "@/lib/cloudinaryDelivery";
+import {
+  normalizeImagePosition,
+  normalizeImagePositionPair,
+  toImageObjectPosition,
+} from "@/lib/imagePosition";
 import {
   CheckCircle2,
   Circle,
@@ -643,6 +649,30 @@ function mergeUniqueStrings(values: string[], limit?: number): string[] {
   return merged.slice(0, limit);
 }
 
+type CoverImageEntry = {
+  url: string;
+  position: { x: number; y: number };
+};
+
+function buildCoverImageEntries(
+  urls: string[],
+  positions: Array<{ x?: unknown; y?: unknown }> = [],
+  limit = MAX_LINK_HUB_COVER_IMAGES,
+): CoverImageEntry[] {
+  const entries: CoverImageEntry[] = [];
+  const normalizedLimit = Math.max(1, Math.floor(limit || MAX_LINK_HUB_COVER_IMAGES));
+
+  urls.forEach((rawUrl, index) => {
+    const url = String(rawUrl || "").trim();
+    if (!url) return;
+    if (entries.some((entry) => entry.url === url)) return;
+    const nextPosition = normalizeImagePositionPair(positions[index]?.x, positions[index]?.y);
+    entries.push({ url, position: nextPosition });
+  });
+
+  return entries.slice(0, normalizedLimit);
+}
+
 async function compactInlineDataUrl(
   value: string,
   kind: ProfileImageKind,
@@ -672,14 +702,19 @@ async function compactProfileImagesByPlan(
   for (let pass = 1; pass <= maxPasses; pass += 1) {
     const compactedAvatar = await compactInlineDataUrl(profile.avatarUrl, "avatar", plan, pass);
     const compactedCovers: string[] = [];
-    const coverSources = mergeUniqueStrings(
+    const coverSources = buildCoverImageEntries(
       [...(profile.coverImageUrls || []), profile.coverImageUrl],
+      profile.coverImagePositions || [],
       MAX_LINK_HUB_COVER_IMAGES,
     );
-    for (const image of coverSources) {
-      compactedCovers.push(await compactInlineDataUrl(image, "cover", plan, pass));
+    for (const cover of coverSources) {
+      compactedCovers.push(await compactInlineDataUrl(cover.url, "cover", plan, pass));
     }
-    const normalizedCoverImages = mergeUniqueStrings(compactedCovers, MAX_LINK_HUB_COVER_IMAGES);
+    const normalizedCovers = buildCoverImageEntries(
+      compactedCovers,
+      coverSources.map((cover) => cover.position),
+      MAX_LINK_HUB_COVER_IMAGES,
+    );
     const compactedReservationHero = await compactInlineDataUrl(
       profile.reservation?.heroImageUrl || "",
       "reservation",
@@ -715,8 +750,9 @@ async function compactProfileImagesByPlan(
     profile = {
       ...profile,
       avatarUrl: compactedAvatar,
-      coverImageUrls: normalizedCoverImages,
-      coverImageUrl: normalizedCoverImages[0] || "",
+      coverImageUrls: normalizedCovers.map((cover) => cover.url),
+      coverImageUrl: normalizedCovers[0]?.url || "",
+      coverImagePositions: normalizedCovers.map((cover) => cover.position),
       reservation: {
         ...profile.reservation,
         heroImageUrl: compactedReservationHero,
@@ -821,13 +857,17 @@ async function offloadProfileImagesToCloudinary(
     }
   };
 
-  const coverSources = mergeUniqueStrings(
+  const coverSources = buildCoverImageEntries(
     [...(input.coverImageUrls || []), input.coverImageUrl],
+    input.coverImagePositions || [],
     MAX_LINK_HUB_COVER_IMAGES,
   );
-  const offloadedCovers: string[] = [];
+  const offloadedCoverEntries: CoverImageEntry[] = [];
   for (let index = 0; index < coverSources.length; index += 1) {
-    offloadedCovers.push(await uploadImage(coverSources[index], `cover-${index + 1}`));
+    offloadedCoverEntries.push({
+      url: await uploadImage(coverSources[index].url, `cover-${index + 1}`),
+      position: coverSources[index].position,
+    });
   }
 
   const offloadedItems: LinkHubCatalogItem[] = [];
@@ -849,13 +889,18 @@ async function offloadProfileImagesToCloudinary(
     });
   }
 
-  const normalizedCoverImages = mergeUniqueStrings(offloadedCovers, MAX_LINK_HUB_COVER_IMAGES);
+  const normalizedCovers = buildCoverImageEntries(
+    offloadedCoverEntries.map((cover) => cover.url),
+    offloadedCoverEntries.map((cover) => cover.position),
+    MAX_LINK_HUB_COVER_IMAGES,
+  );
 
   return {
     ...input,
     avatarUrl: await uploadImage(input.avatarUrl, "avatar"),
-    coverImageUrls: normalizedCoverImages,
-    coverImageUrl: normalizedCoverImages[0] || "",
+    coverImageUrls: normalizedCovers.map((cover) => cover.url),
+    coverImageUrl: normalizedCovers[0]?.url || "",
+    coverImagePositions: normalizedCovers.map((cover) => cover.position),
     reservation: {
       ...input.reservation,
       heroImageUrl: await uploadImage(input.reservation?.heroImageUrl || "", "reservation"),
@@ -2542,6 +2587,39 @@ export default function LinkHubPage() {
     });
   }
 
+  function patchAvatarImagePosition(x: number, y: number) {
+    const next = normalizeImagePositionPair(x, y);
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        avatarImagePositionX: next.x,
+        avatarImagePositionY: next.y,
+      };
+    });
+  }
+
+  function patchCatalogItemImagePosition(itemId: string, x: number, y: number) {
+    const next = normalizeImagePositionPair(x, y);
+    patchCatalogItem(itemId, {
+      imagePositionX: next.x,
+      imagePositionY: next.y,
+    });
+  }
+
+  function patchCoverImagePosition(index: number, x: number, y: number) {
+    const next = normalizeImagePositionPair(x, y);
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const nextPositions = [...(prev.coverImagePositions || [])];
+      nextPositions[index] = next;
+      return {
+        ...prev,
+        coverImagePositions: nextPositions,
+      };
+    });
+  }
+
   function openProTrialModal(featureLabel: string) {
     setProTrialFeatureLabel(featureLabel);
     setProTrialError("");
@@ -2678,9 +2756,12 @@ export default function LinkHubPage() {
         catalogItems: prev.catalogItems.map((item) => {
           if (item.id !== itemId) return item;
           const nextGallery = mergeGalleryImages([...(item.galleryImageUrls || []), normalizedUrl]);
+          const shouldSetPrimary = !String(item.imageUrl || "").trim();
           return {
             ...item,
-            imageUrl: item.imageUrl || normalizedUrl,
+            imageUrl: shouldSetPrimary ? normalizedUrl : item.imageUrl,
+            imagePositionX: shouldSetPrimary ? 50 : item.imagePositionX,
+            imagePositionY: shouldSetPrimary ? 50 : item.imagePositionY,
             galleryImageUrls: nextGallery,
           };
         }),
@@ -2700,9 +2781,12 @@ export default function LinkHubPage() {
         catalogItems: prev.catalogItems.map((item) => {
           if (item.id !== itemId) return item;
           const nextGallery = mergeGalleryImages((item.galleryImageUrls || []).filter((image) => image !== imageUrl));
+          const primaryRemoved = item.imageUrl === imageUrl;
           return {
             ...item,
-            imageUrl: item.imageUrl === imageUrl ? nextGallery[0] || "" : item.imageUrl,
+            imageUrl: primaryRemoved ? nextGallery[0] || "" : item.imageUrl,
+            imagePositionX: primaryRemoved ? 50 : item.imagePositionX,
+            imagePositionY: primaryRemoved ? 50 : item.imagePositionY,
             galleryImageUrls: nextGallery,
           };
         }),
@@ -2750,6 +2834,21 @@ export default function LinkHubPage() {
         reservation: {
           ...prev.reservation,
           [field]: value,
+        },
+      };
+    });
+  }
+
+  function patchReservationHeroImagePosition(x: number, y: number) {
+    const next = normalizeImagePositionPair(x, y);
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        reservation: {
+          ...prev.reservation,
+          heroImagePositionX: next.x,
+          heroImagePositionY: next.y,
         },
       };
     });
@@ -3208,10 +3307,14 @@ export default function LinkHubPage() {
     setProfile((prev) => {
       if (!prev) return prev;
       const nextCovers = (prev.coverImageUrls || []).filter((_, index) => index !== indexToRemove);
+      const nextCoverPositions = (prev.coverImagePositions || []).filter(
+        (_, index) => index !== indexToRemove,
+      );
       return {
         ...prev,
         coverImageUrls: nextCovers,
         coverImageUrl: nextCovers[0] || "",
+        coverImagePositions: nextCoverPositions,
       };
     });
   }
@@ -3223,6 +3326,7 @@ export default function LinkHubPage() {
         ...prev,
         coverImageUrls: [],
         coverImageUrl: "",
+        coverImagePositions: [],
       };
     });
   }
@@ -3272,7 +3376,15 @@ export default function LinkHubPage() {
     setIsUploadingAvatar(true);
     try {
       const optimized = await optimizeImageFile(file, resolveImagePreset("avatar"));
-      patchProfile("avatarUrl", optimized);
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          avatarUrl: optimized,
+          avatarImagePositionX: 50,
+          avatarImagePositionY: 50,
+        };
+      });
       setMessage({ type: "success", text: "Avatar cargado correctamente." });
     } catch (error) {
       console.error("[LinkHub] Avatar upload error:", error);
@@ -3321,15 +3433,19 @@ export default function LinkHubPage() {
 
       setProfile((prev) => {
         if (!prev) return prev;
-        const merged = [...(prev.coverImageUrls || []), ...optimizedImages]
-          .map((item) => item.trim())
-          .filter(Boolean)
-          .filter((item, index, source) => source.indexOf(item) === index)
-          .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+        const mergedCovers = buildCoverImageEntries(
+          [...(prev.coverImageUrls || []), ...optimizedImages],
+          [
+            ...(prev.coverImagePositions || []),
+            ...optimizedImages.map(() => ({ x: 50, y: 50 })),
+          ],
+          MAX_LINK_HUB_COVER_IMAGES,
+        );
         return {
           ...prev,
-          coverImageUrls: merged,
-          coverImageUrl: merged[0] || "",
+          coverImageUrls: mergedCovers.map((cover) => cover.url),
+          coverImageUrl: mergedCovers[0]?.url || "",
+          coverImagePositions: mergedCovers.map((cover) => cover.position),
         };
       });
 
@@ -3375,6 +3491,8 @@ export default function LinkHubPage() {
             return {
               ...item,
               imageUrl: optimized,
+              imagePositionX: 50,
+              imagePositionY: 50,
               galleryImageUrls: nextGallery,
             };
           }),
@@ -3439,7 +3557,18 @@ export default function LinkHubPage() {
     setIsUploadingReservationImage(true);
     try {
       const optimized = await optimizeImageFile(file, resolveImagePreset("reservation"));
-      patchReservation("heroImageUrl", optimized);
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          reservation: {
+            ...prev.reservation,
+            heroImageUrl: optimized,
+            heroImagePositionX: 50,
+            heroImagePositionY: 50,
+          },
+        };
+      });
       setMessage({ type: "success", text: "Imagen de reservas cargada correctamente." });
     } catch (error) {
       console.error("[LinkHub] Reservation image upload error:", error);
@@ -3501,6 +3630,8 @@ export default function LinkHubPage() {
             return {
               ...item,
               imageUrl: item.imageUrl || optimizedBatch[0] || "",
+              imagePositionX: item.imageUrl ? item.imagePositionX : 50,
+              imagePositionY: item.imageUrl ? item.imagePositionY : 50,
               galleryImageUrls: nextGallery,
             };
           }),
@@ -3579,6 +3710,8 @@ export default function LinkHubPage() {
             return {
               ...item,
               imageUrl: nextImage,
+              imagePositionX: 50,
+              imagePositionY: 50,
               galleryImageUrls: mergeGalleryImages([...(item.galleryImageUrls || []), nextImage]),
             };
           }),
@@ -3649,6 +3782,10 @@ export default function LinkHubPage() {
       .map((item) => {
         const normalizedCategoryId = categoryIds.has(item.categoryId) ? item.categoryId : fallbackCategoryId;
         const normalizedImageUrl = item.imageUrl.trim();
+        const normalizedImagePosition = normalizeImagePositionPair(
+          item.imagePositionX,
+          item.imagePositionY,
+        );
         return {
           ...item,
           categoryId: normalizedCategoryId,
@@ -3656,6 +3793,8 @@ export default function LinkHubPage() {
           description: item.description.trim(),
           salesCopy: (item.salesCopy || "").trim(),
           imageUrl: normalizedImageUrl,
+          imagePositionX: normalizedImagePosition.x,
+          imagePositionY: normalizedImagePosition.y,
           galleryImageUrls: mergeGalleryImages(
             (item.galleryImageUrls || []).filter((image) => image.trim() !== normalizedImageUrl),
           ),
@@ -3704,6 +3843,10 @@ export default function LinkHubPage() {
       .slice(0, 12);
     const reservationMinParty = Math.max(1, Math.min(99, Math.round(Number(profile.reservation.minPartySize) || 1)));
     const reservationMaxParty = Math.max(1, Math.min(99, Math.round(Number(profile.reservation.maxPartySize) || 12)));
+    const reservationHeroPosition = normalizeImagePositionPair(
+      profile.reservation.heroImagePositionX,
+      profile.reservation.heroImagePositionY,
+    );
     const cleanedReservation = {
       ...profile.reservation,
       enabled: canUseReservations ? Boolean(profile.reservation.enabled) : false,
@@ -3712,6 +3855,8 @@ export default function LinkHubPage() {
         profile.reservation.subtitle.trim() ||
         "Agenda tu mesa en segundos y recibe confirmacion por WhatsApp.",
       heroImageUrl: profile.reservation.heroImageUrl.trim(),
+      heroImagePositionX: reservationHeroPosition.x,
+      heroImagePositionY: reservationHeroPosition.y,
       slotOptions:
         cleanedReservationSlots.length > 0
           ? cleanedReservationSlots
@@ -3877,11 +4022,17 @@ export default function LinkHubPage() {
       );
 
       const now = Date.now();
-      const cleanedCoverImageUrls = [...(profile.coverImageUrls || []), profile.coverImageUrl]
-        .map((url) => url.trim())
-        .filter(Boolean)
-        .filter((url, index, source) => source.indexOf(url) === index)
-        .slice(0, MAX_LINK_HUB_COVER_IMAGES);
+      const cleanedCoverEntries = buildCoverImageEntries(
+        [...(profile.coverImageUrls || []), profile.coverImageUrl],
+        profile.coverImagePositions || [],
+        MAX_LINK_HUB_COVER_IMAGES,
+      );
+      const cleanedCoverImageUrls = cleanedCoverEntries.map((cover) => cover.url);
+      const cleanedCoverImagePositions = cleanedCoverEntries.map((cover) => cover.position);
+      const cleanedAvatarPosition = normalizeImagePositionPair(
+        profile.avatarImagePositionX,
+        profile.avatarImagePositionY,
+      );
       const normalizedMaps = normalizeGoogleMapsLocationInput(
         profile.location.mapEmbedUrl.trim(),
         profile.location.mapsUrl.trim(),
@@ -3896,8 +4047,11 @@ export default function LinkHubPage() {
           displayName: profile.displayName.trim(),
           bio: profile.bio.trim(),
           avatarUrl: profile.avatarUrl.trim(),
+          avatarImagePositionX: cleanedAvatarPosition.x,
+          avatarImagePositionY: cleanedAvatarPosition.y,
           coverImageUrl: cleanedCoverImageUrls[0] || "",
           coverImageUrls: cleanedCoverImageUrls,
+          coverImagePositions: cleanedCoverImagePositions,
           categoryLabel: formatRubroLabelWithEmoji(profile.categoryLabel.trim() || DEFAULT_RESTAURANT_RUBRO),
           phoneNumber: profile.phoneNumber.trim(),
           whatsappNumber: profile.whatsappNumber.trim(),
@@ -4477,7 +4631,18 @@ export default function LinkHubPage() {
                     </label>
                     <button
                       type="button"
-                      onClick={() => patchProfile("avatarUrl", "")}
+                      onClick={() =>
+                        setProfile((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                avatarUrl: "",
+                                avatarImagePositionX: 50,
+                                avatarImagePositionY: 50,
+                              }
+                            : prev,
+                        )
+                      }
                       className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-300/40 bg-red-400/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.12em] text-red-100"
                     >
                       <X className="h-4 w-4" />
@@ -4487,9 +4652,22 @@ export default function LinkHubPage() {
                   <p className="text-[11px] font-semibold text-zinc-300">
                     {profile.avatarUrl ? "Imagen lista" : "Sin imagen"}
                   </p>
+                  {profile.avatarUrl ? (
+                    <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                      <DraggableImagePositionEditor
+                        src={optimizeCloudinaryDeliveryUrl(profile.avatarUrl, { width: 420 })}
+                        alt={profile.displayName || "Avatar"}
+                        x={profile.avatarImagePositionX}
+                        y={profile.avatarImagePositionY}
+                        onChange={(next) => patchAvatarImagePosition(next.x, next.y)}
+                        className="h-36 w-full"
+                      />
+                    </div>
+                  ) : null}
                   <p className="text-xs text-zinc-500">
                     Soporta JPG, PNG, WEBP. Se optimiza automaticamente para carga rapida.
                   </p>
+                  <p className="text-[11px] text-zinc-400">Mantén clic o dedo y arrastra para reubicar la imagen.</p>
                 </label>
                 <label className="space-y-2 md:col-span-2">
                   <span className="text-xs uppercase tracking-[0.2em] text-zinc-400 font-bold">
@@ -4526,10 +4704,13 @@ export default function LinkHubPage() {
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {profile.coverImageUrls.map((coverUrl, index) => (
                       <div key={`${coverUrl}-${index}`} className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                        <img
+                        <DraggableImagePositionEditor
                           src={optimizeCloudinaryDeliveryUrl(coverUrl, { width: 980 })}
                           alt={`Portada ${index + 1}`}
-                          className="h-24 w-full object-cover"
+                          x={normalizeImagePosition(profile.coverImagePositions?.[index]?.x, 50)}
+                          y={normalizeImagePosition(profile.coverImagePositions?.[index]?.y, 50)}
+                          onChange={(next) => patchCoverImagePosition(index, next.x, next.y)}
+                          className="h-24 w-full"
                         />
                         <div className="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2">
                           <p className="text-xs font-semibold text-zinc-200 truncate">Portada {index + 1}</p>
@@ -5019,19 +5200,22 @@ export default function LinkHubPage() {
                       </div>
                     </div>
                     <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-[120px_minmax(0,1fr)]">
-                      <label
+                      <div
                         className={`rounded-xl border border-white/10 bg-black/40 p-2 ${
                           uploadingCatalogItemId === item.id
                             ? "cursor-not-allowed opacity-70"
                             : "cursor-pointer transition hover:border-sky-300/45 hover:bg-sky-500/10"
                         }`}
-                        title="Haz clic en la imagen para subir/cambiar foto"
+                        title="Mantén clic o dedo para reubicar la imagen"
                       >
                         {item.imageUrl ? (
-                          <img
+                          <DraggableImagePositionEditor
                             src={optimizeCloudinaryDeliveryUrl(item.imageUrl, { width: 520 })}
                             alt={item.title || "Producto"}
-                            className="h-24 w-full rounded-lg object-cover"
+                            x={item.imagePositionX}
+                            y={item.imagePositionY}
+                            onChange={(next) => patchCatalogItemImagePosition(item.id, next.x, next.y)}
+                            className="h-24 w-full rounded-lg"
                           />
                         ) : (
                           <div className="h-24 w-full rounded-lg bg-zinc-900/80 flex items-center justify-center text-zinc-500 text-xs">
@@ -5049,16 +5233,9 @@ export default function LinkHubPage() {
                           {item.outOfStock ? "Sin stock" : "Stock disponible"}
                         </p>
                         <p className="mt-1 text-center text-[9px] font-semibold uppercase tracking-[0.1em] text-sky-200/80">
-                          Toca la imagen para cambiar
+                          Mantén y arrastra para ajustar
                         </p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
-                          className="hidden"
-                          disabled={uploadingCatalogItemId === item.id}
-                        />
-                      </label>
+                      </div>
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-sky-300/40 bg-sky-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-sky-100">
@@ -5101,6 +5278,8 @@ export default function LinkHubPage() {
                             onClick={() =>
                               patchCatalogItem(item.id, {
                                 imageUrl: "",
+                                imagePositionX: 50,
+                                imagePositionY: 50,
                                 galleryImageUrls: [],
                               })
                             }
@@ -5723,7 +5902,21 @@ export default function LinkHubPage() {
                     </label>
                     <button
                       type="button"
-                      onClick={() => patchReservation("heroImageUrl", "")}
+                      onClick={() =>
+                        setProfile((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                reservation: {
+                                  ...prev.reservation,
+                                  heroImageUrl: "",
+                                  heroImagePositionX: 50,
+                                  heroImagePositionY: 50,
+                                },
+                              }
+                            : prev,
+                        )
+                      }
                       className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-300/40 bg-red-400/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-red-100 disabled:opacity-60"
                       disabled={!canUseReservations || !profile.reservation.heroImageUrl}
                     >
@@ -5733,10 +5926,13 @@ export default function LinkHubPage() {
                   </div>
                   {profile.reservation.heroImageUrl ? (
                     <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                      <img
+                      <DraggableImagePositionEditor
                         src={optimizeCloudinaryDeliveryUrl(profile.reservation.heroImageUrl, { width: 1280 })}
                         alt="Reserva"
-                        className="h-28 w-full object-cover"
+                        x={profile.reservation.heroImagePositionX}
+                        y={profile.reservation.heroImagePositionY}
+                        onChange={(next) => patchReservationHeroImagePosition(next.x, next.y)}
+                        className="h-28 w-full"
                       />
                     </div>
                   ) : (
@@ -5744,6 +5940,9 @@ export default function LinkHubPage() {
                       Sin imagen. Puedes subir una foto tematica para potenciar conversion.
                     </div>
                   )}
+                  {profile.reservation.heroImageUrl ? (
+                    <p className="text-[11px] text-zinc-400">Mantén clic o dedo y arrastra para reubicar la imagen.</p>
+                  ) : null}
                 </label>
 
                 <label className="space-y-2">
@@ -6420,7 +6619,13 @@ export default function LinkHubPage() {
                           src={previewAvatarUrl}
                           alt={profile.displayName}
                           className="h-8 w-8 rounded-full border object-cover"
-                          style={{ borderColor: previewMenuBorder }}
+                          style={{
+                            borderColor: previewMenuBorder,
+                            objectPosition: toImageObjectPosition(
+                              profile.avatarImagePositionX,
+                              profile.avatarImagePositionY,
+                            ),
+                          }}
                         />
                       ) : (
                         <div
@@ -6453,7 +6658,17 @@ export default function LinkHubPage() {
 
                 <div className="relative h-28 overflow-hidden">
                   {previewCoverUrl ? (
-                    <img src={previewCoverUrl} alt="Portada" className="h-full w-full object-cover" />
+                    <img
+                      src={previewCoverUrl}
+                      alt="Portada"
+                      className="h-full w-full object-cover"
+                      style={{
+                        objectPosition: toImageObjectPosition(
+                          profile.coverImagePositions?.[0]?.x,
+                          profile.coverImagePositions?.[0]?.y,
+                        ),
+                      }}
+                    />
                   ) : (
                     <div className="h-full w-full" style={{ background: previewMenuGradientSoft }} />
                   )}
@@ -6463,7 +6678,13 @@ export default function LinkHubPage() {
                         src={previewAvatarUrl}
                         alt={profile.displayName}
                         className="h-16 w-16 rounded-full border-[3px] border-white object-cover"
-                        style={{ boxShadow: "0 12px 20px -16px rgba(15,23,42,0.45)" }}
+                        style={{
+                          boxShadow: "0 12px 20px -16px rgba(15,23,42,0.45)",
+                          objectPosition: toImageObjectPosition(
+                            profile.avatarImagePositionX,
+                            profile.avatarImagePositionY,
+                          ),
+                        }}
                       />
                     ) : (
                       <div
@@ -6564,20 +6785,25 @@ export default function LinkHubPage() {
                           {section.items.map((item) => (
                             <article key={item.id} className="rounded-[1rem] border p-2.5" style={previewItemCardStyle}>
                               <div className="flex gap-2.5">
-                                <label
+                                <div
                                   className={`h-20 w-20 shrink-0 overflow-hidden rounded-[0.8rem] border ${
                                     uploadingCatalogItemId === item.id
                                       ? "cursor-not-allowed opacity-70"
                                       : "cursor-pointer transition hover:brightness-110"
                                   }`}
                                   style={{ borderColor: previewMenuBorder }}
-                                  title="Toca la imagen para subir/cambiar foto"
+                                  title="Mantén y arrastra para ajustar"
                                 >
                                   {item.imageUrl ? (
-                                    <img
+                                    <DraggableImagePositionEditor
                                       src={optimizeCloudinaryDeliveryUrl(item.imageUrl, { width: 360 })}
                                       alt={item.title}
-                                      className="h-20 w-20 rounded-[0.8rem] object-cover"
+                                      x={item.imagePositionX}
+                                      y={item.imagePositionY}
+                                      onChange={(next) =>
+                                        patchCatalogItemImagePosition(item.id, next.x, next.y)
+                                      }
+                                      className="h-20 w-20 rounded-[0.8rem]"
                                     />
                                   ) : (
                                     <div
@@ -6587,14 +6813,7 @@ export default function LinkHubPage() {
                                       ITEM
                                     </div>
                                   )}
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
-                                    className="hidden"
-                                    disabled={uploadingCatalogItemId === item.id}
-                                  />
-                                </label>
+                                </div>
                                 <div className="min-w-0 flex-1">
                                   <input
                                     value={item.title}
@@ -6786,6 +7005,12 @@ export default function LinkHubPage() {
                           src={optimizeCloudinaryDeliveryUrl(profile.reservation.heroImageUrl, { width: 1200 })}
                           alt="Reservas"
                           className="h-24 w-full object-cover"
+                          style={{
+                            objectPosition: toImageObjectPosition(
+                              profile.reservation.heroImagePositionX,
+                              profile.reservation.heroImagePositionY,
+                            ),
+                          }}
                         />
                       ) : null}
                       <div className="space-y-2 p-3">

@@ -230,3 +230,9 @@
   - `src/lib/server/rateLimit.ts` ahora aplica fail-open tambien cuando Upstash responde con error (token invalido, timeout o red), evitando `500` en rutas autenticadas.
   - `src/lib/referrals/service.ts` ahora devuelve resumen base (perfil + enlace + stats minimas) si fallan consultas secundarias de red/payouts, evitando que `guardar alias` o `actualizar enlace` fallen por dependencias no criticas.
   - `PATCH /api/referrals/profile` ahora devuelve `409` claro cuando no se puede reservar alias (`REFERRAL_ALIAS_GENERATION_FAILED`), en lugar de `500` generico.
+- Reposicionamiento de imagenes por drag/touch en edicion y publicado (Carta Digital + Tienda Online):
+  - nuevo helper `src/lib/imagePosition.ts` para normalizar/clamp de foco (`x/y`) y generar `object-position` consistente.
+  - nuevo componente reutilizable `src/components/editor/DraggableImagePositionEditor.tsx` para mover imagen con mouse o dedo manteniendo presionado.
+  - Carta Digital (`/linkhub` + `/bio/[slug]`): avatar, portadas, imagen principal de item y hero de reservas ahora guardan `x/y` y se reflejan en publicado y carrito.
+  - Tienda (`/store` + `/t/[slug]`): portada hero, logo y fotos de productos ahora guardan `x/y` y se reflejan en publicado y carrito.
+  - compatibilidad hacia atras mantenida: perfiles/proyectos antiguos sin campos de posicion usan fallback `50% 50%` sin romper render ni rutas.
