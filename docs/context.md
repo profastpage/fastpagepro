@@ -85,6 +85,16 @@
 
 ## 2026-03-03
 
+- Paridad de UX en PC entre carta publicada (`/bio/[slug]`) y preview del editor (`/linkhub`), seccion Carta:
+  - se agrego chip `Todos/All` en navegacion de categorias.
+  - al hacer clic en categorias del preview, ahora hace scroll suave hacia la seccion correspondiente (no solo filtro).
+  - se agrego seguimiento de categoria activa por scroll en preview (igual patron sticky/ancla del publicado).
+  - el listado del preview ahora se renderiza agrupado por secciones de categoria para que el comportamiento de navegacion sea consistente con el render final.
+- Entrega automatica optimizada de imagenes Cloudinary en Carta Digital:
+  - nuevo helper compartido `src/lib/cloudinaryDelivery.ts` para aplicar transformaciones de entrega en URL (`f_auto,q_auto,dpr_auto,c_limit,w_*`) sin alterar originales.
+  - aplicado en carta publicada (`/bio/[slug]`), tarjetas de producto (`ProductCard`) y preview/editor (`/linkhub`) para avatar, portadas, items, galeria y hero de reservas.
+  - resultado: las imagenes ya subidas en Cloudinary se sirven automaticamente en formato y calidad optimos por navegador/dispositivo.
+
 - Demo sin registro `fuente-soda-flow` (restaurant):
   - se actualizo branding visible a `Naranja Social Cafe`.
   - portada y foto de perfil ahora usan imagenes de jugos de naranja para reforzar el rubro.

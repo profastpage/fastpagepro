@@ -65,6 +65,7 @@ import {
 import PlanBadge from "@/components/subscription/PlanBadge";
 import SubscriptionExpiryBanner from "@/components/subscription/SubscriptionExpiryBanner";
 import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
+import { isCloudinaryDeliveryUrl, optimizeCloudinaryDeliveryUrl } from "@/lib/cloudinaryDelivery";
 import {
   CheckCircle2,
   Circle,
@@ -192,6 +193,7 @@ type RestaurantDishSeed = {
 };
 
 const DEFAULT_RESTAURANT_RUBRO = "Cafeteria";
+const PREVIEW_ALL_CATEGORY_ID = "all";
 
 const RESTAURANT_DISH_SEEDS_BY_RUBRO: Record<string, RestaurantDishSeed[]> = {
   cafeteria: [
@@ -440,20 +442,6 @@ const PROFILE_SAVE_TIMEOUT_MS = 35_000;
 
 function isInlineImageDataUrl(value: string): boolean {
   return /^data:image\//i.test(String(value || "").trim());
-}
-
-function isCloudinaryAssetUrl(value: string): boolean {
-  const source = String(value || "").trim();
-  if (!source) return false;
-  try {
-    const parsed = new URL(source);
-    return (
-      parsed.hostname === "res.cloudinary.com" ||
-      parsed.hostname.endsWith(".res.cloudinary.com")
-    );
-  } catch {
-    return false;
-  }
 }
 
 function estimateDataUrlBytes(dataUrl: string): number {
@@ -814,7 +802,7 @@ async function offloadProfileImagesToCloudinary(
     if (!source) return "";
     const isInline = isInlineImageDataUrl(source);
     const isExternalUrl = isValidExternalUrl(source);
-    if (isCloudinaryAssetUrl(source)) return source;
+    if (isCloudinaryDeliveryUrl(source)) return source;
     if (!isInline && !isExternalUrl) return source;
     const cached = cache.get(source);
     if (cached) return cached;
@@ -1270,7 +1258,7 @@ export default function LinkHubPage() {
   const [isBulkUploadingCatalog, setIsBulkUploadingCatalog] = useState(false);
   const [origin, setOrigin] = useState("");
   const [previewSearch, setPreviewSearch] = useState("");
-  const [previewCategoryId, setPreviewCategoryId] = useState("");
+  const [previewCategoryId, setPreviewCategoryId] = useState(PREVIEW_ALL_CATEGORY_ID);
   const [previewTab, setPreviewTab] = useState<"contact" | "catalog" | "location" | "reservation">("catalog");
   const [editorItemSearch, setEditorItemSearch] = useState("");
   const [bulkUploadCategoryId, setBulkUploadCategoryId] = useState("all");
@@ -1309,6 +1297,9 @@ export default function LinkHubPage() {
   const proTrialBannerRef = useRef<HTMLDivElement | null>(null);
   const mobileTopDockRef = useRef<HTMLDivElement | null>(null);
   const catalogEditorItemRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const previewCatalogScrollRef = useRef<HTMLDivElement | null>(null);
+  const previewCategorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const previewCategoryChipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const activePlan = subscriptionSummary?.plan || "FREE";
   const storagePlanTier = useMemo(() => getStoragePlanTier(activePlan), [activePlan]);
@@ -1387,7 +1378,7 @@ export default function LinkHubPage() {
             if (!prev) return bootstrapDraft;
             return Number(bootstrapDraft.updatedAt || 0) > Number(prev.updatedAt || 0) ? bootstrapDraft : prev;
           });
-          setPreviewCategoryId(bootstrapDraft.catalogCategories[0]?.id || "");
+          setPreviewCategoryId(PREVIEW_ALL_CATEGORY_ID);
         }
       } catch {
         // Ignore local storage parse errors and continue with remote fetch.
@@ -1492,7 +1483,7 @@ export default function LinkHubPage() {
               ? localDraft
               : normalized;
           setProfile(nextProfile);
-          setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
+          setPreviewCategoryId(PREVIEW_ALL_CATEGORY_ID);
           if (nextProfile === localDraft) {
             setMessage({ type: "success", text: "Se recupero tu borrador local mas reciente." });
           } else if (autoCreatedRecordingDemo) {
@@ -1516,7 +1507,7 @@ export default function LinkHubPage() {
             : defaultProfile;
         setActiveProfileId(user.uid);
         setProfile(nextProfile);
-        setPreviewCategoryId(nextProfile.catalogCategories[0]?.id || "");
+        setPreviewCategoryId(PREVIEW_ALL_CATEGORY_ID);
       } catch (error) {
         console.error("[LinkHub] Failed loading profile:", error);
         if (active) {
@@ -1524,7 +1515,7 @@ export default function LinkHubPage() {
           const fallback = buildDefaultLinkHubProfile(user);
           setActiveProfileId(user.uid);
           setProfile(fallback);
-          setPreviewCategoryId(fallback.catalogCategories[0]?.id || "");
+          setPreviewCategoryId(PREVIEW_ALL_CATEGORY_ID);
         }
         setMessage({
           type: "error",
@@ -1774,21 +1765,41 @@ export default function LinkHubPage() {
     [activeCartaTheme.tokens.background, useWhiteCartaBackground],
   );
 
-  const previewItems = useMemo(() => {
+  const previewCategorySections = useMemo(() => {
     if (!profile) return [];
-    return profile.catalogItems.filter((item) => {
-      const byCategory = previewCategoryId ? item.categoryId === previewCategoryId : true;
-      const term = previewSearch.trim().toLowerCase();
-      const categoryName =
-        profile.catalogCategories.find((category) => category.id === item.categoryId)?.name.toLowerCase() || "";
-      const bySearch =
-        !term ||
-        item.title.toLowerCase().includes(term) ||
-        item.description.toLowerCase().includes(term) ||
-        categoryName.includes(term);
-      return byCategory && bySearch;
-    });
-  }, [previewCategoryId, previewSearch, profile]);
+    const term = previewSearch.trim().toLowerCase();
+    return profile.catalogCategories
+      .map((category) => {
+        const normalizedCategoryName = category.name.toLowerCase();
+        const items = profile.catalogItems.filter((item) => {
+          if (item.categoryId !== category.id) return false;
+          if (!term) return true;
+          return (
+            item.title.toLowerCase().includes(term) ||
+            item.description.toLowerCase().includes(term) ||
+            normalizedCategoryName.includes(term)
+          );
+        });
+        return {
+          id: category.id,
+          name: category.name,
+          emoji: category.emoji || "",
+          items,
+        };
+      })
+      .filter((section) => section.items.length > 0);
+  }, [previewSearch, profile]);
+  const previewVisibleSections = useMemo(
+    () =>
+      previewCategoryId === PREVIEW_ALL_CATEGORY_ID
+        ? previewCategorySections
+        : previewCategorySections.filter((section) => section.id === previewCategoryId),
+    [previewCategoryId, previewCategorySections],
+  );
+  const previewVisibleItems = useMemo(
+    () => previewVisibleSections.flatMap((section) => section.items),
+    [previewVisibleSections],
+  );
 
   const filteredEditorItems = useMemo(() => {
     if (!profile) return [];
@@ -1905,14 +1916,17 @@ export default function LinkHubPage() {
     [activeCartaTheme.tokens.border, activeCartaTheme.tokens.shadow, activeCartaTheme.tokens.surface2, useWhiteCartaBackground],
   );
   const previewCoverUrl = useMemo(
-    () => profile?.coverImageUrls?.[0] || profile?.coverImageUrl || "",
+    () => optimizeCloudinaryDeliveryUrl(profile?.coverImageUrls?.[0] || profile?.coverImageUrl || "", { width: 1280 }),
     [profile?.coverImageUrl, profile?.coverImageUrls],
   );
-  const previewCategoryTabs = useMemo(
-    () => (profile?.catalogCategories || []).slice(0, 6),
-    [profile?.catalogCategories],
+  const previewAvatarUrl = useMemo(
+    () => optimizeCloudinaryDeliveryUrl(profile?.avatarUrl || "", { width: 260 }),
+    [profile?.avatarUrl],
   );
-  const previewVisibleItems = useMemo(() => previewItems, [previewItems]);
+  const previewCategoryTabs = useMemo(
+    () => previewCategorySections.map((section) => ({ id: section.id, name: section.name, emoji: section.emoji })),
+    [previewCategorySections],
+  );
   const previewNormalizedLocation = useMemo(
     () =>
       normalizeGoogleMapsLocationInput(
@@ -1927,6 +1941,84 @@ export default function LinkHubPage() {
     () => normalizeDigits(profile?.whatsappNumber || profile?.phoneNumber || ""),
     [profile?.phoneNumber, profile?.whatsappNumber],
   );
+
+  useEffect(() => {
+    if (previewCategorySections.length === 0) {
+      setPreviewCategoryId((prev) => (prev === PREVIEW_ALL_CATEGORY_ID ? prev : PREVIEW_ALL_CATEGORY_ID));
+      return;
+    }
+    if (previewCategoryId === PREVIEW_ALL_CATEGORY_ID) return;
+    const exists = previewCategorySections.some((section) => section.id === previewCategoryId);
+    if (!exists) {
+      setPreviewCategoryId(PREVIEW_ALL_CATEGORY_ID);
+    }
+  }, [previewCategoryId, previewCategorySections]);
+
+  useEffect(() => {
+    if (!previewCategoryId) return;
+    const chip = previewCategoryChipRefs.current[previewCategoryId];
+    chip?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [previewCategoryId]);
+
+  useEffect(() => {
+    if (previewTab !== "catalog") return;
+    if (previewCategorySections.length === 0) return;
+
+    const syncActiveCategory = () => {
+      const container = previewCatalogScrollRef.current;
+      if (!container) return;
+
+      const anchorY = container.getBoundingClientRect().top + 8;
+      const firstSection = previewCategorySectionRefs.current[previewCategorySections[0].id];
+      const firstTop = firstSection?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
+
+      if (firstTop > anchorY + 10) {
+        setPreviewCategoryId((prev) => (prev === PREVIEW_ALL_CATEGORY_ID ? prev : PREVIEW_ALL_CATEGORY_ID));
+        return;
+      }
+
+      let nextCategoryId = previewCategorySections[0].id;
+      for (const section of previewCategorySections) {
+        const node = previewCategorySectionRefs.current[section.id];
+        if (!node) continue;
+        if (node.getBoundingClientRect().top <= anchorY) {
+          nextCategoryId = section.id;
+        } else {
+          break;
+        }
+      }
+
+      setPreviewCategoryId((prev) => (prev === nextCategoryId ? prev : nextCategoryId));
+    };
+
+    syncActiveCategory();
+    const container = previewCatalogScrollRef.current;
+    container?.addEventListener("scroll", syncActiveCategory, { passive: true });
+    window.addEventListener("resize", syncActiveCategory);
+    return () => {
+      container?.removeEventListener("scroll", syncActiveCategory);
+      window.removeEventListener("resize", syncActiveCategory);
+    };
+  }, [previewCategorySections, previewTab]);
+
+  function scrollPreviewToCategory(categoryId: string) {
+    setPreviewCategoryId(categoryId);
+    const container = previewCatalogScrollRef.current;
+    if (!container) return;
+
+    if (categoryId === PREVIEW_ALL_CATEGORY_ID) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    const target = previewCategorySectionRefs.current[categoryId];
+    if (!target) return;
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - 8;
+    container.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+  }
+
   const publishChecklist = useMemo<Array<{ id: string; label: string; completed: boolean; section: EditorSectionKey }>>(() => {
     if (!profile) return [];
     const validItems = profile.catalogItems.filter((item) => {
@@ -3990,7 +4082,7 @@ export default function LinkHubPage() {
 
       setActiveProfileId(savedProfileId);
       setProfile(persistedProfile);
-      setPreviewCategoryId(persistedProfile.catalogCategories[0]?.id || "");
+      setPreviewCategoryId(PREVIEW_ALL_CATEGORY_ID);
       try {
         window.localStorage.setItem(`linkhub_draft_${user.uid}_${savedProfileId}`, JSON.stringify(persistedProfile));
         if (savedProfileId === user.uid) {
@@ -4486,7 +4578,7 @@ export default function LinkHubPage() {
                     {profile.coverImageUrls.map((coverUrl, index) => (
                       <div key={`${coverUrl}-${index}`} className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
                         <img
-                          src={coverUrl}
+                          src={optimizeCloudinaryDeliveryUrl(coverUrl, { width: 980 })}
                           alt={`Portada ${index + 1}`}
                           className="h-24 w-full object-cover"
                         />
@@ -4987,7 +5079,11 @@ export default function LinkHubPage() {
                         title="Haz clic en la imagen para subir/cambiar foto"
                       >
                         {item.imageUrl ? (
-                          <img src={item.imageUrl} alt={item.title || "Producto"} className="h-24 w-full rounded-lg object-cover" />
+                          <img
+                            src={optimizeCloudinaryDeliveryUrl(item.imageUrl, { width: 520 })}
+                            alt={item.title || "Producto"}
+                            className="h-24 w-full rounded-lg object-cover"
+                          />
                         ) : (
                           <div className="h-24 w-full rounded-lg bg-zinc-900/80 flex items-center justify-center text-zinc-500 text-xs">
                             Sin imagen
@@ -5068,7 +5164,7 @@ export default function LinkHubPage() {
                           {mergeGalleryImages(item.galleryImageUrls || []).map((galleryImage, galleryIndex, galleryList) => (
                             <div key={`${item.id}-${galleryImage}`} className="relative">
                               <img
-                                src={galleryImage}
+                                src={optimizeCloudinaryDeliveryUrl(galleryImage, { width: 160 })}
                                 alt="Galeria"
                                 className="h-10 w-10 rounded-lg border border-white/15 object-cover"
                               />
@@ -5688,7 +5784,11 @@ export default function LinkHubPage() {
                   </div>
                   {profile.reservation.heroImageUrl ? (
                     <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                      <img src={profile.reservation.heroImageUrl} alt="Reserva" className="h-28 w-full object-cover" />
+                      <img
+                        src={optimizeCloudinaryDeliveryUrl(profile.reservation.heroImageUrl, { width: 1280 })}
+                        alt="Reserva"
+                        className="h-28 w-full object-cover"
+                      />
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-dashed border-white/20 px-4 py-4 text-xs text-zinc-400">
@@ -6368,7 +6468,7 @@ export default function LinkHubPage() {
                     <div className="inline-flex min-w-0 items-center gap-2">
                       {profile.avatarUrl ? (
                         <img
-                          src={profile.avatarUrl}
+                          src={previewAvatarUrl}
                           alt={profile.displayName}
                           className="h-8 w-8 rounded-full border object-cover"
                           style={{ borderColor: previewMenuBorder }}
@@ -6411,7 +6511,7 @@ export default function LinkHubPage() {
                   <div className="absolute inset-x-0 -bottom-8 flex justify-center">
                     {profile.avatarUrl ? (
                       <img
-                        src={profile.avatarUrl}
+                        src={previewAvatarUrl}
                         alt={profile.displayName}
                         className="h-16 w-16 rounded-full border-[3px] border-white object-cover"
                         style={{ boxShadow: "0 12px 20px -16px rgba(15,23,42,0.45)" }}
@@ -6459,14 +6559,21 @@ export default function LinkHubPage() {
                         />
                       </label>
                       <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto pb-1">
-                        {previewCategoryTabs.map((category) => (
+                        {[
+                          { id: PREVIEW_ALL_CATEGORY_ID, name: tx("Todos", "All"), emoji: "🍽️" },
+                          ...previewCategoryTabs,
+                        ].map((category) => (
                           <button
                             key={category.id}
                             type="button"
-                            onClick={() => setPreviewCategoryId(category.id)}
+                            ref={(node) => {
+                              previewCategoryChipRefs.current[category.id] = node;
+                            }}
+                            onClick={() => scrollPreviewToCategory(category.id)}
                             className="shrink-0 rounded-[0.85rem] border px-2.5 py-1.5 text-[10px] font-bold"
                             style={previewCategoryId === category.id ? previewChipActiveStyle : previewChipBaseStyle}
                           >
+                            <span className="mr-1">{category.emoji || category.name.slice(0, 1).toUpperCase()}</span>
                             {category.name}
                           </button>
                         ))}
@@ -6475,7 +6582,7 @@ export default function LinkHubPage() {
                   ) : null}
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                <div ref={previewCatalogScrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
                 {previewTab === "catalog" ? (
                   <div className="space-y-2.5 px-4 pb-3">
                     <button
@@ -6493,75 +6600,92 @@ export default function LinkHubPage() {
                       <Plus className="h-3.5 w-3.5" />
                       Crear nuevo item
                     </button>
-                    {previewVisibleItems.length > 0 ? (
-                      previewVisibleItems.map((item) => (
-                        <article key={item.id} className="rounded-[1rem] border p-2.5" style={previewItemCardStyle}>
-                          <div className="flex gap-2.5">
-                            <label
-                              className={`h-20 w-20 shrink-0 overflow-hidden rounded-[0.8rem] border ${
-                                uploadingCatalogItemId === item.id
-                                  ? "cursor-not-allowed opacity-70"
-                                  : "cursor-pointer transition hover:brightness-110"
-                              }`}
-                              style={{ borderColor: previewMenuBorder }}
-                              title="Toca la imagen para subir/cambiar foto"
-                            >
-                              {item.imageUrl ? (
-                                <img src={item.imageUrl} alt={item.title} className="h-20 w-20 rounded-[0.8rem] object-cover" />
-                              ) : (
-                                <div
-                                  className="h-20 w-20 rounded-[0.8rem] border flex items-center justify-center text-[10px] font-black"
-                                  style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
+                    {previewVisibleSections.length > 0 ? (
+                      previewVisibleSections.map((section) => (
+                        <div
+                          key={section.id}
+                          ref={(node) => {
+                            previewCategorySectionRefs.current[section.id] = node;
+                          }}
+                          className="space-y-2.5"
+                        >
+                          <h4 className="px-0.5 text-sm font-black tracking-tight" style={{ color: activeCartaTheme.tokens.primary }}>
+                            {section.name}
+                          </h4>
+                          {section.items.map((item) => (
+                            <article key={item.id} className="rounded-[1rem] border p-2.5" style={previewItemCardStyle}>
+                              <div className="flex gap-2.5">
+                                <label
+                                  className={`h-20 w-20 shrink-0 overflow-hidden rounded-[0.8rem] border ${
+                                    uploadingCatalogItemId === item.id
+                                      ? "cursor-not-allowed opacity-70"
+                                      : "cursor-pointer transition hover:brightness-110"
+                                  }`}
+                                  style={{ borderColor: previewMenuBorder }}
+                                  title="Toca la imagen para subir/cambiar foto"
                                 >
-                                  ITEM
+                                  {item.imageUrl ? (
+                                    <img
+                                      src={optimizeCloudinaryDeliveryUrl(item.imageUrl, { width: 360 })}
+                                      alt={item.title}
+                                      className="h-20 w-20 rounded-[0.8rem] object-cover"
+                                    />
+                                  ) : (
+                                    <div
+                                      className="h-20 w-20 rounded-[0.8rem] border flex items-center justify-center text-[10px] font-black"
+                                      style={{ borderColor: previewMenuBorder, color: previewTextMuted }}
+                                    >
+                                      ITEM
+                                    </div>
+                                  )}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
+                                    className="hidden"
+                                    disabled={uploadingCatalogItemId === item.id}
+                                  />
+                                </label>
+                                <div className="min-w-0 flex-1">
+                                  <input
+                                    value={item.title}
+                                    onChange={(event) => patchCatalogItem(item.id, { title: event.target.value })}
+                                    placeholder="Nombre del item"
+                                    className="w-full truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[15px] font-extrabold focus:border-[var(--carta-input-border)] focus:outline-none"
+                                    style={{ color: previewTextBase }}
+                                  />
+                                  <input
+                                    value={item.description}
+                                    onChange={(event) => patchCatalogItem(item.id, { description: event.target.value })}
+                                    placeholder="Descripcion comercial"
+                                    className="mt-0.5 w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[12px] focus:border-[var(--carta-input-border)] focus:outline-none"
+                                    style={{ color: previewTextMuted }}
+                                  />
+                                  <div className="mt-1.5 flex items-center gap-1 text-[14px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
+                                    <span>S/</span>
+                                    <input
+                                      value={item.price}
+                                      onChange={(event) => patchCatalogItem(item.id, { price: event.target.value })}
+                                      placeholder="0.00"
+                                      className="w-24 rounded-md border border-transparent bg-transparent px-1 py-0.5 focus:border-[var(--carta-input-border)] focus:outline-none"
+                                      style={{ color: activeCartaTheme.tokens.primary }}
+                                    />
+                                  </div>
+                                  <label className="mt-1 inline-flex cursor-pointer items-center gap-1 rounded-md border border-sky-300/40 bg-sky-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-sky-100">
+                                    <Upload className="h-3 w-3" />
+                                    Foto
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
+                                      className="hidden"
+                                    />
+                                  </label>
                                 </div>
-                              )}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
-                                className="hidden"
-                                disabled={uploadingCatalogItemId === item.id}
-                              />
-                            </label>
-                            <div className="min-w-0 flex-1">
-                              <input
-                                value={item.title}
-                                onChange={(event) => patchCatalogItem(item.id, { title: event.target.value })}
-                                placeholder="Nombre del item"
-                                className="w-full truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[15px] font-extrabold focus:border-[var(--carta-input-border)] focus:outline-none"
-                                style={{ color: previewTextBase }}
-                              />
-                              <input
-                                value={item.description}
-                                onChange={(event) => patchCatalogItem(item.id, { description: event.target.value })}
-                                placeholder="Descripcion comercial"
-                                className="mt-0.5 w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[12px] focus:border-[var(--carta-input-border)] focus:outline-none"
-                                style={{ color: previewTextMuted }}
-                              />
-                              <div className="mt-1.5 flex items-center gap-1 text-[14px] font-black" style={{ color: activeCartaTheme.tokens.primary }}>
-                                <span>S/</span>
-                                <input
-                                  value={item.price}
-                                  onChange={(event) => patchCatalogItem(item.id, { price: event.target.value })}
-                                  placeholder="0.00"
-                                  className="w-24 rounded-md border border-transparent bg-transparent px-1 py-0.5 focus:border-[var(--carta-input-border)] focus:outline-none"
-                                  style={{ color: activeCartaTheme.tokens.primary }}
-                                />
                               </div>
-                              <label className="mt-1 inline-flex cursor-pointer items-center gap-1 rounded-md border border-sky-300/40 bg-sky-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.08em] text-sky-100">
-                                <Upload className="h-3 w-3" />
-                                Foto
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={(event) => handleCatalogItemImageUpload(item.id, event)}
-                                  className="hidden"
-                                />
-                              </label>
-                            </div>
-                          </div>
-                        </article>
+                            </article>
+                          ))}
+                        </div>
                       ))
                     ) : (
                       <div
@@ -6710,7 +6834,7 @@ export default function LinkHubPage() {
                     <article className="overflow-hidden rounded-[0.95rem] border" style={previewItemCardStyle}>
                       {profile.reservation.heroImageUrl ? (
                         <img
-                          src={profile.reservation.heroImageUrl}
+                          src={optimizeCloudinaryDeliveryUrl(profile.reservation.heroImageUrl, { width: 1200 })}
                           alt="Reservas"
                           className="h-24 w-full object-cover"
                         />

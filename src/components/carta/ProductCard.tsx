@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { memo } from "react";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
+import { optimizeCloudinaryDeliveryUrl } from "@/lib/cloudinaryDelivery";
 
 export type ProductCardBadge = string;
 
@@ -53,8 +54,12 @@ const ProductCard = memo(function ProductCard({
     .filter(Boolean)
     .filter((url, index, list) => list.indexOf(url) === index)
     .slice(0, 5);
-  const primaryImage = imageUrl || uniqueGallery[0] || "";
-  const galleryThumbnails = uniqueGallery.filter((url) => url !== primaryImage).slice(0, 3);
+  const primaryImageSource = imageUrl || uniqueGallery[0] || "";
+  const primaryImage = optimizeCloudinaryDeliveryUrl(primaryImageSource, { width: 680 });
+  const galleryThumbnails = uniqueGallery
+    .filter((url) => url !== primaryImageSource)
+    .slice(0, 3)
+    .map((url) => optimizeCloudinaryDeliveryUrl(url, { width: 120 }));
 
   return (
     <article

@@ -65,6 +65,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { localizeDynamicText } from "@/lib/autoI18n";
+import { optimizeCloudinaryDeliveryUrl } from "@/lib/cloudinaryDelivery";
 
 type PublicTab = "contact" | "catalog" | "location" | "reservation";
 type CheckoutStep = "cart" | "checkout";
@@ -94,6 +95,7 @@ const COUPON_DISCOUNTS: Record<string, number> = {
 
 const AUTO_DISCOUNT_THRESHOLD = 80;
 const AUTO_DISCOUNT_RATE = 0.05;
+const ALL_CATEGORY_ID = "all";
 
 const LINK_TYPE_ICON = {
   website: Globe,
@@ -363,7 +365,7 @@ export default function PublicBioPage() {
   const [activeTab, setActiveTab] = useState<PublicTab>("contact");
   const [backgroundMode, setBackgroundMode] = useState<"theme" | "white">("theme");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL_CATEGORY_ID);
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
   const [shareFeedback, setShareFeedback] = useState("");
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -417,7 +419,7 @@ export default function PublicBioPage() {
         }
 
         setProfile(published);
-        setSelectedCategoryId(published.catalogCategories[0]?.id || "");
+        setSelectedCategoryId(ALL_CATEGORY_ID);
       } catch (error) {
         console.error("[PublicBio] Error loading profile:", error);
         setNotFound(true);
@@ -468,6 +470,10 @@ export default function PublicBioPage() {
         localizedEmoji: tdv(category.emoji, ""),
         items: items.map((item) => ({
           ...item,
+          imageUrl: optimizeCloudinaryDeliveryUrl(item.imageUrl, { width: 760 }),
+          galleryImageUrls: (item.galleryImageUrls || []).map((url) =>
+            optimizeCloudinaryDeliveryUrl(String(url || ""), { width: 1160 }),
+          ),
           localizedTitle: td(item.title),
           localizedDescription: td(item.description),
           localizedSalesCopy: tdv(item.salesCopy, ""),
@@ -485,14 +491,17 @@ export default function PublicBioPage() {
     .map((url) => String(url || "").trim())
     .filter(Boolean)
     .filter((url, index, source) => source.indexOf(url) === index)
-    .slice(0, 5);
+    .slice(0, 5)
+    .map((url) => optimizeCloudinaryDeliveryUrl(url, { width: 1680 }));
 
   useEffect(() => {
     if (activeTab !== "catalog") return;
     if (categorySections.length === 0) return;
-    const exists = categorySections.some((section) => section.id === selectedCategoryId);
+    const exists =
+      selectedCategoryId === ALL_CATEGORY_ID ||
+      categorySections.some((section) => section.id === selectedCategoryId);
     if (!exists) {
-      setSelectedCategoryId(categorySections[0].id);
+      setSelectedCategoryId(ALL_CATEGORY_ID);
     }
   }, [activeTab, categorySections, selectedCategoryId]);
 
@@ -501,6 +510,51 @@ export default function PublicBioPage() {
     const chip = categoryChipRefs.current[selectedCategoryId];
     chip?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [selectedCategoryId]);
+
+  useEffect(() => {
+    if (activeTab !== "catalog") return;
+    if (categorySections.length === 0) return;
+
+    const syncActiveCategory = () => {
+      const container = catalogScrollRef.current;
+      if (!container) return;
+
+      const stickyBottom =
+        catalogStickyRef.current?.getBoundingClientRect().bottom ?? container.getBoundingClientRect().top;
+      const anchorY = stickyBottom + 8;
+      const firstSection = categorySectionRefs.current[categorySections[0].id];
+      const firstTop = firstSection?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY;
+
+      if (firstTop > anchorY + 10) {
+        setSelectedCategoryId((prev) => (prev === ALL_CATEGORY_ID ? prev : ALL_CATEGORY_ID));
+        return;
+      }
+
+      let nextCategoryId = categorySections[0].id;
+      for (const section of categorySections) {
+        const node = categorySectionRefs.current[section.id];
+        if (!node) continue;
+        if (node.getBoundingClientRect().top <= anchorY) {
+          nextCategoryId = section.id;
+        } else {
+          break;
+        }
+      }
+
+      setSelectedCategoryId((prev) => (prev === nextCategoryId ? prev : nextCategoryId));
+    };
+
+    syncActiveCategory();
+    const container = catalogScrollRef.current;
+    container?.addEventListener("scroll", syncActiveCategory, { passive: true });
+    window.addEventListener("scroll", syncActiveCategory, { passive: true });
+    window.addEventListener("resize", syncActiveCategory);
+    return () => {
+      container?.removeEventListener("scroll", syncActiveCategory);
+      window.removeEventListener("scroll", syncActiveCategory);
+      window.removeEventListener("resize", syncActiveCategory);
+    };
+  }, [activeTab, categorySections]);
 
   useEffect(() => {
     if (activeCoverIndex >= coverImages.length) {
@@ -582,7 +636,7 @@ export default function PublicBioPage() {
 
   useEffect(() => {
     if (!profile?.reservation?.enabled) return;
-    const hero = String(profile.reservation.heroImageUrl || "").trim();
+    const hero = optimizeCloudinaryDeliveryUrl(String(profile.reservation.heroImageUrl || "").trim(), { width: 1480 });
     if (!hero) return;
     const img = new Image();
     img.src = hero;
@@ -1185,6 +1239,14 @@ export default function PublicBioPage() {
 
   function scrollToCategory(categoryId: string) {
     setSelectedCategoryId(categoryId);
+    const container = catalogScrollRef.current;
+    if (!container) return;
+
+    if (categoryId === ALL_CATEGORY_ID) {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     const categoryMeta = categorySections.find((entry) => entry.id === categoryId);
     postLinkHubMetric({
       eventType: "category_view",
@@ -1193,40 +1255,14 @@ export default function PublicBioPage() {
       categoryId,
       categoryName: categoryMeta?.localizedName || tx("Categoria", "Category"),
     });
-    const container = catalogScrollRef.current;
     const target = categorySectionRefs.current[categoryId];
-    if (!container || !target) return;
+    if (!target) return;
 
     const containerRect = container.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     const stickyHeight = catalogStickyRef.current?.offsetHeight || 0;
     const nextTop = container.scrollTop + (targetRect.top - containerRect.top) - stickyHeight - 8;
     container.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
-  }
-
-  function handleCatalogScroll() {
-    const container = catalogScrollRef.current;
-    if (!container || categorySections.length === 0) return;
-
-    const containerTop = container.getBoundingClientRect().top;
-    const stickyHeight = catalogStickyRef.current?.offsetHeight || 0;
-    const threshold = containerTop + stickyHeight + 8;
-    let activeId = categorySections[0].id;
-
-    for (const section of categorySections) {
-      const node = categorySectionRefs.current[section.id];
-      if (!node) continue;
-      const top = node.getBoundingClientRect().top;
-      if (top <= threshold) {
-        activeId = section.id;
-      } else {
-        break;
-      }
-    }
-
-    if (activeId !== selectedCategoryId) {
-      setSelectedCategoryId(activeId);
-    }
   }
 
   const menuGradientSoft = useWhiteCartaBackground
@@ -1389,7 +1425,7 @@ export default function PublicBioPage() {
               <div className="inline-flex min-w-0 items-center gap-2">
               {profile.avatarUrl ? (
                 <img
-                  src={profile.avatarUrl}
+                  src={optimizeCloudinaryDeliveryUrl(profile.avatarUrl, { width: 220 })}
                   alt={businessName}
                   className="h-9 w-9 md:h-10 md:w-10 rounded-full border object-cover"
                   style={avatarFallbackStyle}
@@ -1617,7 +1653,7 @@ export default function PublicBioPage() {
               <div className="absolute inset-x-0 -bottom-14 flex justify-center">
                 {profile.avatarUrl ? (
                   <img
-                    src={profile.avatarUrl}
+                    src={optimizeCloudinaryDeliveryUrl(profile.avatarUrl, { width: 360 })}
                     alt={businessName}
                     className="h-28 w-28 md:h-36 md:w-36 rounded-full border-4 object-cover"
                     style={{
@@ -1796,7 +1832,6 @@ export default function PublicBioPage() {
 
               <div
                 ref={catalogScrollRef}
-                onScroll={handleCatalogScroll}
                 className="mt-2 min-h-0 flex-1 overflow-y-auto pr-1 no-scrollbar md:mt-4"
               >
                 <div
@@ -1816,11 +1851,14 @@ export default function PublicBioPage() {
                   </label>
 
                   <StickyCategoryBar
-                    categories={categorySections.map((category) => ({
-                      id: category.id,
-                      name: category.localizedName,
-                      emoji: category.localizedEmoji,
-                    }))}
+                    categories={[
+                      { id: ALL_CATEGORY_ID, name: tx("Todos", "All"), emoji: "🍽️" },
+                      ...categorySections.map((category) => ({
+                        id: category.id,
+                        name: category.localizedName,
+                        emoji: category.localizedEmoji,
+                      })),
+                    ]}
                     activeId={selectedCategoryId}
                     onSelect={scrollToCategory}
                     buttonShapeClass={buttonRadiusClass}
@@ -1975,7 +2013,7 @@ export default function PublicBioPage() {
               <div className="overflow-hidden rounded-2xl border" style={{ borderColor: "var(--carta-border)" }}>
                 {profile.reservation.heroImageUrl ? (
                   <img
-                    src={profile.reservation.heroImageUrl}
+                    src={optimizeCloudinaryDeliveryUrl(profile.reservation.heroImageUrl, { width: 1480 })}
                     alt={tx("Reservas", "Bookings")}
                     className="h-40 w-full object-cover md:h-56"
                   />
@@ -2304,7 +2342,11 @@ export default function PublicBioPage() {
                           >
                             <div className="flex gap-3">
                               {item.imageUrl ? (
-                                <img src={item.imageUrl} alt={tdv(item.title, tx("Producto", "Product"))} className="h-20 w-20 rounded-xl object-cover" />
+                                <img
+                                  src={optimizeCloudinaryDeliveryUrl(item.imageUrl, { width: 260 })}
+                                  alt={tdv(item.title, tx("Producto", "Product"))}
+                                  className="h-20 w-20 rounded-xl object-cover"
+                                />
                               ) : (
                                 <div className="h-20 w-20 rounded-xl border flex items-center justify-center text-xs font-bold" style={{ borderColor: "var(--carta-chip-border)" }}>
                                   ITEM
