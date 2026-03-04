@@ -30,6 +30,40 @@ import {
 
 type CartMap = Record<string, number>;
 type RestaurantTab = "contact" | "menu" | "location" | "reservation";
+type DemoQuickGuideStep = {
+  id: string;
+  title: string;
+  description: string;
+};
+
+const DEMO_MENU_QUICK_GUIDE_STEPS: DemoQuickGuideStep[] = [
+  {
+    id: "start-menu",
+    title: "Empieza en Carta",
+    description: "Explora categorias arriba para ir directo a combos, bebidas o platos clave.",
+  },
+  {
+    id: "scroll-categories",
+    title: "Desliza y descubre",
+    description: "Haz scroll hacia abajo: la categoria activa se marca automaticamente.",
+  },
+  {
+    id: "add-cart",
+    title: "Suma al carrito",
+    description: "Usa los botones + y - de cada producto para armar tu pedido.",
+  },
+  {
+    id: "send-whatsapp",
+    title: "Envia por WhatsApp",
+    description: "Toca Mi pedido para enviar tu orden al WhatsApp del negocio.",
+  },
+  {
+    id: "full-control",
+    title: "Todo es personalizable",
+    description:
+      "Con cuenta y plan activo puedes cambiar imagenes, textos, colores, temas, ubicacion y reserva.",
+  },
+];
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("es-PE", {
@@ -49,7 +83,7 @@ function normalizeBadge(value?: string) {
 }
 
 export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
-  const [tab, setTab] = useState<RestaurantTab>("contact");
+  const [tab, setTab] = useState<RestaurantTab>("menu");
   const [backgroundMode, setBackgroundMode] = useState<"theme" | "white">("theme");
   const [reservationPanelReady, setReservationPanelReady] = useState(false);
   const [search, setSearch] = useState("");
@@ -64,6 +98,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   const [reservationNote, setReservationNote] = useState("Cumpleanos");
   const [reservationError, setReservationError] = useState("");
   const [reservationFeedback, setReservationFeedback] = useState("");
+  const [showMenuQuickGuide, setShowMenuQuickGuide] = useState(false);
   const tabContentAnchorRef = useRef<HTMLDivElement | null>(null);
   const menuStickyRef = useRef<HTMLDivElement | null>(null);
   const menuStartRef = useRef<HTMLDivElement | null>(null);
@@ -80,6 +115,11 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     demo.coverImage;
   const profileImage = demo.profileImage || mainImage || demo.coverImage;
   const socialLinks = useMemo(() => getDemoSocialLinks(demo), [demo]);
+  const isPublicDemo = demo.mode !== "real";
+  const quickGuideStorageKey = useMemo(
+    () => `fp_demo_restaurant_quick_guide_seen:${demo.slug}`,
+    [demo.slug],
+  );
   const mapsEmbed = `https://www.google.com/maps?q=${encodeURIComponent(demo.address)}&output=embed`;
   const mapsOpen = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`;
   const callHref = buildOfficialDemoCallHref();
@@ -164,6 +204,18 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
     setReservationDate((prev) => prev || iso);
   }, []);
+
+  useEffect(() => {
+    if (!isPublicDemo) return;
+    try {
+      const hasSeenGuide = window.localStorage.getItem(quickGuideStorageKey) === "1";
+      if (!hasSeenGuide) {
+        setShowMenuQuickGuide(true);
+      }
+    } catch {
+      setShowMenuQuickGuide(true);
+    }
+  }, [isPublicDemo, quickGuideStorageKey]);
 
   useEffect(() => {
     const selected = reservationSlot.trim();
@@ -354,6 +406,16 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
     });
   };
 
+  const dismissMenuQuickGuide = () => {
+    setShowMenuQuickGuide(false);
+    if (!isPublicDemo) return;
+    try {
+      window.localStorage.setItem(quickGuideStorageKey, "1");
+    } catch {
+      // no-op: localStorage can be blocked in some browsers
+    }
+  };
+
   return (
     <section className="space-y-4">
       <article
@@ -523,8 +585,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                 </div>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                <a href={callHref} className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-4 text-sm font-black text-white">
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
+                <a href={callHref} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-3 text-[13px] font-black text-white md:gap-2 md:px-4 md:text-sm">
                   <Phone className="h-4 w-4" /> Llamar ahora
                 </a>
                 <a
@@ -538,7 +600,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       location: "restaurant_contact",
                     })
                   }
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-4 text-sm font-black text-white"
+                  className="inline-flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-3 text-[13px] font-black text-white md:gap-2 md:px-4 md:text-sm"
                 >
                   {"\u{1F4AC} Escribir ahora"}
                 </a>
@@ -548,6 +610,54 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
           {tab === "menu" ? (
             <section className="space-y-4">
+              {isPublicDemo ? (
+                showMenuQuickGuide ? (
+                  <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_12px_24px_-20px_rgba(2,6,23,0.55)] md:p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--fp-primary)]">Guia rapida demo</p>
+                        <p className="mt-1 text-xs text-[var(--fp-muted)] md:text-sm">
+                          Revisa este flujo rapido para entender la carta digital sin registro.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={dismissMenuQuickGuide}
+                        className="shrink-0 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-2.5 py-1.5 text-[11px] font-bold"
+                      >
+                        Entendido
+                      </button>
+                    </div>
+                    <ol className="mt-3 space-y-2">
+                      {DEMO_MENU_QUICK_GUIDE_STEPS.map((step, index) => (
+                        <li key={step.id} className="flex items-start gap-2.5 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-2.5 py-2">
+                          <span
+                            className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black text-white"
+                            style={{ background: "var(--fp-primary)" }}
+                          >
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-black text-[var(--fp-text)]">{step.title}</p>
+                            <p className="mt-0.5 text-[11px] text-[var(--fp-muted)] md:text-xs">{step.description}</p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowMenuQuickGuide(true)}
+                      className="rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-1.5 text-[11px] font-bold text-[var(--fp-muted)]"
+                    >
+                      Ver mini guia
+                    </button>
+                  </div>
+                )
+              ) : null}
+
               <div
                 ref={menuStickyRef}
                 className="sticky top-0 z-40 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] backdrop-blur-sm"

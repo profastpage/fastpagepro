@@ -183,7 +183,7 @@ export default function GuestSupportWidget() {
       return "mb-[calc(env(safe-area-inset-bottom)+7rem)] md:mb-0";
     }
     if (pathname === "/demo" || pathname?.startsWith("/demo/")) {
-      return "mb-[calc(env(safe-area-inset-bottom)+7rem)] md:mb-[5.5rem]";
+      return "mb-[calc(env(safe-area-inset-bottom)+5.35rem)] md:mb-[5.5rem]";
     }
     return "mb-0";
   })();

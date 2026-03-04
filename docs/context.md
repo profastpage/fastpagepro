@@ -260,3 +260,9 @@
 - Carta Digital (`/linkhub`) con limites de proyectos:
   - actualizar/publicar un proyecto existente ahora sigue permitido aun cuando el usuario este en tope de plan (ej. `5/5`), conservando estado `published` al guardar borrador.
   - intento de publicar proyecto nuevo con limite alcanzado muestra bloqueo explicito (`candado`) y redirige a `Billing` para subir de plan.
+- Demo restaurante sin registro (`/demo/restaurant/[slug]`) optimizada para primer impacto:
+  - la demo ahora inicia por defecto en la pestana `Carta` (antes `Contacto`) para mostrar productos inmediatamente.
+  - en `Contacto`, los CTAs `Llamar ahora` y `Escribir ahora` ahora se muestran alineados en una misma fila en mobile para mejor legibilidad inicial.
+  - se agrego mini guia no invasiva dentro de `Carta` (primer ingreso) con pasos: navegar categorias, scroll, agregar al carrito, enviar por WhatsApp y entender personalizacion al activar cuenta/plan.
+  - la guia se puede cerrar (`Entendido`), queda persistida por demo (`localStorage`) y puede reabrirse manualmente con `Ver mini guia`.
+  - el widget flotante de ayuda en rutas `/demo` redujo su offset vertical en mobile para minimizar superposiciones con contenido principal.
