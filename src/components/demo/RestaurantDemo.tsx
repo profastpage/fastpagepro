@@ -507,8 +507,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   <span>{`\u23F1\uFE0F ${demo.openHours}`}</span>
                 </div>
                 <p className="mx-auto mt-4 max-w-2xl text-sm text-[var(--fp-muted)] md:text-base">{demo.description}</p>
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--fp-muted)]">Redes</span>
+                <div className="mt-4 flex items-center justify-center">
                   <DemoSocialLinks
                     links={socialLinks}
                     className="justify-center"

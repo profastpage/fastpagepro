@@ -37,8 +37,7 @@ export default function ServicesDemo({ demo }: { demo: LandingData }) {
           </p>
           <h2 className="text-3xl font-black md:text-5xl">{demo.title}</h2>
           <p className="text-[var(--fp-muted)]">{demo.description}</p>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-black uppercase tracking-[0.12em] text-[var(--fp-muted)]">Redes</span>
+          <div className="flex items-center">
             <DemoSocialLinks
               links={socialLinks}
               onOpen={(platform) =>

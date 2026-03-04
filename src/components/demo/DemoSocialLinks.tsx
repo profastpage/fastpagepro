@@ -89,7 +89,7 @@ export default function DemoSocialLinks({
   if (!links.length) return null;
 
   return (
-    <div className={`flex flex-wrap items-center gap-2 ${className}`.trim()}>
+    <div className={`flex max-w-full flex-nowrap items-center gap-2 overflow-x-auto ${className}`.trim()}>
       {links.map((link) => {
         const platformUi = PLATFORM_UI[link.platform];
         if (!platformUi) return null;
@@ -101,7 +101,7 @@ export default function DemoSocialLinks({
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => onOpen?.(link.platform, link.url)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 active:scale-[0.98]"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 active:scale-[0.98]"
             aria-label={link.label || platformUi.label}
             title={link.label || platformUi.label}
             style={platformUi.style}
