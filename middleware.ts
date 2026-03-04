@@ -17,7 +17,6 @@ const GUARDS: Guard[] = [
   { pattern: /^\/api\/metrics(?:\/|$)/, feature: "basicMetrics", mode: "api" },
   { pattern: /^\/builder(?:\/|$)/, feature: "clonerAccess", mode: "page" },
   { pattern: /^\/templates(?:\/|$)/, feature: "clonerAccess", mode: "page" },
-  { pattern: /^\/store(?:\/|$)/, feature: "fullStore", mode: "page" },
   { pattern: /^\/cloner\/web(?:\/|$)/, feature: "clonerAccess", mode: "page" },
   { pattern: /^\/dashboard\/domain(?:\/|$)/, feature: "customDomain", mode: "page" },
   { pattern: /^\/dashboard\/team(?:\/|$)/, feature: "multiUser", mode: "page" },
@@ -26,17 +25,7 @@ const GUARDS: Guard[] = [
 ];
 
 const EXCLUDED_PATHS = ["/dashboard/billing", "/api/subscription/"];
-const ACTIVE_ONLY_PATHS = [
-  /^\/cartadigital(?:\/|$)/,
-  /^\/linkhub(?:\/|$)/,
-  /^\/settings(?:\/|$)/,
-  /^\/editor(?:\/|$)/,
-  /^\/preview(?:\/|$)/,
-  /^\/app\/new(?:\/|$)/,
-  /^\/api\/publish(?:\/|$)/,
-  /^\/api\/sites(?:\/|$)/,
-  /^\/api\/clone(?:\/|$)/,
-];
+const ACTIVE_ONLY_PATHS: RegExp[] = [];
 
 const DEFAULT_CANONICAL_HOST = "www.fastpagepro.com";
 const DEFAULT_ALLOWED_PUBLIC_HOSTS = ["www.fastpagepro.com", "fastpagepro.com"];

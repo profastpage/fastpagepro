@@ -332,8 +332,6 @@ async function queryPublishedStoreBySlug(slug: string) {
   const snapshot = await getDocs(storeQuery);
   if (!snapshot.empty) {
     const payload = snapshot.docs[0].data() as DocumentData;
-    if (isStoreAccessBlocked(payload)) return null;
-    if (await ownerSubscriptionBlocked(safeText(payload.userId))) return null;
     return normalizePublishedStore(
       payload,
       snapshot.docs[0].id,
@@ -353,8 +351,6 @@ async function queryPublishedStoreById(id: string) {
   const fallbackSnapshot = await getDocs(fallbackQuery);
   if (!fallbackSnapshot.empty) {
     const payload = fallbackSnapshot.docs[0].data() as DocumentData;
-    if (isStoreAccessBlocked(payload)) return null;
-    if (await ownerSubscriptionBlocked(safeText(payload.userId))) return null;
     return normalizePublishedStore(
       payload,
       fallbackSnapshot.docs[0].id,

@@ -3940,25 +3940,6 @@ export default function LinkHubPage() {
             ? usedProjects
             : usedProjects + 1;
 
-      if (planStatus !== "ACTIVE") {
-        setMessage({
-          type: "error",
-          text: "Tu periodo activo termino. Renueva en Billing para reactivar y publicar proyectos.",
-        });
-        return;
-      }
-
-      if (maxProjects != null && nextProjects > maxProjects) {
-        const newProjectBlocked = publishTargetMode === "new";
-        setMessage({
-          type: "error",
-          text: newProjectBlocked
-            ? `🔒 Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Para publicar un proyecto nuevo, sube a un plan superior en Billing.`
-            : `Limite alcanzado: ${usedProjects}/${maxProjects} proyectos publicados. Renueva o sube de plan en Billing.`,
-        });
-        return;
-      }
-
       if (
         publishTargetMode === "new" &&
         maxProjects != null &&

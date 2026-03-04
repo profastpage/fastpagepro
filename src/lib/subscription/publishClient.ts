@@ -79,23 +79,17 @@ export function requestPublishTarget(options: PublishTargetPromptOptions): Publi
 export async function assertCanPublishWithMode(
   options: PublishQuotaCheckOptions,
 ): Promise<PublishQuotaCheckResult> {
-  const summary = await fetchCurrentSubscriptionSummary();
-  const status = String(summary.status || "").toUpperCase();
-
-  if (status !== "ACTIVE") {
-    throw new Error("Tu periodo activo termino. Renueva en Billing para reactivar y publicar proyectos.");
+  let summary: Awaited<ReturnType<typeof fetchCurrentSubscriptionSummary>> | null = null;
+  try {
+    summary = await fetchCurrentSubscriptionSummary();
+  } catch {
+    summary = null;
   }
 
-  const limit = summary.limits.maxProjects ?? summary.limits.maxPublishedPages ?? null;
-  const used = Number(summary.usage.publishedPages || 0);
+  const limit = summary?.limits?.maxProjects ?? summary?.limits?.maxPublishedPages ?? null;
+  const used = Number(summary?.usage?.publishedPages || 0);
   const consumesSlot = options.mode === "new" || !options.alreadyPublished;
   const next = consumesSlot ? used + 1 : used;
-
-  if (limit != null && next > limit) {
-    throw new Error(
-      `Limite alcanzado: ${used}/${limit} proyectos publicados. Renueva o sube de plan en Billing.`,
-    );
-  }
 
   return {
     used,
