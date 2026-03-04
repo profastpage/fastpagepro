@@ -662,16 +662,26 @@ function AuthContent() {
         } catch (popupError: any) {
           const popupCode = String(popupError?.code || "");
           const popupMessage = String(popupError?.message || "");
-          const shouldFallback =
+          const unsupportedEnvironment =
+            popupCode === "auth/operation-not-supported-in-this-environment";
+          const popupBlocked =
             popupCode === "auth/popup-blocked" ||
             popupCode === "auth/popup-closed-by-user" ||
             popupCode === "auth/cancelled-popup-request" ||
-            popupCode === "auth/operation-not-supported-in-this-environment" ||
             /popup/i.test(popupMessage);
-          if (!shouldFallback) {
+
+          if (!unsupportedEnvironment && !popupBlocked) {
             throw popupError;
           }
-          console.warn("[Auth] Popup no disponible, fallback a redirect", popupError);
+
+          if (popupBlocked) {
+            setIsGoogleError(true);
+            showToast(i18n.popupBlocked);
+            setTimeout(() => setIsGoogleError(false), 3000);
+            return;
+          }
+
+          console.warn("[Auth] Entorno sin soporte popup, fallback a redirect", popupError);
         }
       }
 
