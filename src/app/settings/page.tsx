@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ChangeEvent, useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -223,7 +223,6 @@ export default function SettingsPage() {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
-        setMessage({ type: "error", text: "Sesion expirada. Vuelve a iniciar sesion." });
         return;
       }
       const response = await fetch("/api/referrals/summary", {
@@ -365,7 +364,7 @@ export default function SettingsPage() {
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
-          title: "Invitacion Fast Page",
+          title: "Invitación Fast Page",
           text: "Crea tu cuenta con mi enlace de referido:",
           url: link,
         });
@@ -383,7 +382,6 @@ export default function SettingsPage() {
     try {
       const token = await auth.currentUser?.getIdToken();
       if (!token) {
-        setMessage({ type: "error", text: "Sesion expirada. Vuelve a iniciar sesion." });
         return;
       }
       const normalizedAlias = String(referralAliasInput || "").trim().toLowerCase();
@@ -394,7 +392,7 @@ export default function SettingsPage() {
       if (normalizedAlias) {
         requestBody.customAlias = normalizedAlias;
       } else if (!options?.regenerateCode) {
-        setMessage({ type: "error", text: "Ingresa un alias valido para guardarlo." });
+        setMessage({ type: "error", text: "Ingresa un alias válido para guardarlo." });
         return;
       }
 
@@ -645,7 +643,7 @@ export default function SettingsPage() {
                       {tabs.find(t => t.id === activeTab)?.icon}
                     </div>
                     <div className="text-left">
-                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Seccion actual</p>
+                      <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Sección actual</p>
                       <p className="text-lg font-bold text-white">{tabs.find(t => t.id === activeTab)?.label}</p>
                     </div>
                   </div>
@@ -766,7 +764,7 @@ export default function SettingsPage() {
                     <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">
                       Programa de referidos
                     </p>
-                    <h3 className="mt-1 text-xl font-black text-white">Nueva seccion Referidos</h3>
+                    <h3 className="mt-1 text-xl font-black text-white">Nueva sección Referidos</h3>
                     <p className="mt-1 text-sm text-zinc-300">
                       Gestiona enlace, alias, clientes por nivel y comisiones desde la pestaña de referidos.
                     </p>
@@ -815,7 +813,7 @@ export default function SettingsPage() {
               {activeTab === "referrals" && (
                 <SettingSection
                   title="Dashboard de referidos"
-                  desc="Crea tu enlace unico, guarda hasta 3 aliases permanentes y revisa comisiones por nivel."
+                  desc="Crea tu enlace único, guarda hasta 3 aliases permanentes y revisa comisiones por nivel."
                 >
                   <div className="rounded-[2rem] border border-amber-500/20 bg-amber-500/5 p-6 sm:p-8">
                     <div className="flex flex-col gap-6">
@@ -823,7 +821,7 @@ export default function SettingsPage() {
                         <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">
                           Programa de afiliados
                         </p>
-                        <h3 className="text-2xl font-black text-white">Seccion de referidos por niveles</h3>
+                        <h3 className="text-2xl font-black text-white">Sección de referidos por niveles</h3>
                         <p className="text-sm text-zinc-300">
                           Nivel 1: {referralData?.level1Percent ?? 40}% mensual. Nivel 2: {referralData?.level2Percent ?? 10}% mensual.
                         </p>
@@ -937,11 +935,11 @@ export default function SettingsPage() {
                             <p className="mt-1 text-lg font-black text-white">{referralData.level2Clients}</p>
                           </div>
                           <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comision N1</p>
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comisión N1</p>
                             <p className="mt-1 text-lg font-black text-emerald-200">S/ {referralData.level1Commission.toFixed(2)}</p>
                           </div>
                           <div className="rounded-xl border border-white/10 bg-black/25 p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comision N2</p>
+                            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Comisión N2</p>
                             <p className="mt-1 text-lg font-black text-emerald-200">S/ {referralData.level2Commission.toFixed(2)}</p>
                           </div>
                         </div>
@@ -953,7 +951,7 @@ export default function SettingsPage() {
                           <div className="mt-3 space-y-2">
                             {referralData.networkLevel1.length === 0 ? (
                               <p className="rounded-xl border border-dashed border-white/15 bg-black/20 px-3 py-3 text-sm text-zinc-400">
-                                Aun no tienes clientes en nivel 1.
+                                Aún no tienes clientes en nivel 1.
                               </p>
                             ) : (
                               referralData.networkLevel1.slice(0, 30).map((item) => (
@@ -966,7 +964,7 @@ export default function SettingsPage() {
                                     {item.status === "PAID" ? "Pagado" : "Registrado"} - {new Date(item.createdAt).toLocaleDateString()}
                                   </p>
                                   <p className="text-emerald-200">
-                                    Comision acumulada: S/ {Number(item.totalCommissionSoles || 0).toFixed(2)}
+                                    Comisión acumulada: S/ {Number(item.totalCommissionSoles || 0).toFixed(2)}
                                   </p>
                                 </div>
                               ))
@@ -981,7 +979,7 @@ export default function SettingsPage() {
                           <div className="mt-3 space-y-2">
                             {referralData.networkLevel2.length === 0 ? (
                               <p className="rounded-xl border border-dashed border-white/15 bg-black/20 px-3 py-3 text-sm text-zinc-400">
-                                Aun no tienes clientes en nivel 2.
+                                Aún no tienes clientes en nivel 2.
                               </p>
                             ) : (
                               referralData.networkLevel2.slice(0, 30).map((item) => (
@@ -994,7 +992,7 @@ export default function SettingsPage() {
                                     {item.status === "PAID" ? "Pagado" : "Registrado"} - {new Date(item.createdAt).toLocaleDateString()}
                                   </p>
                                   <p className="text-emerald-200">
-                                    Comision acumulada: S/ {Number(item.totalCommissionSoles || 0).toFixed(2)}
+                                    Comisión acumulada: S/ {Number(item.totalCommissionSoles || 0).toFixed(2)}
                                   </p>
                                 </div>
                               ))
@@ -1006,7 +1004,7 @@ export default function SettingsPage() {
                       <div className="mt-6 rounded-2xl border border-dashed border-white/15 bg-black/20 px-4 py-5 text-sm text-zinc-400">
                         {loadingReferral
                           ? "Generando enlace de referido..."
-                          : "Aun no se pudo cargar tu enlace. Pulsa actualizar enlace."}
+                          : "Aún no se pudo cargar tu enlace. Pulsa actualizar enlace."}
                       </div>
                     )}
                   </div>
@@ -1095,14 +1093,14 @@ export default function SettingsPage() {
                       icon={Mail} 
                       active={formData.twoFactorEmail} 
                       onToggle={() => setFormData({...formData, twoFactorEmail: !formData.twoFactorEmail})}
-                      desc="Recibe un codigo unico cada vez que inicies sesion."
+                      desc="Recibe un código único cada vez que inicies sesión."
                     />
                     <SettingToggle 
                       label={t("settings.security.2fa_sms")} 
                       icon={Smartphone} 
                       active={formData.twoFactorPhone} 
                       onToggle={() => setFormData({...formData, twoFactorPhone: !formData.twoFactorPhone})}
-                      desc="Seguridad reforzada a traves de tu dispositivo movil."
+                      desc="Seguridad reforzada a través de tu dispositivo móvil."
                     />
 
                     <div className="pt-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1136,8 +1134,8 @@ export default function SettingsPage() {
               {/* Action Footer */}
               <div className="mt-16 pt-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-8">
                 <div className="text-center sm:text-left">
-                  <p className="text-zinc-600 text-xs font-bold uppercase tracking-widest mb-1">Sincronizacion</p>
-                  <p className="text-zinc-400 text-sm font-medium italic">Estado: En linea</p>
+                  <p className="text-zinc-600 text-xs font-bold uppercase tracking-widest mb-1">Sincronización</p>
+                  <p className="text-zinc-400 text-sm font-medium italic">Estado: En línea</p>
                 </div>
                 
                 <button
@@ -1162,7 +1160,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-
-
-

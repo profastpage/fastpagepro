@@ -1,4 +1,4 @@
-# Context
+﻿# Context
 
 ## 2026-03-02
 
@@ -55,7 +55,7 @@
   - la subida a Storage ahora tiene fallback por imagen: si una foto falla o demora demasiado, no bloquea todo el proceso; continua con las demas y devuelve error controlado si excede limites.
 - Mensaje WhatsApp de reservas (`/bio/[slug]`):
   - se reformateo el texto de redireccion al enviar reserva con bloques separados por espacios: titulo, intro, `Datos de reserva`, bloque de anticipo opcional y bloque `Solicitud enviada`.
-  - se unifico listado con bullets `·` para mejor lectura en WhatsApp.
+  - se unifico listado con bullets `Ã‚Â·` para mejor lectura en WhatsApp.
 - Referidos multinivel (backend + dashboard):
   - comisiones por nivel habilitadas: `40%` para nivel 1 y `10%` para nivel 2 por defecto (tope total configurable por entorno).
   - liquidacion de comisiones por pago con registros `payout` para soportar pago mensual recurrente e idempotencia por `paymentRef`.
@@ -106,9 +106,9 @@
   - se actualizo branding visible a `Naranja Social Cafe`.
   - portada y foto de perfil ahora usan imagenes de jugos de naranja para reforzar el rubro.
   - la carta ahora incluye platos tipicos de cafeteria (club sandwich, panini, tostadas francesas, waffles y croissant) ademas de bebidas.
-- Navegacion de pestañas (demo sin registro y carta publicada con registro):
-  - se unifico el cambio de pestañas `Contacto/Carta/Ubicacion/Reserva` con handler comun para que la seleccion sea mas consistente en tap/click.
-  - al cambiar de pestaña se asegura posicionamiento del contenido (ancla superior), mejorando la percepcion de cambio en mobile.
+- Navegacion de pestaÃƒÂ±as (demo sin registro y carta publicada con registro):
+  - se unifico el cambio de pestaÃƒÂ±as `Contacto/Carta/Ubicacion/Reserva` con handler comun para que la seleccion sea mas consistente en tap/click.
+  - al cambiar de pestaÃƒÂ±a se asegura posicionamiento del contenido (ancla superior), mejorando la percepcion de cambio en mobile.
   - se mejoraron estados de boton (`active`, `focus-visible`, `touch-manipulation`, `aria-pressed`) para interaccion mas estable y responsiva.
 - Redes sociales en demos sin registro:
   - se agrego soporte de `socialLinks` al modelo de demos y fallback automatico por demo cuando no estan definidas.
@@ -121,7 +121,7 @@
   - se agrego endpoint server-side `POST /api/linkhub/storage/offload` (autenticado con Firebase ID token) para subir imagenes a Firebase Storage desde backend y evitar bloqueos CORS del navegador.
   - el guardado ahora intenta primero la subida server-side por cada imagen inline; si falla, mantiene fallback al flujo cliente previo.
   - se exporto `adminStorage` en Firebase Admin para uso centralizado del nuevo endpoint.
-- Rendimiento de pestaña `Reserva` (demo sin registro y carta con registro):
+- Rendimiento de pestaÃƒÂ±a `Reserva` (demo sin registro y carta con registro):
   - se precarga el panel de reserva en `idle` para evitar latencia al primer clic.
   - se hace prefetch de la imagen hero de reservas para abrir con contenido visual inmediato.
   - se mantiene el panel montado en segundo plano (`hidden`) y se muestra al instante cuando el usuario toca `Reserva`.
@@ -253,3 +253,7 @@
   - `GET /afiliados/[alias]` redirige a signup con `ref=<alias>&lockRef=1` para bloquear el referido desde enlace de invitacion.
   - `/signup` y `/auth` propagan `lockRef=1`; en registro el campo de referido queda de solo lectura cuando llega bloqueado por URL.
   - `POST /api/referrals/apply` y `applyReferralCode` aceptan codigo o alias (hasta 32 chars), resolviendo alias activo a codigo interno para vincular la red en registro manual o Google.
+- Texto y encoding en Configuracion/Ajustes:
+  - `LanguageContext` ahora normaliza mojibake con decodificacion UTF-8 + mapeo CP1252 para corregir strings rotos y mostrar texto legible en UI.
+  - se corrigieron textos visibles en `/settings` y `/auth` con tildes correctas (`sesion`, `seccion`, `codigo`, `comision`, etc.).
+  - en `settings` (tab Referidos) se eliminaron los dos avisos rojos duplicados de `Sesion expirada...` para no repetir alerta cuando ya existe el boton superior de `Cerrar sesion`.

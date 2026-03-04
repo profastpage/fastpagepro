@@ -17,93 +17,145 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
 
 const MOJIBAKE_PATTERN = /Ã|Â|â|ð|ï¿½|�/;
 
+const CP1252_TO_BYTE: Record<number, number> = {
+  0x20ac: 0x80,
+  0x201a: 0x82,
+  0x0192: 0x83,
+  0x201e: 0x84,
+  0x2026: 0x85,
+  0x2020: 0x86,
+  0x2021: 0x87,
+  0x02c6: 0x88,
+  0x2030: 0x89,
+  0x0160: 0x8a,
+  0x2039: 0x8b,
+  0x0152: 0x8c,
+  0x017d: 0x8e,
+  0x2018: 0x91,
+  0x2019: 0x92,
+  0x201c: 0x93,
+  0x201d: 0x94,
+  0x2022: 0x95,
+  0x2013: 0x96,
+  0x2014: 0x97,
+  0x02dc: 0x98,
+  0x2122: 0x99,
+  0x0161: 0x9a,
+  0x203a: 0x9b,
+  0x0153: 0x9c,
+  0x017e: 0x9e,
+  0x0178: 0x9f,
+};
+
+function toLikelyUtf8Bytes(input: string): Uint8Array {
+  const bytes: number[] = [];
+  for (const char of input) {
+    const codePoint = char.codePointAt(0) || 0;
+    if (codePoint <= 0xff) {
+      bytes.push(codePoint);
+      continue;
+    }
+    const cp1252Byte = CP1252_TO_BYTE[codePoint];
+    bytes.push(typeof cp1252Byte === "number" ? cp1252Byte : 0x3f);
+  }
+  return Uint8Array.from(bytes);
+}
+
+function decodeUtf8Safely(bytes: Uint8Array): string | null {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
 function fixMojibake(value: string): string {
   let result = value;
 
-  for (let i = 0; i < 3; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     if (!MOJIBAKE_PATTERN.test(result)) break;
-    const bytes = Uint8Array.from(Array.from(result), (char) => char.charCodeAt(0) & 0xff);
-    const decoded = new TextDecoder("utf-8").decode(bytes);
+    const bytes = toLikelyUtf8Bytes(result);
+    const decoded = decodeUtf8Safely(bytes);
     if (!decoded || decoded === result) break;
     result = decoded;
   }
 
   return result.replace(
-    "Consultor�a, jurídico e serviços. Profissional e confiável.",
+    "Consultorï¿½a, jurídico e serviços. Profissional e confiável.",
     "Consultoria, jurídico e serviços. Profissional e confiável.",
   );
 }
 
 const translations: Record<string, Record<Language, string>> = {
   // Nav
-  "nav.home": { es: "Inicio", en: "Home", pt: "InÃ­cio" },
+  "nav.home": { es: "Inicio", en: "Home", pt: "InÃƒÂ­cio" },
   "nav.builder": { es: "Constructor", en: "Builder", pt: "Construtor" },
   "nav.templates": { es: "Plantillas", en: "Templates", pt: "Modelos" },
   "nav.cloner": { es: "Clonador", en: "Cloner", pt: "Clonador" },
   "nav.store": { es: "Tienda Online", en: "Online Store", pt: "Loja Online" },
   "nav.linkhub": { es: "Carta Digital", en: "Digital Menu", pt: "Cardapio Digital" },
   "nav.published": { es: "Publicados", en: "Published", pt: "Publicados" },
-  "nav.metrics": { es: "MÃ©tricas Pro", en: "Pro Metrics", pt: "MÃ©tricas Pro" },
+    "nav.metrics": { es: "Métricas Pro", en: "Pro Metrics", pt: "Métricas Pro" },
   "nav.hub": { es: "Hub", en: "Hub", pt: "Hub" },
-  "nav.settings": { es: "ConfiguraciÃ³n", en: "Settings", pt: "ConfiguraÃ§Ãµes" },
-  "nav.login": { es: "Iniciar SesiÃ³n", en: "Login", pt: "Entrar" },
+    "nav.settings": { es: "Configuración", en: "Settings", pt: "Configurações" },
+    "nav.login": { es: "Iniciar Sesión", en: "Login", pt: "Entrar" },
   "nav.create_account": { es: "Crear Cuenta", en: "Create Account", pt: "Criar Conta" },
-  "nav.start_now": { es: "Comenzar Ahora", en: "Start Now", pt: "ComeÃ§ar Agora" },
-  "nav.features": { es: "CaracterÃ­sticas", en: "Features", pt: "Recursos" },
-  "nav.pricing": { es: "Precios", en: "Pricing", pt: "PreÃ§os" },
+    "nav.start_now": { es: "Comenzar Ahora", en: "Start Now", pt: "Começar Agora" },
+    "nav.features": { es: "Características", en: "Features", pt: "Recursos" },
+    "nav.pricing": { es: "Precios", en: "Pricing", pt: "Preços" },
   "nav.testimonials": { es: "Testimonios", en: "Testimonials", pt: "Depoimentos" },
-  "nav.logout": { es: "Cerrar SesiÃ³n", en: "Logout", pt: "Sair" },
+    "nav.logout": { es: "Cerrar Sesión", en: "Logout", pt: "Sair" },
 
   // Settings
-  "settings.title": { es: "CONFIGURACIÃ“N", en: "SETTINGS", pt: "CONFIGURAÃ‡Ã•ES" },
-  "settings.subtitle": { es: "Personaliza tu experiencia, gestiona tu suscripciÃ³n y asegura tu cuenta.", en: "Personalize your experience, manage your subscription and secure your account.", pt: "Personalize sua experiÃªncia, gerencie sua assinatura e proteja sua conta." },
-  "settings.logout": { es: "Cerrar SesiÃ³n", en: "Log Out", pt: "Sair" },
-  "settings.save": { es: "Confirmar Cambios", en: "Confirm Changes", pt: "Confirmar AlteraÃ§Ãµes" },
+    "settings.title": { es: "CONFIGURACIÓN", en: "SETTINGS", pt: "CONFIGURAÇÕES" },
+    "settings.subtitle": { es: "Personaliza tu experiencia, gestiona tu suscripción y asegura tu cuenta.", en: "Personalize your experience, manage your subscription and secure your account.", pt: "Personalize sua experiência, gerencie sua assinatura e proteja sua conta." },
+    "settings.logout": { es: "Cerrar Sesión", en: "Log Out", pt: "Sair" },
+  "settings.save": { es: "Confirmar Cambios", en: "Confirm Changes", pt: "Confirmar AlteraÃƒÂ§ÃƒÂµes" },
   "settings.saving": { es: "Procesando...", en: "Processing...", pt: "Processando..." },
-  "settings.success": { es: "Â¡ConfiguraciÃ³n guardada correctamente!", en: "Settings saved successfully!", pt: "ConfiguraÃ§Ãµes salvas com sucesso!" },
-  "settings.error": { es: "Error al guardar los cambios", en: "Error saving changes", pt: "Erro ao salvar as alteraÃ§Ãµes" },
-  "settings.validation.website": { es: "El sitio web debe comenzar con http:// o https://", en: "Website must start with http:// or https://", pt: "O site deve comeÃ§ar com http:// ou https://" },
-  "settings.validation.name": { es: "El nombre es demasiado corto", en: "Name is too short", pt: "O nome Ã© muito curto" },
+    "settings.success": { es: "¡Configuración guardada correctamente!", en: "Settings saved successfully!", pt: "Configurações salvas com sucesso!" },
+  "settings.error": { es: "Error al guardar los cambios", en: "Error saving changes", pt: "Erro ao salvar as alteraÃƒÂ§ÃƒÂµes" },
+  "settings.validation.website": { es: "El sitio web debe comenzar con http:// o https://", en: "Website must start with http:// or https://", pt: "O site deve comeÃƒÂ§ar com http:// ou https://" },
+  "settings.validation.name": { es: "El nombre es demasiado corto", en: "Name is too short", pt: "O nome ÃƒÂ© muito curto" },
   "settings.loading": { es: "PREPARANDO AJUSTES", en: "PREPARING SETTINGS", pt: "PREPARANDO AJUSTES" },
   "settings.syncing": { es: "Sincronizando con la nube...", en: "Syncing with the cloud...", pt: "Sincronizando com a nuvem..." },
   
-  "settings.tabs.profile": { es: "Perfil PÃºblico", en: "Public Profile", pt: "Perfil PÃºblico" },
+    "settings.tabs.profile": { es: "Perfil Público", en: "Public Profile", pt: "Perfil Público" },
   "settings.tabs.profile.desc": { es: "Tu identidad en la plataforma", en: "Your identity on the platform", pt: "Sua identidade na plataforma" },
   "settings.tabs.account": { es: "Cuenta", en: "Account", pt: "Conta" },
-  "settings.tabs.account.desc": { es: "InformaciÃ³n de contacto y acceso", en: "Contact and access info", pt: "InformaÃ§Ãµes de contato e acesso" },
-  "settings.tabs.plan": { es: "SuscripciÃ³n", en: "Subscription", pt: "Assinatura" },
-  "settings.tabs.plan.desc": { es: "Gestiona tu plan y facturaciÃ³n", en: "Manage plan and billing", pt: "Gerenciar plano e faturamento" },
-  "settings.tabs.security": { es: "Seguridad", en: "Security", pt: "SeguranÃ§a" },
+    "settings.tabs.account.desc": { es: "Información de contacto y acceso", en: "Contact and access info", pt: "Informações de contato e acesso" },
+    "settings.tabs.plan": { es: "Suscripción", en: "Subscription", pt: "Assinatura" },
+    "settings.tabs.plan.desc": { es: "Gestiona tu plan y facturación", en: "Manage plan and billing", pt: "Gerenciar plano e faturamento" },
+  "settings.tabs.security": { es: "Seguridad", en: "Security", pt: "SeguranÃƒÂ§a" },
   "settings.tabs.security.desc": { es: "Protege tu cuenta y datos", en: "Protect your account and data", pt: "Proteja sua conta e dados" },
 
   "settings.profile.visual": { es: "Identidad Visual", en: "Visual Identity", pt: "Identidade Visual" },
-  "settings.profile.title": { es: "Tu Perfil PÃºblico", en: "Your Public Profile", pt: "Seu Perfil PÃºblico" },
-  "settings.profile.desc": { es: "Esta informaciÃ³n aparecerÃ¡ en tus sitios publicados.", en: "This info will appear on your published sites.", pt: "Estas informaÃ§Ãµes aparecerÃ£o em seus sites publicados." },
+    "settings.profile.title": { es: "Tu Perfil Público", en: "Your Public Profile", pt: "Seu Perfil Público" },
+    "settings.profile.desc": { es: "Esta información aparecerá en tus sitios publicados.", en: "This info will appear on your published sites.", pt: "Estas informações aparecerão em seus sites publicados." },
   "settings.profile.name": { es: "Nombre Completo", en: "Full Name", pt: "Nome Completo" },
-  "settings.profile.company": { es: "Empresa o Negocio", en: "Company or Business", pt: "Empresa ou NegÃ³cio" },
+  "settings.profile.company": { es: "Empresa o Negocio", en: "Company or Business", pt: "Empresa ou NegÃƒÂ³cio" },
   "settings.profile.website": { es: "Sitio Web Personal", en: "Personal Website", pt: "Site Pessoal" },
-  "settings.profile.location": { es: "UbicaciÃ³n / DirecciÃ³n", en: "Location / Address", pt: "LocalizaÃ§Ã£o / EndereÃ§o" },
-  "settings.profile.bio": { es: "BiografÃ­a Profesional", en: "Professional Bio", pt: "Biografia Profissional" },
+  "settings.profile.location": { es: "UbicaciÃƒÂ³n / DirecciÃƒÂ³n", en: "Location / Address", pt: "LocalizaÃƒÂ§ÃƒÂ£o / EndereÃƒÂ§o" },
+  "settings.profile.bio": { es: "BiografÃƒÂ­a Profesional", en: "Professional Bio", pt: "Biografia Profissional" },
 
-  "settings.account.title": { es: "ConfiguraciÃ³n de Acceso", en: "Access Settings", pt: "ConfiguraÃ§Ãµes de Acesso" },
-  "settings.account.desc": { es: "Gestiona cÃ³mo te contactamos y preferencias.", en: "Manage how we contact you and preferences.", pt: "Gerencie como entramos em contato e preferÃªncias." },
-  "settings.account.email": { es: "Correo ElectrÃ³nico", en: "Email Address", pt: "E-mail" },
-  "settings.account.phone": { es: "NÃºmero de Contacto", en: "Contact Number", pt: "NÃºmero de Contato" },
-  "settings.account.language": { es: "Idioma de Preferencia", en: "Preferred Language", pt: "Idioma de PreferÃªncia" },
-  "settings.account.notifications": { es: "Notificaciones", en: "Notifications", pt: "NotificaÃ§Ãµes" },
+    "settings.account.title": { es: "Configuración de Acceso", en: "Access Settings", pt: "Configurações de Acesso" },
+    "settings.account.desc": { es: "Gestiona cómo te contactamos y preferencias.", en: "Manage how we contact you and preferences.", pt: "Gerencie como entramos em contato e preferências." },
+    "settings.account.email": { es: "Correo Electrónico", en: "Email Address", pt: "E-mail" },
+    "settings.account.phone": { es: "Número de Contacto", en: "Contact Number", pt: "Número de Contato" },
+    "settings.account.language": { es: "Idioma de Preferencia", en: "Preferred Language", pt: "Idioma de Preferência" },
+  "settings.account.notifications": { es: "Notificaciones", en: "Notifications", pt: "NotificaÃƒÂ§ÃƒÂµes" },
 
-  "settings.plan.title": { es: "MembresÃ­a", en: "Membership", pt: "Assinatura" },
+    "settings.plan.title": { es: "Membresía", en: "Membership", pt: "Assinatura" },
   "settings.plan.current": { es: "Plan Actual", en: "Current Plan", pt: "Plano Atual" },
   "settings.plan.manage": { es: "Gestionar Pago", en: "Manage Payment", pt: "Gerenciar Pagamento" },
 
-  "settings.security.title": { es: "Ciberseguridad", en: "Cybersecurity", pt: "CiberseguranÃ§a" },
-  "settings.security.2fa_email": { es: "VerificaciÃ³n por Email", en: "Email Verification", pt: "VerificaÃ§Ã£o por E-mail" },
-  "settings.security.2fa_sms": { es: "AutenticaciÃ³n SMS", en: "SMS Authentication", pt: "AutenticaÃ§Ã£o por SMS" },
-  "settings.security.change_pass": { es: "Cambiar ContraseÃ±a", en: "Change Password", pt: "Alterar Senha" },
+    "settings.security.title": { es: "Ciberseguridad", en: "Cybersecurity", pt: "Cibersegurança" },
+    "settings.security.2fa_email": { es: "Verificación por Email", en: "Email Verification", pt: "Verificação por E-mail" },
+    "settings.security.2fa_sms": { es: "Autenticación SMS", en: "SMS Authentication", pt: "Autenticação por SMS" },
+    "settings.security.change_pass": { es: "Cambiar Contraseña", en: "Change Password", pt: "Alterar Senha" },
   "settings.security.delete_account": { es: "Eliminar Cuenta", en: "Delete Account", pt: "Excluir Conta" },
 
   // Hero
-  "hero.tag": { es: "EdiciÃ³n Deluxe v2.0", en: "Deluxe Edition v2.0", pt: "EdiÃ§Ã£o Deluxe v2.0" },
+  "hero.tag": { es: "EdiciÃƒÂ³n Deluxe v2.0", en: "Deluxe Edition v2.0", pt: "EdiÃƒÂ§ÃƒÂ£o Deluxe v2.0" },
   "hero.title_start": { es: "Crea y Clona", en: "Create & Clone", pt: "Crie e Clone" },
   "hero.title_highlight": { es: "Landing Pages", en: "Landing Pages", pt: "Landing Pages" },
   "hero.subtitle_start": {
@@ -112,38 +164,38 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Pare de perder tempo.",
   },
   "hero.subtitle_highlight": {
-    es: "Crea pÃ¡ginas que venden",
+    es: "Crea pÃƒÂ¡ginas que venden",
     en: "Create pages that sell",
-    pt: "Crie pÃ¡ginas que vendem",
+    pt: "Crie pÃƒÂ¡ginas que vendem",
   },
   "hero.subtitle_end_1": {
-    es: "o clona el Ã©xito de tu competencia en segundos.",
+    es: "o clona el ÃƒÂ©xito de tu competencia en segundos.",
     en: "or clone your competition's success in seconds.",
-    pt: "ou clone o sucesso da sua concorrÃªncia em segundos.",
+    pt: "ou clone o sucesso da sua concorrÃƒÂªncia em segundos.",
   },
   "hero.subtitle_end_highlight": {
-    es: "Sin cÃ³digo, resultados profesionales al instante.",
+    es: "Sin cÃƒÂ³digo, resultados profesionales al instante.",
     en: "No code, professional results instantly.",
-    pt: "Sem cÃ³digo, resultados profissionais instantaneamente.",
+    pt: "Sem cÃƒÂ³digo, resultados profissionais instantaneamente.",
   },
   "hero.cta_create": { es: "Crear Landing", en: "Create Landing", pt: "Criar Landing" },
-  "hero.cta_clone": { es: "Clonar PÃ¡gina", en: "Clone Page", pt: "Clonar PÃ¡gina" },
-  "hero.payments": { es: "MÃ©todos de Pago", en: "Payment Methods", pt: "MÃ©todos de Pagamento" },
+  "hero.cta_clone": { es: "Clonar PÃƒÂ¡gina", en: "Clone Page", pt: "Clonar PÃƒÂ¡gina" },
+  "hero.payments": { es: "MÃƒÂ©todos de Pago", en: "Payment Methods", pt: "MÃƒÂ©todos de Pagamento" },
   "testimonials.title": {
     es: "Lo que dicen nuestros usuarios",
     en: "What our users say",
-    pt: "O que nossos usuÃ¡rios dizem",
+    pt: "O que nossos usuÃƒÂ¡rios dizem",
   },
   "testimonials.subtitle": {
-    es: "Ãšnete a cientos de creadores que ya estÃ¡n construyendo el futuro de la web.",
+    es: "ÃƒÅ¡nete a cientos de creadores que ya estÃƒÂ¡n construyendo el futuro de la web.",
     en: "Join hundreds of creators who are already building the future of the web.",
-    pt: "Junte-se a centenas de criadores que jÃ¡ estÃ£o construindo o futuro da web.",
+    pt: "Junte-se a centenas de criadores que jÃƒÂ¡ estÃƒÂ£o construindo o futuro da web.",
   },
   "testimonials.pedro.role": { es: "COPYWRITER", en: "COPYWRITER", pt: "COPYWRITER" },
   "testimonials.pedro.text": {
-    es: "La mejor inversiÃ³n para mi agencia. Puedo validar copys en diseÃ±os reales al instante.",
+    es: "La mejor inversiÃƒÂ³n para mi agencia. Puedo validar copys en diseÃƒÂ±os reales al instante.",
     en: "The best investment for my agency. I can validate copy in real designs instantly.",
-    pt: "O melhor investimento para minha agÃªncia. Posso validar copys en designs reais instantaneamente.",
+    pt: "O melhor investimento para minha agÃƒÂªncia. Posso validar copys en designs reais instantaneamente.",
   },
   "testimonials.ana.role": {
     es: "DIRECTORA DE MARKETING",
@@ -151,77 +203,77 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "DIRETORA DE MARKETING",
   },
   "testimonials.ana.text": {
-    es: "La velocidad de carga y la facilidad de uso son incomparables. AumentÃ³ mi conversiÃ³n un 40%.",
+    es: "La velocidad de carga y la facilidad de uso son incomparables. AumentÃƒÂ³ mi conversiÃƒÂ³n un 40%.",
     en: "Load speed and ease of use are incomparable. Increased my conversion by 40%.",
-    pt: "A velocidade de carregamento e a facilidade de uso sÃ£o incomparÃ¡veis. Aumentou minha conversÃ£o em 40%.",
+    pt: "A velocidade de carregamento e a facilidade de uso sÃƒÂ£o incomparÃƒÂ¡veis. Aumentou minha conversÃƒÂ£o em 40%.",
   },
   "testimonials.carlos.role": { es: "FREELANCER", en: "FREELANCER", pt: "FREELANCER" },
   "testimonials.carlos.text": {
-    es: "Pude clonar la landing de mi competencia y mejorarla en minutos. Â¡IncreÃ­ble herramienta!",
+    es: "Pude clonar la landing de mi competencia y mejorarla en minutos. Ã‚Â¡IncreÃƒÂ­ble herramienta!",
     en: "I was able to clone my competitor's landing page and improve it in minutes. Amazing tool!",
-    pt: "Consegui clonar a landing da minha concorrÃªncia e melhorÃ¡-la em minutos. Ferramenta incrÃ­vel!",
+    pt: "Consegui clonar a landing da minha concorrÃƒÂªncia e melhorÃƒÂ¡-la em minutos. Ferramenta incrÃƒÂ­vel!",
   },
-  "testimonials.sofia.role": { es: "DISEÃ‘ADORA UX", en: "UX DESIGNER", pt: "DESIGNER UX" },
+  "testimonials.sofia.role": { es: "DISEÃƒâ€˜ADORA UX", en: "UX DESIGNER", pt: "DESIGNER UX" },
   "testimonials.sofia.text": {
-    es: "La flexibilidad del editor me permite crear experiencias Ãºnicas sin tocar cÃ³digo.",
+    es: "La flexibilidad del editor me permite crear experiencias ÃƒÂºnicas sin tocar cÃƒÂ³digo.",
     en: "The editor's flexibility allows me to create unique experiences without touching code.",
-    pt: "A flexibilidade do editor me permite criar experiÃªncias Ãºnicas sem tocar em cÃ³digo.",
+    pt: "A flexibilidade do editor me permite criar experiÃƒÂªncias ÃƒÂºnicas sem tocar em cÃƒÂ³digo.",
   },
   "testimonials.diego.role": { es: "EMPRENDEDOR", en: "ENTREPRENEUR", pt: "EMPREENDEDOR" },
   "testimonials.diego.text": {
-    es: "LancÃ© mi MVP en un fin de semana gracias a Fast Page. Los inversores quedaron impresionados.",
+    es: "LancÃƒÂ© mi MVP en un fin de semana gracias a Fast Page. Los inversores quedaron impresionados.",
     en: "I launched my MVP in a weekend thanks to Fast Page. Investors were impressed.",
-    pt: "Lancei meu MVP em um fim de semana graÃ§as Ã  Fast Page. Os investidores ficaram impressionados.",
+    pt: "Lancei meu MVP em um fim de semana graÃƒÂ§as ÃƒÂ  Fast Page. Os investidores ficaram impressionados.",
   },
   "testimonials.laura.role": { es: "BLOGGER", en: "BLOGGER", pt: "BLOGGER" },
   "testimonials.laura.text": {
-    es: "Mis lectores adoran el nuevo diseÃ±o de mi blog. Fue tan fÃ¡cil como elegir una plantilla.",
+    es: "Mis lectores adoran el nuevo diseÃƒÂ±o de mi blog. Fue tan fÃƒÂ¡cil como elegir una plantilla.",
     en: "My readers love my blog's new design. It was as easy as choosing a template.",
-    pt: "Meus leitores adoram o novo design do meu blog. Foi tÃ£o fÃ¡cil quanto escolher um modelo.",
+    pt: "Meus leitores adoram o novo design do meu blog. Foi tÃƒÂ£o fÃƒÂ¡cil quanto escolher um modelo.",
   },
   "testimonials.javier.role": { es: "CONSULTOR SEO", en: "SEO CONSULTANT", pt: "CONSULTOR SEO" },
   "testimonials.javier.text": {
-    es: "El cÃ³digo generado es limpio y rÃ¡pido, lo que ha mejorado enormemente mi ranking en Google.",
+    es: "El cÃƒÂ³digo generado es limpio y rÃƒÂ¡pido, lo que ha mejorado enormemente mi ranking en Google.",
     en: "The generated code is clean and fast, which has greatly improved my Google ranking.",
-    pt: "O cÃ³digo gerado Ã© limpo e rÃ¡pido, o que melhorou enormemente meu ranking no Google.",
+    pt: "O cÃƒÂ³digo gerado ÃƒÂ© limpo e rÃƒÂ¡pido, o que melhorou enormemente meu ranking no Google.",
   },
   "testimonials.elena.role": { es: "PROJECT MANAGER", en: "PROJECT MANAGER", pt: "GERENTE DE PROJETO" },
   "testimonials.elena.text": {
-    es: "Gestionar mÃºltiples proyectos nunca fue tan sencillo. Fast Page es mi herramienta diaria.",
+    es: "Gestionar mÃƒÂºltiples proyectos nunca fue tan sencillo. Fast Page es mi herramienta diaria.",
     en: "Managing multiple projects has never been easier. Fast Page is my daily tool.",
-    pt: "Gerenciar mÃºltiplos projetos nunca foi tÃ£o simples. Fast Page Ã© minha ferramenta diÃ¡ria.",
+    pt: "Gerenciar mÃƒÂºltiplos projetos nunca foi tÃƒÂ£o simples. Fast Page ÃƒÂ© minha ferramenta diÃƒÂ¡ria.",
   },
   "testimonials.miguel.role": { es: "DESARROLLADOR", en: "DEVELOPER", pt: "DESENVOLVEDOR" },
   "testimonials.miguel.text": {
-    es: "Aunque sÃ© programar, esto me ahorra horas de trabajo repetitivo. Â¡Simplemente genial!",
+    es: "Aunque sÃƒÂ© programar, esto me ahorra horas de trabajo repetitivo. Ã‚Â¡Simplemente genial!",
     en: "Even though I know how to code, this saves me hours of repetitive work. Simply great!",
     pt: "Embora eu saiba programar, isso me poupa horas de trabalho repetitivo. Simplesmente genial!",
   },
-  "testimonials.carmen.role": { es: "AGENCIA DIGITAL", en: "DIGITAL AGENCY", pt: "AGÃŠNCIA DIGITAL" },
+  "testimonials.carmen.role": { es: "AGENCIA DIGITAL", en: "DIGITAL AGENCY", pt: "AGÃƒÅ NCIA DIGITAL" },
   "testimonials.carmen.text": {
-    es: "Hemos escalado nuestra producciÃ³n de landings x10 sin contratar mÃ¡s personal.",
+    es: "Hemos escalado nuestra producciÃƒÂ³n de landings x10 sin contratar mÃƒÂ¡s personal.",
     en: "We have scaled our landing page production x10 without hiring more staff.",
-    pt: "Escalamos nossa produÃ§Ã£o de landings em 10x sem contratar mais pessoal.",
+    pt: "Escalamos nossa produÃƒÂ§ÃƒÂ£o de landings em 10x sem contratar mais pessoal.",
   },
 
   // Cloner Business Models
   "cloner.title": {
     es: "Selecciona tu Modelo de Negocio",
     en: "Select Your Business Model",
-    pt: "Selecione seu Modelo de NegÃ³cio",
+    pt: "Selecione seu Modelo de NegÃƒÂ³cio",
   },
   "cloner.subtitle": {
     es: "Elige una plantilla base optimizada para tu industria.",
     en: "Choose a base template optimized for your industry.",
-    pt: "Escolha um modelo base otimizado para sua indÃºstria.",
+    pt: "Escolha um modelo base otimizado para sua indÃƒÂºstria.",
   },
   "cloner.restaurant.title": { es: "Restaurante", en: "Restaurant", pt: "Restaurante" },
   "cloner.restaurant.desc": {
-    es: "MenÃºs digitales, reservas y pedidos online. DiseÃ±o apetitoso.",
+    es: "MenÃƒÂºs digitales, reservas y pedidos online. DiseÃƒÂ±o apetitoso.",
     en: "Digital menus, reservations, and online orders. Appetizing design.",
     pt: "Menus digitais, reservas e pedidos online. Design apetitoso.",
   },
-  "cloner.tech.title": { es: "TecnologÃ­a", en: "Technology", pt: "Tecnologia" },
+  "cloner.tech.title": { es: "TecnologÃƒÂ­a", en: "Technology", pt: "Tecnologia" },
   "cloner.tech.desc": {
     es: "SaaS, Apps y Startups. Moderno, limpio y futurista.",
     en: "SaaS, Apps, and Startups. Modern, clean, and futuristic.",
@@ -230,71 +282,71 @@ const translations: Record<string, Record<Language, string>> = {
   "cloner.office.title": {
     es: "Oficina / Corporativo",
     en: "Office / Corporate",
-    pt: "EscritÃ³rio / Corporativo",
+    pt: "EscritÃƒÂ³rio / Corporativo",
   },
   "cloner.office.desc": {
-    es: "ConsultorÃ­a, legal y servicios. Profesional y confiable.",
+    es: "ConsultorÃƒÂ­a, legal y servicios. Profesional y confiable.",
     en: "Consulting, legal, and services. Professional and reliable.",
-    pt: "Consultorï¿½a, jurÃ­dico e serviÃ§os. Profissional e confiÃ¡vel.",
+    pt: "ConsultorÃ¯Â¿Â½a, jurÃƒÂ­dico e serviÃƒÂ§os. Profissional e confiÃƒÂ¡vel.",
   },
   "cloner.select": { es: "Seleccionar Modelo", en: "Select Model", pt: "Selecionar Modelo" },
   "cloner.back": { es: "Volver a Modelos", en: "Back to Models", pt: "Voltar para Modelos" },
 
   // Cloner Subcategories
-  "cloner.restaurant.pizzeria": { es: "PizzerÃ­a", en: "Pizzeria", pt: "Pizzaria" },
+  "cloner.restaurant.pizzeria": { es: "PizzerÃƒÂ­a", en: "Pizzeria", pt: "Pizzaria" },
   "cloner.restaurant.criolla": { es: "Comida Criolla", en: "Creole Food", pt: "Comida Crioula" },
   "cloner.restaurant.china": { es: "Comida China", en: "Chinese Food", pt: "Comida Chinesa" },
   "cloner.restaurant.anticuchos": { es: "Anticuchos", en: "Anticuchos", pt: "Anticuchos" },
   "cloner.restaurant.sushi": { es: "Sushi / Japonesa", en: "Sushi / Japanese", pt: "Sushi / Japonesa" },
-  "cloner.restaurant.cafe": { es: "CafeterÃ­a", en: "Coffee Shop", pt: "Cafeteria" },
+  "cloner.restaurant.cafe": { es: "CafeterÃƒÂ­a", en: "Coffee Shop", pt: "Cafeteria" },
 
   "cloner.tech.saas": { es: "SaaS / Software", en: "SaaS / Software", pt: "SaaS / Software" },
   "cloner.tech.app": { es: "App Mobile", en: "Mobile App", pt: "App Mobile" },
-  "cloner.tech.agency": { es: "Agencia Digital", en: "Digital Agency", pt: "AgÃªncia Digital" },
+  "cloner.tech.agency": { es: "Agencia Digital", en: "Digital Agency", pt: "AgÃƒÂªncia Digital" },
   "cloner.tech.startup": { es: "Startup", en: "Startup", pt: "Startup" },
 
-  "cloner.office.realestate": { es: "Inmobiliaria", en: "Real Estate", pt: "ImobiliÃ¡ria" },
+  "cloner.office.realestate": { es: "Inmobiliaria", en: "Real Estate", pt: "ImobiliÃƒÂ¡ria" },
   "cloner.office.law": { es: "Abogados", en: "Law Firm", pt: "Advogados" },
-  "cloner.office.consulting": { es: "ConsultorÃ­a", en: "Consulting", pt: "ConsultorÃ­a" },
-  "cloner.office.medical": { es: "ClÃ­nica / MÃ©dica", en: "Clinic / Medical", pt: "ClÃ­nica / MÃ©dica" },
+  "cloner.office.consulting": { es: "ConsultorÃƒÂ­a", en: "Consulting", pt: "ConsultorÃƒÂ­a" },
+  "cloner.office.medical": { es: "ClÃƒÂ­nica / MÃƒÂ©dica", en: "Clinic / Medical", pt: "ClÃƒÂ­nica / MÃƒÂ©dica" },
 
   // New Models
-  "cloner.beauty.title": { es: "Salud y Belleza", en: "Health & Beauty", pt: "SaÃºde e Beleza" },
+  "cloner.beauty.title": { es: "Salud y Belleza", en: "Health & Beauty", pt: "SaÃƒÂºde e Beleza" },
   "cloner.beauty.desc": { es: "Spas, gimnasios y bienestar. Relajante y vital.", en: "Spas, gyms, and wellness. Relaxing and vital.", pt: "Spas, academias e bem-estar. Relaxante e vital." },
-  "cloner.education.title": { es: "EducaciÃ³n", en: "Education", pt: "EducaÃ§Ã£o" },
+  "cloner.education.title": { es: "EducaciÃƒÂ³n", en: "Education", pt: "EducaÃƒÂ§ÃƒÂ£o" },
   "cloner.education.desc": { es: "Cursos, academias y tutores. Educativo y claro.", en: "Courses, academies, and tutors. Educational and clear.", pt: "Cursos, academias e tutores. Educativo e claro." },
   "cloner.ecommerce.title": { es: "E-commerce", en: "E-commerce", pt: "E-commerce" },
-  "cloner.ecommerce.desc": { es: "Tiendas online y catÃ¡logos. Ventas directas.", en: "Online stores and catalogs. Direct sales.", pt: "Lojas online e catÃ¡logos. Vendas diretas." },
-  "cloner.services.title": { es: "Oficios / Servicios", en: "Trades / Services", pt: "OfÃ­cios / ServiÃ§os" },
-  "cloner.services.desc": { es: "TÃ©cnicos, hogar y reparaciones. PrÃ¡ctico.", en: "Technicians, home, and repairs. Practical.", pt: "TÃ©cnicos, casa e reparos. PrÃ¡tico." },
+  "cloner.ecommerce.desc": { es: "Tiendas online y catÃƒÂ¡logos. Ventas directas.", en: "Online stores and catalogs. Direct sales.", pt: "Lojas online e catÃƒÂ¡logos. Vendas diretas." },
+  "cloner.services.title": { es: "Oficios / Servicios", en: "Trades / Services", pt: "OfÃƒÂ­cios / ServiÃƒÂ§os" },
+  "cloner.services.desc": { es: "TÃƒÂ©cnicos, hogar y reparaciones. PrÃƒÂ¡ctico.", en: "Technicians, home, and repairs. Practical.", pt: "TÃƒÂ©cnicos, casa e reparos. PrÃƒÂ¡tico." },
   "cloner.creative.title": { es: "Creativo / Eventos", en: "Creative / Events", pt: "Criativo / Eventos" },
-  "cloner.creative.desc": { es: "Portafolios, mÃºsica y bodas. ArtÃ­stico.", en: "Portfolios, music, and weddings. Artistic.", pt: "PortfÃ³lios, mÃºsica e casamentos. ArtÃ­stico." },
+  "cloner.creative.desc": { es: "Portafolios, mÃƒÂºsica y bodas. ArtÃƒÂ­stico.", en: "Portfolios, music, and weddings. Artistic.", pt: "PortfÃƒÂ³lios, mÃƒÂºsica e casamentos. ArtÃƒÂ­stico." },
 
   // New Subcategories
-  "cloner.beauty.spa": { es: "Spa / EstÃ©tica", en: "Spa / Aesthetics", pt: "Spa / EstÃ©tica" },
+  "cloner.beauty.spa": { es: "Spa / EstÃƒÂ©tica", en: "Spa / Aesthetics", pt: "Spa / EstÃƒÂ©tica" },
   "cloner.beauty.gym": { es: "Gimnasio / Crossfit", en: "Gym / Crossfit", pt: "Academia / Crossfit" },
   "cloner.beauty.yoga": { es: "Yoga / Pilates", en: "Yoga / Pilates", pt: "Yoga / Pilates" },
-  "cloner.beauty.barber": { es: "BarberÃ­a / SalÃ³n", en: "Barber / Salon", pt: "Barbearia / SalÃ£o" },
+  "cloner.beauty.barber": { es: "BarberÃƒÂ­a / SalÃƒÂ³n", en: "Barber / Salon", pt: "Barbearia / SalÃƒÂ£o" },
   
   "cloner.education.course": { es: "Curso Online", en: "Online Course", pt: "Curso Online" },
-  "cloner.education.school": { es: "Colegio / Nido", en: "School / Kindergarten", pt: "Escola / Jardim de InfÃ¢ncia" },
+  "cloner.education.school": { es: "Colegio / Nido", en: "School / Kindergarten", pt: "Escola / Jardim de InfÃƒÂ¢ncia" },
   "cloner.education.tutor": { es: "Profesor Particular", en: "Private Tutor", pt: "Professor Particular" },
   "cloner.education.language": { es: "Idiomas", en: "Languages", pt: "Idiomas" },
 
   "cloner.ecommerce.fashion": { es: "Moda / Ropa", en: "Fashion / Clothing", pt: "Moda / Roupa" },
-  "cloner.ecommerce.tech": { es: "TecnologÃ­a", en: "Technology", pt: "Tecnologia" },
+  "cloner.ecommerce.tech": { es: "TecnologÃƒÂ­a", en: "Technology", pt: "Tecnologia" },
   "cloner.ecommerce.pets": { es: "Mascotas", en: "Pets", pt: "Pets" },
-  "cloner.ecommerce.home": { es: "Hogar y Deco", en: "Home & Decor", pt: "Casa e DecoraÃ§Ã£o" },
+  "cloner.ecommerce.home": { es: "Hogar y Deco", en: "Home & Decor", pt: "Casa e DecoraÃƒÂ§ÃƒÂ£o" },
 
   "cloner.services.plumber": { es: "Gasfitero / Plomero", en: "Plumber", pt: "Encanador" },
   "cloner.services.electrician": { es: "Electricista", en: "Electrician", pt: "Eletricista" },
   "cloner.services.cleaning": { es: "Limpieza", en: "Cleaning", pt: "Limpeza" },
-  "cloner.services.mechanic": { es: "MecÃ¡nico", en: "Mechanic", pt: "MecÃ¢nico" },
+  "cloner.services.mechanic": { es: "MecÃƒÂ¡nico", en: "Mechanic", pt: "MecÃƒÂ¢nico" },
 
-  "cloner.creative.photography": { es: "FotografÃ­a", en: "Photography", pt: "Fotografia" },
-  "cloner.creative.music": { es: "MÃºsica / DJ", en: "Music / DJ", pt: "MÃºsica / DJ" },
+  "cloner.creative.photography": { es: "FotografÃƒÂ­a", en: "Photography", pt: "Fotografia" },
+  "cloner.creative.music": { es: "MÃƒÂºsica / DJ", en: "Music / DJ", pt: "MÃƒÂºsica / DJ" },
   "cloner.creative.wedding": { es: "Wedding Planner", en: "Wedding Planner", pt: "Wedding Planner" },
-  "cloner.creative.portfolio": { es: "Portafolio Personal", en: "Personal Portfolio", pt: "PortfÃ³lio Pessoal" },
+  "cloner.creative.portfolio": { es: "Portafolio Personal", en: "Personal Portfolio", pt: "PortfÃƒÂ³lio Pessoal" },
 
   // Hub
   "hub.welcome": { es: "Bienvenido de nuevo,", en: "Welcome back,", pt: "Bem-vindo de volta," },
@@ -312,9 +364,9 @@ const translations: Record<string, Record<Language, string>> = {
   "hub.builder.action": { es: "Abrir Constructor", en: "Open Builder", pt: "Abrir Construtor" },
   "hub.cloner.title": { es: "Plantillas Web", en: "Web Templates", pt: "Modelos Web" },
   "hub.cloner.desc": {
-    es: "Personaliza tu pÃ¡gina web",
+    es: "Personaliza tu pÃƒÂ¡gina web",
     en: "Customize your web page",
-    pt: "Personalize sua pÃ¡gina web",
+    pt: "Personalize sua pÃƒÂ¡gina web",
   },
   "hub.cloner.action": { es: "Abrir Plantillas", en: "Open Templates", pt: "Abrir Modelos" },
   "hub.webcloner.title": { es: "Clonador Web", en: "Web Cloner", pt: "Clonador Web" },
@@ -345,66 +397,66 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Gerencie todos os seus projetos publicados em uma unica visao profissional.",
   },
   "hub.published.action": { es: "Ver Publicados", en: "View Published", pt: "Ver Publicados" },
-  "hub.metrics.title": { es: "MÃ©tricas Pro", en: "Pro Metrics", pt: "MÃ©tricas Pro" },
+  "hub.metrics.title": { es: "MÃƒÂ©tricas Pro", en: "Pro Metrics", pt: "MÃƒÂ©tricas Pro" },
   "hub.metrics.desc": {
-    es: "AnalÃ­ticas avanzadas y mapas de calor para optimizar conversiones.",
+    es: "AnalÃƒÂ­ticas avanzadas y mapas de calor para optimizar conversiones.",
     en: "Advanced analytics and heatmaps to optimize conversions.",
-    pt: "AnÃ¡lises avanÃ§adas e mapas de calor para otimizar conversÃµes.",
+    pt: "AnÃƒÂ¡lises avanÃƒÂ§adas e mapas de calor para otimizar conversÃƒÂµes.",
   },
-  "hub.metrics.action": { es: "Ver AnalÃ­ticas", en: "View Analytics", pt: "Ver AnÃ¡lises" },
-  "hub.config.title": { es: "ConfiguraciÃ³n", en: "Configuration", pt: "ConfiguraÃ§Ãµes" },
+  "hub.metrics.action": { es: "Ver AnalÃƒÂ­ticas", en: "View Analytics", pt: "Ver AnÃƒÂ¡lises" },
+    "hub.config.title": { es: "Configuración", en: "Configuration", pt: "Configurações" },
   "hub.config.desc": {
     es: "Administra tu cuenta, plan y preferencias globales.",
     en: "Manage your account, plan and global preferences.",
-    pt: "Gerencie sua conta, plano e preferÃªncias globais.",
+    pt: "Gerencie sua conta, plano e preferÃƒÂªncias globais.",
   },
   "hub.config.action": { es: "Ir a Ajustes", en: "Go to Settings", pt: "Ir para Ajustes" },
-  "hub.logout": { es: "Cerrar SesiÃ³n", en: "Log Out", pt: "Sair" },
+  "hub.logout": { es: "Cerrar SesiÃƒÂ³n", en: "Log Out", pt: "Sair" },
 
   // FAQ
   "faq.title": { es: "Preguntas Frecuentes", en: "Frequently Asked Questions", pt: "Perguntas Frequentes" },
   "faq.subtitle": {
     es: "Resolvemos tus dudas antes de empezar.",
     en: "We answer your questions before you start.",
-    pt: "Resolvemos suas dÃºvidas antes de comeÃ§ar.",
+    pt: "Resolvemos suas dÃƒÂºvidas antes de comeÃƒÂ§ar.",
   },
   "faq.q1": {
-    es: "Â¿Es necesario saber programar?",
+    es: "Ã‚Â¿Es necesario saber programar?",
     en: "Do I need to know how to code?",
-    pt: "Ã‰ necessÃ¡rio saber programar?",
+    pt: "Ãƒâ€° necessÃƒÂ¡rio saber programar?",
   },
   "faq.a1": {
     es: "No, nuestra plataforma es completamente No-Code con una interfaz de arrastrar y soltar.",
     en: "No, our platform is completely No-Code with a drag-and-drop interface.",
-    pt: "NÃ£o, nossa plataforma Ã© completamente No-Code com uma interface de arrastar e soltar.",
+    pt: "NÃƒÂ£o, nossa plataforma ÃƒÂ© completamente No-Code com uma interface de arrastar e soltar.",
   },
-  "faq.q2": { es: "Â¿Puedo exportar el cÃ³digo?", en: "Can I export the code?", pt: "Posso exportar o cÃ³digo?" },
+  "faq.q2": { es: "Ã‚Â¿Puedo exportar el cÃƒÂ³digo?", en: "Can I export the code?", pt: "Posso exportar o cÃƒÂ³digo?" },
   "faq.a2": {
-    es: "SÃ­, puedes exportar tus creaciones a HTML/CSS/JS limpio o componentes React.",
+    es: "SÃƒÂ­, puedes exportar tus creaciones a HTML/CSS/JS limpio o componentes React.",
     en: "Yes, you can export your creations to clean HTML/CSS/JS or React components.",
-    pt: "Sim, vocÃª pode exportar suas criaÃ§Ãµes para HTML/CSS/JS limpo ou componentes React.",
+    pt: "Sim, vocÃƒÂª pode exportar suas criaÃƒÂ§ÃƒÂµes para HTML/CSS/JS limpo ou componentes React.",
   },
-  "faq.q3": { es: "Â¿Funciona en mÃ³viles?", en: "Does it work on mobile?", pt: "Funciona em celulares?" },
+  "faq.q3": { es: "Ã‚Â¿Funciona en mÃƒÂ³viles?", en: "Does it work on mobile?", pt: "Funciona em celulares?" },
   "faq.a3": {
-    es: "Absolutamente. Toda la plataforma y las pÃ¡ginas generadas siguen la filosofÃ­a Mobile First.",
+    es: "Absolutamente. Toda la plataforma y las pÃƒÂ¡ginas generadas siguen la filosofÃƒÂ­a Mobile First.",
     en: "Absolutely. The entire platform and generated pages follow the Mobile First philosophy.",
-    pt: "Absolutamente. Toda a plataforma e as pÃ¡ginas geradas seguem a filosofia Mobile First.",
+    pt: "Absolutamente. Toda a plataforma e as pÃƒÂ¡ginas geradas seguem a filosofia Mobile First.",
   },
-  "faq.q4": { es: "Â¿Hay lÃ­mite de pÃ¡ginas?", en: "Is there a page limit?", pt: "Existe limite de pÃ¡ginas?" },
+  "faq.q4": { es: "Ã‚Â¿Hay lÃƒÂ­mite de pÃƒÂ¡ginas?", en: "Is there a page limit?", pt: "Existe limite de pÃƒÂ¡ginas?" },
   "faq.a4": {
     es: "Depende de tu plan. El plan gratuito incluye 3 proyectos, y los planes Pro son ilimitados.",
     en: "It depends on your plan. The free plan includes 3 projects, and Pro plans are unlimited.",
-    pt: "Depende do seu plano. O plano gratuito inclui 3 projetos, e os planos Pro sÃ£o ilimitados.",
+    pt: "Depende do seu plano. O plano gratuito inclui 3 projetos, e os planos Pro sÃƒÂ£o ilimitados.",
   },
   "faq.q5": {
-    es: "Â¿QuÃ© tecnologÃ­as usa?",
+    es: "Ã‚Â¿QuÃƒÂ© tecnologÃƒÂ­as usa?",
     en: "What technologies does it use?",
     pt: "Quais tecnologias utiliza?",
   },
   "faq.a5": {
-    es: "El builder genera cÃ³digo moderno optimizado usando Next.js 14, Tailwind CSS y React.",
+    es: "El builder genera cÃƒÂ³digo moderno optimizado usando Next.js 14, Tailwind CSS y React.",
     en: "The builder generates optimized modern code using Next.js 14, Tailwind CSS, and React.",
-    pt: "O builder gera cÃ³digo moderno otimizado usando Next.js 14, Tailwind CSS e React.",
+    pt: "O builder gera cÃƒÂ³digo moderno otimizado usando Next.js 14, Tailwind CSS e React.",
   },
 
   // General
@@ -420,31 +472,31 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Prova e performance",
   },
   "landing.proof.title": {
-    es: "DiseÃ±ada para convertir visitas en clientes",
+    es: "DiseÃƒÂ±ada para convertir visitas en clientes",
     en: "Built to turn visitors into customers",
     pt: "Projetada para converter visitas em clientes",
   },
   "landing.proof.subtitle": {
-    es: "Constructor visual, clonado inteligente y publicaciÃ³n inmediata. Todo en un flujo corto para lanzar mÃ¡s rÃ¡pido y vender mejor.",
+    es: "Constructor visual, clonado inteligente y publicaciÃƒÂ³n inmediata. Todo en un flujo corto para lanzar mÃƒÂ¡s rÃƒÂ¡pido y vender mejor.",
     en: "Visual builder, smart cloning, and instant publishing. Everything in a short flow to launch faster and sell better.",
     pt: "Construtor visual, clonagem inteligente e publicacao imediata. Tudo em um fluxo curto para lancar mais rapido e vender melhor.",
   },
-  "landing.proof.stat1": { es: "pÃ¡ginas publicadas", en: "published pages", pt: "pÃ¡ginas publicadas" },
+  "landing.proof.stat1": { es: "pÃƒÂ¡ginas publicadas", en: "published pages", pt: "pÃƒÂ¡ginas publicadas" },
   "landing.proof.stat2": { es: "proyectos activos", en: "active projects", pt: "projetos ativos" },
-  "landing.proof.stat3": { es: "satisfacciÃ³n promedio", en: "average satisfaction", pt: "satisfacao media" },
+  "landing.proof.stat3": { es: "satisfacciÃƒÂ³n promedio", en: "average satisfaction", pt: "satisfacao media" },
   "landing.proof.stat4": { es: "tiempo para publicar", en: "time to publish", pt: "tempo para publicar" },
   "landing.proof.card1.title": {
-    es: "Sin cÃ³digo y editable al 100%",
+    es: "Sin cÃƒÂ³digo y editable al 100%",
     en: "No-code and 100% editable",
     pt: "Sem codigo e 100% editavel",
   },
   "landing.proof.card1.desc": {
-    es: "Cambia textos, imÃ¡genes, colores y estructura visual sin depender de desarrollo.",
+    es: "Cambia textos, imÃƒÂ¡genes, colores y estructura visual sin depender de desarrollo.",
     en: "Change text, images, colors, and visual structure without relying on development.",
     pt: "Altere textos, imagens, cores e estrutura visual sem depender de desenvolvimento.",
   },
   "landing.proof.card2.title": {
-    es: "PublicaciÃ³n y guardado real",
+    es: "PublicaciÃƒÂ³n y guardado real",
     en: "Real publish and save",
     pt: "Publicacao e salvamento reais",
   },
@@ -454,17 +506,17 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Salve versoes, publique e volte para sua conta com historico persistente.",
   },
   "landing.product.eyebrow": {
-    es: "Vista rÃ¡pida del producto",
+    es: "Vista rÃƒÂ¡pida del producto",
     en: "Quick product view",
     pt: "Visao rapida do produto",
   },
   "landing.product.title": {
-    es: "Elige el mejor camino para cada campaÃ±a",
+    es: "Elige el mejor camino para cada campaÃƒÂ±a",
     en: "Choose the best path for each campaign",
     pt: "Escolha o melhor caminho para cada campanha",
   },
   "landing.product.templates.title": {
-    es: "Plantillas (rÃ¡pido)",
+    es: "Plantillas (rÃƒÂ¡pido)",
     en: "Templates (fast)",
     pt: "Modelos (rapido)",
   },
@@ -474,8 +526,8 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Comece com modelos por nicho e edite tudo visualmente.",
   },
   "landing.product.templates.b1": { es: "Listo en minutos", en: "Ready in minutes", pt: "Pronto em minutos" },
-  "landing.product.templates.b2": { es: "Ideal para lanzamientos rÃ¡pidos", en: "Ideal for fast launches", pt: "Ideal para lancamentos rapidos" },
-  "landing.product.templates.b3": { es: "DiseÃ±o base profesional", en: "Professional base design", pt: "Design base profissional" },
+  "landing.product.templates.b2": { es: "Ideal para lanzamientos rÃƒÂ¡pidos", en: "Ideal for fast launches", pt: "Ideal para lancamentos rapidos" },
+  "landing.product.templates.b3": { es: "DiseÃƒÂ±o base profesional", en: "Professional base design", pt: "Design base profissional" },
   "landing.product.templates.cta": { es: "Ver Plantillas", en: "See Templates", pt: "Ver Modelos" },
   "landing.product.cloner.title": {
     es: "Clonador Web (control total)",
@@ -483,13 +535,13 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Clonador Web (controle total)",
   },
   "landing.product.cloner.desc": {
-    es: "Replica, adapta y optimiza una pÃ¡gina existente para tu oferta.",
+    es: "Replica, adapta y optimiza una pÃƒÂ¡gina existente para tu oferta.",
     en: "Replicate, adapt, and optimize an existing page for your offer.",
     pt: "Replique, adapte e otimize uma pagina existente para sua oferta.",
   },
   "landing.product.cloner.b1": { es: "Ideal para benchmarking", en: "Ideal for benchmarking", pt: "Ideal para benchmarking" },
-  "landing.product.cloner.b2": { es: "EdiciÃ³n completa de contenido", en: "Complete content editing", pt: "Edicao completa de conteudo" },
-  "landing.product.cloner.b3": { es: "PublicaciÃ³n con seguimiento", en: "Publishing with tracking", pt: "Publicacao com acompanhamento" },
+  "landing.product.cloner.b2": { es: "EdiciÃƒÂ³n completa de contenido", en: "Complete content editing", pt: "Edicao completa de conteudo" },
+  "landing.product.cloner.b3": { es: "PublicaciÃƒÂ³n con seguimiento", en: "Publishing with tracking", pt: "Publicacao com acompanhamento" },
   "landing.product.cloner.cta": { es: "Ir al Clonador", en: "Go to Cloner", pt: "Ir para o Clonador" },
   "landing.useCases.title": {
     es: "Casos de uso listos para vender",
@@ -497,7 +549,7 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Casos de uso prontos para vender",
   },
   "landing.useCases.subtitle": {
-    es: "DiseÃ±os pensados por tipo de negocio para acelerar resultados sin perder calidad visual.",
+    es: "DiseÃƒÂ±os pensados por tipo de negocio para acelerar resultados sin perder calidad visual.",
     en: "Designs tailored by business type to accelerate results without losing visual quality.",
     pt: "Designs pensados por tipo de negocio para acelerar resultados sem perder qualidade visual.",
   },
@@ -505,7 +557,7 @@ const translations: Record<string, Record<Language, string>> = {
   "landing.useCases.restaurant.title": { es: "Restaurantes", en: "Restaurants", pt: "Restaurantes" },
   "landing.useCases.restaurant.tag": { es: "alto ticket", en: "high ticket", pt: "alto ticket" },
   "landing.useCases.restaurant.desc": {
-    es: "MenÃºs, reservas y pedidos en una sola pÃ¡gina.",
+    es: "MenÃƒÂºs, reservas y pedidos en una sola pÃƒÂ¡gina.",
     en: "Menus, bookings, and orders on one page.",
     pt: "Menus, reservas e pedidos em uma unica pagina.",
   },
@@ -517,13 +569,13 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Capture leads de alto valor com formularios claros.",
   },
   "landing.useCases.ecommerce.title": { es: "E-commerce", en: "E-commerce", pt: "E-commerce" },
-  "landing.useCases.ecommerce.tag": { es: "conversiÃ³n rÃ¡pida", en: "fast conversion", pt: "conversao rapida" },
+  "landing.useCases.ecommerce.tag": { es: "conversiÃƒÂ³n rÃƒÂ¡pida", en: "fast conversion", pt: "conversao rapida" },
   "landing.useCases.ecommerce.desc": {
-    es: "Lanza ofertas y catÃ¡logos con diseÃ±o orientado a venta.",
+    es: "Lanza ofertas y catÃƒÂ¡logos con diseÃƒÂ±o orientado a venta.",
     en: "Launch offers and catalogs with a sales-oriented design.",
     pt: "Lance ofertas e catalogos com design orientado para vendas.",
   },
-  "landing.useCases.consulting.title": { es: "ConsultorÃ­a", en: "Consulting", pt: "ConsultorÃ­a" },
+  "landing.useCases.consulting.title": { es: "ConsultorÃƒÂ­a", en: "Consulting", pt: "ConsultorÃƒÂ­a" },
   "landing.useCases.consulting.tag": { es: "marca premium", en: "premium brand", pt: "marca premium" },
   "landing.useCases.consulting.desc": {
     es: "Refuerza autoridad con casos y CTA de contacto directo.",
@@ -545,9 +597,9 @@ const translations: Record<string, Record<Language, string>> = {
     pt: "Plataforma profissional para criar e clonar landing pages",
   },
   "footer.rights": {
-    es: "Â© {year} Fast Page. Todos los derechos reservados.",
-    en: "Â© {year} Fast Page. All rights reserved.",
-    pt: "Â© {year} Fast Page. Todos os direitos reservados.",
+    es: "Ã‚Â© {year} Fast Page. Todos los derechos reservados.",
+    en: "Ã‚Â© {year} Fast Page. All rights reserved.",
+    pt: "Ã‚Â© {year} Fast Page. Todos os direitos reservados.",
   },
 
   loading: { es: "Cargando...", en: "Loading...", pt: "Carregando..." },
@@ -599,7 +651,3 @@ export function useLanguage() {
   }
   return context;
 }
-
-
-
-
