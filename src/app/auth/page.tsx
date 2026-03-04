@@ -676,8 +676,9 @@ function AuthContent() {
 
           if (popupBlocked) {
             setIsGoogleError(true);
-            showToast(i18n.popupBlocked);
+            showToast(`${i18n.popupBlocked} ${i18n.redirectGoogle}`);
             setTimeout(() => setIsGoogleError(false), 3000);
+            await startGoogleRedirect(tab);
             return;
           }
 
