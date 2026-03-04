@@ -148,6 +148,27 @@ function buildServiceAccountFromEnv(): admin.ServiceAccount | null {
   };
 }
 
+function shouldUseApplicationDefaultCredentials(): boolean {
+  const explicitOptIn = normalizeSecret(String(process.env.FIREBASE_ADMIN_USE_APPLICATION_DEFAULT || ""));
+  if (explicitOptIn === "1" || explicitOptIn.toLowerCase() === "true") {
+    return true;
+  }
+
+  // ADC usually needs either a credentials file path or a native Google runtime.
+  const explicitCredentialsPath = normalizeSecret(String(process.env.GOOGLE_APPLICATION_CREDENTIALS || ""));
+  if (explicitCredentialsPath) {
+    return true;
+  }
+
+  const runningOnGoogleRuntime =
+    Boolean(String(process.env.K_SERVICE || "").trim()) ||
+    Boolean(String(process.env.FUNCTION_TARGET || "").trim()) ||
+    Boolean(String(process.env.GAE_ENV || "").trim()) ||
+    Boolean(String(process.env.GOOGLE_CLOUD_PROJECT || "").trim());
+
+  return runningOnGoogleRuntime;
+}
+
 if (!admin.apps.length) {
   try {
     const serviceAccount = buildServiceAccountFromEnv();
@@ -155,18 +176,25 @@ if (!admin.apps.length) {
     const storageBucket = resolveFirebaseStorageBucket(projectId);
 
     if (!serviceAccount) {
-      try {
-        admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-          projectId,
-          ...(storageBucket ? { storageBucket } : {}),
-        });
-        isInitialized = true;
-        console.log("[FirebaseAdmin] Initialized with application default credentials");
-      } catch {
+      if (!shouldUseApplicationDefaultCredentials()) {
         if (!initWarningShown) {
           console.warn("[FirebaseAdmin] No Firebase Admin credentials found. Admin SDK disabled.");
           initWarningShown = true;
+        }
+      } else {
+        try {
+          admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+            projectId,
+            ...(storageBucket ? { storageBucket } : {}),
+          });
+          isInitialized = true;
+          console.log("[FirebaseAdmin] Initialized with application default credentials");
+        } catch {
+          if (!initWarningShown) {
+            console.warn("[FirebaseAdmin] Could not initialize with application default credentials. Admin SDK disabled.");
+            initWarningShown = true;
+          }
         }
       }
     } else {

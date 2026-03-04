@@ -236,3 +236,7 @@
   - Carta Digital (`/linkhub` + `/bio/[slug]`): avatar, portadas, imagen principal de item y hero de reservas ahora guardan `x/y` y se reflejan en publicado y carrito.
   - Tienda (`/store` + `/t/[slug]`): portada hero, logo y fotos de productos ahora guardan `x/y` y se reflejan en publicado y carrito.
   - compatibilidad hacia atras mantenida: perfiles/proyectos antiguos sin campos de posicion usan fallback `50% 50%` sin romper render ni rutas.
+- Referidos y metricas server-side en produccion (Vercel) recuperados:
+  - se detecto causa real de `500` en `/api/referrals/summary` y `/api/referrals/profile`: Firebase Admin se inicializaba con `applicationDefault()` sin credenciales validas en Vercel.
+  - se agregaron variables de entorno Admin en Vercel (`FIREBASE_SERVICE_ACCOUNT_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`) para habilitar Firestore server-side.
+  - `src/lib/firebaseAdmin.ts` ahora evita usar ADC por defecto en runtimes no-Google y solo lo habilita con opt-in (`FIREBASE_ADMIN_USE_APPLICATION_DEFAULT=1`) o contexto GCP explicito.
