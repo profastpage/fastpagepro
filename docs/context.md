@@ -266,3 +266,6 @@
   - se agrego mini guia no invasiva dentro de `Carta` (primer ingreso) con pasos: navegar categorias, scroll, agregar al carrito, enviar por WhatsApp y entender personalizacion al activar cuenta/plan.
   - la guia se puede cerrar (`Entendido`), queda persistida por demo (`localStorage`) y puede reabrirse manualmente con `Ver mini guia`.
   - el widget flotante de ayuda en rutas `/demo` redujo su offset vertical en mobile para minimizar superposiciones con contenido principal.
+- Registro/Login (`/auth`) con textos corregidos:
+  - se normalizaron labels y mensajes en espanol con tildes correctas para evitar mojibake (`Iniciar Sesion`, `Contrasena`, `Codigo`, `continua`, etc.).
+  - se verifico que no queden cadenas corruptas (`Ã`, `Â`) en los flujos de `login` y `register`.
