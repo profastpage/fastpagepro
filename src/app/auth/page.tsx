@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Zap } from "lucide-react";
@@ -9,6 +9,7 @@ import {
   browserLocalPersistence,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   sendPasswordResetEmail,
@@ -220,6 +221,7 @@ function AuthContent() {
   const [isGoogleError, setIsGoogleError] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const isPostAuthProcessingRef = useRef(false);
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
   const planIntent = normalizePlanIntent(searchParams.get("plan"));
   const trialIntent = String(searchParams.get("trial") || "").trim().toLowerCase();
@@ -417,6 +419,32 @@ function AuthContent() {
     }
   };
 
+  const runPostAuthFlow = async (
+    firebaseUser: any,
+    source: "auth_state" | "redirect" | "popup",
+  ) => {
+    if (!firebaseUser?.uid) return;
+    if (isPostAuthProcessingRef.current) return;
+    isPostAuthProcessingRef.current = true;
+
+    try {
+      await syncUserToFirestore(firebaseUser, preferredVertical);
+      await applyReferralCodeAfterAuth(firebaseUser, tab === "register");
+      await activateBusinessTrial(firebaseUser);
+      if (tab === "register") {
+        void trackGrowthEvent("signup_complete", {
+          vertical: preferredVertical,
+          location: source === "popup" ? "auth_google_popup" : "auth_google_redirect",
+        });
+      }
+      router.push(resolvePostAuthTarget(firebaseUser.email));
+    } catch (error: any) {
+      console.error("[Auth] Error en flujo post login Google:", error);
+      isPostAuthProcessingRef.current = false;
+      throw error;
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -529,13 +557,7 @@ function AuthContent() {
     // Check if user is already logged in
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // Sincronizacion prioritaria
-        await syncUserToFirestore(user, preferredVertical);
-        await applyReferralCodeAfterAuth(user, tab === "register");
-        await activateBusinessTrial(user);
-
-        // Redireccion inmediata despues de asegurar datos
-        router.push(resolvePostAuthTarget(user.email));
+        await runPostAuthFlow(user, "auth_state");
       }
     });
 
@@ -543,25 +565,25 @@ function AuthContent() {
       try {
         const result = await getRedirectResult(auth);
         if (result?.user) {
-          // Sincronizacion prioritaria
-          await syncUserToFirestore(result.user, preferredVertical);
-          await applyReferralCodeAfterAuth(result.user, tab === "register");
-          await activateBusinessTrial(result.user);
-          if (tab === "register") {
-            void trackGrowthEvent("signup_complete", {
-              vertical: preferredVertical,
-              location: "auth_google_redirect",
-            });
-          }
-          router.push(resolvePostAuthTarget(result.user.email));
+          await runPostAuthFlow(result.user, "redirect");
         }
       } catch (error: any) {
         console.error("Redirect Error:", error);
+        showToast(`${i18n.loginError} ${error?.code || error?.message || i18n.unknownError}`);
       }
     };
     checkRedirect();
     return () => unsubscribe();
-  }, [demoSlugIntent, demoThemeIntent, planIntent, preferredVertical, router, tab, trialIntent]);
+  }, [demoSlugIntent, demoThemeIntent, i18n.loginError, i18n.unknownError, planIntent, preferredVertical, router, tab, trialIntent]);
+
+  const shouldPreferRedirectForGoogle = () => {
+    if (typeof window === "undefined") return true;
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isMobileLike =
+      /android|iphone|ipad|ipod|mobile|opera mini|iemobile|webos/.test(ua) ||
+      isStandaloneMode();
+    return isMobileLike;
+  };
 
   const handleGoogleLogin = async () => {
     if (isGoogleLoading) return;
@@ -575,7 +597,32 @@ function AuthContent() {
     setIsGoogleLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
+      provider.setCustomParameters({ prompt: "select_account" });
+
+      if (!shouldPreferRedirectForGoogle()) {
+        try {
+          const popupResult = await signInWithPopup(auth, provider);
+          if (popupResult?.user) {
+            await runPostAuthFlow(popupResult.user, "popup");
+            return;
+          }
+        } catch (popupError: any) {
+          const popupCode = String(popupError?.code || "");
+          const popupMessage = String(popupError?.message || "");
+          const canFallbackToRedirect =
+            popupCode === "auth/popup-blocked" ||
+            popupCode === "auth/popup-closed-by-user" ||
+            popupCode === "auth/cancelled-popup-request" ||
+            popupCode === "auth/operation-not-supported-in-this-environment" ||
+            /popup/i.test(popupMessage);
+
+          if (!canFallbackToRedirect) {
+            throw popupError;
+          }
+          console.warn("[Auth] Popup Google no disponible, fallback a redirect.", popupError);
+        }
+      }
+
       showToast(i18n.redirectGoogle);
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
