@@ -96,6 +96,7 @@ const COUPON_DISCOUNTS: Record<string, number> = {
 const AUTO_DISCOUNT_THRESHOLD = 80;
 const AUTO_DISCOUNT_RATE = 0.05;
 const ALL_CATEGORY_ID = "all";
+const MANUAL_CATEGORY_SYNC_PAUSE_MS = 850;
 
 const LINK_TYPE_ICON = {
   website: Globe,
@@ -396,6 +397,7 @@ export default function PublicBioPage() {
   const catalogStickyRef = useRef<HTMLDivElement | null>(null);
   const categorySectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const categoryChipRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const categorySyncPauseUntilRef = useRef(0);
 
   const slug = useMemo(() => sanitizeSlug(params?.slug || ""), [params?.slug]);
 
@@ -516,6 +518,7 @@ export default function PublicBioPage() {
     if (categorySections.length === 0) return;
 
     const syncActiveCategory = () => {
+      if (Date.now() < categorySyncPauseUntilRef.current) return;
       const container = catalogScrollRef.current;
       if (!container) return;
 
@@ -1238,6 +1241,7 @@ export default function PublicBioPage() {
   }
 
   function scrollToCategory(categoryId: string) {
+    categorySyncPauseUntilRef.current = Date.now() + MANUAL_CATEGORY_SYNC_PAUSE_MS;
     setSelectedCategoryId(categoryId);
     const container = catalogScrollRef.current;
     if (!container) return;
@@ -1417,7 +1421,7 @@ export default function PublicBioPage() {
         style={wrapperStyle}
       >
         <div
-          className={`border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"}`}
+          className={`sticky top-0 z-40 border-b px-3 md:px-8 ${activeTab === "contact" ? "py-3" : "py-2"}`}
           style={headerBarStyle}
         >
           <div className="relative space-y-1.5 md:space-y-0">
@@ -1836,7 +1840,7 @@ export default function PublicBioPage() {
               >
                 <div
                   ref={catalogStickyRef}
-                  className="sticky top-0 z-30 -mx-1 mb-3 border-b px-1 pb-3 pt-1 shadow-[0_12px_22px_-18px_rgba(0,0,0,0.45)] backdrop-blur"
+                  className="sticky top-0 z-50 -mx-1 mb-3 border-b px-1 pb-3 pt-1 shadow-[0_12px_22px_-18px_rgba(0,0,0,0.45)] backdrop-blur"
                   style={catalogStickyStyle}
                 >
                   <label className="flex items-center gap-2 rounded-2xl border px-3 py-2" style={searchSurfaceStyle}>

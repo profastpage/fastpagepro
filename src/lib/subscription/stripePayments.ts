@@ -1,4 +1,5 @@
 import { adminDb } from "@/lib/firebaseAdmin";
+import { nanoid } from "nanoid";
 import type { PlanType } from "@/lib/subscription/plans";
 
 type BillingCycle = "MONTHLY" | "ANNUAL";
@@ -37,7 +38,7 @@ function assertStorage() {
 }
 
 function createPaymentId() {
-  return `sub_stripe_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  return `sub_stripe_${Date.now()}_${nanoid(10)}`;
 }
 
 function toRecord(id: string, payload: Record<string, unknown>): StripeSubscriptionPaymentRecord {

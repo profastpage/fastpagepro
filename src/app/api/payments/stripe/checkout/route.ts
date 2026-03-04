@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
+import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
 import {
   calculateSubscriptionAmountSoles,
   type PlanType,
@@ -14,6 +16,13 @@ import { createStripeCheckoutSession } from "@/lib/payments/stripe";
 export const runtime = "nodejs";
 
 type BillingCycle = "MONTHLY" | "ANNUAL";
+const checkoutBodySchema = z
+  .object({
+    plan: z.string().trim().max(24),
+    billingCycle: z.enum(["MONTHLY", "ANNUAL"]).optional(),
+    durationMonths: z.coerce.number().int().min(1).max(12).optional(),
+  })
+  .passthrough();
 
 function toPlan(input: unknown): PlanType | null {
   const normalized = String(input || "").trim().toUpperCase();
@@ -48,11 +57,26 @@ export async function POST(request: NextRequest) {
   let pendingPaymentId = "";
   try {
     const user = await requireFirebaseUser(request);
-    const body = (await request.json().catch(() => ({}))) as {
-      plan?: string;
-      billingCycle?: BillingCycle;
-      durationMonths?: number;
-    };
+    const rateLimit = await enforceRouteRateLimit({
+      request,
+      namespace: "stripe_checkout",
+      limit: 8,
+      window: "1 m",
+      identifier: user.uid,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intenta de nuevo en unos segundos." },
+        { status: 429 },
+      );
+    }
+
+    const rawBody = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const parsedBody = checkoutBodySchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: "Datos invalidos para Stripe" }, { status: 400 });
+    }
+    const body = parsedBody.data;
 
     const plan = toPlan(body?.plan);
     if (!plan || plan === "FREE") {

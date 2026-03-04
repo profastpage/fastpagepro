@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
+import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
 import {
   getStripeSubscriptionPayment,
   markStripeSubscriptionPaymentStatus,
@@ -9,16 +11,37 @@ import { fetchStripeCheckoutSessionStatus } from "@/lib/payments/stripe";
 import { assignSubscriptionPlanByAdmin } from "@/lib/subscription/service";
 
 export const runtime = "nodejs";
+const confirmBodySchema = z
+  .object({
+    paymentId: z.string().trim().min(1).max(180),
+    sessionId: z.string().trim().max(220).optional(),
+  })
+  .passthrough();
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireFirebaseUser(request);
-    const body = (await request.json().catch(() => ({}))) as {
-      paymentId?: string;
-      sessionId?: string;
-    };
-    const paymentId = String(body?.paymentId || "").trim();
-    const sessionId = String(body?.sessionId || "").trim();
+    const rateLimit = await enforceRouteRateLimit({
+      request,
+      namespace: "stripe_confirm",
+      limit: 20,
+      window: "1 m",
+      identifier: user.uid,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intenta de nuevo en unos segundos." },
+        { status: 429 },
+      );
+    }
+
+    const rawBody = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const parsedBody = confirmBodySchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return NextResponse.json({ error: "paymentId es requerido" }, { status: 400 });
+    }
+    const paymentId = parsedBody.data.paymentId;
+    const sessionId = String(parsedBody.data.sessionId || "").trim();
 
     if (!paymentId) {
       return NextResponse.json({ error: "paymentId es requerido" }, { status: 400 });

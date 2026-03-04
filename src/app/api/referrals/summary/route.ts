@@ -1,5 +1,6 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
+import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
 import { buildReferralSummary } from "@/lib/referrals/service";
 
 export const runtime = "nodejs";
@@ -7,6 +8,20 @@ export const runtime = "nodejs";
 export async function GET(request: NextRequest) {
   try {
     const user = await requireFirebaseUser(request);
+    const rateLimit = await enforceRouteRateLimit({
+      request,
+      namespace: "referrals_summary_get",
+      limit: 30,
+      window: "1 m",
+      identifier: user.uid,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intenta de nuevo en unos segundos." },
+        { status: 429 },
+      );
+    }
+
     const summary = await buildReferralSummary({
       userId: user.uid,
       email: String(user.email || ""),
@@ -28,4 +43,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo cargar resumen de referidos" }, { status: 500 });
   }
 }
-

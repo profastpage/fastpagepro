@@ -1632,52 +1632,6 @@ export default function LinkHubPage() {
     });
   }, [profile]);
 
-  useEffect(() => {
-    if (!profile) return;
-    if (profile.businessType !== "restaurant") return;
-    const meaningfulItems = profile.catalogItems.filter((item) => item.title.trim().length > 0).length;
-    if (meaningfulItems >= 5) return;
-
-    setProfile((prev) => {
-      if (!prev || prev.businessType !== "restaurant") return prev;
-      const currentMeaningful = prev.catalogItems.filter((item) => item.title.trim().length > 0).length;
-      if (currentMeaningful >= 5) return prev;
-
-      const cleanLabel = stripRubroEmojiPrefix(prev.categoryLabel || DEFAULT_RESTAURANT_RUBRO);
-      const formattedLabel = formatRubroLabelWithEmoji(cleanLabel);
-      const rubroEmoji = inferRubroEmoji(cleanLabel);
-      const categories =
-        prev.catalogCategories.length > 0
-          ? prev.catalogCategories.map((category, index) =>
-              index === 0 ? { ...category, emoji: rubroEmoji, name: cleanLabel || category.name } : category,
-            )
-          : [createLinkHubCatalogCategory(cleanLabel || DEFAULT_RESTAURANT_RUBRO, rubroEmoji)];
-      const categoryId = categories[0]?.id || "";
-      const normalizedExisting = prev.catalogItems.map((item) =>
-        applyCatalogItemVisualRules({ ...item, categoryId: item.categoryId || categoryId }, categories, "restaurant"),
-      );
-      const existingTitles = new Set(
-        normalizedExisting.map((item) => item.title.trim().toLowerCase()).filter(Boolean),
-      );
-      const starterCandidates = buildRestaurantStarterItems(cleanLabel, categories)
-        .map((item) => applyCatalogItemVisualRules({ ...item, categoryId }, categories, "restaurant"))
-        .filter((item) => !existingTitles.has(item.title.trim().toLowerCase()));
-
-      const nextItems = [...normalizedExisting];
-      for (const starter of starterCandidates) {
-        if (nextItems.filter((item) => item.title.trim().length > 0).length >= 5) break;
-        nextItems.push(starter);
-      }
-
-      return {
-        ...prev,
-        categoryLabel: formattedLabel,
-        catalogCategories: categories,
-        catalogItems: nextItems.slice(0, MAX_LINK_HUB_CATALOG_ITEMS),
-      };
-    });
-  }, [profile?.businessType, profile?.categoryLabel, profile?.catalogCategories.length, profile?.catalogItems.length]);
-
   const publicUrl = useMemo(() => {
     if (!profile?.slug || !origin) return "";
     return `${origin}/bio/${profile.slug}`;
@@ -3042,14 +2996,9 @@ export default function LinkHubPage() {
     setProfile((prev) => {
       if (!prev) return prev;
       const nextItems = prev.catalogItems.filter((item) => item.id !== itemId);
-      const fallbackItem = applyCatalogItemVisualRules(
-        createLinkHubCatalogItem(prev.catalogCategories[0]?.id || ""),
-        prev.catalogCategories,
-        prev.businessType,
-      );
       return {
         ...prev,
-        catalogItems: nextItems.length > 0 ? nextItems : [fallbackItem],
+        catalogItems: nextItems,
       };
     });
   }

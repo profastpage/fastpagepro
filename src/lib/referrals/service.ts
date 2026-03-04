@@ -1,4 +1,5 @@
-﻿import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue } from "firebase-admin/firestore";
+import { customAlphabet } from "nanoid";
 import { adminDb } from "@/lib/firebaseAdmin";
 
 type ReferralEventStatus = "REGISTERED" | "PAID";
@@ -105,6 +106,7 @@ const DEFAULT_APP_URL = "https://www.fastpagepro.com";
 const MAX_REFERRAL_CODE_LEN = 20;
 const MAX_ALIAS_LEN = 32;
 const MAX_PAYMENT_REF_LEN = 120;
+const REFERRAL_CODE_SUFFIX = customAlphabet("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 4);
 const RESERVED_ALIASES = new Set([
   "admin",
   "api",
@@ -228,7 +230,7 @@ function buildBaseAliasFromEmail(email: string, userId: string): string {
 }
 
 function buildCandidateCode(base: string, attempt: number): string {
-  const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  const suffix = REFERRAL_CODE_SUFFIX();
   const numbered = `${base}${attempt > 0 ? String(attempt) : ""}${suffix}`;
   return normalizeReferralCode(numbered).slice(0, MAX_REFERRAL_CODE_LEN);
 }
@@ -762,7 +764,7 @@ export async function markReferralPaid(input: {
   const sanitizedPaymentRef = sanitizePaymentRef(input.paymentRef);
   const payoutId =
     sanitizedPaymentRef ||
-    sanitizePaymentRef(`${invitedUserId}:${requestedPlan}:${amountSoles}:${Date.now().toString(36)}`);
+    sanitizePaymentRef(`${invitedUserId}:${requestedPlan}:${amountSoles}:${Date.now().toString(36)}:${REFERRAL_CODE_SUFFIX()}`);
   const payoutRef = db.collection(REFERRAL_PAYOUTS_COLLECTION).doc(payoutId);
   const existingPayout = await payoutRef.get();
   if (existingPayout.exists) {
@@ -1018,14 +1020,66 @@ function buildNetworkRows(input: {
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
+function buildEmptyReferralSummary(input: {
+  profile: ReferralProfileRecord;
+  commissionConfig: ReferralCommissionConfig;
+}): ReferralSummary {
+  const profile = input.profile;
+  return {
+    profile,
+    referralLink: buildReferralLink(profile),
+    events: [],
+    payouts: [],
+    network: {
+      level1: [],
+      level2: [],
+    },
+    stats: {
+      invited: profile.invitedCount,
+      converted: profile.convertedCount,
+      pending: Math.max(0, profile.invitedCount - profile.convertedCount),
+      level1Referrals: 0,
+      level2Referrals: 0,
+      totalCommissionSoles: profile.totalCommissionSoles,
+      level1CommissionSoles: profile.level1CommissionSoles,
+      level2CommissionSoles: profile.level2CommissionSoles,
+      level1CommissionPercent: input.commissionConfig.level1Percent,
+      level2CommissionPercent: input.commissionConfig.level2Percent,
+      maxCommissionPercent: input.commissionConfig.maxPercent,
+    },
+  };
+}
+
 export async function buildReferralSummary(input: {
   userId: string;
   email?: string;
 }): Promise<ReferralSummary> {
   const commissionConfig = getReferralCommissionConfig();
   const profile = await ensureReferralProfile(input);
-  const { level1Events, level2Events } = await findDirectAndIndirectEvents(profile.userId);
-  const payouts = await getPayoutsForUser(profile.userId);
+
+  let level1Events: ReferralEventRecord[] = [];
+  let level2Events: ReferralEventRecord[] = [];
+  try {
+    const events = await findDirectAndIndirectEvents(profile.userId);
+    level1Events = events.level1Events;
+    level2Events = events.level2Events;
+  } catch (error) {
+    console.warn("[Referrals] Could not load network events. Returning base summary.", error);
+  }
+
+  let payouts: ReferralPayoutRecord[] = [];
+  try {
+    payouts = await getPayoutsForUser(profile.userId);
+  } catch (error) {
+    console.warn("[Referrals] Could not load payouts. Returning summary without payouts.", error);
+  }
+
+  if (level1Events.length === 0 && level2Events.length === 0 && payouts.length === 0) {
+    return buildEmptyReferralSummary({
+      profile,
+      commissionConfig,
+    });
+  }
 
   const level1CommissionSoles = roundMoney(
     payouts.reduce((acc, payout) => acc + (payout.level1?.userId === profile.userId ? payout.level1.commissionSoles : 0), 0),
@@ -1130,4 +1184,6 @@ export async function resolveReferralAlias(alias: string): Promise<{
     referralCode,
   };
 }
+
+
 

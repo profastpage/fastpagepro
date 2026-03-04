@@ -77,6 +77,7 @@ const ProductCard = memo(function ProductCard({
               src={primaryImage}
               alt={title}
               fill
+              unoptimized
               loading="lazy"
               sizes="(max-width: 768px) 128px, 170px"
               className="object-cover"
@@ -124,7 +125,7 @@ const ProductCard = memo(function ProductCard({
                   key={url}
                   className="relative h-7 w-7 overflow-hidden rounded-md border border-[color:var(--carta-chip-border)]"
                 >
-                  <Image src={url} alt={title} fill sizes="28px" className="object-cover" />
+                  <Image src={url} alt={title} fill unoptimized sizes="28px" className="object-cover" />
                 </span>
               ))}
               <span className="text-[10px] font-semibold" style={{ color: "var(--carta-muted-text)" }}>

@@ -24,14 +24,14 @@ const StickyCategoryBar = memo(function StickyCategoryBar({
   getButtonRef,
 }: StickyCategoryBarProps) {
   return (
-    <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
+    <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1 touch-pan-x">
       {categories.map((category) => (
         <button
           key={category.id}
           type="button"
           ref={(node) => getButtonRef?.(category.id, node)}
           onClick={() => onSelect(category.id)}
-          className={`shrink-0 border px-3 py-2 text-xs font-bold transition hover:-translate-y-0.5 active:scale-[0.98] ${buttonShapeClass}`}
+          className={`shrink-0 border px-3 py-2 text-xs font-bold transition touch-manipulation hover:-translate-y-0.5 active:scale-[0.98] ${buttonShapeClass}`}
           style={
             activeId === category.id
               ? {

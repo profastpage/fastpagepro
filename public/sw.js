@@ -1,4 +1,4 @@
-const CACHE_NAME = "fastpage-pwa-v1";
+const CACHE_NAME = "fastpage-pwa-v2";
 const APP_SHELL = ["/", "/app", "/auth", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
@@ -6,7 +6,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
       .catch(() => undefined),
   );
 });
@@ -37,11 +37,10 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     fetch(event.request).catch(async () => {
-      const appEntry = await caches.match("/app");
+      const appEntry = await caches.match("/app", { ignoreSearch: true });
       if (appEntry) return appEntry;
-      const root = await caches.match("/");
+      const root = await caches.match("/", { ignoreSearch: true });
       return root || Response.error();
     }),
   );
 });
-

@@ -1,23 +1,44 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
+import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
 import { applyReferralCode } from "@/lib/referrals/service";
 
 export const runtime = "nodejs";
 
+const applyBodySchema = z
+  .object({
+    code: z.string().trim().min(3).max(20),
+  })
+  .passthrough();
+
 export async function POST(request: NextRequest) {
   try {
     const user = await requireFirebaseUser(request);
-    const body = (await request.json().catch(() => ({}))) as { code?: string };
-    const code = String(body?.code || "").trim();
+    const rateLimit = await enforceRouteRateLimit({
+      request,
+      namespace: "referrals_apply",
+      limit: 12,
+      window: "1 m",
+      identifier: user.uid,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intenta de nuevo en unos segundos." },
+        { status: 429 },
+      );
+    }
 
-    if (!code) {
+    const rawBody = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const parsedBody = applyBodySchema.safeParse(rawBody);
+    if (!parsedBody.success) {
       return NextResponse.json({ error: "Codigo de referido requerido" }, { status: 400 });
     }
 
     const result = await applyReferralCode({
       invitedUserId: user.uid,
       invitedEmail: String(user.email || ""),
-      code,
+      code: parsedBody.data.code,
     });
 
     return NextResponse.json({
@@ -46,4 +67,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No se pudo aplicar el codigo de referido" }, { status: 500 });
   }
 }
-

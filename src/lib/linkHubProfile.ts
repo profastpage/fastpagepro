@@ -1387,10 +1387,13 @@ export function normalizeLinkHubProfile(
     .filter((item) => item.title.length > 0)
     .slice(0, MAX_LINK_HUB_CATALOG_ITEMS);
 
+  const hasExplicitEmptyCatalog = Array.isArray(input.catalogItems) && input.catalogItems.length === 0;
   const finalItems =
-    catalogItems.length > 0
-      ? catalogItems
-      : createDefaultCatalogItems(finalCategories, businessType);
+    hasExplicitEmptyCatalog
+      ? []
+      : catalogItems.length > 0
+        ? catalogItems
+        : createDefaultCatalogItems(finalCategories, businessType);
 
   const rawTestimonials = Array.isArray((input as Record<string, unknown>)["proTestimonials"])
     ? ((input as Record<string, unknown>)["proTestimonials"] as unknown[])

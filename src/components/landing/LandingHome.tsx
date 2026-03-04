@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 import Footer from "@/components/Footer";
 import DemoCard from "@/components/demo/DemoCard";
+import HeroOrbScene from "@/components/landing/HeroOrbScene";
 import VerticalSelector from "@/components/demo/VerticalSelector";
 import PwaInstallTopBanner from "@/components/pwa/PwaInstallTopBanner";
 import { useLanguage } from "@/context/LanguageContext";
@@ -49,6 +51,12 @@ type ModuleCard = {
   title: string;
   line: string;
   href: string;
+  icon: ComponentType<{ className?: string }>;
+};
+
+type HeroMetric = {
+  value: string;
+  label: string;
   icon: ComponentType<{ className?: string }>;
 };
 
@@ -156,6 +164,18 @@ const FLOW_STEPS_EN = [
   { title: "WhatsApp", icon: MessageCircle, description: "Reply fast and close sales in the same chat." },
   { title: "Metrics", icon: BarChart3, description: "Measure which sources and products generate more revenue." },
   { title: "Scale", icon: Rocket, description: "Double down on what works without wasting time or budget." },
+];
+
+const HERO_METRICS_ES: HeroMetric[] = [
+  { value: "+120", label: "Negocios activos", icon: Store },
+  { value: "14 dias", label: "Trial gratis", icon: ShieldCheck },
+  { value: "0%", label: "Comision por venta", icon: BarChart3 },
+];
+
+const HERO_METRICS_EN: HeroMetric[] = [
+  { value: "+120", label: "Active businesses", icon: Store },
+  { value: "14 days", label: "Free trial", icon: ShieldCheck },
+  { value: "0%", label: "Commission per sale", icon: BarChart3 },
 ];
 
 const DEMO_TAB_CONFIG_ES: Record<BusinessVertical, string> = {
@@ -639,6 +659,26 @@ const DELUXE_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-5 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
 const SOFT_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50";
+const HERO_STAGGER_VARIANTS = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.075,
+      delayChildren: 0.04,
+    },
+  },
+};
+const HERO_ITEM_VARIANTS = {
+  hidden: { opacity: 0, y: 18 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.45,
+    },
+  },
+};
 const HERO_CTA_VARIANT_ES = "B" as "A" | "B";
 const HERO_PRIMARY_CTA_LABEL_ES =
   HERO_CTA_VARIANT_ES === "A" ? "PROBAR 14 DÍAS GRATIS" : "Probar gratis 14 días";
@@ -717,6 +757,7 @@ export default function LandingHome() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number>(0);
   const [activityIndex, setActivityIndex] = useState(0);
   const [desktopTestimonialIndex, setDesktopTestimonialIndex] = useState(0);
+  const [enableHero3D, setEnableHero3D] = useState(false);
   const testimonialsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -736,6 +777,30 @@ export default function LandingHome() {
       page: "landing_home",
       vertical: urlVertical,
     });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const desktopMedia = window.matchMedia("(min-width: 1024px)");
+    const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const resolve3D = () => {
+      const navigatorWithMemory = window.navigator as Navigator & { deviceMemory?: number };
+      const memory = navigatorWithMemory.deviceMemory ?? 8;
+      const cores = window.navigator.hardwareConcurrency ?? 8;
+      const isLowEnd = memory <= 3 || cores <= 4;
+      setEnableHero3D(desktopMedia.matches && !reducedMotionMedia.matches && !isLowEnd);
+    };
+
+    resolve3D();
+
+    const onMediaChange = () => resolve3D();
+    desktopMedia.addEventListener("change", onMediaChange);
+    reducedMotionMedia.addEventListener("change", onMediaChange);
+    return () => {
+      desktopMedia.removeEventListener("change", onMediaChange);
+      reducedMotionMedia.removeEventListener("change", onMediaChange);
+    };
   }, []);
 
   const liveActivityFeed = isEnglish ? LIVE_ACTIVITY_FEED_EN : LIVE_ACTIVITY_FEED_ES;
@@ -877,6 +942,7 @@ export default function LandingHome() {
   );
   const moduleCards = isEnglish ? MODULES_EN : MODULES_ES;
   const flowSteps = isEnglish ? FLOW_STEPS_EN : FLOW_STEPS_ES;
+  const heroMetrics = isEnglish ? HERO_METRICS_EN : HERO_METRICS_ES;
   const demoTabConfig = isEnglish ? DEMO_TAB_CONFIG_EN : DEMO_TAB_CONFIG_ES;
   const faqs = isEnglish ? FAQS_EN : FAQS_ES;
   const verticalCopy = useMemo(() => getVerticalCopy(vertical, language), [language, vertical]);
@@ -956,40 +1022,83 @@ export default function LandingHome() {
         <PwaInstallTopBanner />
       </section>
 
-      <section className="relative z-10 mx-auto min-h-[calc(100svh-84px)] w-full max-w-7xl px-4 pb-12 pt-24 sm:px-6 md:pt-28 lg:px-8 lg:pt-32">
-        <div className="grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
-          <div className="space-y-4">
-            <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
+      <section className="relative z-10 mx-auto min-h-[calc(100svh-84px)] w-full max-w-7xl overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(120deg,rgba(16,16,16,0.95),rgba(10,10,10,0.82)_45%,rgba(17,17,17,0.96))] px-4 pb-12 pt-24 sm:px-6 md:pt-28 lg:px-8 lg:pt-32">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl" />
+          <div className="absolute right-[-4rem] top-1/3 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.35)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:28px_28px]" />
+        </div>
+
+        <div className="relative grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
+          <motion.div
+            variants={HERO_STAGGER_VARIANTS}
+            initial="hidden"
+            animate="show"
+            className="space-y-4"
+          >
+            <motion.p
+              variants={HERO_ITEM_VARIANTS}
+              className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300"
+            >
               {copy.heroTag}
-            </p>
-            <h1 className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
+            </motion.p>
+            <motion.h1
+              variants={HERO_ITEM_VARIANTS}
+              className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl"
+            >
               {copy.heroTitle}
-            </h1>
-            <p className="max-w-2xl text-base text-zinc-300 md:text-lg">
+            </motion.h1>
+            <motion.p variants={HERO_ITEM_VARIANTS} className="max-w-2xl text-base text-zinc-300 md:text-lg">
               {copy.heroDesc}
-            </p>
-            <div className="max-w-2xl space-y-0.5 text-left text-[11px] font-medium leading-[1.3] text-zinc-300 sm:text-xs">
+            </motion.p>
+            <motion.div
+              variants={HERO_ITEM_VARIANTS}
+              className="max-w-2xl space-y-0.5 text-left text-[11px] font-medium leading-[1.3] text-zinc-300 sm:text-xs"
+            >
               {copy.heroChecklist.map((item) => (
                 <p key={item}>✅ {item}</p>
               ))}
-            </div>
-            <p className="max-w-2xl text-xs font-semibold text-amber-200/90">
+            </motion.div>
+            <motion.p variants={HERO_ITEM_VARIANTS} className="max-w-2xl text-xs font-semibold text-amber-200/90">
               {copy.heroProof}
-            </p>
+            </motion.p>
 
-            <VerticalSelector
-              value={vertical}
-              onChange={(nextVertical) => {
-                setVertical(nextVertical);
-                persistVerticalChoice(nextVertical);
-                void trackGrowthEvent("view_demo", {
-                  vertical: nextVertical,
-                  slug: "landing_selector",
-                });
-              }}
-            />
+            <motion.div variants={HERO_ITEM_VARIANTS} className="grid max-w-2xl grid-cols-3 gap-2 sm:gap-3">
+              {heroMetrics.map((metric) => {
+                const Icon = metric.icon;
+                return (
+                  <div
+                    key={metric.label}
+                    className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
+                  >
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-amber-300/35 bg-amber-300/10">
+                      <Icon className="h-3.5 w-3.5 text-amber-300" />
+                    </span>
+                    <p className="mt-2 text-sm font-black text-white sm:text-base">{metric.value}</p>
+                    <p className="text-[11px] text-zinc-300 sm:text-xs">{metric.label}</p>
+                  </div>
+                );
+              })}
+            </motion.div>
 
-            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <motion.div variants={HERO_ITEM_VARIANTS}>
+              <VerticalSelector
+                value={vertical}
+                onChange={(nextVertical) => {
+                  setVertical(nextVertical);
+                  persistVerticalChoice(nextVertical);
+                  void trackGrowthEvent("view_demo", {
+                    vertical: nextVertical,
+                    slug: "landing_selector",
+                  });
+                }}
+              />
+            </motion.div>
+
+            <motion.div
+              variants={HERO_ITEM_VARIANTS}
+              className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+            >
               <Link
                 href={heroSignupHref}
                 onClick={() =>
@@ -1013,7 +1122,8 @@ export default function LandingHome() {
                 }
                 className={`${SOFT_BUTTON_BASE} inline-flex w-full justify-center rounded-full px-6 py-3 uppercase tracking-[0.12em] sm:w-auto`}
               >
-                <PlayCircle className="h-4 w-4" /> {copy.ctaDemo}</Link>
+                <PlayCircle className="h-4 w-4" /> {copy.ctaDemo}
+              </Link>
               <a
                 href="#pricing"
                 onClick={() =>
@@ -1027,15 +1137,15 @@ export default function LandingHome() {
               >
                 {copy.ctaPlans}
               </a>
-            </div>
-            <p className="max-w-2xl text-center text-[11px] text-zinc-400/80 sm:text-xs">
+            </motion.div>
+            <motion.p variants={HERO_ITEM_VARIANTS} className="max-w-2xl text-center text-[11px] text-zinc-400/80 sm:text-xs">
               {copy.ctaPrimaryHelper}
-            </p>
-            <p className="text-xs font-semibold text-amber-200/85">
+            </motion.p>
+            <motion.p variants={HERO_ITEM_VARIANTS} className="text-xs font-semibold text-amber-200/85">
               {copy.urgency}
-            </p>
+            </motion.p>
 
-            <div className="flex flex-wrap gap-2">
+            <motion.div variants={HERO_ITEM_VARIANTS} className="flex flex-wrap gap-2">
               {copy.chips.map((item) => (
                 <span
                   key={item}
@@ -1044,10 +1154,48 @@ export default function LandingHome() {
                   {item}
                 </span>
               ))}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="rounded-3xl border border-white/10 bg-black/45 p-5 shadow-2xl backdrop-blur-md">
+          <motion.div
+            initial={{ opacity: 0, x: 24, y: 12 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            transition={{ duration: 0.55, ease: "easeOut", delay: 0.1 }}
+            className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/45 p-5 shadow-2xl backdrop-blur-md"
+          >
+            <motion.div
+              aria-hidden
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 5.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+              className="absolute -right-6 -top-6 h-28 w-28 rounded-full border border-amber-300/20 bg-amber-300/10 blur-xl"
+            />
+            <div className="relative mb-4">
+              {enableHero3D ? (
+                <HeroOrbScene />
+              ) : (
+                <div className="relative flex h-[220px] items-end overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_28%_18%,rgba(251,191,36,0.14),transparent_48%),radial-gradient(circle_at_78%_72%,rgba(34,211,238,0.1),transparent_55%),linear-gradient(165deg,rgba(8,8,8,0.96),rgba(18,18,18,0.88))] p-4">
+                  <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(to_right,rgba(255,255,255,0.3)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.3)_1px,transparent_1px)] [background-size:24px_24px]" />
+                  <p className="relative text-xs font-bold uppercase tracking-[0.16em] text-amber-200/90">
+                    {copy.panelTag}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="relative mb-4 rounded-2xl border border-white/10 bg-zinc-950/70 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{copy.liveActivity}</p>
+                <span className="rounded-full border border-emerald-300/40 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-bold text-emerald-200">
+                  {activityTimeLabel || (isEnglish ? "now" : "ahora")}
+                </span>
+              </div>
+              <p className="mt-1 text-sm font-semibold text-white">
+                {activeLiveActivity ? `${activeLiveActivity.name} ${copy.from} ${activeLiveActivity.city}` : "FastPage"}
+              </p>
+              <p className="mt-1 text-xs text-zinc-300">
+                {activeLiveActivity?.action ?? copy.panelDesc}
+              </p>
+            </div>
+
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">{copy.panelTag}</p>
             <h2 className="mt-3 text-3xl font-black text-white">{verticalCopy.headline}</h2>
             <p className="mt-3 text-sm text-zinc-300">
@@ -1074,7 +1222,7 @@ export default function LandingHome() {
               {copy.panelCta}
               <ArrowRight className="h-4 w-4" />
             </Link>
-          </div>
+          </motion.div>
         </div>
       </section>
 

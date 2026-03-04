@@ -46,6 +46,10 @@ const RECOMMENDED_FIREBASE_AUTH_DOMAINS = Array.from(
   new Set([CANONICAL_AUTH_HOST, ...AUTH_ALIAS_HOSTS].filter(Boolean)),
 );
 const GOOGLE_AUTH_INTENT_KEY = "fp_google_auth_intent";
+const FORCE_GOOGLE_REDIRECT =
+  String(process.env.NEXT_PUBLIC_GOOGLE_AUTH_FORCE_REDIRECT || "0")
+    .trim()
+    .toLowerCase() !== "0";
 
 type LandingPlanIntent = "FREE" | "BUSINESS" | "PRO";
 
@@ -55,6 +59,17 @@ function isStandaloneMode() {
     window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );
+}
+
+function isPwaAuthContext() {
+  if (typeof window === "undefined") return false;
+  if (isStandaloneMode()) return true;
+  try {
+    const currentUrl = new URL(window.location.href);
+    return String(currentUrl.searchParams.get("source") || "").trim().toLowerCase() === "pwa";
+  } catch {
+    return false;
+  }
 }
 
 function normalizePlanIntent(rawValue: string | null): LandingPlanIntent | null {
@@ -223,6 +238,7 @@ function AuthContent() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const isPostAuthProcessingRef = useRef(false);
+  const googleIntentMemoryRef = useRef<"login" | "register" | null>(null);
   const googleIntentRef = useRef<"login" | "register">("login");
   const preferredVertical = normalizeVertical(searchParams.get("vertical"));
   const planIntent = normalizePlanIntent(searchParams.get("plan"));
@@ -242,12 +258,25 @@ function AuthContent() {
   const persistGoogleIntent = (intent: "login" | "register") => {
     if (typeof window === "undefined") return;
     googleIntentRef.current = intent;
-    window.sessionStorage.setItem(GOOGLE_AUTH_INTENT_KEY, intent);
+    googleIntentMemoryRef.current = intent;
+    try {
+      window.sessionStorage.setItem(GOOGLE_AUTH_INTENT_KEY, intent);
+    } catch (error) {
+      console.warn("[Auth] No se pudo persistir intent en sessionStorage:", error);
+    }
   };
 
   const readGoogleIntent = (): "login" | "register" => {
     if (typeof window === "undefined") return tab;
-    const raw = String(window.sessionStorage.getItem(GOOGLE_AUTH_INTENT_KEY) || "").trim().toLowerCase();
+    let raw = "";
+    try {
+      raw = String(window.sessionStorage.getItem(GOOGLE_AUTH_INTENT_KEY) || "").trim().toLowerCase();
+    } catch (error) {
+      console.warn("[Auth] No se pudo leer intent de sessionStorage:", error);
+    }
+    if (!raw && googleIntentMemoryRef.current) {
+      return googleIntentMemoryRef.current;
+    }
     if (raw === "register") return "register";
     if (raw === "login") return "login";
     return tab;
@@ -255,11 +284,17 @@ function AuthContent() {
 
   const clearGoogleIntent = () => {
     if (typeof window === "undefined") return;
-    window.sessionStorage.removeItem(GOOGLE_AUTH_INTENT_KEY);
+    googleIntentMemoryRef.current = null;
+    try {
+      window.sessionStorage.removeItem(GOOGLE_AUTH_INTENT_KEY);
+    } catch (error) {
+      console.warn("[Auth] No se pudo limpiar intent de sessionStorage:", error);
+    }
   };
 
   const isCanonicalRedirectNeeded = () => {
     if (typeof window === "undefined") return false;
+    if (isPwaAuthContext()) return false;
     const currentHost = window.location.host.toLowerCase();
     if (!CANONICAL_AUTH_HOST) return false;
     if (currentHost === CANONICAL_AUTH_HOST) return false;
@@ -629,6 +664,8 @@ function AuthContent() {
   }, [demoSlugIntent, demoThemeIntent, i18n.loginError, i18n.unknownError, planIntent, preferredVertical, router, tab, trialIntent]);
 
   const shouldUseGooglePopup = () => {
+    if (isPwaAuthContext()) return true;
+    if (FORCE_GOOGLE_REDIRECT) return false;
     if (typeof window === "undefined") return false;
     const ua = window.navigator.userAgent.toLowerCase();
     const isMobile =
@@ -669,8 +706,12 @@ function AuthContent() {
             popupCode === "auth/popup-closed-by-user" ||
             popupCode === "auth/cancelled-popup-request" ||
             /popup/i.test(popupMessage);
+          const popupFatal =
+            popupCode === "auth/unauthorized-domain" ||
+            popupCode === "auth/operation-not-allowed" ||
+            popupCode === "auth/invalid-api-key";
 
-          if (!unsupportedEnvironment && !popupBlocked) {
+          if (popupFatal) {
             throw popupError;
           }
 
@@ -682,7 +723,13 @@ function AuthContent() {
             return;
           }
 
-          console.warn("[Auth] Entorno sin soporte popup, fallback a redirect", popupError);
+          if (unsupportedEnvironment) {
+            console.warn("[Auth] Entorno sin soporte popup, fallback a redirect", popupError);
+          } else {
+            console.warn("[Auth] Popup Google fallo; fallback a redirect", popupError);
+          }
+          await startGoogleRedirect(tab);
+          return;
         }
       }
 
@@ -698,6 +745,8 @@ function AuthContent() {
         } else {
           showToast(`${i18n.unauthorizedDomainFirebase} ${RECOMMENDED_FIREBASE_AUTH_DOMAINS.join(", ")}`);
         }
+      } else if (error.code === "auth/operation-not-allowed") {
+        showToast(i18n.authNotEnabled);
       } else {
         showToast(`${i18n.loginError} ${error.message || i18n.unknownError}`);
       }

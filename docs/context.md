@@ -181,3 +181,52 @@
   - durante guardado se migran automaticamente URLs antiguas (no-Cloudinary) hacia Cloudinary en avatar, portadas, reserva y catalogo.
   - si la subida a Cloudinary falla, el guardado detiene el flujo con error explicito (`No se pudo subir imagenes a Cloudinary`) para evitar bucles silenciosos.
   - nuevas variables de entorno requeridas en servidor: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (o `CLOUDINARY_URL`).
+
+## 2026-03-04
+
+- Arquitectura 3C (Contract/Core/Context) aplicada como migracion piloto en `theme-marketplace` sin cambios de rutas publicas ni esquema de base de datos:
+  - nuevos contratos en `src/contract/themeMarketplace` (DTOs, puertos e interfaces de casos de uso).
+  - logica de negocio extraida a `src/core/themeMarketplace/themeMarketplaceUseCases.ts` (catalogo, compra y confirmacion de pago).
+  - adaptadores concretos en `src/context/themeMarketplace` para Firestore, catalogo de packs e Izipay.
+  - `src/lib/themeMarketplace/service.ts` se mantiene como fachada retrocompatible apuntando a los use cases 3C.
+  - endpoints `GET /api/theme-marketplace/packs` y `POST/PUT /api/theme-marketplace/purchase` conservan contrato HTTP y mensajes existentes.
+- Login Google en `/auth` robustecido adicionalmente para entornos con extensiones/popup inestable:
+  - si `signInWithPopup` falla con errores no fatales, ahora hace fallback inmediato a `signInWithRedirect` en vez de abortar flujo.
+  - persistencia de `google intent` (`login/register`) ahora usa `sessionStorage` con `try/catch` y fallback en memoria para navegadores que bloquean storage.
+  - se agrego manejo explicito de `auth/operation-not-allowed` para mostrar mensaje de configuracion en lugar de error generico.
+  - se fuerza por defecto el login Google via `signInWithRedirect` (`NEXT_PUBLIC_GOOGLE_AUTH_FORCE_REDIRECT=1`) para evitar fallas de inicio causadas por popups bloqueados/extensiones del navegador; se puede reactivar popup en desktop con `0`.
+- Login Google en PWA instalada (`standalone`) corregido:
+  - `/auth` ya no fuerza redireccion de host canonico cuando detecta contexto PWA (`display-mode: standalone` o `?source=pwa`), evitando que el flujo OAuth salga del contexto de la app instalada antes de iniciar sesion.
+- PWA update hardening para aplicar fixes como "reinstalada":
+  - `PwaServiceWorkerRegistrar` ahora fuerza `updateViaCache: "none"`, chequea updates en cada arranque y periodicamente, activa worker nuevo con `SKIP_WAITING` y recarga al cambiar `controller`.
+  - `public/sw.js` sube cache a `fastpage-pwa-v2`, precache con `cache: "reload"` y fallback con `ignoreSearch`.
+  - `next.config.mjs` agrega `Cache-Control` anti-cache para `/sw.js` y `no-cache` para `/manifest.webmanifest`.
+  - `ServiceWorkerCleanup` pasa de limpieza una sola vez a limpieza periodica (TTL 5 min), reduciendo casos donde queda estado viejo en app instalada.
+- Firebase Auth domain strategy actualizada para evitar `missing initial state` en redirect OAuth (PWA/mobile/storage-partitioned):
+  - `src/lib/firebase.ts` ahora prioriza `authDomain` same-origin (host actual) cuando esta en lista permitida, en lugar de forzar siempre `*.firebaseapp.com`.
+  - se agrega `NEXT_PUBLIC_FIREBASE_AUTH_ALLOWED_DOMAINS` para controlar dominios autorizados de runtime.
+  - fallback conservador a `fastpage-7ceb3.firebaseapp.com` si el host no esta permitido.
+- Landing principal (`/`) con hero visual mas premium y dinamico sin romper rutas ni CTAs:
+  - se integraron animaciones suaves con `framer-motion` en entrada del hero y panel derecho.
+  - se agregaron capas visuales (glow + grilla sutil) y tarjetas de metricas rapidas para reforzar valor/propuesta en primer pantallazo.
+  - se incorporo tarjeta de actividad en vivo dentro del panel del hero reutilizando el feed existente (ES/EN), manteniendo tracking y enlaces actuales.
+- Hero 3D real en landing (`/`) con rendimiento protegido:
+  - se agrego componente nuevo `src/components/landing/HeroOrbScene.tsx` usando `@react-three/fiber` y `@react-three/drei` para render de orbita 3D ligera en el panel principal.
+  - la escena 3D solo se activa en desktop (`min-width: 1024px`), con `prefers-reduced-motion` desactivado y evitando dispositivos low-end (heuristica por `deviceMemory`/`hardwareConcurrency`).
+  - en mobile o entornos de bajo rendimiento se mantiene fallback visual estatico del mismo estilo para no degradar UX ni tiempo de carga.
+- Carta Digital publicada (`/bio/[slug]`) corrige render de fotos de productos:
+  - `src/components/carta/ProductCard.tsx` ahora renderiza imagen principal y miniaturas con `next/image` en modo `unoptimized` para evitar roturas en runtime con URLs externas de Cloudinary.
+  - resultado: las imagenes subidas desde edicion con cuenta registrada se visualizan correctamente tras publicar.
+- Hero 3D de landing (`/`) alineado a narrativa de marca FastPage:
+  - `src/components/landing/HeroOrbScene.tsx` se rediseno para representar velocidad web: nucleo de rendimiento, anillo de trafico, particulas de red y simbolo visual tipo rayo.
+  - se agrego etiqueta visual `Fast Web Engine` para reforzar el concepto de paginas rapidas/alto rendimiento en el primer impacto.
+- Hardening backend para referidos y Stripe con validacion/rate-limit:
+  - se instalaron `zod`, `nanoid`, `@upstash/ratelimit` y `@upstash/redis`.
+  - se agrego helper server-side `src/lib/server/rateLimit.ts` con modo fail-open cuando Upstash no esta configurado.
+  - endpoints `POST /api/referrals/apply`, `PATCH /api/referrals/profile`, `GET /api/referrals/summary`, `POST /api/payments/stripe/checkout` y `POST /api/payments/stripe/confirm` ahora validan payload con `zod` y aplican rate limit por usuario.
+  - generacion de IDs/codigos sensibles dejo de usar `Math.random` en flujos de referidos/pagos y paso a `nanoid`/`customAlphabet`.
+  - se agregaron variables opcionales en `.env.example`: `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`.
+- Referidos (`/api/referrals/summary` y `/api/referrals/profile`) con resiliencia operativa:
+  - `src/lib/server/rateLimit.ts` ahora aplica fail-open tambien cuando Upstash responde con error (token invalido, timeout o red), evitando `500` en rutas autenticadas.
+  - `src/lib/referrals/service.ts` ahora devuelve resumen base (perfil + enlace + stats minimas) si fallan consultas secundarias de red/payouts, evitando que `guardar alias` o `actualizar enlace` fallen por dependencias no criticas.
+  - `PATCH /api/referrals/profile` ahora devuelve `409` claro cuando no se puede reservar alias (`REFERRAL_ALIAS_GENERATION_FAILED`), en lugar de `500` generico.
