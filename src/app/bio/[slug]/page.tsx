@@ -42,6 +42,7 @@ import {
   AtSign,
   ChevronDown,
   ChevronUp,
+  Download,
   Facebook,
   Fish,
   Globe,
@@ -67,14 +68,32 @@ import { useLanguage } from "@/context/LanguageContext";
 import { localizeDynamicText } from "@/lib/autoI18n";
 import { optimizeCloudinaryDeliveryUrl } from "@/lib/cloudinaryDelivery";
 import { toImageObjectPosition } from "@/lib/imagePosition";
+import IosInstallGuideModal from "@/components/pwa/IosInstallGuideModal";
 
 type PublicTab = "contact" | "catalog" | "location" | "reservation";
 type CheckoutStep = "cart" | "checkout";
 type DeliveryMethod = "delivery" | "pickup" | "dinein";
 type PaymentMethod = "cash" | "transfer" | "yape" | "plin";
 type GoldKeywordAction = "contact" | "catalog" | "location" | "reservation" | "call" | "whatsapp";
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 
 type CartItem = CartaCartItem;
+
+function isStandaloneMode() {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
+function isIosInstallDevice() {
+  if (typeof window === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+}
 
 const ORDER_DELIVERY_OPTIONS: Array<{ value: DeliveryMethod; label: string }> = [
   { value: "delivery", label: "Envio a domicilio" },
@@ -370,6 +389,12 @@ export default function PublicBioPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(ALL_CATEGORY_ID);
   const [activeCoverIndex, setActiveCoverIndex] = useState(0);
   const [shareFeedback, setShareFeedback] = useState("");
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isPwaStandalone, setIsPwaStandalone] = useState(false);
+  const [isIosPwaDevice, setIsIosPwaDevice] = useState(false);
+  const [isPwaInstallVisible, setIsPwaInstallVisible] = useState(false);
+  const [isPwaInstalling, setIsPwaInstalling] = useState(false);
+  const [showIosInstallGuide, setShowIosInstallGuide] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>("cart");
@@ -439,6 +464,53 @@ export default function PublicBioPage() {
       active = false;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!profile?.proFeaturesUnlocked) {
+      setDeferredInstallPrompt(null);
+      setIsPwaStandalone(false);
+      setIsIosPwaDevice(false);
+      setIsPwaInstallVisible(false);
+      setIsPwaInstalling(false);
+      setShowIosInstallGuide(false);
+      return;
+    }
+    if (typeof window === "undefined") return;
+
+    const standaloneMode = isStandaloneMode();
+    setIsPwaStandalone(standaloneMode);
+    if (standaloneMode) {
+      setIsPwaInstallVisible(false);
+      setDeferredInstallPrompt(null);
+      return;
+    }
+
+    const iosDevice = isIosInstallDevice();
+    setIsIosPwaDevice(iosDevice);
+    if (iosDevice) {
+      setIsPwaInstallVisible(true);
+    }
+
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setDeferredInstallPrompt(event as BeforeInstallPromptEvent);
+      setIsPwaInstallVisible(true);
+    };
+    const handleAppInstalled = () => {
+      setIsPwaStandalone(true);
+      setIsPwaInstallVisible(false);
+      setDeferredInstallPrompt(null);
+      setIsPwaInstalling(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, [profile?.proFeaturesUnlocked, profile?.slug]);
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const automationConfig = profile?.automation;
@@ -804,6 +876,12 @@ export default function PublicBioPage() {
     reservationRequiresDeposit &&
     (reservationDepositAmount.length > 0 || reservationDepositInstructions.length > 0);
   const visibleTabCount = reservationEnabled ? 4 : 3;
+  const showPwaInstallAction = Boolean(
+    profile.proFeaturesUnlocked &&
+      isPwaInstallVisible &&
+      !isPwaStandalone &&
+      (isIosPwaDevice || Boolean(deferredInstallPrompt)),
+  );
   const activateTab = (nextTab: PublicTab) => {
     const resolvedTab = nextTab === "reservation" && !reservationEnabled ? "contact" : nextTab;
     if (resolvedTab === "reservation") {
@@ -1262,6 +1340,38 @@ export default function PublicBioPage() {
     }
   }
 
+  async function handlePwaInstall() {
+    if (!showPwaInstallAction) return;
+
+    if (isIosPwaDevice && !deferredInstallPrompt) {
+      setShowIosInstallGuide(true);
+      return;
+    }
+
+    if (!deferredInstallPrompt) {
+      window.alert(
+        tx(
+          "Si no ves el boton de instalacion del navegador, abre el menu y elige Instalar app.",
+          "If you don't see the browser install button, open the menu and choose Install app.",
+        ),
+      );
+      return;
+    }
+
+    setIsPwaInstalling(true);
+    try {
+      await deferredInstallPrompt.prompt();
+      const result = await deferredInstallPrompt.userChoice;
+      if (result.outcome === "accepted") {
+        setIsPwaInstallVisible(false);
+        setIsPwaStandalone(true);
+      }
+      setDeferredInstallPrompt(null);
+    } finally {
+      setIsPwaInstalling(false);
+    }
+  }
+
   function scrollToCategory(categoryId: string) {
     categorySyncPauseUntilRef.current = Date.now() + MANUAL_CATEGORY_SYNC_PAUSE_MS;
     setSelectedCategoryId(categoryId);
@@ -1557,6 +1667,26 @@ export default function PublicBioPage() {
               {shareFeedback}
             </p>
           )}
+          {showPwaInstallAction ? (
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={handlePwaInstall}
+                disabled={isPwaInstalling}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[10px] font-black uppercase tracking-[0.09em] transition hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+                style={{
+                  borderColor: "var(--carta-chip-border)",
+                  color: "var(--carta-button-text)",
+                  background: "var(--carta-button-bg)",
+                  boxShadow: useWhiteCartaBackground ? "0 10px 20px -16px rgba(15,23,42,0.38)" : "var(--carta-shadow)",
+                }}
+                aria-label={tx("Instalar app", "Install app")}
+              >
+                <Download className="h-3.5 w-3.5" />
+                {isPwaInstalling ? tx("Instalando...", "Installing...") : tx("Instalar app", "Install app")}
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <div
@@ -2695,6 +2825,7 @@ export default function PublicBioPage() {
           </div>
         </div>
       )}
+      <IosInstallGuideModal open={showIosInstallGuide} onClose={() => setShowIosInstallGuide(false)} />
     </CartaThemeProvider>
   );
 }
