@@ -269,3 +269,8 @@
 - Registro/Login (`/auth`) con textos corregidos:
   - se normalizaron labels y mensajes en espanol con tildes correctas para evitar mojibake (`Iniciar Sesion`, `Contrasena`, `Codigo`, `continua`, etc.).
   - se verifico que no queden cadenas corruptas (`Ã`, `Â`) en los flujos de `login` y `register`.
+- Navegacion `Retroceder` en demos (`/demo` y `/demo/[vertical]/[slug]`) reforzada:
+  - se agrego helper compartido `src/lib/navigation.ts` con estrategia `navigateBackWithFallback`.
+  - ahora prioriza volver al `referrer` mismo dominio cuando existe; si no, usa `history.back()`.
+  - se agrega fallback forzado por timeout para webview/PWA donde `history.back()` no cambia URL.
+  - fallback final garantizado: `/` en Demo Hub y `/demo?vertical=<vertical>` en Demo Experience.

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import ThemePicker from "@/components/demo/ThemePicker";
 import StickyCTA from "@/components/demo/StickyCTA";
 import RestaurantDemo from "@/components/demo/RestaurantDemo";
@@ -11,6 +10,7 @@ import ServicesDemo from "@/components/demo/ServicesDemo";
 import type { DemoData } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
+import { navigateBackWithFallback } from "@/lib/navigation";
 import {
   persistVerticalChoice,
   verticalToCreateHref,
@@ -26,7 +26,6 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
   const isEn = language === "en";
   const tx = (es: string, en: string) => (isEn ? en : es);
   const td = (value: string) => localizeDynamicText(value, language);
-  const router = useRouter();
   const [themeId, setThemeId] = useState(demo.themeId);
 
   useEffect(() => {
@@ -51,11 +50,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     : verticalToSignupHref(demo.vertical, { demoSlug: demo.slug, demoTheme: themeId });
 
   const handleBackClick = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push("/");
+    navigateBackWithFallback(`/demo?vertical=${demo.vertical}`);
   };
 
   if (demo.vertical === "restaurant") {

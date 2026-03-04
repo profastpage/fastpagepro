@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import DemoCard from "@/components/demo/DemoCard";
 import VerticalSelector from "@/components/demo/VerticalSelector";
 import { DEMO_CATALOG } from "@/lib/demoCatalog";
 import { persistUtmFromUrl, trackGrowthEvent } from "@/lib/analytics";
+import { navigateBackWithFallback } from "@/lib/navigation";
 import {
   getVerticalCopy,
   normalizeVertical,
@@ -20,7 +20,6 @@ type DemoHubProps = {
 };
 
 export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps) {
-  const router = useRouter();
   const [vertical, setVertical] = useState<BusinessVertical>(defaultVertical);
 
   useEffect(() => {
@@ -41,11 +40,7 @@ export default function DemoHub({ defaultVertical = "restaurant" }: DemoHubProps
     [vertical],
   );
   const handleBackClick = () => {
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.push("/");
+    navigateBackWithFallback("/");
   };
 
   return (
