@@ -254,6 +254,9 @@
   - el precache del `service worker` se redujo a `"/"` y `"/manifest.webmanifest"`; ya no precachea `"/auth"` ni `"/app"` desde la home, evitando que se dispare Firebase Auth/GAPI durante la carga inicial.
 - Nav autenticada aislada de la home publica:
   - `NavRouter` ahora monta `AppNav` a traves de un `AppNavMount` separado, para que `/` solo cargue `PublicNav` y no arrastre la navegacion autenticada al bundle inicial de la landing.
+- Runtime PWA excluido de `/`:
+  - `DeferredGlobalEnhancements` ya no monta `PwaServiceWorkerRegistrar` ni `ServiceWorkerCleanup` en la home publica.
+  - objetivo: que la landing no registre ni toque `service workers` durante el arranque, reduciendo ruido de red y ejecucion en Lighthouse.
 - Referidos con persistencia avanzada de alias y bloqueo de invitacion:
   - `referral_profiles` ahora soporta `customAliases` (maximo 3) manteniendo compatibilidad con `customAlias` como alias primario.
   - guardar alias ya no reemplaza ni libera aliases anteriores; se mantienen activos para siempre en la cuenta hasta llegar al limite.

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 
 const FloatingControls = dynamic(() => import("@/components/FloatingControls"), {
   ssr: false,
@@ -19,10 +20,13 @@ const PwaServiceWorkerRegistrar = dynamic(
 );
 
 export default function DeferredGlobalEnhancements() {
+  const pathname = usePathname();
+  const shouldMountPwaRuntime = pathname !== "/";
+
   return (
     <>
-      <PwaServiceWorkerRegistrar />
-      <ServiceWorkerCleanup />
+      {shouldMountPwaRuntime ? <PwaServiceWorkerRegistrar /> : null}
+      {shouldMountPwaRuntime ? <ServiceWorkerCleanup /> : null}
       <FloatingControls />
       <LuxuryCursorEffect />
     </>
