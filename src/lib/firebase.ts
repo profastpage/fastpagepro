@@ -4,6 +4,7 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const DEFAULT_FIREBASE_AUTH_DOMAIN = "fastpage-7ceb3.firebaseapp.com";
+const DEFAULT_AUTH_CANONICAL_HOST = "www.fastpagepro.com";
 const DEFAULT_ALLOWED_AUTH_DOMAINS = [
   "www.fastpagepro.com",
   "fastpagepro.com",
@@ -28,6 +29,15 @@ function stripPort(host: string): string {
     .replace(/:\d+$/, "");
 }
 
+function isLocalHost(host: string): boolean {
+  const normalizedHost = stripPort(normalizeDomain(host));
+  return (
+    normalizedHost === "localhost" ||
+    normalizedHost === "127.0.0.1" ||
+    normalizedHost.endsWith(".localhost")
+  );
+}
+
 function readAllowedDomains(): Set<string> {
   const raw = String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_ALLOWED_DOMAINS || "").trim();
   const entries = raw
@@ -45,6 +55,12 @@ function canUseAsAuthDomain(host: string, allowedDomains: Set<string>): boolean 
   return allowedDomains.has(hostWithoutPort);
 }
 
+function readCanonicalAuthHost(): string {
+  return normalizeDomain(
+    String(process.env.NEXT_PUBLIC_AUTH_CANONICAL_HOST || DEFAULT_AUTH_CANONICAL_HOST),
+  );
+}
+
 function resolveFirebaseAuthDomain(): string {
   const fallback = DEFAULT_FIREBASE_AUTH_DOMAIN;
   const configured = normalizeDomain(String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || ""));
@@ -54,6 +70,8 @@ function resolveFirebaseAuthDomain(): string {
   const disableSameOrigin = sameOriginMode === "0" || sameOriginMode === "false";
   const forceSameOrigin = sameOriginMode === "1" || sameOriginMode === "true";
   const allowedDomains = readAllowedDomains();
+  const canonicalHost = readCanonicalAuthHost();
+  const canUseCanonicalHost = canUseAsAuthDomain(canonicalHost, allowedDomains);
 
   if (typeof window !== "undefined") {
     const currentHost = normalizeDomain(window.location.host);
@@ -64,6 +82,14 @@ function resolveFirebaseAuthDomain(): string {
         (!disableSameOrigin && (!configured || configured === fallback)));
 
     if (shouldPreferCurrentHost) {
+      if (
+        canUseCanonicalHost &&
+        canonicalHost &&
+        currentHost !== canonicalHost &&
+        !isLocalHost(currentHost)
+      ) {
+        return canonicalHost;
+      }
       return currentHost;
     }
   }
