@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Nav from "@/components/Nav";
 import DeferredGlobalEnhancements from "@/components/DeferredGlobalEnhancements";
+import NavRouter from "@/components/NavRouter";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
 
@@ -42,7 +42,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <Nav />
+            <NavRouter />
             {children}
             <DeferredGlobalEnhancements />
           </LanguageProvider>

@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
 
 function isStandaloneMode() {
   if (typeof window === "undefined") return false;
@@ -17,18 +15,32 @@ export default function LandingAuthRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (isStandaloneMode()) {
-        router.replace(user ? "/hub" : "/auth");
-        return;
-      }
+    let active = true;
+    let unsubscribe: (() => void) | null = null;
 
-      if (user) {
-        router.replace("/hub");
-      }
-    });
+    void (async () => {
+      const [{ onAuthStateChanged }, { auth }] = await Promise.all([
+        import("firebase/auth"),
+        import("@/lib/firebase"),
+      ]);
+      if (!active) return;
 
-    return () => unsubscribe();
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (isStandaloneMode()) {
+          router.replace(user ? "/hub" : "/auth");
+          return;
+        }
+
+        if (user) {
+          router.replace("/hub");
+        }
+      });
+    })();
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
   }, [router]);
 
   return null;
