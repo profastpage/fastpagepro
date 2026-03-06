@@ -282,3 +282,7 @@
   - el boton `Retroceder` ahora prioriza volver a la vertical/pestana previa dentro del hub (`restaurant`, `ecommerce`, `services`) antes de salir de la pagina.
   - se implemento historial de pestañas en `sessionStorage` (`fp_demo_vertical_history`) y sincronizacion del query param `?vertical=...`.
   - si no existe pestana previa, mantiene fallback de navegacion segura al flujo anterior (`navigateBackWithFallback`).
+- Landing principal (`/`) optimizada para arranque:
+  - se elimino la pantalla negra inicial de `LandingHomeEntry` para que la home renderice contenido desde el primer paint.
+  - la redireccion por autenticacion y modo standalone/PWA se movio a un guard cliente no bloqueante (`LandingAuthRedirect`), evitando bloquear el LCP del sitio publico.
+  - `HeroOrbScene` ahora entra por `dynamic import` sin SSR, sacando `three/@react-three/*` del bundle inicial cuando el 3D no aplica.

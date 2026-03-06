@@ -1,9 +1,9 @@
 ﻿"use client";
 
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -27,11 +27,9 @@ import {
 } from "lucide-react";
 import Footer from "@/components/Footer";
 import DemoCard from "@/components/demo/DemoCard";
-import HeroOrbScene from "@/components/landing/HeroOrbScene";
 import VerticalSelector from "@/components/demo/VerticalSelector";
 import PwaInstallTopBanner from "@/components/pwa/PwaInstallTopBanner";
 import { useLanguage } from "@/context/LanguageContext";
-import { useAuth } from "@/hooks/useAuth";
 import { getDemoCatalog } from "@/lib/demoCatalog";
 import {
   persistUtmFromUrl,
@@ -45,6 +43,10 @@ import {
   verticalToSignupHref,
   type BusinessVertical,
 } from "@/lib/vertical";
+
+const HeroOrbScene = dynamic(() => import("@/components/landing/HeroOrbScene"), {
+  ssr: false,
+});
 
 type ModuleCard = {
   id: "builder" | "templates" | "cloner" | "store" | "menu" | "metrics";
@@ -748,9 +750,7 @@ const PRICING_FEATURES_EN = {
 } as const;
 
 export default function LandingHome() {
-  const { user, loading } = useAuth();
   const { language } = useLanguage();
-  const router = useRouter();
   const isEnglish = language === "en";
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [demoTab, setDemoTab] = useState<BusinessVertical>("restaurant");
@@ -759,10 +759,6 @@ export default function LandingHome() {
   const [desktopTestimonialIndex, setDesktopTestimonialIndex] = useState(0);
   const [enableHero3D, setEnableHero3D] = useState(false);
   const testimonialsRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!loading && user) router.replace("/hub");
-  }, [loading, router, user]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1004,16 +1000,6 @@ export default function LandingHome() {
     const offset = direction === "left" ? -step : step;
     container.scrollBy({ left: offset, behavior: "smooth" });
   };
-
-  if (loading) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-black">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-amber-300 border-t-transparent" />
-      </div>
-    );
-  }
-
-  if (user) return null;
 
   return (
     <main className="relative overflow-x-hidden pb-24 md:pb-0">
