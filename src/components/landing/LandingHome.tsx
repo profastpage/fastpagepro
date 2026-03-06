@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { type ComponentType, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -20,9 +19,9 @@ import {
   UtensilsCrossed,
   WandSparkles,
 } from "lucide-react";
-import VerticalSelector from "@/components/demo/VerticalSelector";
+import LandingVerticalSelector from "@/components/landing/LandingVerticalSelector";
 import PwaInstallTopBanner from "@/components/pwa/PwaInstallTopBanner";
-import { useLanguage } from "@/context/LanguageContext";
+import { useLandingLanguage } from "@/context/LandingLanguageContext";
 import {
   persistUtmFromUrl,
   trackGrowthEvent,
@@ -656,26 +655,6 @@ const DELUXE_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-5 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
 const SOFT_BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50";
-const HERO_STAGGER_VARIANTS = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.075,
-      delayChildren: 0.04,
-    },
-  },
-};
-const HERO_ITEM_VARIANTS = {
-  hidden: { opacity: 0, y: 18 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.45,
-    },
-  },
-};
 const HERO_CTA_VARIANT_ES = "B" as "A" | "B";
 const HERO_PRIMARY_CTA_LABEL_ES =
   HERO_CTA_VARIANT_ES === "A" ? "CREA TU NEGOCIO DIGITAL HOY" : "Crea tu negocio digital hoy";
@@ -745,11 +724,12 @@ const PRICING_FEATURES_EN = {
 } as const;
 
 export default function LandingHome() {
-  const { language } = useLanguage();
+  const { language } = useLandingLanguage();
   const isEnglish = language === "en";
   const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
   const [activityIndex, setActivityIndex] = useState(0);
   const [enableHero3D, setEnableHero3D] = useState(false);
+  const [mountSecondarySections, setMountSecondarySections] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -804,6 +784,28 @@ export default function LandingHome() {
     }, 3800);
     return () => window.clearInterval(intervalId);
   }, [liveActivityFeed.length]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const idleCallback = (
+      window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+        cancelIdleCallback?: (id: number) => void;
+      }
+    ).requestIdleCallback;
+
+    if (typeof idleCallback === "function") {
+      const idleId = idleCallback(() => setMountSecondarySections(true), { timeout: 1200 });
+      return () => {
+        (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(
+          idleId,
+        );
+      };
+    }
+
+    const timeoutId = window.setTimeout(() => setMountSecondarySections(true), 250);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const copy = useMemo(
     () =>
@@ -972,40 +974,22 @@ export default function LandingHome() {
         </div>
 
         <div className="relative grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
-          <motion.div
-            variants={HERO_STAGGER_VARIANTS}
-            initial="hidden"
-            animate="show"
-            className="space-y-4"
-          >
-            <motion.p
-              variants={HERO_ITEM_VARIANTS}
-              className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300"
-            >
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
               {copy.heroTag}
-            </motion.p>
-            <motion.h1
-              variants={HERO_ITEM_VARIANTS}
-              className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl"
-            >
+            </p>
+            <h1 className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
               {copy.heroTitle}
-            </motion.h1>
-            <motion.p variants={HERO_ITEM_VARIANTS} className="max-w-2xl text-base text-zinc-300 md:text-lg">
-              {copy.heroDesc}
-            </motion.p>
-            <motion.div
-              variants={HERO_ITEM_VARIANTS}
-              className="max-w-2xl space-y-0.5 text-left text-[11px] font-medium leading-[1.3] text-zinc-300 sm:text-xs"
-            >
+            </h1>
+            <p className="max-w-2xl text-base text-zinc-300 md:text-lg">{copy.heroDesc}</p>
+            <div className="max-w-2xl space-y-0.5 text-left text-[11px] font-medium leading-[1.3] text-zinc-300 sm:text-xs">
               {copy.heroChecklist.map((item) => (
                 <p key={item}>✅ {item}</p>
               ))}
-            </motion.div>
-            <motion.p variants={HERO_ITEM_VARIANTS} className="max-w-2xl text-xs font-semibold text-amber-200/90">
-              {copy.heroProof}
-            </motion.p>
+            </div>
+            <p className="max-w-2xl text-xs font-semibold text-amber-200/90">{copy.heroProof}</p>
 
-            <motion.div variants={HERO_ITEM_VARIANTS} className="grid max-w-2xl grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid max-w-2xl grid-cols-3 gap-2 sm:gap-3">
               {heroMetrics.map((metric) => {
                 const Icon = metric.icon;
                 return (
@@ -1021,10 +1005,10 @@ export default function LandingHome() {
                   </div>
                 );
               })}
-            </motion.div>
+            </div>
 
-            <motion.div variants={HERO_ITEM_VARIANTS}>
-              <VerticalSelector
+            <div>
+              <LandingVerticalSelector
                 value={vertical}
                 onChange={(nextVertical) => {
                   setVertical(nextVertical);
@@ -1035,12 +1019,9 @@ export default function LandingHome() {
                   });
                 }}
               />
-            </motion.div>
+            </div>
 
-            <motion.div
-              variants={HERO_ITEM_VARIANTS}
-              className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center"
-            >
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href={heroSignupHref}
                 prefetch={false}
@@ -1081,15 +1062,15 @@ export default function LandingHome() {
               >
                 {copy.ctaPlans}
               </a>
-            </motion.div>
-            <motion.p variants={HERO_ITEM_VARIANTS} className="max-w-2xl text-center text-[11px] text-zinc-400/80 sm:text-xs">
+            </div>
+            <p className="max-w-2xl text-center text-[11px] text-zinc-400/80 sm:text-xs">
               {copy.ctaPrimaryHelper}
-            </motion.p>
-            <motion.p variants={HERO_ITEM_VARIANTS} className="text-xs font-semibold text-amber-200/85">
+            </p>
+            <p className="text-xs font-semibold text-amber-200/85">
               {copy.urgency}
-            </motion.p>
+            </p>
 
-            <motion.div variants={HERO_ITEM_VARIANTS} className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {copy.chips.map((item) => (
                 <span
                   key={item}
@@ -1098,19 +1079,12 @@ export default function LandingHome() {
                   {item}
                 </span>
               ))}
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 24, y: 12 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            transition={{ duration: 0.55, ease: "easeOut", delay: 0.1 }}
-            className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/45 p-5 shadow-2xl backdrop-blur-md"
-          >
-            <motion.div
+          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/45 p-5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <div
               aria-hidden
-              animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 5.5, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
               className="absolute -right-6 -top-6 h-28 w-28 rounded-full border border-amber-300/20 bg-amber-300/10 blur-xl"
             />
             <div className="relative mb-4 hidden md:block">
@@ -1167,27 +1141,29 @@ export default function LandingHome() {
               {copy.panelCta}
               <ArrowRight className="h-4 w-4" />
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      <LandingHomeSecondarySectionsDynamic
-        copy={copy}
-        flowSteps={flowSteps}
-        moduleCards={moduleCards}
-        demoTabConfig={demoTabConfig}
-        pricingFeatures={pricingFeatures}
-        faqs={faqs}
-        testimonials={testimonials}
-        heroSignupHref={heroSignupHref}
-        heroDemoHref={heroDemoHref}
-        starterSignupHref={starterSignupHref}
-        businessSignupHref={businessSignupHref}
-        proSignupHref={proSignupHref}
-        vertical={vertical}
-        activityTimeLabel={activityTimeLabel}
-        activeLiveActivity={activeLiveActivity}
-      />
+      {mountSecondarySections ? (
+        <LandingHomeSecondarySectionsDynamic
+          copy={copy}
+          flowSteps={flowSteps}
+          moduleCards={moduleCards}
+          demoTabConfig={demoTabConfig}
+          pricingFeatures={pricingFeatures}
+          faqs={faqs}
+          testimonials={testimonials}
+          heroSignupHref={heroSignupHref}
+          heroDemoHref={heroDemoHref}
+          starterSignupHref={starterSignupHref}
+          businessSignupHref={businessSignupHref}
+          proSignupHref={proSignupHref}
+          vertical={vertical}
+          activityTimeLabel={activityTimeLabel}
+          activeLiveActivity={activeLiveActivity}
+        />
+      ) : null}
     </main>
   );
 }

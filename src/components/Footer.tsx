@@ -3,24 +3,31 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Zap } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
+import { useLandingLanguage } from "@/context/LandingLanguageContext";
 
 const FOOTER_LINKS = [
-  { labelKey: "nav.hub", fallback: "HUB", href: "/hub" },
-  { labelKey: "nav.builder", fallback: "BUILDER", href: "/builder" },
-  { labelKey: "nav.templates", fallback: "TEMPLATES", href: "/templates" },
-  { labelKey: "nav.cloner", fallback: "CLONER", href: "/cloner/web" },
-  { labelKey: "nav.store", fallback: "ONLINE STORE", href: "/store" },
-  { labelKey: "nav.linkhub", fallback: "CARTA DIGITAL", href: "/cartadigital" },
-  { labelKey: "nav.pricing", fallback: "PRICING", href: "/dashboard/billing" },
-  { labelKey: "nav.login", fallback: "LOGIN", href: "/auth?tab=login" },
+  { labelEs: "Hub", labelEn: "Hub", href: "/hub" },
+  { labelEs: "Constructor", labelEn: "Builder", href: "/builder" },
+  { labelEs: "Plantillas", labelEn: "Templates", href: "/templates" },
+  { labelEs: "Clonador", labelEn: "Cloner", href: "/cloner/web" },
+  { labelEs: "Tienda Online", labelEn: "Online Store", href: "/store" },
+  { labelEs: "Carta Digital", labelEn: "Digital Menu", href: "/cartadigital" },
+  { labelEs: "Precios", labelEn: "Pricing", href: "/dashboard/billing" },
+  { labelEs: "Login", labelEn: "Login", href: "/auth?tab=login" },
 ];
 
 export default function Footer() {
-  const { t } = useLanguage();
+  const { language } = useLandingLanguage();
   const pathname = usePathname();
   const year = new Date().getFullYear();
   const disablePrefetch = pathname === "/";
+  const isEnglish = language === "en";
+  const description = isEnglish
+    ? "Launch digital experiences that convert visits into WhatsApp sales."
+    : "Lanza experiencias digitales que convierten visitas en ventas por WhatsApp.";
+  const rights = isEnglish
+    ? `© ${year} Fast Page. All rights reserved.`
+    : `© ${year} Fast Page. Todos los derechos reservados.`;
 
   return (
     <footer className="relative mt-10 border-t border-white/10 bg-black/70 backdrop-blur-md">
@@ -36,9 +43,7 @@ export default function Footer() {
               <p className="text-sm font-black uppercase tracking-[0.2em] text-gold-gradient">
                 Fast Page
               </p>
-              <p className="text-xs text-zinc-400">
-                {t("footer.description")}
-              </p>
+              <p className="text-xs text-zinc-400">{description}</p>
             </div>
           </div>
 
@@ -50,14 +55,14 @@ export default function Footer() {
                 prefetch={disablePrefetch ? false : undefined}
                 className="transition-colors hover:text-amber-300"
               >
-                {t(item.labelKey) === item.labelKey ? item.fallback : t(item.labelKey)}
+                {isEnglish ? item.labelEn : item.labelEs}
               </Link>
             ))}
           </nav>
         </div>
 
         <div className="mt-6 border-t border-white/10 pt-5 text-center text-xs text-zinc-500 md:text-left">
-          {t("footer.rights").replace("{year}", String(year))}
+          {rights}
         </div>
       </div>
     </footer>

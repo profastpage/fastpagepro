@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Download, Zap } from "lucide-react";
 import IosInstallGuideModal from "@/components/pwa/IosInstallGuideModal";
-import { useLanguage } from "@/context/LanguageContext";
+import { useLandingLanguage } from "@/context/LandingLanguageContext";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -29,7 +29,7 @@ function isIOSDevice() {
 export default function PublicNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { t, language, setLanguage } = useLanguage();
+  const { language, setLanguage } = useLandingLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallingApp, setIsInstallingApp] = useState(false);
@@ -78,6 +78,8 @@ export default function PublicNav() {
     setLanguage(language === "es" ? "en" : "es");
   };
 
+  const isEnglish = language === "en";
+
   const handleInstallFromMenu = async () => {
     if (isStandalonePwa) return;
     if (!deferredInstallPrompt) {
@@ -101,7 +103,10 @@ export default function PublicNav() {
     }
   };
 
-  const installLabel = language === "en" ? "Install app" : "Instalar app";
+  const installLabel = isEnglish ? "Install app" : "Instalar app";
+  const toggleLanguageLabel = isEnglish ? "Change language" : "Cambiar idioma";
+  const loginLabel = isEnglish ? "Login" : "Iniciar sesion";
+  const createAccountLabel = isEnglish ? "Create account" : "Crear cuenta";
   const homeHref = isStandalonePwa ? "/auth" : "/";
 
   return (
@@ -120,7 +125,7 @@ export default function PublicNav() {
           <button
             type="button"
             onClick={toggleLanguage}
-            aria-label={t("floating.toggleLanguage")}
+            aria-label={toggleLanguageLabel}
             className="inline-flex h-9 min-w-[2.5rem] items-center justify-center rounded-full border border-white/20 bg-white/5 px-3 text-[11px] font-bold tracking-[0.08em] text-white transition hover:border-amber-300/45 hover:text-amber-200"
           >
             {language === "es" ? "EN" : "ES"}
@@ -135,7 +140,7 @@ export default function PublicNav() {
               <polyline points="10 17 15 12 10 7" />
               <line x1="15" y1="12" x2="3" y2="12" />
             </svg>
-            {t("nav.login")}
+            {loginLabel}
           </Link>
           <Link
             href="/auth?tab=register"
@@ -146,7 +151,7 @@ export default function PublicNav() {
               <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
-            {t("nav.create_account")}
+            {createAccountLabel}
           </Link>
         </div>
       </div>
@@ -181,7 +186,7 @@ export default function PublicNav() {
               type="button"
               onClick={toggleLanguage}
               className="inline-flex h-8 min-w-[2.25rem] items-center justify-center rounded-full border border-white/20 bg-white/5 px-2 text-[10px] font-bold tracking-[0.08em] text-white transition hover:border-amber-300/45 hover:text-amber-200"
-              aria-label={t("floating.toggleLanguage")}
+              aria-label={toggleLanguageLabel}
             >
               {language === "es" ? "EN" : "ES"}
             </button>
@@ -240,7 +245,7 @@ export default function PublicNav() {
                         className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/60 bg-amber-300/15 px-4 py-3 text-base font-black leading-tight text-amber-100 transition-all hover:border-amber-200 hover:bg-amber-300/25 disabled:cursor-not-allowed disabled:opacity-65"
                       >
                         <Download className="h-4 w-4" />
-                        {isInstallingApp ? (language === "en" ? "Installing..." : "Instalando...") : installLabel}
+                        {isInstallingApp ? (isEnglish ? "Installing..." : "Instalando...") : installLabel}
                       </button>
                     </div>
                   ) : null}
@@ -251,14 +256,14 @@ export default function PublicNav() {
                       prefetch={false}
                       className="w-full rounded-full border border-amber-300/60 bg-amber-300/10 py-3 text-center text-base font-bold text-amber-200 transition-all hover:bg-amber-300/20"
                     >
-                      {t("nav.login")}
+                      {loginLabel}
                     </Link>
                     <Link
                       href="/auth?tab=register"
                       prefetch={false}
                       className="w-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 py-3 text-center text-base font-black text-black transition-all hover:brightness-110"
                     >
-                      {t("nav.create_account")}
+                      {createAccountLabel}
                     </Link>
                   </div>
                 </aside>

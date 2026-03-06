@@ -304,3 +304,10 @@
   - componentes globales no criticos del layout (`FloatingControls`, `LuxuryCursorEffect`, `ServiceWorkerCleanup`, `PwaServiceWorkerRegistrar`) ahora cargan diferidos en cliente para reducir JS inicial y trabajo de hidratacion en mobile.
   - la home separa el contenido secundario debajo del hero en `LandingHomeSecondarySections`, cargado en chunk aparte para reducir el JS inicial del primer viewport.
   - la navegacion global ahora se enruta por contexto (`NavRouter`): la home publica usa `PublicNav` liviano y el panel autenticado pesado (`AppNav`) queda en chunk diferido para rutas internas.
+- Landing principal (`/`) aislada del runtime global pesado:
+  - `layout.tsx` ahora monta un `AppShell` por ruta; `/` usa `LandingAppShell` y el resto de la app mantiene `DefaultAppShell`.
+  - la home ya no depende del `LanguageContext` global gigante; usa `LandingLanguageContext` liviano para compartir idioma entre `PublicNav`, hero y footer.
+  - `LandingVerticalSelector` evita arrastrar el provider global en la home, manteniendo `VerticalSelector` original para `/demo` y `/signup`.
+  - se retiro `framer-motion` del hero de `/` y se reemplazo por clases CSS ligeras para conservar entrada visual sin costo de runtime.
+  - las secciones secundarias debajo del hero ahora se montan en `idle`, quitando su hidratacion del path critico del primer viewport.
+  - validacion local sobre build productiva (`next build` + `next start` + Lighthouse mobile en `http://127.0.0.1:4000`) dio aproximadamente: `Performance 94`, `FCP 0.9 s`, `LCP 2.6 s`, `TBT 200 ms`, `CLS 0`.

@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import DeferredGlobalEnhancements from "@/components/DeferredGlobalEnhancements";
-import NavRouter from "@/components/NavRouter";
+import AppShell from "@/components/app-shell/AppShell";
 import { ThemeProvider } from "@/providers/ThemeProvider";
-import { LanguageProvider } from "@/context/LanguageContext";
 
 export const metadata: Metadata = {
   title: "Fast Page",
@@ -41,11 +39,7 @@ export default function RootLayout({
           forcedTheme="dark"
           disableTransitionOnChange
         >
-          <LanguageProvider>
-            <NavRouter />
-            {children}
-            <DeferredGlobalEnhancements />
-          </LanguageProvider>
+          <AppShell>{children}</AppShell>
         </ThemeProvider>
       </body>
     </html>
