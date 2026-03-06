@@ -221,6 +221,8 @@
  - Google Auth redirect en dominio canonico (`www.fastpagepro.com`) corregido:
   - `src/lib/firebase.ts` ahora prefiere `authDomain` same-origin por defecto cuando el host actual esta permitido, reutilizando el rewrite existente de `__/auth/*`.
   - objetivo: evitar el salto a `fastpage-7ceb3.firebaseapp.com` que rompe `sessionStorage`/estado inicial en navegadores con storage partitioning y dispara `Unable to process request due to missing initial state`.
+ - Landing principal (`/`) con fallback seguro de secciones secundarias:
+  - el montaje diferido debajo del hero ahora mantiene `IntersectionObserver`, pero agrega fallback por primera interaccion y timeout corto para evitar que la pagina quede mostrando solo el hero.
   - `src/components/landing/HeroOrbScene.tsx` se rediseno para representar velocidad web: nucleo de rendimiento, anillo de trafico, particulas de red y simbolo visual tipo rayo.
   - se agrego etiqueta visual `Fast Web Engine` para reforzar el concepto de paginas rapidas/alto rendimiento en el primer impacto.
 - Hardening backend para referidos y Stripe con validacion/rate-limit:

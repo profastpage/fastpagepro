@@ -790,7 +790,10 @@ export default function LandingHome() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const trigger = secondarySectionsTriggerRef.current;
-    if (!trigger) return;
+    if (!trigger) {
+      setMountSecondarySections(true);
+      return;
+    }
 
     const mountSections = () => setMountSecondarySections(true);
     const observer = new IntersectionObserver(
@@ -806,9 +809,19 @@ export default function LandingHome() {
     );
 
     observer.observe(trigger);
+    window.addEventListener("scroll", mountSections, { once: true, passive: true });
+    window.addEventListener("wheel", mountSections, { once: true, passive: true });
+    window.addEventListener("touchmove", mountSections, { once: true, passive: true });
+    window.addEventListener("keydown", mountSections, { once: true });
+    const timeoutId = window.setTimeout(mountSections, 1200);
 
     return () => {
       observer.disconnect();
+      window.removeEventListener("scroll", mountSections);
+      window.removeEventListener("wheel", mountSections);
+      window.removeEventListener("touchmove", mountSections);
+      window.removeEventListener("keydown", mountSections);
+      window.clearTimeout(timeoutId);
     };
   }, []);
 
