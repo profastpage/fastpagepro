@@ -48,17 +48,22 @@ function canUseAsAuthDomain(host: string, allowedDomains: Set<string>): boolean 
 function resolveFirebaseAuthDomain(): string {
   const fallback = DEFAULT_FIREBASE_AUTH_DOMAIN;
   const configured = normalizeDomain(String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || ""));
-  const forceSameOrigin =
-    String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_FORCE_SAME_ORIGIN || "0")
-      .trim()
-      .toLowerCase() === "1";
+  const sameOriginMode = String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_FORCE_SAME_ORIGIN || "auto")
+    .trim()
+    .toLowerCase();
+  const disableSameOrigin = sameOriginMode === "0" || sameOriginMode === "false";
+  const forceSameOrigin = sameOriginMode === "1" || sameOriginMode === "true";
   const allowedDomains = readAllowedDomains();
 
-  // Enable same-origin only when explicitly requested by env, since it requires
-  // OAuth redirect URIs to be configured for every runtime host.
   if (typeof window !== "undefined") {
     const currentHost = normalizeDomain(window.location.host);
-    if (forceSameOrigin && canUseAsAuthDomain(currentHost, allowedDomains)) {
+    const canUseCurrentHost = canUseAsAuthDomain(currentHost, allowedDomains);
+    const shouldPreferCurrentHost =
+      canUseCurrentHost &&
+      (forceSameOrigin ||
+        (!disableSameOrigin && (!configured || configured === fallback)));
+
+    if (shouldPreferCurrentHost) {
       return currentHost;
     }
   }

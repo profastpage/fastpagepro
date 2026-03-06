@@ -218,6 +218,9 @@
   - `src/components/carta/ProductCard.tsx` ahora renderiza imagen principal y miniaturas con `next/image` en modo `unoptimized` para evitar roturas en runtime con URLs externas de Cloudinary.
   - resultado: las imagenes subidas desde edicion con cuenta registrada se visualizan correctamente tras publicar.
 - Hero 3D de landing (`/`) alineado a narrativa de marca FastPage:
+ - Google Auth redirect en dominio canonico (`www.fastpagepro.com`) corregido:
+  - `src/lib/firebase.ts` ahora prefiere `authDomain` same-origin por defecto cuando el host actual esta permitido, reutilizando el rewrite existente de `__/auth/*`.
+  - objetivo: evitar el salto a `fastpage-7ceb3.firebaseapp.com` que rompe `sessionStorage`/estado inicial en navegadores con storage partitioning y dispara `Unable to process request due to missing initial state`.
   - `src/components/landing/HeroOrbScene.tsx` se rediseno para representar velocidad web: nucleo de rendimiento, anillo de trafico, particulas de red y simbolo visual tipo rayo.
   - se agrego etiqueta visual `Fast Web Engine` para reforzar el concepto de paginas rapidas/alto rendimiento en el primer impacto.
 - Hardening backend para referidos y Stripe con validacion/rate-limit:
