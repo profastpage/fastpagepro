@@ -252,6 +252,8 @@
 - Service worker fuera del path critico de la landing:
   - el registro de `sw.js` ahora se difiere hasta `load/idle` para no competir con el primer render de `/`.
   - el precache del `service worker` se redujo a `"/"` y `"/manifest.webmanifest"`; ya no precachea `"/auth"` ni `"/app"` desde la home, evitando que se dispare Firebase Auth/GAPI durante la carga inicial.
+- Nav autenticada aislada de la home publica:
+  - `NavRouter` ahora monta `AppNav` a traves de un `AppNavMount` separado, para que `/` solo cargue `PublicNav` y no arrastre la navegacion autenticada al bundle inicial de la landing.
 - Referidos con persistencia avanzada de alias y bloqueo de invitacion:
   - `referral_profiles` ahora soporta `customAliases` (maximo 3) manteniendo compatibilidad con `customAlias` como alias primario.
   - guardar alias ya no reemplaza ni libera aliases anteriores; se mantienen activos para siempre en la cuenta hasta llegar al limite.

@@ -1,10 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import PublicNav from "@/components/nav/PublicNav";
-
-const AppNav = dynamic(() => import("@/components/nav/AppNav"));
+import AppNavMount from "@/components/nav/AppNavMount";
 
 export default function NavRouter() {
   const pathname = usePathname();
@@ -24,5 +22,5 @@ export default function NavRouter() {
     return <PublicNav />;
   }
 
-  return <AppNav />;
+  return <AppNavMount />;
 }
