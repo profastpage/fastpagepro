@@ -287,3 +287,4 @@
   - la redireccion por autenticacion y modo standalone/PWA se movio a un guard cliente no bloqueante (`LandingAuthRedirect`), evitando bloquear el LCP del sitio publico.
   - `HeroOrbScene` ahora entra por `dynamic import` sin SSR, sacando `three/@react-three/*` del bundle inicial cuando el 3D no aplica.
   - componentes globales no criticos del layout (`FloatingControls`, `LuxuryCursorEffect`, `ServiceWorkerCleanup`, `PwaServiceWorkerRegistrar`) ahora cargan diferidos en cliente para reducir JS inicial y trabajo de hidratacion en mobile.
+  - la home separa el contenido secundario debajo del hero en `LandingHomeSecondarySections`, cargado en chunk aparte para reducir el JS inicial del primer viewport.
