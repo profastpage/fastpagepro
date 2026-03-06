@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import LandingAuthRedirect from "@/components/landing/LandingAuthRedirect";
 import LandingHomeEntry from "@/components/landing/LandingHomeEntry";
 
 export const metadata: Metadata = {
@@ -26,10 +25,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return (
-    <>
-      <LandingAuthRedirect />
-      <LandingHomeEntry />
-    </>
-  );
+  return <LandingHomeEntry />;
 }

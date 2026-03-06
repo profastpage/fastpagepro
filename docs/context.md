@@ -246,6 +246,9 @@
     - fallback de copiado con `execCommand("copy")` cuando `navigator.clipboard` no esta disponible (caso comun en algunos moviles/PWA/webview).
     - mensaje explicito de sesion expirada si falta ID token al guardar/cargar referidos.
     - alias normalizado en cliente (`trim + lowercase`) antes de enviar al backend para consistencia.
+- Home publica (`/`) sin precarga de Firebase Auth:
+  - se retiro `LandingAuthRedirect` del render inicial de la landing para evitar cargar `firebase/auth`, `iframe.js` y `gapi` en el path critico del primer paint.
+  - impacto esperado: menos JS no usado en mobile y menor costo de arranque sin tocar el diseno visual de la pagina.
 - Referidos con persistencia avanzada de alias y bloqueo de invitacion:
   - `referral_profiles` ahora soporta `customAliases` (maximo 3) manteniendo compatibilidad con `customAlias` como alias primario.
   - guardar alias ya no reemplaza ni libera aliases anteriores; se mantienen activos para siempre en la cuenta hasta llegar al limite.
