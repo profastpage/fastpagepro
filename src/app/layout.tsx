@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Nav from "@/components/Nav";
+import DeferredGlobalEnhancements from "@/components/DeferredGlobalEnhancements";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
-import FloatingControls from "@/components/FloatingControls";
-import ServiceWorkerCleanup from "@/components/ServiceWorkerCleanup";
-import LuxuryCursorEffect from "@/components/LuxuryCursorEffect";
-import PwaServiceWorkerRegistrar from "@/components/pwa/PwaServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
   title: "Fast Page",
@@ -45,12 +42,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <PwaServiceWorkerRegistrar />
-            <ServiceWorkerCleanup />
             <Nav />
             {children}
-            <FloatingControls />
-            <LuxuryCursorEffect />
+            <DeferredGlobalEnhancements />
           </LanguageProvider>
         </ThemeProvider>
       </body>
