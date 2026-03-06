@@ -309,5 +309,5 @@
   - la home ya no depende del `LanguageContext` global gigante; usa `LandingLanguageContext` liviano para compartir idioma entre `PublicNav`, hero y footer.
   - `LandingVerticalSelector` evita arrastrar el provider global en la home, manteniendo `VerticalSelector` original para `/demo` y `/signup`.
   - se retiro `framer-motion` del hero de `/` y se reemplazo por clases CSS ligeras para conservar entrada visual sin costo de runtime.
-  - las secciones secundarias debajo del hero ahora se montan en `idle`, quitando su hidratacion del path critico del primer viewport.
+  - las secciones secundarias debajo del hero ahora se montan por cercania al scroll (`IntersectionObserver`) o primera interaccion del usuario, evitando que su chunk se ejecute durante el arranque inicial de la home.
   - validacion local sobre build productiva (`next build` + `next start` + Lighthouse mobile en `http://127.0.0.1:4000`) dio aproximadamente: `Performance 94`, `FCP 0.9 s`, `LCP 2.6 s`, `TBT 200 ms`, `CLS 0`.

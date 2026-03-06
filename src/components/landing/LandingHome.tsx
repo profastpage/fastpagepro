@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { type ComponentType, useEffect, useMemo, useState } from "react";
+import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   BarChart3,
@@ -40,6 +40,7 @@ const HeroOrbScene = dynamic(() => import("@/components/landing/HeroOrbScene"), 
 });
 const LandingHomeSecondarySectionsDynamic = dynamic(
   () => import("@/components/landing/LandingHomeSecondarySections"),
+  { ssr: false },
 );
 
 type ModuleCard = {
@@ -730,6 +731,7 @@ export default function LandingHome() {
   const [activityIndex, setActivityIndex] = useState(0);
   const [enableHero3D, setEnableHero3D] = useState(false);
   const [mountSecondarySections, setMountSecondarySections] = useState(false);
+  const secondarySectionsTriggerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -787,24 +789,27 @@ export default function LandingHome() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const idleCallback = (
-      window as Window & {
-        requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
-        cancelIdleCallback?: (id: number) => void;
-      }
-    ).requestIdleCallback;
+    const trigger = secondarySectionsTriggerRef.current;
+    if (!trigger) return;
 
-    if (typeof idleCallback === "function") {
-      const idleId = idleCallback(() => setMountSecondarySections(true), { timeout: 1200 });
-      return () => {
-        (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(
-          idleId,
-        );
-      };
-    }
+    const mountSections = () => setMountSecondarySections(true);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          mountSections();
+        }
+      },
+      {
+        rootMargin: "0px 0px -18% 0px",
+        threshold: 1,
+      },
+    );
 
-    const timeoutId = window.setTimeout(() => setMountSecondarySections(true), 250);
-    return () => window.clearTimeout(timeoutId);
+    observer.observe(trigger);
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   const copy = useMemo(
@@ -1144,6 +1149,8 @@ export default function LandingHome() {
           </div>
         </div>
       </section>
+
+      <div ref={secondarySectionsTriggerRef} aria-hidden className="h-px w-full" />
 
       {mountSecondarySections ? (
         <LandingHomeSecondarySectionsDynamic
