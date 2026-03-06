@@ -108,7 +108,7 @@ export default function PublicNav() {
     <>
       <div className="hidden md:block">
         <div className="fixed top-8 left-8 z-50">
-          <Link href={homeHref} className="flex items-center gap-2 group transition-all" aria-label="Fast Page Home">
+          <Link href={homeHref} prefetch={false} className="flex items-center gap-2 group transition-all" aria-label="Fast Page Home">
             <Zap className="w-8 h-8 text-amber-400 drop-shadow-[0_0_8px_rgba(255,215,0,0.7)] group-hover:scale-110 transition-transform duration-300" />
             <span className="text-lg font-black tracking-tighter text-gold-gradient drop-shadow-sm group-hover:brightness-110 transition-all">FAST PAGE</span>
           </Link>
@@ -127,6 +127,7 @@ export default function PublicNav() {
           </button>
           <Link
             href="/auth?tab=login"
+            prefetch={false}
             className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-white transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -138,6 +139,7 @@ export default function PublicNav() {
           </Link>
           <Link
             href="/auth?tab=register"
+            prefetch={false}
             className="nav-link-glow flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] font-bold text-white transition-all"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -151,7 +153,7 @@ export default function PublicNav() {
 
       <div className="md:hidden">
         <header className="fixed top-0 left-0 w-full h-16 z-50 flex items-center justify-between px-4 bg-bg/80 backdrop-blur-md border-b border-border">
-          <Link href={homeHref} className="flex items-center gap-2 font-bold text-lg" aria-label="Fast Page Home">
+          <Link href={homeHref} prefetch={false} className="flex items-center gap-2 font-bold text-lg" aria-label="Fast Page Home">
             <Zap className="w-6 h-6 text-amber-400" />
             <span>Fast Page</span>
           </Link>
@@ -246,12 +248,14 @@ export default function PublicNav() {
                   <div className="mt-8 flex flex-col gap-4">
                     <Link
                       href="/auth?tab=login"
+                      prefetch={false}
                       className="w-full rounded-full border border-amber-300/60 bg-amber-300/10 py-3 text-center text-base font-bold text-amber-200 transition-all hover:bg-amber-300/20"
                     >
                       {t("nav.login")}
                     </Link>
                     <Link
                       href="/auth?tab=register"
+                      prefetch={false}
                       className="w-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 py-3 text-center text-base font-black text-black transition-all hover:brightness-110"
                     >
                       {t("nav.create_account")}

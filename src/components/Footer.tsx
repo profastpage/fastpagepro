@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Zap } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -17,7 +18,9 @@ const FOOTER_LINKS = [
 
 export default function Footer() {
   const { t } = useLanguage();
+  const pathname = usePathname();
   const year = new Date().getFullYear();
+  const disablePrefetch = pathname === "/";
 
   return (
     <footer className="relative mt-10 border-t border-white/10 bg-black/70 backdrop-blur-md">
@@ -44,6 +47,7 @@ export default function Footer() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={disablePrefetch ? false : undefined}
                 className="transition-colors hover:text-amber-300"
               >
                 {t(item.labelKey) === item.labelKey ? item.fallback : t(item.labelKey)}

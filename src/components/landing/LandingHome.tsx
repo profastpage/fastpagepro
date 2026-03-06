@@ -1043,6 +1043,7 @@ export default function LandingHome() {
             >
               <Link
                 href={heroSignupHref}
+                prefetch={false}
                 onClick={() =>
                   void trackGrowthEvent("click_cta_signup", {
                     vertical,
@@ -1055,6 +1056,7 @@ export default function LandingHome() {
               </Link>
               <Link
                 href={heroDemoHref}
+                prefetch={false}
                 onClick={() =>
                   void trackGrowthEvent("click_demo_open", {
                     vertical,
@@ -1153,6 +1155,7 @@ export default function LandingHome() {
             </div>
             <Link
               href={heroDemoHref}
+              prefetch={false}
               onClick={() =>
                 void trackGrowthEvent("click_demo_open", {
                   vertical,

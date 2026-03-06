@@ -7,9 +7,10 @@ import DemoImage from "@/components/demo/DemoImage";
 type DemoCardProps = {
   item: DemoCatalogItem;
   onOpen?: (vertical: string, slug: string) => void;
+  prefetch?: boolean;
 };
 
-export default function DemoCard({ item, onOpen }: DemoCardProps) {
+export default function DemoCard({ item, onOpen, prefetch }: DemoCardProps) {
   const demoType: DemoType = item.vertical === "ecommerce" ? "store" : item.vertical;
   const demoUrl = getDemoUrl(demoType, item.slug);
 
@@ -34,6 +35,7 @@ export default function DemoCard({ item, onOpen }: DemoCardProps) {
         <p className="text-sm text-zinc-300">{item.subtitle}</p>
         <Link
           href={demoUrl}
+          prefetch={prefetch}
           onClick={() => {
             if (typeof window !== "undefined") {
               window.dispatchEvent(

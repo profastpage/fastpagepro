@@ -257,6 +257,9 @@
 - Runtime PWA excluido de `/`:
   - `DeferredGlobalEnhancements` ya no monta `PwaServiceWorkerRegistrar` ni `ServiceWorkerCleanup` en la home publica.
   - objetivo: que la landing no registre ni toque `service workers` durante el arranque, reduciendo ruido de red y ejecucion en Lighthouse.
+- Prefetch desactivado en la landing publica:
+  - los links visibles de `PublicNav`, hero, pricing, footer y tarjetas demo de `/` ahora usan `prefetch={false}`.
+  - objetivo: evitar que la home descargue anticipadamente bundles de `/auth`, `/signup`, demos y otras rutas antes del primer clic.
 - Referidos con persistencia avanzada de alias y bloqueo de invitacion:
   - `referral_profiles` ahora soporta `customAliases` (maximo 3) manteniendo compatibilidad con `customAlias` como alias primario.
   - guardar alias ya no reemplaza ni libera aliases anteriores; se mantienen activos para siempre en la cuenta hasta llegar al limite.

@@ -255,6 +255,7 @@ export default function LandingHomeSecondarySections({
               <Link
                 key={module.id}
                 href={module.href}
+                prefetch={false}
                 onClick={() =>
                   void trackGrowthEvent("click_demo_open", {
                     vertical,
@@ -312,6 +313,7 @@ export default function LandingHomeSecondarySections({
                 <div className="mt-5 flex gap-2">
                   <Link
                     href={`/demo?vertical=${item.vertical}`}
+                    prefetch={false}
                     onClick={() =>
                       void trackGrowthEvent("click_demo_open", {
                         vertical: item.vertical,
@@ -322,6 +324,7 @@ export default function LandingHomeSecondarySections({
                   >{copy.ctaDemo}</Link>
                   <Link
                     href={`/signup?vertical=${item.vertical}`}
+                    prefetch={false}
                     onClick={() =>
                       void trackGrowthEvent("click_cta_signup", {
                         vertical: item.vertical,
@@ -365,6 +368,7 @@ export default function LandingHomeSecondarySections({
             <DemoCard
               key={`${item.vertical}-${item.slug}`}
               item={item}
+              prefetch={false}
               onOpen={(selectedVertical, slug) =>
                 void trackGrowthEvent("click_demo_open", {
                   vertical: selectedVertical,
@@ -394,7 +398,7 @@ export default function LandingHomeSecondarySections({
                 <li key={feature}>{feature}</li>
               ))}
             </ul>
-            <Link href={starterSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
+            <Link href={starterSignupHref} prefetch={false} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10">
               {copy.starterCta}
             </Link>
           </article>
@@ -415,7 +419,7 @@ export default function LandingHomeSecondarySections({
                 <li key={feature}>{feature}</li>
               ))}
             </ul>
-            <Link href={businessSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
+            <Link href={businessSignupHref} prefetch={false} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-amber-300/45 bg-amber-300/10 px-4 py-2 text-sm font-bold text-amber-100 transition hover:bg-amber-300/20">
               {copy.businessCta}
             </Link>
           </article>
@@ -432,7 +436,7 @@ export default function LandingHomeSecondarySections({
                 <li key={feature}>{feature}</li>
               ))}
             </ul>
-            <Link href={proSignupHref} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
+            <Link href={proSignupHref} prefetch={false} className="mt-auto inline-flex w-full items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-4 py-2 text-sm font-bold text-cyan-100 transition hover:bg-cyan-300/20">
               {copy.proCta}
             </Link>
           </article>
@@ -603,6 +607,7 @@ export default function LandingHomeSecondarySections({
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={heroSignupHref}
+              prefetch={false}
               onClick={() =>
                 void trackGrowthEvent("click_cta_signup", {
                   vertical,
@@ -613,6 +618,7 @@ export default function LandingHomeSecondarySections({
             >{copy.ctaPrimary}</Link>
             <Link
               href={heroDemoHref}
+              prefetch={false}
               onClick={() =>
                 void trackGrowthEvent("click_demo_open", {
                   vertical,
@@ -655,6 +661,7 @@ export default function LandingHomeSecondarySections({
       <div className="fixed inset-x-0 bottom-3 z-40 px-3 md:hidden">
         <Link
           href={heroSignupHref}
+          prefetch={false}
           onClick={() =>
             void trackGrowthEvent("click_cta_signup", {
               vertical,
