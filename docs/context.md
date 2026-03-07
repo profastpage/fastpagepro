@@ -223,9 +223,9 @@
   - objetivo: evitar el salto a `fastpage-7ceb3.firebaseapp.com` que rompe `sessionStorage`/estado inicial en navegadores con storage partitioning y dispara `Unable to process request due to missing initial state`.
 - Landing principal (`/`) con fallback seguro de secciones secundarias:
   - el montaje diferido debajo del hero ahora mantiene `IntersectionObserver`, pero agrega fallback por primera interaccion y timeout corto para evitar que la pagina quede mostrando solo el hero.
-- Auth sensible forzado al host canonico:
-  - `middleware.ts` ahora redirige `308` las rutas `/auth`, `/signup` y `/__/auth/*` al host canonico antes de iniciar OAuth.
-  - `src/lib/firebase.ts` estabiliza `authDomain` hacia el host canonico permitido cuando el usuario entra por un alias publico como `fastpagepro.com`, evitando `redirect_uri_mismatch` por variar entre apex y `www`.
+- Auth Google revertido a dominio Firebase administrado por defecto:
+  - `src/lib/firebase.ts` vuelve a usar `fastpage-7ceb3.firebaseapp.com` como `authDomain` por defecto, y deja el modo same-origin solo con opt-in explicito (`NEXT_PUBLIC_FIREBASE_AUTH_FORCE_SAME_ORIGIN=1`).
+  - se retiro el forzado server-side de `/auth` y `/signup` al host canonico para recuperar el flujo OAuth que ya estaba funcionando antes de los ajustes recientes.
   - `src/components/landing/HeroOrbScene.tsx` se rediseno para representar velocidad web: nucleo de rendimiento, anillo de trafico, particulas de red y simbolo visual tipo rayo.
   - se agrego etiqueta visual `Fast Web Engine` para reforzar el concepto de paginas rapidas/alto rendimiento en el primer impacto.
 - Hardening backend para referidos y Stripe con validacion/rate-limit:

@@ -4,7 +4,6 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const DEFAULT_FIREBASE_AUTH_DOMAIN = "fastpage-7ceb3.firebaseapp.com";
-const DEFAULT_AUTH_CANONICAL_HOST = "www.fastpagepro.com";
 const DEFAULT_ALLOWED_AUTH_DOMAINS = [
   "www.fastpagepro.com",
   "fastpagepro.com",
@@ -29,15 +28,6 @@ function stripPort(host: string): string {
     .replace(/:\d+$/, "");
 }
 
-function isLocalHost(host: string): boolean {
-  const normalizedHost = stripPort(normalizeDomain(host));
-  return (
-    normalizedHost === "localhost" ||
-    normalizedHost === "127.0.0.1" ||
-    normalizedHost.endsWith(".localhost")
-  );
-}
-
 function readAllowedDomains(): Set<string> {
   const raw = String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_ALLOWED_DOMAINS || "").trim();
   const entries = raw
@@ -55,41 +45,20 @@ function canUseAsAuthDomain(host: string, allowedDomains: Set<string>): boolean 
   return allowedDomains.has(hostWithoutPort);
 }
 
-function readCanonicalAuthHost(): string {
-  return normalizeDomain(
-    String(process.env.NEXT_PUBLIC_AUTH_CANONICAL_HOST || DEFAULT_AUTH_CANONICAL_HOST),
-  );
-}
-
 function resolveFirebaseAuthDomain(): string {
   const fallback = DEFAULT_FIREBASE_AUTH_DOMAIN;
   const configured = normalizeDomain(String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || ""));
-  const sameOriginMode = String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_FORCE_SAME_ORIGIN || "auto")
-    .trim()
-    .toLowerCase();
-  const disableSameOrigin = sameOriginMode === "0" || sameOriginMode === "false";
-  const forceSameOrigin = sameOriginMode === "1" || sameOriginMode === "true";
+  const forceSameOrigin =
+    String(process.env.NEXT_PUBLIC_FIREBASE_AUTH_FORCE_SAME_ORIGIN || "0")
+      .trim()
+      .toLowerCase() === "1";
   const allowedDomains = readAllowedDomains();
-  const canonicalHost = readCanonicalAuthHost();
-  const canUseCanonicalHost = canUseAsAuthDomain(canonicalHost, allowedDomains);
 
+  // Enable same-origin only when explicitly requested by env, since it requires
+  // OAuth redirect URIs to be configured for every runtime host.
   if (typeof window !== "undefined") {
     const currentHost = normalizeDomain(window.location.host);
-    const canUseCurrentHost = canUseAsAuthDomain(currentHost, allowedDomains);
-    const shouldPreferCurrentHost =
-      canUseCurrentHost &&
-      (forceSameOrigin ||
-        (!disableSameOrigin && (!configured || configured === fallback)));
-
-    if (shouldPreferCurrentHost) {
-      if (
-        canUseCanonicalHost &&
-        canonicalHost &&
-        currentHost !== canonicalHost &&
-        !isLocalHost(currentHost)
-      ) {
-        return canonicalHost;
-      }
+    if (forceSameOrigin && canUseAsAuthDomain(currentHost, allowedDomains)) {
       return currentHost;
     }
   }

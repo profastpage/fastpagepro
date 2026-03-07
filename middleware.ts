@@ -29,7 +29,6 @@ const ACTIVE_ONLY_PATHS: RegExp[] = [];
 
 const DEFAULT_CANONICAL_HOST = "www.fastpagepro.com";
 const DEFAULT_ALLOWED_PUBLIC_HOSTS = ["www.fastpagepro.com", "fastpagepro.com"];
-const CANONICAL_AUTH_PATHS = [/^\/auth(?:\/|$)/, /^\/signup(?:\/|$)/, /^\/__\/auth(?:\/|$)/];
 
 function resolveCurrentHost(request: NextRequest): string {
   const hostHeader =
@@ -61,23 +60,15 @@ function isLocalHost(host: string): boolean {
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const host = resolveCurrentHost(request);
-  const canonicalHost = resolveCanonicalHost();
 
   if (process.env.NODE_ENV === "production" && host && !isLocalHost(host)) {
-    if (host !== canonicalHost && CANONICAL_AUTH_PATHS.some((pattern) => pattern.test(path))) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.host = canonicalHost;
-      redirectUrl.protocol = "https:";
-      return NextResponse.redirect(redirectUrl, 308);
-    }
-
     const allowedHosts = resolveAllowedPublicHosts();
     if (!allowedHosts.has(host)) {
       if (path.startsWith("/api/")) {
         return NextResponse.json({ error: "Host no permitido" }, { status: 403 });
       }
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.host = canonicalHost;
+      redirectUrl.host = resolveCanonicalHost();
       redirectUrl.protocol = "https:";
       return NextResponse.redirect(redirectUrl, 308);
     }
