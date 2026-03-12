@@ -19,6 +19,7 @@ import {
 import type { RestaurantMenuData, RestaurantMenuItem } from "@/lib/demoTypes";
 import { trackGrowthEvent } from "@/lib/analytics";
 import DemoImage from "@/components/demo/DemoImage";
+import DemoReveal from "@/components/demo/DemoReveal";
 import DemoSocialLinks from "@/components/demo/DemoSocialLinks";
 import { getDemoSocialLinks } from "@/lib/demoSocial";
 import {
@@ -390,7 +391,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   };
 
   const navButton =
-    "h-11 rounded-2xl border px-3 text-xs font-black uppercase tracking-[0.08em] transition touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98] md:h-12 md:text-sm";
+    "h-11 rounded-full border px-3 text-xs font-black uppercase tracking-[0.12em] transition duration-300 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fp-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--fp-surface)] active:scale-[0.98] md:h-12 md:text-sm";
 
   const activateTab = (nextTab: RestaurantTab) => {
     if (nextTab === "reservation") {
@@ -430,15 +431,16 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
   };
 
   return (
-    <section className="space-y-4">
-      <article
-        className="mx-auto w-full max-w-md overflow-visible rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] text-[var(--fp-text)] md:max-w-5xl"
-        style={demoSurfaceStyle}
-      >
-        <div className="z-20 border-b border-[var(--fp-border)] bg-[var(--fp-card)] px-4 py-3">
+    <section className="space-y-6">
+      <DemoReveal>
+        <article
+          className="fp-demo-shell fp-demo-grid mx-auto w-full max-w-md overflow-visible text-[var(--fp-text)] md:max-w-6xl"
+          style={demoSurfaceStyle}
+        >
+        <div className="z-20 border-b border-[var(--fp-border)] bg-[color-mix(in_srgb,var(--fp-card)_88%,transparent)] px-4 py-3 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-2 md:gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)]">
+              <div className="relative h-10 w-10 overflow-hidden rounded-full border border-[var(--fp-border)] shadow-[0_12px_24px_-20px_rgba(15,23,42,0.8)]">
                 <DemoImage
                   src={profileImage}
                   alt={demo.title}
@@ -449,10 +451,15 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   className="object-cover"
                 />
               </div>
-              <p className="truncate text-sm font-semibold">{demo.title}</p>
+              <div>
+                <p className="truncate text-sm font-semibold">{demo.title}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--fp-muted)]">
+                  experiencia inmersiva
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="inline-flex h-10 items-center gap-1 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-1">
+              <div className="inline-flex h-10 items-center gap-1 rounded-full border border-[var(--fp-border)] bg-[var(--fp-surface)]/90 p-1">
                 <button
                   type="button"
                   onClick={() => setBackgroundMode("theme")}
@@ -494,7 +501,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
               </div>
               <button
                 type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--fp-border)]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--fp-border)] bg-[var(--fp-surface)]/92 transition duration-300 hover:-translate-y-0.5 hover:border-[var(--fp-primary)]/40"
                 aria-label="Compartir demo"
               >
                 <Share2 className="h-4 w-4" />
@@ -503,7 +510,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           </div>
         </div>
 
-        <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-3 md:grid md:grid-cols-4">
+        <div className="hidden gap-3 border-b border-[var(--fp-border)] px-4 py-4 md:grid md:grid-cols-4">
           <button
             type="button"
             onClick={() => activateTab("contact")}
@@ -542,87 +549,119 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           </button>
         </div>
 
-        <div className="min-h-[62vh] px-4 pb-24 pt-4 md:px-8 md:pb-8 md:pt-6">
+        <div className="min-h-[62vh] px-4 pb-24 pt-5 md:px-8 md:pb-8 md:pt-7">
           <div ref={tabContentAnchorRef} className="h-0 w-full" aria-hidden="true" />
           {tab === "contact" ? (
-            <section className="space-y-4">
-              <div className="relative pb-10 md:pb-12">
-                <div className="relative h-44 overflow-hidden rounded-3xl border border-[var(--fp-border)] md:h-72">
-                  <DemoImage
-                    src={demo.coverImage}
-                    alt={demo.title}
-                    fallbackLabel={demo.title}
-                    fill
-                    unoptimized
-                    sizes="100vw"
-                    className="object-cover"
-                  />
-                </div>
-                <div className="absolute inset-x-0 bottom-0 flex justify-center">
-                  <div className="relative h-24 w-24 overflow-hidden rounded-full border-4 border-white/90 shadow-lg md:h-28 md:w-28">
+            <section className="space-y-5">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_300px]">
+                <div className="relative overflow-hidden rounded-[2rem] border border-[var(--fp-border)] bg-[var(--fp-card)]">
+                  <div className="absolute inset-0 bg-gradient-to-br from-black/55 via-black/10 to-transparent" />
+                  <div className="relative h-[24rem] md:h-[34rem]">
                     <DemoImage
-                      src={profileImage}
-                      alt={`${demo.title} perfil`}
+                      src={demo.coverImage}
+                      alt={demo.title}
                       fallbackLabel={demo.title}
                       fill
                       unoptimized
-                      sizes="112px"
+                      sizes="100vw"
                       className="object-cover"
                     />
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white md:p-7">
+                    <p className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[0.7rem] font-black uppercase tracking-[0.2em] text-white/85 backdrop-blur-md">
+                      {demo.promoStrip}
+                    </p>
+                    <h2 className="mt-4 max-w-[10ch] text-5xl font-black leading-[0.92] md:text-7xl">
+                      {demo.title}
+                    </h2>
+                    <p className="mt-4 max-w-2xl text-sm leading-6 text-white/78 md:text-base">
+                      {demo.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="fp-demo-panel fp-demo-hover-card p-4 md:p-5">
+                    <div className="relative h-24 w-24 overflow-hidden rounded-full border border-[var(--fp-border)] shadow-lg">
+                      <DemoImage
+                        src={profileImage}
+                        alt={`${demo.title} perfil`}
+                        fallbackLabel={demo.title}
+                        fill
+                        unoptimized
+                        sizes="112px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <p className="mt-4 text-[0.68rem] font-black uppercase tracking-[0.2em] text-[var(--fp-primary)]">
+                      open now
+                    </p>
+                    <p className="mt-3 text-3xl font-black leading-none text-[var(--fp-text)]">
+                      {demo.openHours}
+                    </p>
+                    <p className="mt-3 text-sm leading-6 text-[var(--fp-muted)]">{demo.address}</p>
+                  </div>
+
+                  <div className="fp-demo-panel fp-demo-hover-card p-4 md:p-5">
+                    <p className="fp-demo-kicker">Reserva o pedido</p>
+                    <div className="mt-5 grid gap-3">
+                      <a href={callHref} className="fp-demo-button-secondary inline-flex items-center justify-center gap-2 px-4 text-sm font-black text-[var(--fp-text)]">
+                        <Phone className="h-4 w-4 text-[var(--fp-primary)]" /> Llamar ahora
+                      </a>
+                      <a
+                        href={whatsappHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() =>
+                          void trackGrowthEvent("click_whatsapp", {
+                            vertical: demo.vertical,
+                            slug: demo.slug,
+                            location: "restaurant_contact",
+                          })
+                        }
+                        className="fp-demo-button-primary inline-flex items-center justify-center gap-2 px-4 text-sm font-black text-white"
+                      >
+                        {"\u{1F4AC}"} Pedir por WhatsApp
+                      </a>
+                    </div>
+                    <div className="mt-4">
+                      <DemoSocialLinks
+                        links={socialLinks}
+                        className="justify-start"
+                        onOpen={(platform) =>
+                          void trackGrowthEvent("click_social", {
+                            vertical: demo.vertical,
+                            slug: demo.slug,
+                            location: "restaurant_contact",
+                            platform,
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-10 text-center md:pt-12">
-                <h2 className="text-4xl font-black md:text-6xl">{demo.title}</h2>
-                <p className="mt-2 text-sm uppercase tracking-[0.2em] text-[var(--fp-primary)]">{`\u{1F354} Carta Digital \u{1F354}`}</p>
-                <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-1.5 text-xs font-bold">
-                  <span>{`\u{1F7E2} Abierto`}</span>
-                  <span>|</span>
-                  <span>{`\u23F1\uFE0F ${demo.openHours}`}</span>
-                </div>
-                <p className="mx-auto mt-4 max-w-2xl text-sm text-[var(--fp-muted)] md:text-base">{demo.description}</p>
-                <div className="mt-4 flex items-center justify-center">
-                  <DemoSocialLinks
-                    links={socialLinks}
-                    className="justify-center"
-                    onOpen={(platform) =>
-                      void trackGrowthEvent("click_social", {
-                        vertical: demo.vertical,
-                        slug: demo.slug,
-                        location: "restaurant_contact",
-                        platform,
-                      })
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 md:gap-3">
-                <a href={callHref} className="inline-flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-3 text-[13px] font-black text-white md:gap-2 md:px-4 md:text-sm">
-                  <Phone className="h-4 w-4" /> Llamar ahora
-                </a>
-                <a
-                  href={whatsappHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() =>
-                    void trackGrowthEvent("click_whatsapp", {
-                      vertical: demo.vertical,
-                      slug: demo.slug,
-                      location: "restaurant_contact",
-                    })
-                  }
-                  className="inline-flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-3 text-[13px] font-black text-white md:gap-2 md:px-4 md:text-sm"
-                >
-                  {"\u{1F4AC} Escribir ahora"}
-                </a>
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  { title: "Visual grande", body: "Hero mas inmersivo con fotografia protagonista." },
+                  { title: "CTA directo", body: "Reserva o pedido visible sin depender de bloques repetidos." },
+                  { title: "Experiencia mobile", body: "Navegacion tactil, categorias claras y cierre rapido." },
+                ].map((item) => (
+                  <article key={item.title} className="fp-demo-panel fp-demo-hover-card p-5">
+                    <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-[var(--fp-primary)]">
+                      restaurante
+                    </p>
+                    <h3 className="mt-3 text-2xl font-black text-[var(--fp-text)]">{item.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--fp-muted)]">{item.body}</p>
+                  </article>
+                ))}
               </div>
             </section>
           ) : null}
 
           {tab === "menu" ? (
-            <section className="space-y-4">
+            <section className="space-y-5">
               {isPublicDemo ? (
                 showMenuQuickGuide ? (
                   <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_12px_24px_-20px_rgba(2,6,23,0.55)] md:p-4">
@@ -673,9 +712,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
               <div
                 ref={menuStickyRef}
-                className="sticky top-0 z-40 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 shadow-[0_14px_28px_-18px_rgba(0,0,0,0.45)] backdrop-blur-sm"
+                className="sticky top-0 z-40 rounded-[1.8rem] border border-[var(--fp-border)] bg-[color-mix(in_srgb,var(--fp-card)_88%,transparent)] p-3 shadow-[0_24px_48px_-28px_rgba(0,0,0,0.56)] backdrop-blur-xl"
               >
-                <label className="flex h-11 items-center gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3">
+                <label className="flex h-12 items-center gap-3 rounded-full border border-[var(--fp-border)] bg-[var(--fp-surface)] px-4">
                   <Search className="h-4 w-4 text-[var(--fp-muted)]" />
                   <input
                     value={search}
@@ -690,7 +729,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       key={itemCategory}
                       type="button"
                       onClick={() => scrollToCategory(itemCategory)}
-                      className="shrink-0 rounded-xl border px-3 py-2 text-xs font-bold md:px-4 md:text-sm"
+                      className="shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition duration-300 hover:-translate-y-0.5 md:text-sm"
                       style={
                         category === itemCategory
                           ? { background: "var(--fp-primary)", borderColor: "var(--fp-primary)", color: "#fff" }
@@ -712,15 +751,14 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                     }}
                     className="space-y-3"
                   >
-                    <h3 className="text-4xl font-black md:text-5xl" style={{ color: "var(--fp-primary)" }}>{group.name}</h3>
+                    <h3 className="text-4xl font-black tracking-[-0.04em] md:text-6xl" style={{ color: "var(--fp-primary)" }}>{group.name}</h3>
                     {group.items.map((item) => (
                       <article
                         key={item.id}
-                        className="rounded-[1.2rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3.5 md:p-4"
-                        style={{ boxShadow: "0 14px 24px -20px rgba(15,23,42,0.45)" }}
+                        className="fp-demo-panel fp-demo-hover-card rounded-[1.5rem] p-3.5 md:p-4"
                       >
                         <div className="flex gap-3.5 md:gap-4.5">
-                          <div className="relative h-[124px] w-[124px] shrink-0 overflow-hidden rounded-[0.9rem] border border-[var(--fp-border)] md:h-[168px] md:w-[168px]">
+                          <div className="fp-demo-image-frame relative h-[124px] w-[124px] shrink-0 rounded-[1.2rem] md:h-[176px] md:w-[176px]">
                             <DemoImage
                               src={item.image}
                               alt={item.name}
@@ -735,23 +773,23 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                             <div className="flex items-start justify-between gap-2">
                               <h4 className="line-clamp-2 text-[1.34rem] font-black leading-tight md:text-3xl">{item.name}</h4>
                               {item.badge ? (
-                                <span className="rounded-full bg-[var(--fp-primary)] px-2 py-0.5 text-[9px] font-black text-white">
+                                <span className="rounded-full bg-[var(--fp-primary)] px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.14em] text-white">
                                   {normalizeBadge(item.badge)}
                                 </span>
                               ) : null}
                             </div>
-                            <p className="mt-1 line-clamp-2 text-[14px] text-[var(--fp-muted)] md:text-base">{item.description}</p>
-                            <div className="mt-2 flex items-end gap-2">
+                            <p className="mt-2 line-clamp-2 text-[14px] leading-6 text-[var(--fp-muted)] md:text-base">{item.description}</p>
+                            <div className="mt-3 flex items-end gap-2">
                               {item.compareAtPrice ? (
                                 <p className="text-[11px] line-through text-[var(--fp-muted)] md:text-xs">{formatMoney(item.compareAtPrice)}</p>
                               ) : null}
-                              <p className="text-[1.46rem] font-black text-[var(--fp-primary)] md:text-[1.62rem]">{formatMoney(item.price)}</p>
+                              <p className="text-[1.46rem] font-black tracking-[-0.04em] text-[var(--fp-primary)] md:text-[1.72rem]">{formatMoney(item.price)}</p>
                             </div>
-                            <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-1.5 py-1">
+                            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-1.5 py-1">
                               <button
                                 type="button"
                                 onClick={() => updateQty(item, -1)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--fp-border)] bg-[var(--fp-surface)] transition hover:border-[var(--fp-primary)]/40"
                               >
                                 <Minus className="h-4 w-4" />
                               </button>
@@ -759,7 +797,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                               <button
                                 type="button"
                                 onClick={() => updateQty(item, 1)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--fp-border)] bg-[var(--fp-surface)] transition hover:border-[var(--fp-primary)]/40"
                               >
                                 <Plus className="h-4 w-4" />
                               </button>
@@ -775,8 +813,8 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           ) : null}
 
           {tab === "location" ? (
-            <section className="space-y-4 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 md:p-5">
-              <div className="overflow-hidden rounded-2xl border border-[var(--fp-border)]">
+            <section className="fp-demo-panel space-y-4 p-3 md:p-5">
+              <div className="fp-demo-image-frame rounded-[1.5rem]">
                 <iframe
                   title={`Mapa de ${demo.title}`}
                   src={mapsEmbed}
@@ -794,7 +832,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                 href={mapsOpen}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-5 text-sm font-black text-white"
+                className="fp-demo-button-primary inline-flex items-center justify-center gap-2 px-5 text-sm font-black text-white"
               >
                 <MapPin className="h-4 w-4" /> Ir ahora
               </a>
@@ -803,9 +841,9 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
 
           {tab === "reservation" || reservationPanelReady ? (
             <section
-              className={`${tab === "reservation" ? "block" : "hidden"} space-y-4 rounded-3xl border border-[var(--fp-border)] bg-[var(--fp-card)] p-3 md:p-5`}
+              className={`${tab === "reservation" ? "block" : "hidden"} fp-demo-panel space-y-4 p-3 md:p-5`}
             >
-              <div className="overflow-hidden rounded-2xl border border-[var(--fp-border)]">
+              <div className="fp-demo-image-frame rounded-[1.5rem]">
                 <DemoImage
                   src={reservationConfig.heroImage}
                   alt={reservationConfig.title}
@@ -816,7 +854,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                   className="h-40 w-full object-cover md:h-52"
                 />
               </div>
-              <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4 md:p-5">
+              <div className="rounded-[1.5rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4 md:p-5">
                 <h3 className="text-3xl font-black md:text-4xl" style={{ color: "var(--fp-primary)" }}>
                   {reservationConfig.title}
                 </h3>
@@ -831,7 +869,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       value={reservationName}
                       onChange={(event) => setReservationName(event.target.value)}
                       placeholder="Ej. Fabio Herrera"
-                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                      className="w-full rounded-[1rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
                     />
                   </label>
 
@@ -839,7 +877,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                     <span className="text-xs font-black uppercase tracking-[0.12em]" style={{ color: "var(--fp-primary)" }}>
                       Personas
                     </span>
-                    <div className="flex items-center rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)]">
+                    <div className="flex items-center rounded-[1rem] border border-[var(--fp-border)] bg-[var(--fp-surface)]">
                       <button
                         type="button"
                         onClick={() =>
@@ -892,12 +930,12 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       value={reservationDate}
                       onChange={(event) => setReservationDate(event.target.value)}
                       onFocus={openReservationDatePicker}
-                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 pr-12 text-sm outline-none"
+                      className="w-full rounded-[1rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 pr-12 text-sm outline-none"
                     />
                     <button
                       type="button"
                       onClick={openReservationDatePicker}
-                      className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-[var(--fp-border)] bg-[var(--fp-surface)]"
+                      className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[var(--fp-border)] bg-[var(--fp-surface)]"
                       aria-label="Abrir calendario"
                     >
                       <CalendarDays className="h-4 w-4" />
@@ -912,7 +950,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                     <select
                       value={reservationSlot}
                       onChange={(event) => setReservationSlot(event.target.value)}
-                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                      className="w-full rounded-[1rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
                     >
                       {reservationConfig.slotOptions.map((slot) => (
                         <option key={slot} value={slot}>
@@ -930,7 +968,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       value={reservationContact}
                       onChange={(event) => setReservationContact(event.target.value)}
                       placeholder="906431630"
-                      className="w-full rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                      className="w-full rounded-[1rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
                     />
                   </label>
 
@@ -943,7 +981,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                       value={reservationNote}
                       onChange={(event) => setReservationNote(event.target.value)}
                       placeholder={reservationConfig.notePlaceholder}
-                      className="w-full resize-none rounded-xl border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
+                      className="w-full resize-none rounded-[1rem] border border-[var(--fp-border)] bg-[var(--fp-surface)] px-3 py-2.5 text-sm outline-none"
                     />
                   </label>
                 </div>
@@ -970,7 +1008,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
                 <button
                   type="button"
                   onClick={submitReservationDemo}
-                  className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[var(--fp-primary)] bg-[var(--fp-primary)] px-4 text-sm font-black text-white"
+                  className="fp-demo-button-primary mt-4 inline-flex w-full items-center justify-center gap-2 px-4 text-sm font-black text-white"
                 >
                   {reservationConfig.ctaLabel}
                 </button>
@@ -979,6 +1017,7 @@ export default function RestaurantDemo({ demo }: { demo: RestaurantMenuData }) {
           ) : null}
         </div>
       </article>
+      </DemoReveal>
 
       {tab === "menu" ? (
         <a

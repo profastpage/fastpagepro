@@ -1,0 +1,10 @@
+1. CREAR DIRECTORIO EN CLIENTES FASTPAGE
+
+ npm run new-project restaurant-lasvegas "Las Vegas Smokehouse" restaurant
+
+
+2. INSTALAR:
+
+cd ..\clients\restaurant-lasvegas 
+npm install
+npm run dev

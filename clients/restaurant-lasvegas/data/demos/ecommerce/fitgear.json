@@ -1,0 +1,18 @@
+{
+  "vertical": "ecommerce",
+  "slug": "fitgear",
+  "title": "FitGear",
+  "subtitle": "Suplementos y accesorios fitness",
+  "description": "Store enfocada en ticket medio y recompra.",
+  "coverImage": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "minimalCommerce",
+  "heroKicker": "Entrena mejor",
+  "whatsappNumber": "51997688900",
+  "trustBullets": ["Asesoria gratuita", "Recomendaciones por objetivo", "Envios todo Peru", "Stock real"],
+  "categories": ["Suplementos", "Accesorios", "Ropa"],
+  "products": [
+    {"id":"fg-1","category":"Suplementos","name":"Whey Pro 2lb","description":"Proteina aislada de alta absorcion.","image":"https://images.unsplash.com/photo-1576678927484-cc907957088c?q=80&w=1200&auto=format&fit=crop","price":179,"badge":"Top"},
+    {"id":"fg-2","category":"Accesorios","name":"Bandas de resistencia","description":"Pack de 5 niveles de fuerza.","image":"https://images.unsplash.com/photo-1518310383802-640c2de311b2?q=80&w=1200&auto=format&fit=crop","price":59,"compareAtPrice":79,"badge":"Oferta"},
+    {"id":"fg-3","category":"Ropa","name":"Short Performance","description":"Tela elastica y secado rapido.","image":"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop","price":89,"badge":"Nuevo"}
+  ]
+}

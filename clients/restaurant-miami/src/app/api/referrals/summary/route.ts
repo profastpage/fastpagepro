@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireFirebaseUser } from "@/lib/server/requireFirebaseUser";
+import { enforceRouteRateLimit } from "@/lib/server/rateLimit";
+import { buildReferralSummary } from "@/lib/referrals/service";
+import { isFirebaseAdminCredentialError } from "@/lib/server/firebaseError";
+
+export const runtime = "nodejs";
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await requireFirebaseUser(request);
+    const rateLimit = await enforceRouteRateLimit({
+      request,
+      namespace: "referrals_summary_get",
+      limit: 30,
+      window: "1 m",
+      identifier: user.uid,
+    });
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intenta de nuevo en unos segundos." },
+        { status: 429 },
+      );
+    }
+
+    const summary = await buildReferralSummary({
+      userId: user.uid,
+      email: String(user.email || ""),
+    });
+
+    return NextResponse.json({
+      success: true,
+      summary,
+    });
+  } catch (error: any) {
+    const message = String(error?.message || "");
+    if (message.startsWith("UNAUTHORIZED")) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+    if (message.startsWith("SERVICE_UNAVAILABLE") || isFirebaseAdminCredentialError(error)) {
+      return NextResponse.json({ error: "Servicio de referidos no disponible" }, { status: 503 });
+    }
+    console.error("[Referrals Summary] Error:", error);
+    return NextResponse.json({ error: "No se pudo cargar resumen de referidos" }, { status: 500 });
+  }
+}

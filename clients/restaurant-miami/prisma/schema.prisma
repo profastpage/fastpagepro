@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Subscription {
+  id            String             @id @default(uuid())
+  userId        String
+  plan          PlanType
+  status        SubscriptionStatus
+  startDate     DateTime
+  endDate       DateTime
+  paymentMethod PaymentMethod
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  requests      SubscriptionRequest[] @relation("ApprovedSubscription")
+
+  @@index([userId, status, endDate])
+  @@index([userId, createdAt])
+}
+
+model SubscriptionRequest {
+  id                     String                    @id @default(uuid())
+  userId                 String
+  requestedPlan          PlanType
+  paymentMethod          PaymentMethod
+  status                 SubscriptionRequestStatus @default(PENDING)
+  proofFileName          String?
+  proofMimeType          String?
+  proofBase64            String?
+  notes                  String?
+  createdAt              DateTime                  @default(now())
+  reviewedAt             DateTime?
+  reviewedBy             String?
+  approvedSubscriptionId String?
+
+  approvedSubscription   Subscription?             @relation("ApprovedSubscription", fields: [approvedSubscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, createdAt])
+}
+
+enum PlanType {
+  FREE
+  BUSINESS
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  PENDING
+}
+
+enum PaymentMethod {
+  YAPE
+  PLIN
+  TRANSFERENCIA
+}
+
+enum SubscriptionRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

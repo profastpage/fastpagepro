@@ -1,0 +1,37 @@
+{
+  "vertical": "services",
+  "slug": "pro-metrics",
+  "title": "Pro Metrics Demo",
+  "subtitle": "Panel demo para medir visitas, conversion y rendimiento tecnico",
+  "description": "Visualiza indicadores clave para optimizar decisiones comerciales en tiempo real.",
+  "coverImage": "https://images.unsplash.com/photo-1551281044-8d8d7f10c1f6?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "leadDark",
+  "heroKicker": "Analitica accionable",
+  "whatsappNumber": "51919662011",
+  "bullets": [
+    "Visitas totales por proyecto",
+    "Conversion semanal",
+    "Rendimiento tecnico (LCP/SEO/A11y)"
+  ],
+  "cards": [
+    {
+      "id": "pm-1",
+      "title": "Conversion por canal",
+      "summary": "Compara resultados entre trafico organico, anuncios y WhatsApp para priorizar inversion.",
+      "cta": "Ver detalles"
+    },
+    {
+      "id": "pm-2",
+      "title": "Tiempo en pagina",
+      "summary": "Detecta secciones con mayor atencion y mejora los bloques que pierden retencion.",
+      "cta": "Revisar rendimiento"
+    },
+    {
+      "id": "pm-3",
+      "title": "Insights de crecimiento",
+      "summary": "Recomendaciones guiadas para mejorar CTA, estructura y velocidad de conversion.",
+      "cta": "Activar insights"
+    }
+  ]
+}
+

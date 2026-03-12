@@ -15,6 +15,7 @@ import technova from "../../data/demos/ecommerce/technova.json";
 import urbanWear from "../../data/demos/ecommerce/urban-wear.json";
 import agencyGrowth from "../../data/demos/services/agency-growth.json";
 import consultoriaPro from "../../data/demos/services/consultoria-pro.json";
+import estatePrime from "../../data/demos/services/estate-prime.json";
 import legalStudio from "../../data/demos/services/legal-studio.json";
 import proMetrics from "../../data/demos/services/pro-metrics.json";
 
@@ -50,6 +51,7 @@ const MOCK_DEMOS: Record<DemoVertical, Record<string, DemoData>> = {
   services: {
     "agency-growth": agencyGrowth as DemoData,
     "consultoria-pro": consultoriaPro as DemoData,
+    "estate-prime": estatePrime as DemoData,
     "legal-studio": legalStudio as DemoData,
     "pro-metrics": proMetrics as DemoData,
   },

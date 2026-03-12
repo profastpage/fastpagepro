@@ -1,0 +1,270 @@
+import type { CSSProperties } from "react";
+import { normalizeVertical, type BusinessVertical } from "@/lib/vertical";
+
+export type ThemeToken = {
+  id: string;
+  vertical: BusinessVertical;
+  name: string;
+  primary: string;
+  secondary: string;
+  bg: string;
+  surface: string;
+  text: string;
+  muted: string;
+  card: string;
+  border: string;
+  dark: string;
+};
+
+export const THEME_TOKENS: ThemeToken[] = [
+  {
+    id: "foodWarm",
+    vertical: "restaurant",
+    name: "Food Warm",
+    primary: "#d9480f",
+    secondary: "#f59f00",
+    bg: "#f8f4ec",
+    surface: "#ffffff",
+    text: "#2f1a0f",
+    muted: "#7a5a44",
+    card: "#fff7ed",
+    border: "#f3d6bd",
+    dark: "#1f120b",
+  },
+  {
+    id: "darkKitchen",
+    vertical: "restaurant",
+    name: "Dark Kitchen",
+    primary: "#f97316",
+    secondary: "#fde68a",
+    bg: "#111111",
+    surface: "#1b1b1b",
+    text: "#f8fafc",
+    muted: "#cbd5e1",
+    card: "#1f2937",
+    border: "#374151",
+    dark: "#090909",
+  },
+  {
+    id: "coffeeLight",
+    vertical: "restaurant",
+    name: "Coffee Light",
+    primary: "#92400e",
+    secondary: "#d6a85a",
+    bg: "#f7f3ee",
+    surface: "#ffffff",
+    text: "#2b2118",
+    muted: "#6b5a49",
+    card: "#fdf8f2",
+    border: "#e8d9c8",
+    dark: "#26190f",
+  },
+  {
+    id: "sushiPremium",
+    vertical: "restaurant",
+    name: "Sushi Premium",
+    primary: "#b91c1c",
+    secondary: "#111827",
+    bg: "#f4f4f5",
+    surface: "#ffffff",
+    text: "#18181b",
+    muted: "#52525b",
+    card: "#fafafa",
+    border: "#e4e4e7",
+    dark: "#09090b",
+  },
+  {
+    id: "cleanStore",
+    vertical: "ecommerce",
+    name: "Clean Store",
+    primary: "#2563eb",
+    secondary: "#38bdf8",
+    bg: "#f4f7fb",
+    surface: "#ffffff",
+    text: "#0f172a",
+    muted: "#64748b",
+    card: "#ffffff",
+    border: "#dbeafe",
+    dark: "#0b1220",
+  },
+  {
+    id: "premiumShop",
+    vertical: "ecommerce",
+    name: "Premium Shop",
+    primary: "#111827",
+    secondary: "#f59e0b",
+    bg: "#f5f5f4",
+    surface: "#ffffff",
+    text: "#111827",
+    muted: "#57534e",
+    card: "#ffffff",
+    border: "#e7e5e4",
+    dark: "#030712",
+  },
+  {
+    id: "flashSale",
+    vertical: "ecommerce",
+    name: "Flash Sale",
+    primary: "#ef4444",
+    secondary: "#fb7185",
+    bg: "#f8fafc",
+    surface: "#ffffff",
+    text: "#0f172a",
+    muted: "#64748b",
+    card: "#fff1f2",
+    border: "#fecdd3",
+    dark: "#0b1020",
+  },
+  {
+    id: "minimalCommerce",
+    vertical: "ecommerce",
+    name: "Minimal Commerce",
+    primary: "#334155",
+    secondary: "#94a3b8",
+    bg: "#f8fafc",
+    surface: "#ffffff",
+    text: "#111827",
+    muted: "#64748b",
+    card: "#ffffff",
+    border: "#e2e8f0",
+    dark: "#020617",
+  },
+  {
+    id: "luxeGraphite",
+    vertical: "ecommerce",
+    name: "Luxe Graphite",
+    primary: "#111827",
+    secondary: "#d4a017",
+    bg: "#f4f5f7",
+    surface: "#ffffff",
+    text: "#1f2937",
+    muted: "#64748b",
+    card: "#ffffff",
+    border: "#dbe1ea",
+    dark: "#07090e",
+  },
+  {
+    id: "velvetRose",
+    vertical: "ecommerce",
+    name: "Velvet Rose",
+    primary: "#be185d",
+    secondary: "#fb7185",
+    bg: "#fff1f2",
+    surface: "#ffffff",
+    text: "#3f102a",
+    muted: "#9f1239",
+    card: "#ffe4ea",
+    border: "#fecdd3",
+    dark: "#140a12",
+  },
+  {
+    id: "oceanicTech",
+    vertical: "ecommerce",
+    name: "Oceanic Tech",
+    primary: "#0e7490",
+    secondary: "#2563eb",
+    bg: "#eef8ff",
+    surface: "#ffffff",
+    text: "#0f172a",
+    muted: "#334155",
+    card: "#e0edf9",
+    border: "#bfdbfe",
+    dark: "#04111b",
+  },
+  {
+    id: "forestMarket",
+    vertical: "ecommerce",
+    name: "Forest Market",
+    primary: "#15803d",
+    secondary: "#65a30d",
+    bg: "#f1fdf4",
+    surface: "#ffffff",
+    text: "#0f2c1f",
+    muted: "#365948",
+    card: "#e7f7ec",
+    border: "#bbf7d0",
+    dark: "#06150f",
+  },
+  {
+    id: "sunsetStudio",
+    vertical: "ecommerce",
+    name: "Sunset Studio",
+    primary: "#ea580c",
+    secondary: "#f59e0b",
+    bg: "#fff7ed",
+    surface: "#ffffff",
+    text: "#3a1d0f",
+    muted: "#7c3f1f",
+    card: "#ffedd5",
+    border: "#fed7aa",
+    dark: "#1a0f0b",
+  },
+  {
+    id: "leadDark",
+    vertical: "services",
+    name: "Lead Dark",
+    primary: "#22c55e",
+    secondary: "#06b6d4",
+    bg: "#020617",
+    surface: "#0f172a",
+    text: "#f8fafc",
+    muted: "#94a3b8",
+    card: "#111827",
+    border: "#1f2937",
+    dark: "#020617",
+  },
+  {
+    id: "corporateLight",
+    vertical: "services",
+    name: "Corporate Light",
+    primary: "#1d4ed8",
+    secondary: "#0ea5e9",
+    bg: "#f1f5f9",
+    surface: "#ffffff",
+    text: "#0f172a",
+    muted: "#475569",
+    card: "#ffffff",
+    border: "#cbd5e1",
+    dark: "#0f172a",
+  },
+  {
+    id: "agencyBold",
+    vertical: "services",
+    name: "Agency Bold",
+    primary: "#7c3aed",
+    secondary: "#ec4899",
+    bg: "#0b1020",
+    surface: "#111827",
+    text: "#f8fafc",
+    muted: "#c4b5fd",
+    card: "#1f2937",
+    border: "#374151",
+    dark: "#070b16",
+  },
+];
+
+export function getThemesByVertical(vertical: unknown) {
+  const normalized = normalizeVertical(vertical);
+  return THEME_TOKENS.filter((theme) => theme.vertical === normalized);
+}
+
+export function resolveThemeById(vertical: unknown, themeId?: string | null): ThemeToken {
+  const normalized = normalizeVertical(vertical);
+  const verticalThemes = getThemesByVertical(normalized);
+  const fromId = verticalThemes.find((theme) => theme.id === themeId);
+  return fromId || verticalThemes[0];
+}
+
+export function themeToCssVars(theme: ThemeToken): CSSProperties {
+  return {
+    "--fp-primary": theme.primary,
+    "--fp-secondary": theme.secondary,
+    "--fp-bg": theme.bg,
+    "--fp-surface": theme.surface,
+    "--fp-text": theme.text,
+    "--fp-muted": theme.muted,
+    "--fp-card": theme.card,
+    "--fp-border": theme.border,
+    "--fp-dark": theme.dark,
+  } as CSSProperties;
+}

@@ -130,6 +130,14 @@ export const DEMO_CATALOG: DemoCatalogItem[] = [
     coverImage:
       "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1400&auto=format&fit=crop",
   },
+  {
+    vertical: "services",
+    slug: "estate-prime",
+    title: "Prime Residences",
+    subtitle: "Landing aspiracional para inmobiliaria premium",
+    coverImage:
+      "https://images.unsplash.com/photo-1600585154526-990dced4db0c?q=80&w=1400&auto=format&fit=crop",
+  },
 ];
 
 export function getDemoCatalog(vertical?: string): DemoCatalogItem[] {

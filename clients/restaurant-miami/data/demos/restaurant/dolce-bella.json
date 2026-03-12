@@ -1,0 +1,131 @@
+{
+  "vertical": "restaurant",
+  "slug": "dolce-bella",
+  "title": "Dolce Bella",
+  "subtitle": "Carta de postres con pedidos por WhatsApp",
+  "description": "Rubro tematico de postres para vender por vitrina, porcion y torta completa con vista mobile premium.",
+  "coverImage": "https://images.unsplash.com/photo-1464306076886-da185f6a9d05?q=80&w=1800&auto=format&fit=crop",
+  "profileImage": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?q=80&w=800&auto=format&fit=crop",
+  "themeId": "coffeeLight",
+  "promoStrip": "Combo dulce: 2 postres + 2 bebidas con descuento",
+  "openHours": "10:00 am - 10:00 pm",
+  "address": "Av. Angamos Oeste 845, Miraflores",
+  "whatsappNumber": "51987544021",
+  "categories": ["Postres de vitrina", "Tortas enteras", "Helados artesanales", "Bebidas dulces"],
+  "items": [
+    {
+      "id": "db-1",
+      "category": "Postres de vitrina",
+      "name": "Cheesecake de frutos rojos",
+      "description": "Base crocante, crema suave y salsa de berries casera.",
+      "image": "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?q=80&w=1400&auto=format&fit=crop",
+      "price": 18,
+      "compareAtPrice": 22,
+      "badge": "Favorito",
+      "featured": true,
+      "favoriteOfDay": true
+    },
+    {
+      "id": "db-2",
+      "category": "Postres de vitrina",
+      "name": "Tiramisu clasico",
+      "description": "Capas de cafe, queso mascarpone y cacao premium.",
+      "image": "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?q=80&w=1400&auto=format&fit=crop",
+      "price": 17,
+      "badge": "Mas pedido"
+    },
+    {
+      "id": "db-3",
+      "category": "Postres de vitrina",
+      "name": "Brownie fudge con nuez",
+      "description": "Textura humeda con chocolate intenso y nuez tostada.",
+      "image": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?q=80&w=1400&auto=format&fit=crop",
+      "price": 14
+    },
+    {
+      "id": "db-4",
+      "category": "Postres de vitrina",
+      "name": "Pie de limon",
+      "description": "Masa de mantequilla, crema de limon y merengue tostado.",
+      "image": "https://images.unsplash.com/photo-1519864600265-abb23847ef2c?q=80&w=1400&auto=format&fit=crop",
+      "price": 15
+    },
+    {
+      "id": "db-5",
+      "category": "Tortas enteras",
+      "name": "Torta de chocolate premium",
+      "description": "Bizcocho de cacao 70% con relleno de fudge artesanal.",
+      "image": "https://images.unsplash.com/photo-1578985545062-69928b1d9587?q=80&w=1400&auto=format&fit=crop",
+      "price": 95,
+      "compareAtPrice": 110,
+      "badge": "Top"
+    },
+    {
+      "id": "db-6",
+      "category": "Tortas enteras",
+      "name": "Torta red velvet",
+      "description": "Masa aterciopelada con crema de queso y vainilla.",
+      "image": "https://images.unsplash.com/photo-1559620192-032c4bc4674e?q=80&w=1400&auto=format&fit=crop",
+      "price": 102
+    },
+    {
+      "id": "db-7",
+      "category": "Tortas enteras",
+      "name": "Torta tres leches",
+      "description": "Bizcocho esponjoso bañado en mezcla de tres leches.",
+      "image": "https://images.unsplash.com/photo-1621303837174-89787a7d4729?q=80&w=1400&auto=format&fit=crop",
+      "price": 88
+    },
+    {
+      "id": "db-8",
+      "category": "Helados artesanales",
+      "name": "Copa de helado vainilla bourbon",
+      "description": "Helado artesanal con sirope y almendras caramelizadas.",
+      "image": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?q=80&w=1400&auto=format&fit=crop",
+      "price": 16,
+      "badge": "Top ventas"
+    },
+    {
+      "id": "db-9",
+      "category": "Helados artesanales",
+      "name": "Gelato de pistacho",
+      "description": "Gelato cremoso de pistacho real con topping crocante.",
+      "image": "https://images.unsplash.com/photo-1488900128323-21503983a07e?q=80&w=1400&auto=format&fit=crop",
+      "price": 19
+    },
+    {
+      "id": "db-10",
+      "category": "Helados artesanales",
+      "name": "Sundae cookie crunch",
+      "description": "Helado de crema, salsa de caramelo y galleta triturada.",
+      "image": "https://images.unsplash.com/photo-1570197788417-0e82375c9371?q=80&w=1400&auto=format&fit=crop",
+      "price": 18
+    },
+    {
+      "id": "db-11",
+      "category": "Bebidas dulces",
+      "name": "Frappe de oreo",
+      "description": "Leche helada, oreo triturada y crema chantilly.",
+      "image": "https://images.unsplash.com/photo-1488477304112-4944851de03d?q=80&w=1400&auto=format&fit=crop",
+      "price": 15
+    },
+    {
+      "id": "db-12",
+      "category": "Bebidas dulces",
+      "name": "Chocolate caliente especiado",
+      "description": "Chocolate espeso con canela y toque de naranja.",
+      "image": "https://images.unsplash.com/photo-1517578239113-b03992dcdd25?q=80&w=1400&auto=format&fit=crop",
+      "price": 14
+    }
+  ],
+  "reservation": {
+    "title": "Reserva para celebraciones",
+    "subtitle": "Agenda una mesa para cumpleanos, brunch o tea time y confirma por WhatsApp.",
+    "heroImage": "https://images.unsplash.com/photo-1488477181946-6428a0291777?q=80&w=1800&auto=format&fit=crop",
+    "slotOptions": ["11:30 am", "1:00 pm", "4:30 pm", "7:00 pm", "8:30 pm"],
+    "minPartySize": 2,
+    "maxPartySize": 12,
+    "ctaLabel": "Reservar ahora",
+    "notePlaceholder": "Cumpleanos, tipo de torta o decoracion especial."
+  }
+}

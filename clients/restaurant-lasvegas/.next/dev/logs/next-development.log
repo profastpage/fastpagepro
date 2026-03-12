@@ -1,0 +1,23 @@
+[00:00:01.035] Server  WARN    ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+[00:00:01.214] Server  LOG     ✓ Ready in 861ms
+[00:00:09.155] Server  WARN    ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+[00:00:09.669] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:09.817] Server  WARN    ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+[00:00:10.031] Server  WARN    [FirebaseAdmin] No Firebase Admin credentials found. Admin SDK disabled.
+[00:00:10.043] Server  LOG     [growth_events:fallback] {}
+[00:00:10.052] Server  LOG     [growth_events:fallback] {}
+[00:00:10.065] Browser LOG     [growth-event] {"event":"page_view","href":"http://localhost:3000/","page":"landing_home","path":"/","ts":1772657964054,"vertical":"restaurant"}
+[00:00:10.065] Browser LOG     [growth-event] {"event":"page_view","href":"http://localhost:3000/","page":"landing_home","path":"/","ts":1772657964056,"vertical":"restaurant"}
+[00:00:10.755] Server  WARN    ⚠ Unsupported metadata themeColor is configured in metadata export in /app. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+[00:00:10.868] Server  WARN    ⚠ Unsupported metadata themeColor is configured in metadata export in /auth. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+[00:00:10.985] Server  WARN    ⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+[00:00:11.129] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:11.247] Server  LOG     [growth_events:fallback] {}
+[00:00:11.254] Server  LOG     [growth_events:fallback] {}
+[00:00:11.359] Browser LOG     [growth-event] {"event":"page_view","href":"http://localhost:3000/","page":"landing_home","path":"/","ts":1772657965498,"vertical":"restaurant"}
+[00:00:11.359] Browser LOG     [growth-event] {"event":"page_view","href":"http://localhost:3000/","page":"landing_home","path":"/","ts":1772657965499,"vertical":"restaurant"}

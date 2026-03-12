@@ -1,0 +1,36 @@
+{
+  "vertical": "services",
+  "slug": "estate-prime",
+  "title": "Prime Residences",
+  "subtitle": "Landing premium para captar compradores, inversionistas y visitas privadas",
+  "description": "Presenta proyectos, filtra propiedades clave y convierte consultas en tours o reuniones con una narrativa mas aspiracional.",
+  "coverImage": "https://images.unsplash.com/photo-1600585154526-990dced4db0c?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "estateLuxe",
+  "heroKicker": "Inmobiliaria premium",
+  "whatsappNumber": "51995522880",
+  "bullets": [
+    "Tours privados y agenda inmediata",
+    "Propiedades destacadas con enfoque aspiracional",
+    "CTA para compra, alquiler e inversion"
+  ],
+  "cards": [
+    {
+      "id": "ep-1",
+      "title": "Coleccion curada de propiedades",
+      "summary": "Hero, galeria y fichas pensadas para elevar la percepcion de valor desde el primer scroll.",
+      "cta": "Ver proyectos"
+    },
+    {
+      "id": "ep-2",
+      "title": "Leads calificados en menos pasos",
+      "summary": "Formularios y WhatsApp orientados a visitas, cotizacion y seguimiento comercial.",
+      "cta": "Solicitar visita"
+    },
+    {
+      "id": "ep-3",
+      "title": "Marca sobria y elegante",
+      "summary": "Composicion espaciosa, visual y confiable para proyectos residenciales o de inversion.",
+      "cta": "Hablar con asesor"
+    }
+  ]
+}

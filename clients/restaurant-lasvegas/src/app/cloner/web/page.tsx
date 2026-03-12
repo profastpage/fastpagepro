@@ -1,0 +1,613 @@
+﻿"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
+import { db } from "@/lib/firebase";
+import { collection, deleteDoc, doc, getDocs, query, where } from "firebase/firestore";
+import { setDocWithVerification } from "@/lib/firestoreWriteGuard";
+import { Globe, ArrowRight, AlertCircle, ExternalLink, Clock, Trash2, Edit3, Rocket, HelpCircle, BookOpen, ShieldCheck, Zap } from "lucide-react";
+import MobilePageBar from "@/components/MobilePageBar";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import MobilePlanStatusCard from "@/components/subscription/MobilePlanStatusCard";
+
+function isValidUrl(url: string) {
+  try {
+    const u = new URL(url);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function normalizeUrl(input: string) {
+  const value = input.trim();
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith("//")) return `https:${value}`;
+  return `https://${value}`;
+}
+
+const EDITABLE_TEXT_PLACEHOLDER = "(edita aqui)";
+const IMAGE_PLACEHOLDER_DATA_URL = `data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+    <rect width="640" height="640" fill="#0f172a"/>
+    <rect x="32" y="32" width="576" height="576" rx="28" fill="none" stroke="#64748b" stroke-width="8" stroke-dasharray="20 14"/>
+    <g fill="#cbd5e1">
+      <circle cx="320" cy="270" r="76"/>
+      <rect x="205" y="390" width="230" height="26" rx="13"/>
+    </g>
+    <text x="320" y="470" text-anchor="middle" fill="#e2e8f0" font-size="40" font-family="Arial, sans-serif" font-weight="700">Sube imagen</text>
+  </svg>`,
+)}`;
+
+function scrubCssImageUrls(input: string): string {
+  return String(input || "").replace(/url\(\s*(['"]?)(?!data:)([^)'"]+)\1\s*\)/gi, "none");
+}
+
+function replaceTextContent(value: string): string {
+  const source = String(value || "");
+  if (!source.trim()) return source;
+  const leading = source.match(/^\s*/)?.[0] || "";
+  const trailing = source.match(/\s*$/)?.[0] || "";
+  return `${leading}${EDITABLE_TEXT_PLACEHOLDER}${trailing}`;
+}
+
+function toEditableTemplateHtml(rawHtml: string): string {
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return rawHtml;
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(rawHtml, "text/html");
+  const skipTextTag = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "SVG", "TITLE"]);
+
+  doc.querySelectorAll("script").forEach((node) => node.remove());
+  if (doc.title) doc.title = EDITABLE_TEXT_PLACEHOLDER;
+
+  doc.querySelectorAll("*").forEach((el) => {
+    const element = el as HTMLElement;
+    const tag = element.tagName;
+
+    Array.from(element.attributes).forEach((attr) => {
+      if (attr.name.toLowerCase().startsWith("on")) {
+        element.removeAttribute(attr.name);
+      }
+    });
+
+    const styleValue = element.getAttribute("style");
+    if (styleValue) {
+      element.setAttribute("style", scrubCssImageUrls(styleValue));
+    }
+
+    if (tag === "STYLE") {
+      element.textContent = scrubCssImageUrls(element.textContent || "");
+      return;
+    }
+
+    if (tag === "IMG") {
+      const image = element as HTMLImageElement;
+      image.setAttribute("src", IMAGE_PLACEHOLDER_DATA_URL);
+      image.removeAttribute("srcset");
+      image.removeAttribute("data-src");
+      image.removeAttribute("data-srcset");
+      image.removeAttribute("data-original");
+      image.setAttribute("alt", EDITABLE_TEXT_PLACEHOLDER);
+      image.setAttribute("data-fp-placeholder", "image");
+      image.setAttribute("data-fp-upload-hint", "1");
+    }
+
+    if (tag === "VIDEO" || tag === "AUDIO" || tag === "SOURCE" || tag === "TRACK") {
+      element.removeAttribute("src");
+      element.removeAttribute("srcset");
+    }
+
+    if (tag === "IFRAME") {
+      element.setAttribute("src", "about:blank");
+    }
+
+    if (tag === "A") {
+      const href = String(element.getAttribute("href") || "").trim();
+      if (href && !href.startsWith("#")) {
+        element.setAttribute("href", "#");
+      }
+    }
+
+    if (tag === "FORM") {
+      element.setAttribute("action", "#");
+    }
+
+    if (tag === "INPUT") {
+      const input = element as HTMLInputElement;
+      const type = String(input.getAttribute("type") || "text").toLowerCase();
+      const textLike = new Set(["text", "search", "email", "tel", "url", "number", "password"]);
+      if (textLike.has(type)) {
+        input.setAttribute("value", EDITABLE_TEXT_PLACEHOLDER);
+        input.setAttribute("placeholder", EDITABLE_TEXT_PLACEHOLDER);
+      } else if (type === "submit" || type === "button") {
+        input.setAttribute("value", EDITABLE_TEXT_PLACEHOLDER);
+      }
+    }
+
+    if (tag === "TEXTAREA") {
+      const textarea = element as HTMLTextAreaElement;
+      textarea.value = EDITABLE_TEXT_PLACEHOLDER;
+      textarea.textContent = EDITABLE_TEXT_PLACEHOLDER;
+      textarea.setAttribute("placeholder", EDITABLE_TEXT_PLACEHOLDER);
+    }
+
+    const textAttrs = ["alt", "title", "aria-label", "placeholder"];
+    textAttrs.forEach((name) => {
+      const value = element.getAttribute(name);
+      if (value && value.trim()) {
+        element.setAttribute(name, EDITABLE_TEXT_PLACEHOLDER);
+      }
+    });
+  });
+
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode as Text);
+  }
+  textNodes.forEach((node) => {
+    const parentTag = node.parentElement?.tagName || "";
+    if (skipTextTag.has(parentTag)) return;
+    const value = node.textContent || "";
+    if (!value.trim()) return;
+    node.textContent = replaceTextContent(value);
+  });
+
+  if (!doc.getElementById("fp-template-clone-style")) {
+    const style = doc.createElement("style");
+    style.id = "fp-template-clone-style";
+    style.textContent = `
+      img[data-fp-placeholder="image"]{
+        background:#0f172a !important;
+        border:1.5px dashed #64748b !important;
+        border-radius:12px;
+        object-fit:cover;
+      }
+    `;
+    doc.head.appendChild(style);
+  }
+
+  return `<!DOCTYPE html>\n${doc.documentElement.outerHTML}`;
+}
+
+export default function WebClonerPage() {
+  const { user, loading: authLoading } = useAuth(true);
+  const { t, language } = useLanguage();
+  const tx = (es: string, en: string) => (language === "en" ? en : es);
+  const router = useRouter();
+  const [url, setUrl] = useState("");
+  const [html, setHtml] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [savingToEditor, setSavingToEditor] = useState(false);
+  const [publishedSites, setPublishedSites] = useState<any[]>([]);
+  const [fetchingSites, setFetchingSites] = useState(true);
+  const [sitesError, setSitesError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const debouncedUrl = useMemo(() => normalizeUrl(url), [url]);
+
+  const fetchPublishedSites = async (uid: string) => {
+    setFetchingSites(true);
+    setSitesError(null);
+    try {
+      const q = query(collection(db, "cloned_sites"), where("userId", "==", uid));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const published = data
+        .filter((site: any) => Boolean(site?.published))
+        .sort((a: any, b: any) => {
+          const timeA = Number(a?.publishedAt || a?.updatedAt || a?.createdAt || 0);
+          const timeB = Number(b?.publishedAt || b?.updatedAt || b?.createdAt || 0);
+          return timeB - timeA;
+        });
+      setPublishedSites(published);
+    } catch (err: any) {
+      console.error("Error fetching sites:", err);
+      setPublishedSites([]);
+      setSitesError(tx("No se pudieron cargar los proyectos publicados de tu cuenta.", "Could not load your account's published projects."));
+    } finally {
+      setFetchingSites(false);
+    }
+  };
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user?.uid) {
+      setPublishedSites([]);
+      setFetchingSites(false);
+      return;
+    }
+    fetchPublishedSites(user.uid);
+  }, [authLoading, user?.uid]);
+
+  const handleOpenEditor = async () => {
+    if (!html || !isValidUrl(debouncedUrl)) return;
+
+    setSavingToEditor(true);
+    try {
+      if (authLoading) {
+        throw new Error(tx("Espera un momento mientras validamos tu sesion.", "Please wait while we validate your session."));
+      }
+      if (!user?.uid) {
+        throw new Error(tx("Debes iniciar sesion para guardar y editar.", "You must sign in to save and edit."));
+      }
+
+      const siteId =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID().slice(0, 8)
+          : Math.random().toString(36).slice(2, 10);
+      const templatedHtml = toEditableTemplateHtml(html);
+
+      const sitePayload = {
+        id: siteId,
+        html: templatedHtml,
+        url: debouncedUrl,
+        userId: user.uid,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        published: false,
+        status: "draft",
+      };
+
+      await setDocWithVerification(
+        doc(db, "cloned_sites", siteId),
+        sitePayload,
+        { merge: true },
+        {
+          expectedUpdatedAt: Number(sitePayload.updatedAt || Date.now()),
+          requiredFields: ["id", "userId"],
+          errorMessage: tx("No se pudo confirmar el guardado del proyecto en Firestore.", "Could not confirm project save in Firestore."),
+        },
+      );
+      router.push(`/editor/${siteId}`);
+    } catch (e: any) {
+      const msg = String(e?.message || "");
+      const low = msg.toLowerCase();
+      if (low.includes("permission") || low.includes("insufficient")) {
+        setError(tx("No tienes permisos para guardar en Firebase. Revisa reglas de Firestore para cloned_sites.", "You don't have permission to save in Firebase. Check Firestore rules for cloned_sites."));
+      } else {
+        setError(msg || tx("No se pudo guardar el proyecto. Verifica tu sesion y permisos.", "Could not save the project. Verify your session and permissions."));
+      }
+    } finally {
+      setSavingToEditor(false);
+    }
+  };
+
+  const handleDeletePublished = async () => {
+    if (!deleteTarget?.id) return;
+    if (!user?.uid) return;
+    if (deleting) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteDoc(doc(db, "cloned_sites", String(deleteTarget.id)));
+      setPublishedSites((prev) => prev.filter((s) => s?.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      await fetchPublishedSites(user.uid);
+    } catch (e: any) {
+      console.error("Error deleting site:", e);
+      setDeleteError(e?.message || tx("No se pudo eliminar el sitio. Revisa permisos de Firestore.", "Could not delete the site. Check Firestore permissions."));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      setError(null);
+      setHtml(null);
+      if (!debouncedUrl || !isValidUrl(debouncedUrl)) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/clone?url=${encodeURIComponent(debouncedUrl)}`);
+        const ct = res.headers.get("content-type") || "";
+        if (!res.ok) {
+          const j = ct.includes("application/json") ? await res.json() : null;
+          throw new Error(j?.error || `Error ${res.status}`);
+        }
+        const text = await res.text();
+        setHtml(text);
+      } catch (e: any) {
+        setError(e.message || tx("Error inesperado", "Unexpected error"));
+      } finally {
+        setLoading(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(handler);
+  }, [debouncedUrl]);
+
+  const [showGuide, setShowGuide] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <MobilePageBar
+        title={tx("Clonador Web", "Web Cloner")}
+        onBack={() => {
+          if (typeof window !== "undefined" && window.history.length > 1) {
+            router.back();
+            return;
+          }
+          router.push("/hub");
+        }}
+      />
+
+      <main className="flex-grow pt-[7.5rem] md:pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <MobilePlanStatusCard userId={user?.uid} className="mb-6" />
+        {/* Help Button */}
+        <button 
+          onClick={() => setShowGuide(true)}
+          className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-zinc-900 border border-white/10 rounded-2xl flex items-center justify-center text-cyan-400 shadow-2xl hover:bg-zinc-800 transition-all active:scale-95 group"
+        >
+          <HelpCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+        </button>
+
+        {/* User Manual Modal */}
+        {showGuide && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="bg-zinc-900 border border-white/10 rounded-[32px] w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl">
+              <div className="p-8 border-b border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-cyan-400" />
+                  </div>
+                  <h2 className="text-2xl font-bold">{tx("Manual de Usuario: Clonador Web PRO", "User Guide: Web Cloner PRO")}</h2>
+                </div>
+                <button 
+                  onClick={() => setShowGuide(false)}
+                  className="p-2 hover:bg-white/5 rounded-lg text-zinc-500 hover:text-white"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="flex-grow overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-cyan-400" />
+                    {tx("1. Clonación de Sitios", "1. Website Cloning")}
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    {tx("Ingresa cualquier URL válida en el campo principal. Nuestro motor inteligente extraerá el HTML, CSS y recursos, sanitizando el código para que sea completamente editable.", "Enter any valid URL in the main field. Our smart engine extracts HTML, CSS and resources, sanitizing the code so everything is fully editable.")}
+                  </p>
+                </section>
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Edit3 className="w-5 h-5 text-cyan-400" />
+                    {tx("2. Editor Visual Intuitivo", "2. Intuitive Visual Editor")}
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    {tx("Haz clic en cualquier elemento (texto, imágenes, fondos) para editarlo. Aparecerá una barra de herramientas flotante para modificar colores, tamaños y estilos en tiempo real.", "Click any element (text, images, backgrounds) to edit it. A floating toolbar appears to adjust colors, sizes, and styles in real time.")}
+                  </p>
+                </section>
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-cyan-400" />
+                    {tx("3. Guardado Automático", "3. Auto Save")}
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    {tx("Tus cambios se guardan automáticamente cada 15 segundos mientras editas. También puedes usar el botón \"Guardar\" para asegurar tus cambios manualmente.", "Your changes are auto-saved every 15 seconds while editing. You can also use the \"Save\" button to secure changes manually.")}
+                  </p>
+                </section>
+                <section>
+                  <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                    <Rocket className="w-5 h-5 text-cyan-400" />
+                    {tx("4. Publicación en un Clic", "4. One-Click Publish")}
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed">
+                    {tx("Una vez satisfecho con los cambios, pulsa \"Publicar\". El sistema optimizará el código, validará los recursos y generará la versión final de tu landing page.", "When you're satisfied with changes, click \"Publish\". The system optimizes code, validates resources, and generates the final version of your landing page.")}
+                  </p>
+                </section>
+                <div className="bg-cyan-500/5 border border-cyan-500/10 rounded-2xl p-4 flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-cyan-400 mt-0.5" />
+                  <p className="text-xs text-cyan-400/80 leading-relaxed">
+                    <strong>{tx("Nota de Seguridad:", "Security Note:")}</strong>{" "}
+                    {tx("Todos los sitios clonados pasan por un proceso de limpieza para eliminar scripts maliciosos y rastreadores, garantizando que tu nueva página sea rápida y segura.", "All cloned sites pass through a cleanup process to remove malicious scripts and trackers, ensuring your new page is fast and safe.")}
+                  </p>
+                </div>
+              </div>
+              <div className="p-8 border-t border-white/10 bg-black/20">
+                <button 
+                  onClick={() => setShowGuide(false)}
+                  className="w-full py-4 rounded-2xl bg-cyan-500 text-black font-bold hover:bg-cyan-400 transition-all"
+                >
+                  {tx("Entendido, ¡empezar a clonar!", "Got it, start cloning!")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_0%,rgba(0,255,255,0.03),transparent_70%)]" />
+          <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-cyan-600/5 rounded-full blur-[90px]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="mb-8 text-center animate-fade-in">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">{t("hub.webcloner.title")}</h1>
+            <p className="text-zinc-500 dark:text-zinc-400">{t("hub.webcloner.desc")}</p>
+          </div>
+
+          <div className="bg-zinc-900/60 border border-white/10 rounded-3xl p-4 md:p-6 mb-8">
+            <label htmlFor="clone-url" className="block text-sm font-semibold text-zinc-400 mb-3">
+              URL
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex gap-3 flex-1">
+                <div className="flex items-center px-3 rounded-xl bg-white/5 border border-white/10">
+                  <Globe className="w-5 h-5 text-cyan-400" />
+                </div>
+                <input
+                  id="clone-url"
+                  type="url"
+                  placeholder={tx("https://ejemplo.com", "https://example.com")}
+                  className="flex-1 min-w-0 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-cyan-500 outline-none text-sm md:text-base"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onBlur={() => {
+                    if (!url.trim()) return;
+                    setUrl(normalizeUrl(url));
+                  }}
+                />
+              </div>
+              <button
+                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-cyan-500 text-black font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-cyan-500/20"
+                disabled={!isValidUrl(debouncedUrl) || !html || savingToEditor || authLoading || !user?.uid}
+                onClick={handleOpenEditor}
+                aria-label={tx("Abrir editor", "Open editor")}
+              >
+                {savingToEditor ? (
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Preview & Edit</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+            {error && (
+              <div className="mt-3 flex items-center gap-2 text-red-400">
+                <AlertCircle className="w-4 h-4" />
+                <span>{error}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Published Projects Section */}
+          <div className="mb-12" id="published-sites">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-cyan-400" />
+              </div>
+              <h2 className="text-xl font-bold">{tx("Proyectos Publicados", "Published Projects")}</h2>
+              <span className="text-xs px-2 py-1 rounded-full bg-zinc-800 text-zinc-400 border border-white/5 font-bold">
+                {publishedSites.length}
+              </span>
+            </div>
+
+            {fetchingSites ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-48 rounded-3xl bg-zinc-900/40 border border-white/5 animate-pulse" />
+                ))}
+              </div>
+            ) : publishedSites.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {publishedSites.map((site) => (
+                  <div 
+                    key={site.id} 
+                    className="group relative bg-zinc-900/40 border border-white/5 rounded-3xl p-5 hover:bg-zinc-800/60 transition-all hover:border-cyan-500/30 overflow-hidden"
+                  >
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <Globe className="w-5 h-5 text-zinc-400 group-hover:text-cyan-400 transition-colors" />
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => router.push(`/editor/${site.id}`)}
+                            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+                            title={tx("Editar Proyecto", "Edit Project")}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteError(null);
+                              setDeleteTarget(site);
+                            }}
+                            className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-300 hover:text-red-200 transition-all"
+                            title={tx("Eliminar Proyecto", "Delete Project")}
+                            aria-label={tx("Eliminar proyecto", "Delete project")}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <h3 className="font-bold text-zinc-200 line-clamp-1 mb-1">{tx("Proyecto", "Project")} #{site.id}</h3>
+                        <p className="text-xs text-zinc-500 line-clamp-1">{site.url}</p>
+                      </div>
+
+                      <div className="mt-auto flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                          <Clock className="w-3 h-3" />
+                          {new Date(site.publishedAt || site.createdAt).toLocaleDateString()}
+                        </div>
+                        <button 
+                          onClick={() => {
+                            window.open(`/preview/${site.id}`, "_blank");
+                          }}
+                          className="flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+                        >
+                          {tx("Ver Sitio", "View Site")} <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-zinc-900/20 border border-white/5 border-dashed rounded-3xl p-12 text-center">
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <Rocket className="w-6 h-6 text-zinc-600" />
+                </div>
+                <h3 className="text-zinc-400 font-bold mb-1">{tx("No hay proyectos publicados", "No published projects yet")}</h3>
+                <p className="text-zinc-600 text-sm">{tx("Clona un sitio y dale a \"Publicar\" para que aparezca aquí.", "Clone a site and click \"Publish\" so it appears here.")}</p>
+              </div>
+            )}
+            {sitesError && (
+              <div className="mt-4 flex items-center gap-2 text-red-400">
+                <AlertCircle className="w-4 h-4" />
+                <span>{sitesError}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl overflow-hidden border border-white/10 bg-black">
+            {loading && (
+              <div className="p-8 text-center text-zinc-400">{tx("Cargando preview...", "Loading preview...")}</div>
+            )}
+            {!loading && html && (
+              <iframe
+                title="preview"
+                className="w-full h-[70vh] bg-white"
+                sandbox="allow-scripts allow-forms allow-popups allow-modals allow-same-origin"
+                srcDoc={html}
+              />
+            )}
+            {!loading && !html && (
+              <div className="p-8 text-center text-zinc-500">{tx("Ingresa una URL válida para ver el preview.", "Enter a valid URL to see the preview.")}</div>
+            )}
+          </div>
+        </div>
+      </main>
+
+      <ConfirmDeleteModal
+        open={Boolean(deleteTarget)}
+        title={tx("¿Eliminar sitio publicado?", "Delete published site?")}
+        description={`${tx("Se eliminara permanentemente el proyecto", "Project will be permanently deleted")} #${deleteTarget?.id || ""}.`}
+        confirmLabel={deleting ? tx("Eliminando...", "Deleting...") : tx("Eliminar ahora", "Delete now")}
+        loading={deleting}
+        error={deleteError}
+        onCancel={() => {
+          if (deleting) return;
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
+        onConfirm={handleDeletePublished}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,232 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function rootAdminEmail() {
+      return "afiliadosprobusiness@gmail.com";
+    }
+
+    function tokenEmail() {
+      return signedIn() && request.auth.token.email is string
+        ? request.auth.token.email.lower()
+        : "";
+    }
+
+    function isAdmin() {
+      return signedIn() &&
+        (
+          request.auth.token.admin == true ||
+          tokenEmail() == rootAdminEmail()
+        );
+    }
+
+    function isDemoUser() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isDemo == true;
+    }
+
+    function demoUserGroupId() {
+      return isDemoUser()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.demoGroupId is string
+          ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.demoGroupId
+          : "";
+    }
+
+    function canAccessOwnDemoGroup(demoGroupId) {
+      return isDemoUser() && demoUserGroupId() == demoGroupId;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if (isOwner(userId)
+        && (
+          !request.resource.data.keys().hasAny(["uid"])
+          || request.resource.data.uid == userId
+        ))
+        || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /demoGroups/{demoGroupId} {
+      allow get, list: if isAdmin() || canAccessOwnDemoGroup(demoGroupId);
+      allow create, update, delete: if isAdmin();
+
+      match /{document=**} {
+        allow read, write: if isAdmin() || canAccessOwnDemoGroup(demoGroupId);
+      }
+    }
+
+    match /cloned_sites/{siteId} {
+      function isPublishedStorefront() {
+        return resource.data.source == "store-builder"
+          && resource.data.published == true;
+      }
+
+      function existingOwner() {
+        return resource.data.userId is string ? resource.data.userId : "";
+      }
+
+      function incomingOwner() {
+        return request.resource.data.userId is string ? request.resource.data.userId : "";
+      }
+
+      allow get, list: if isAdmin()
+        || (signedIn() && existingOwner() == request.auth.uid)
+        || isPublishedStorefront();
+
+      allow create: if signedIn()
+        && incomingOwner() == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && (
+            // Normal owner update path (owner is immutable)
+            (existingOwner() == request.auth.uid && incomingOwner() == existingOwner())
+            // Legacy compatibility: old docs without userId can be claimed by current owner
+            || (!resource.data.keys().hasAny(["userId"]) && incomingOwner() == request.auth.uid)
+          )
+        );
+
+      allow delete: if isAdmin() || (signedIn() && existingOwner() == request.auth.uid);
+    }
+
+    match /projects/{projectId} {
+      function existingOwner() {
+        return resource.data.userId is string ? resource.data.userId : "";
+      }
+
+      function incomingOwner() {
+        return request.resource.data.userId is string ? request.resource.data.userId : "";
+      }
+
+      allow get, list: if isAdmin()
+        || (signedIn() && existingOwner() == request.auth.uid);
+
+      allow create: if signedIn()
+        && incomingOwner() == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && (
+            // Normal owner update path (owner is immutable)
+            (existingOwner() == request.auth.uid && incomingOwner() == existingOwner())
+            // Legacy compatibility: old docs without userId can be claimed by current owner
+            || (!resource.data.keys().hasAny(["userId"]) && incomingOwner() == request.auth.uid)
+          )
+        );
+
+      allow delete: if isAdmin() || (signedIn() && existingOwner() == request.auth.uid);
+    }
+
+    match /analytics/{projectId} {
+      function ownsAnalyticsProject() {
+        return signedIn()
+          && get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
+      }
+
+      allow get, list: if isAdmin() || ownsAnalyticsProject();
+      allow create, update: if isAdmin() || ownsAnalyticsProject();
+      allow delete: if isAdmin();
+    }
+
+    match /store_orders/{orderId} {
+      allow create: if request.resource.data.storeId is string
+        && request.resource.data.storeSlug is string
+        && request.resource.data.storeOwnerId is string
+        && request.resource.data.storeName is string
+        && request.resource.data.source == "public-storefront"
+        && request.resource.data.status == "new"
+        && request.resource.data.currency is string
+        && request.resource.data.createdAt is int
+        && request.resource.data.customer is map
+        && request.resource.data.customer.name is string
+        && request.resource.data.customer.phone is string
+        && request.resource.data.customer.address is string
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.totals is map
+        && request.resource.data.totals.items is int
+        && request.resource.data.totals.totalCents is int;
+
+      allow get, list: if isAdmin()
+        || (signedIn() && resource.data.storeOwnerId == request.auth.uid);
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /link_profiles/{profileId} {
+      function isLinkProfileOwner() {
+        return signedIn()
+          && (
+            profileId == request.auth.uid
+            || (resource.data.userId is string && resource.data.userId == request.auth.uid)
+          );
+      }
+
+      allow get: if isAdmin()
+        || isLinkProfileOwner()
+        || resource.data.published == true;
+
+      allow list: if isAdmin()
+        || resource.data.published == true
+        || (signedIn() && (
+          profileId == request.auth.uid
+          || resource.data.userId == request.auth.uid
+        ));
+
+      allow create: if signedIn()
+        && request.resource.data.userId is string
+        && request.resource.data.userId == request.auth.uid;
+
+      allow update: if isAdmin()
+        || (
+          isLinkProfileOwner()
+          && (
+            !request.resource.data.keys().hasAny(["userId"])
+            || request.resource.data.userId == request.auth.uid
+          )
+        );
+
+      allow delete: if isAdmin() || isLinkProfileOwner();
+    }
+
+    match /subscription_notifications/{notificationId} {
+      function notificationOwner() {
+        return signedIn()
+          && resource.data.userId is string
+          && resource.data.userId == request.auth.uid;
+      }
+
+      function notificationOwnerCreate() {
+        return signedIn()
+          && request.resource.data.userId is string
+          && request.resource.data.userId == request.auth.uid;
+      }
+
+      allow get: if isAdmin() || notificationOwner();
+      allow list: if isAdmin();
+      allow create: if isAdmin() || notificationOwnerCreate();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

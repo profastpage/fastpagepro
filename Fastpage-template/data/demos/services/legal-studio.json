@@ -1,0 +1,17 @@
+{
+  "vertical": "services",
+  "slug": "legal-studio",
+  "title": "Legal Studio",
+  "subtitle": "Landing profesional para estudios legales",
+  "description": "Presenta autoridad y capta consultas calificadas en minutos.",
+  "coverImage": "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1600&auto=format&fit=crop",
+  "themeId": "leadDark",
+  "heroKicker": "Asesoria legal premium",
+  "whatsappNumber": "51993377722",
+  "bullets": ["Respuesta en menos de 2 horas", "Especialistas por area", "Confidencialidad garantizada"],
+  "cards": [
+    {"id":"ls-1","title":"Derecho corporativo","summary":"Constitucion, contratos y compliance.","cta":"Consultar ahora"},
+    {"id":"ls-2","title":"Defensa laboral","summary":"Asesoria para empresas y ejecutivos.","cta":"Solicitar evaluacion"},
+    {"id":"ls-3","title":"Propiedad intelectual","summary":"Registra y protege tu marca.","cta":"Hablar con experto"}
+  ]
+}

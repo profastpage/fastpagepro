@@ -12,8 +12,10 @@ type ThemePickerProps = {
 export default function ThemePicker({ vertical, value, onChange }: ThemePickerProps) {
   const themes = getThemesByVertical(vertical);
   return (
-    <section className="rounded-2xl border border-white/10 bg-black/40 p-4">
-      <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-300">Tema dinamico</p>
+    <section className="fp-demo-panel p-4">
+      <p className="text-xs font-black uppercase tracking-[0.2em] text-[var(--fp-muted)]">
+        Tema dinamico
+      </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {themes.map((theme: ThemeToken) => {
           const isActive = theme.id === value;
@@ -22,11 +24,21 @@ export default function ThemePicker({ vertical, value, onChange }: ThemePickerPr
               key={theme.id}
               type="button"
               onClick={() => onChange(theme.id)}
-              className={`rounded-xl border px-3 py-2 text-left transition ${
+              className={`rounded-[1.15rem] border px-3 py-3 text-left transition duration-300 hover:-translate-y-0.5 ${
                 isActive
-                  ? "border-amber-300 bg-amber-300/15 text-amber-100"
-                  : "border-white/15 bg-white/[0.03] text-zinc-200 hover:border-white/30"
+                  ? "text-[var(--fp-text)]"
+                  : "bg-[var(--fp-card)] text-[var(--fp-text)]"
               }`}
+              style={
+                isActive
+                  ? {
+                      borderColor: "color-mix(in srgb, var(--fp-primary) 36%, transparent)",
+                      background:
+                        "linear-gradient(180deg, color-mix(in srgb, var(--fp-primary) 11%, var(--fp-card)), var(--fp-card))",
+                      boxShadow: "0 18px 40px rgba(15, 23, 42, 0.08)",
+                    }
+                  : { borderColor: "var(--fp-border)" }
+              }
             >
               <p className="text-sm font-bold">{theme.name}</p>
               <div className="mt-2 flex items-center gap-2">

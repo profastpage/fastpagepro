@@ -1,0 +1,27 @@
+{
+  "vertical": "restaurant",
+  "slug": "brasa-power",
+  "title": "Brasa Power",
+  "subtitle": "Pollo a la brasa con carta de alta conversion",
+  "description": "Estrategia enfocada en combos familiares y pedidos por zonas.",
+  "coverImage": "https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=1600&auto=format&fit=crop",
+  "profileImage": "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=600&auto=format&fit=crop",
+  "themeId": "darkKitchen",
+  "promoStrip": "Delivery gratis en zona 1 desde S/ 59",
+  "openHours": "12:00 pm - 11:00 pm",
+  "address": "Av. Javier Prado 890, San Isidro",
+  "whatsappNumber": "51998877661",
+  "categories": ["Pollos", "Parrillas", "Acompanamientos", "Ensaladas", "Bebidas"],
+  "items": [
+    {"id":"bp-1","category":"Pollos","name":"1/4 Brasa Clasico","description":"Incluye papas crocantes y cremas artesanales.","image":"https://images.unsplash.com/photo-1518492104633-130d0cc84637?q=80&w=1200&auto=format&fit=crop","price":23,"compareAtPrice":28,"badge":"Mas pedido","favoriteOfDay":true},
+    {"id":"bp-2","category":"Pollos","name":"1/2 Pollo Familiar","description":"Con papas familiares, ensalada y gaseosa 1L.","image":"https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?q=80&w=1200&auto=format&fit=crop","price":42,"badge":"Top"},
+    {"id":"bp-3","category":"Pollos","name":"Pollo Entero Power","description":"Pollo entero + 2 guarniciones + bebida 1.5L.","image":"https://images.unsplash.com/photo-1598103442097-8b74394b95c6?q=80&w=1200&auto=format&fit=crop","price":79,"compareAtPrice":92},
+    {"id":"bp-4","category":"Parrillas","name":"Parrilla Mixta","description":"Chorizo, anticucho, mollejitas y papas doradas.","image":"https://images.unsplash.com/photo-1558030006-450675393462?q=80&w=1200&auto=format&fit=crop","price":58,"badge":"Favorito"},
+    {"id":"bp-5","category":"Parrillas","name":"Anticuchos XL","description":"Brochetas de corazon con papa dorada.","image":"https://images.unsplash.com/photo-1529692236671-f1dc72a0d4d8?q=80&w=1200&auto=format&fit=crop","price":29},
+    {"id":"bp-6","category":"Acompanamientos","name":"Papas Familiares","description":"Porcion grande para compartir.","image":"https://images.unsplash.com/photo-1518013431117-eb1465fa5752?q=80&w=1200&auto=format&fit=crop","price":14},
+    {"id":"bp-7","category":"Acompanamientos","name":"Tequenos de Queso","description":"8 unidades con salsa huancaina.","image":"https://images.unsplash.com/photo-1612152325046-45a18d0f5f8f?q=80&w=1200&auto=format&fit=crop","price":18},
+    {"id":"bp-8","category":"Ensaladas","name":"Ensalada Brasa","description":"Lechuga, tomate, palta y aderezo de yogurt.","image":"https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200&auto=format&fit=crop","price":16},
+    {"id":"bp-9","category":"Bebidas","name":"Chicha Morada 1L","description":"Receta casera sin preservantes.","image":"https://images.unsplash.com/photo-1613478223719-2ab802602423?q=80&w=1200&auto=format&fit=crop","price":12},
+    {"id":"bp-10","category":"Bebidas","name":"Maracuya Frozen","description":"Pulpa natural y hielo frappe.","image":"https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=1200&auto=format&fit=crop","price":14}
+  ]
+}

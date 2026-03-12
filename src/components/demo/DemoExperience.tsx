@@ -19,6 +19,7 @@ import {
 import { resolveThemeById, themeToCssVars } from "@/lib/themes";
 import { useLanguage } from "@/context/LanguageContext";
 import { localizeDynamicText } from "@/lib/autoI18n";
+import DemoReveal from "@/components/demo/DemoReveal";
 
 export default function DemoExperience({ demo }: { demo: DemoData }) {
   const { user } = useAuth();
@@ -102,49 +103,53 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
     >
       <div className="mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0 space-y-4">
-          <div className="grid gap-2 rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-3 sm:grid-cols-4">
+          <div className="fp-demo-panel grid gap-2 p-3 sm:grid-cols-4">
             <button
               type="button"
               onClick={handleBackClick}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-3 text-center text-xs font-black uppercase tracking-[0.12em] transition duration-300 hover:-translate-y-0.5"
             >
               {"\u2190"} {tx("Retroceder", "Back")}
             </button>
             <Link
               href="/"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] sm:justify-start"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-3 text-center text-xs font-black uppercase tracking-[0.12em] transition duration-300 hover:-translate-y-0.5 sm:justify-start"
             >
               {"\u2190"} {tx("Volver al inicio", "Back to home")}
             </Link>
             <button
               type="button"
               onClick={() => setLanguage(language === "en" ? "es" : "en")}
-              className="inline-flex w-full items-center justify-center rounded-xl border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em]"
+              className="inline-flex w-full items-center justify-center rounded-full border border-[var(--fp-border)] bg-[var(--fp-card)] px-3 py-3 text-center text-xs font-black uppercase tracking-[0.12em] transition duration-300 hover:-translate-y-0.5"
               aria-label={tx("Cambiar idioma", "Change language")}
             >
               {language === "en" ? "ES" : "EN"}
             </button>
             <Link
               href={createHref}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300/40 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-3 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-amber-100 sm:justify-end"
+              className="fp-demo-button-primary inline-flex w-full items-center justify-center gap-2 px-3 py-3 text-center text-xs font-black uppercase tracking-[0.12em] text-white sm:justify-end"
             >
               {tx("Crear mi version gratis", "Create my free version")}
             </Link>
           </div>
-          <div className="rounded-2xl border border-[var(--fp-border)] bg-[var(--fp-surface)] p-4">
+          <DemoReveal delay={0.03}>
+          <div className="fp-demo-panel px-4 py-5 md:px-6">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--fp-muted)]">
               {tx("Demo", "Demo")} {demo.mode === "real" ? tx("real", "real") : tx("preview", "preview")} / {td(demo.vertical)}
             </p>
-            <h1 className="mt-2 text-2xl font-black md:text-4xl">{td(demo.title)}</h1>
-            <p className="mt-2 text-sm text-[var(--fp-muted)] md:text-base">{td(demo.subtitle)}</p>
+            <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] md:text-5xl">{td(demo.title)}</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--fp-muted)] md:text-base">
+              {td(demo.subtitle)}
+            </p>
           </div>
+          </DemoReveal>
           {demo.vertical === "ecommerce" ? <EcommerceDemo demo={demo} /> : null}
           {demo.vertical === "services" ? <ServicesDemo demo={demo} /> : null}
         </section>
 
         <aside className="min-w-0 space-y-4 xl:sticky xl:top-24 xl:self-start">
           <ThemePicker vertical={demo.vertical} value={themeId} onChange={setThemeId} />
-          <section className="rounded-2xl border border-white/10 bg-black/40 p-4">
+          <section className="fp-demo-panel p-4">
             <p className="text-sm font-bold text-white">Modo de demo</p>
             <p className="mt-2 text-xs text-zinc-300">
               mode=demo usa JSON mock. mode=real esta preparado para integrar slug del cliente.
@@ -158,7 +163,7 @@ export default function DemoExperience({ demo }: { demo: DemoData }) {
                   mode: demo.mode || "demo",
                 })
               }
-              className="mt-3 w-full rounded-xl border border-amber-300/35 bg-amber-300/10 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-amber-200"
+              className="mt-3 w-full rounded-full border border-amber-300/35 bg-amber-300/10 px-3 py-3 text-xs font-black uppercase tracking-[0.12em] text-amber-200 transition duration-300 hover:-translate-y-0.5"
             >
               Tracking demo activo
             </button>

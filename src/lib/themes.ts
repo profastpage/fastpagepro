@@ -241,6 +241,20 @@ export const THEME_TOKENS: ThemeToken[] = [
     border: "#374151",
     dark: "#070b16",
   },
+  {
+    id: "estateLuxe",
+    vertical: "services",
+    name: "Estate Luxe",
+    primary: "#a16207",
+    secondary: "#1f2937",
+    bg: "#f5f1ea",
+    surface: "#fffdf9",
+    text: "#1f2937",
+    muted: "#6b7280",
+    card: "#f9f6f0",
+    border: "#dfd5c7",
+    dark: "#171411",
+  },
 ];
 
 export function getThemesByVertical(vertical: unknown) {

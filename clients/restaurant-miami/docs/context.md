@@ -1,0 +1,284 @@
+﻿# Context
+
+## 2026-03-02
+
+- Demos publicas de landing (`/demo`) para restaurante, ecommerce y servicios:
+  - los botones/carro que redirigen a WhatsApp ahora usan siempre el numero oficial `51919662011`.
+  - la demo de restaurante tambien fija el CTA de llamada a `tel:+51919662011`.
+  - se agrego una nueva demo restaurante sin registro: `dolce-bella` (rubro postres), con portada, foto de perfil, ubicacion, menu tematico y reserva lista para preview/entrega.
+  - se agrego otra demo restaurante sin registro: `fuente-soda-flow` (rubro fuente de soda / full bebidas), con portada, perfil, ubicacion y carta completa de bebidas para preview comercial.
+- Flujos base sin demo:
+  - `TemplateGenerator` usa `51919662011` como numero placeholder por defecto.
+  - defaults iniciales del editor de tienda (`/store`) usan `51919662011`.
+  - seeds de demo accounts ahora asignan `51919662011`.
+- WhatsApp con emojis estables (demo + cuentas registradas):
+  - se agrego helper compartido `src/lib/whatsapp.ts` para generar links con `https://api.whatsapp.com/send` y `URLSearchParams`.
+  - las cartas digitales publicadas (`/bio/[slug]`) usan el helper en contacto, pedido de carrito y reserva.
+  - el preview del editor LinkHub (`/linkhub`) tambien usa el mismo helper.
+- Carta digital mas visual (demo + cuentas registradas):
+  - se aumentaron dimensiones de tarjetas de productos en la seccion carta para mobile-first.
+  - imagenes, tipografia, precio y controles de cantidad ahora tienen mayor presencia visual.
+  - aplica en demo sin registro (`RestaurantDemo`) y en carta publicada de cuentas registradas (`ProductCard` en `/bio/[slug]`).
+  - se reforzo tambien el preview de carta en `/linkhub` para que el tamano visible de items se acerque al render final mobile.
+  - ajuste fino adicional: badge mas compacto y stepper tipo pildora mas corto para acercar la UI al layout de referencia (imagen 2).
+  - ajuste adicional: precios reducidos en tarjetas de carta para demo sin registro y carta publicada con registro.
+  - ajuste extra: precios aun mas pequenos y imagenes de producto significativamente mas grandes en desktop (tambien ajustadas en mobile).
+  - en editor de items (`/linkhub`), el boton `Duplicar` se reemplazo por `Crear nuevo`: inserta un item debajo del actual, limpia busqueda y hace scroll/focus directo al nuevo para editar.
+  - se retiro `Emoji` y `Badge` a nivel item en el editor; ahora el emoji del item se sincroniza automaticamente con la categoria y el badge manual se fuerza vacio al guardar.
+  - en carta publicada (`/bio/[slug]`), los badges manuales de item ya no se usan; solo se muestran badges de promo automatica cuando aplica.
+  - en `Etiqueta del rubro` (editor `/linkhub`) se habilito emoji automatico al inicio del rubro, incluyendo cuando se escribe un rubro nuevo; se agrego tambien la opcion `Parrilla`.
+  - `Etiqueta del rubro` ahora incluye selector rapido (`select`) que al clic muestra todos los rubros predefinidos disponibles (historial + nuevos), manteniendo tambien input libre para rubros personalizados.
+  - para cuentas registradas, si el catalogo tiene menos de 5 items se autocompleta con platos base del rubro actual; y al confirmar cambio de rubro se cargan 5 platos predefinidos del rubro (titulo, descripcion, precio y emoji referencial).
+  - en el editor de items de carta (`/linkhub`), ahora se puede tocar/clicar directamente la imagen del producto para adjuntar o cambiar foto (ademas del boton `Subir imagen`), reutilizando la misma compresion automatica para mantener bajo peso.
+- Tema de carta en editor LinkHub (`/linkhub`):
+  - al cambiar tema (sugerido por rubro, tema oficial o RGB) ya no se fuerza `cartaBackgroundMode: "white"`; ahora respeta el modo activo elegido por el usuario.
+  - en modo `theme`, el preview aplica fallback de texto oscuro cuando detecta fondos de tema claros, para evitar texto blanco sin contraste.
+  - se agregaron `8` temas premium nuevos de Carta Digital y quedaron disponibles desde plan `BUSINESS` (tambien `PRO`), manteniendo bloqueo en `FREE`.
+  - el Creador RGB de Carta Digital ahora incluye `8` presets adicionales (12 en total) para aplicar variantes visuales rapido con un clic.
+  - en modo movil de la carta publicada (`/bio/[slug]`) y demo (`RestaurantDemo`), el selector `Tema/Claro` ahora usa botones con iconos (`paleta` y `sol`) y estilo visual mas premium; en desktop mantiene etiqueta textual junto al icono.
+- Reservas (editor + carta publicada):
+  - el rango de configuracion de personas para reserva se amplio de `1..60` a `1..99` en saneamiento y UI del editor (`/linkhub`).
+  - en la carta publicada (`/bio/[slug]`), la seleccion de personas en reserva dejo de usar input numerico libre y ahora usa control con botones de flecha (`-1` / `+1`) respetando min/max del restaurante.
+- Rendimiento de arranque (reingreso a la app):
+  - `useAuth` ahora libera `loading` de forma optimista con datos de Firebase/Auth y mueve validaciones lentas (Firestore status, reset demo y sync de suscripcion) a segundo plano.
+  - se agrego cache/memoizacion con dedupe para lectura de usuario en Firestore y sync de suscripcion, reduciendo llamadas repetidas cuando multiples componentes usan `useAuth`.
+  - en `/linkhub`, el editor recupera borrador local al inicio antes de terminar lectura remota y ya no bloquea pantalla completa si ese borrador existe.
+- Guardado de Carta Digital (LinkHub):
+  - se habilito verificacion `best-effort` en guardado de perfil para no bloquear guardado por relecturas de confirmacion inestables en red movil.
+  - se redujo compresion objetivo de imagenes (portada, reservas y catalogo) para disminuir peso del documento y mejorar exito de guardado.
+  - al guardar, se eliminan duplicados entre `imageUrl` y `galleryImageUrls` en items para evitar inflar tamano del perfil.
+  - se agrego mensaje de error explicito cuando Firestore rechaza por tamano de documento.
+  - nueva compresion progresiva por plan (`FREE/BUSINESS/PRO`) en todas las subidas (avatar, portada, reserva, items y galeria), con compactacion global adicional justo antes de guardar.
+  - se aplican presupuestos de payload por plan para Firestore y un mensaje de error mas claro con tamano actual vs limite del plan cuando todavia excede.
+  - para evitar el error recurrente por tamano de documento, al guardar se migran automaticamente las imagenes inline (`data:image/...`) a Firebase Storage y en Firestore se persisten solo URLs, reduciendo drasticamente el peso del perfil.
+  - se agregaron timeouts de seguridad en compresion/subida/guardado para evitar ciclos de espera infinita al guardar o publicar con muchas imagenes.
+  - la subida a Storage ahora tiene fallback por imagen: si una foto falla o demora demasiado, no bloquea todo el proceso; continua con las demas y devuelve error controlado si excede limites.
+- Mensaje WhatsApp de reservas (`/bio/[slug]`):
+  - se reformateo el texto de redireccion al enviar reserva con bloques separados por espacios: titulo, intro, `Datos de reserva`, bloque de anticipo opcional y bloque `Solicitud enviada`.
+  - se unifico listado con bullets `Ã‚Â·` para mejor lectura en WhatsApp.
+- Referidos multinivel (backend + dashboard):
+  - comisiones por nivel habilitadas: `40%` para nivel 1 y `10%` para nivel 2 por defecto (tope total configurable por entorno).
+  - liquidacion de comisiones por pago con registros `payout` para soportar pago mensual recurrente e idempotencia por `paymentRef`.
+  - personalizacion de alias de afiliado y regeneracion de enlace unico desde API (`PATCH /api/referrals/profile`).
+  - nueva ruta publica `/afiliados/[alias]` para redirigir a signup con el codigo de referido.
+  - se robustecio la inicializacion de Firebase Admin para evitar falsos `SERVICE_UNAVAILABLE` en referidos: parser de credenciales JSON/base64 sin romper `\\n`, soporte de llaves `snake_case` y `camelCase`, aliases adicionales de variables de entorno y fallback a `applicationDefault` cuando aplique.
+- Referidos en ajustes (`/settings`):
+  - nueva pestana `Referidos` con dashboard: alias editable, boton para actualizar enlace, link compartible y metricas por niveles.
+  - listado visible de clientes en nivel 1 y nivel 2 con estado y comision acumulada.
+- Reservas en demo sin registro (`RestaurantDemo`):
+  - se elimino el bloque de "Anticipo sugerido" en la UI de reserva de demos publicas.
+  - se elimino tambien el texto opcional de "reserva anticipada" para que no aparezca ningun bloque de anticipo en demos.
+  - el mensaje de WhatsApp de reserva en demo tambien elimina el bloque de anticipo para mantener consistencia.
+- Reservas en carta publicada con registro (`/bio/[slug]`):
+  - el bloque de anticipo ahora solo se muestra si `requiresDeposit` esta activo y existe al menos un dato configurado (`depositAmount` o `depositInstructions`).
+  - se eliminaron fallbacks de texto de anticipo al guardar perfil y al renderizar la carta, por lo que si el usuario deja vacio ese campo en edicion no aparece en la seccion reserva.
+- Contraste en demos sin registro (`RestaurantDemo`):
+  - al activar fondo blanco, el contenedor principal ahora fuerza `text-[var(--fp-text)]` para evitar heredar texto claro del tema.
+  - los estados informativos de reserva (nudge, error y feedback) cambian a texto oscuro en modo blanco, evitando texto casi blanco sobre fondos claros.
+- Navegacion en landing/demo:
+  - se agrego boton `Retroceder` (1 accion por clic usando historial del navegador) junto a `Volver al inicio` en la experiencia de demos (`DemoExperience`) para restaurante, ecommerce y servicios.
+  - el hub de demos (`DemoHub`) tambien incluye `Retroceder`; si no existe historial previo, hace fallback seguro a `/`.
+- Metricas PRO (`/metrics`):
+  - cada apertura de enlace ahora suma `Clicks Totales` (+1 por page_view).
+  - `Visitas` cambia a visitante unico por dispositivo/navegador (dedupe por `visitorId` persistente) en lugar de sumar cada apertura repetida.
+  - la tabla inferior `Rendimiento por Proyecto` ahora incluye columna dinamica de `Clicks` por proyecto.
+
+## 2026-03-03
+
+- Paridad de UX en PC entre carta publicada (`/bio/[slug]`) y preview del editor (`/linkhub`), seccion Carta:
+  - se agrego chip `Todos/All` en navegacion de categorias.
+  - al hacer clic en categorias del preview, ahora hace scroll suave hacia la seccion correspondiente (no solo filtro).
+  - se agrego seguimiento de categoria activa por scroll en preview (igual patron sticky/ancla del publicado).
+  - el listado del preview ahora se renderiza agrupado por secciones de categoria para que el comportamiento de navegacion sea consistente con el render final.
+- Entrega automatica optimizada de imagenes Cloudinary en Carta Digital:
+  - nuevo helper compartido `src/lib/cloudinaryDelivery.ts` para aplicar transformaciones de entrega en URL (`f_auto,q_auto,dpr_auto,c_limit,w_*`) sin alterar originales.
+  - aplicado en carta publicada (`/bio/[slug]`), tarjetas de producto (`ProductCard`) y preview/editor (`/linkhub`) para avatar, portadas, items, galeria y hero de reservas.
+  - resultado: las imagenes ya subidas en Cloudinary se sirven automaticamente en formato y calidad optimos por navegador/dispositivo.
+- Login con Google (Firebase Auth redirect) recuperado:
+  - se detecto causa real en Hosting de Firebase: `__/firebase/init.json` devolvia `404` en `fastpage-7ceb3.firebaseapp.com`, lo que dejaba en blanco el `__/auth/handler`.
+  - se agrego configuracion `hosting` en `firebase.json` con `site: fastpage-7ceb3` y `appAssociation: AUTO`.
+  - se agrego `public/index.html` minimo para bootstrap de Hosting.
+  - se ejecuto deploy de Hosting y se verifico `200` en:
+    - `https://fastpage-7ceb3.firebaseapp.com/__/firebase/init.json`
+    - `https://fastpage-7ceb3.web.app/__/firebase/init.json`
+
+- Demo sin registro `fuente-soda-flow` (restaurant):
+  - se actualizo branding visible a `Naranja Social Cafe`.
+  - portada y foto de perfil ahora usan imagenes de jugos de naranja para reforzar el rubro.
+  - la carta ahora incluye platos tipicos de cafeteria (club sandwich, panini, tostadas francesas, waffles y croissant) ademas de bebidas.
+- Navegacion de pestaÃƒÂ±as (demo sin registro y carta publicada con registro):
+  - se unifico el cambio de pestaÃƒÂ±as `Contacto/Carta/Ubicacion/Reserva` con handler comun para que la seleccion sea mas consistente en tap/click.
+  - al cambiar de pestaÃƒÂ±a se asegura posicionamiento del contenido (ancla superior), mejorando la percepcion de cambio en mobile.
+  - se mejoraron estados de boton (`active`, `focus-visible`, `touch-manipulation`, `aria-pressed`) para interaccion mas estable y responsiva.
+- Redes sociales en demos sin registro:
+  - se agrego soporte de `socialLinks` al modelo de demos y fallback automatico por demo cuando no estan definidas.
+  - se incorporo bloque visual de iconos sociales (Instagram, Facebook, TikTok, YouTube, Web y WhatsApp) en demos de `restaurant`, `ecommerce` y `services`.
+  - se instrumento metrica `click_social` por plataforma en el flujo de demo.
+- Demo `Naranja Social Cafe`:
+  - se cambio portada por una imagen de frutas y jugos especiales.
+  - se configuraron redes sociales explicitas en el JSON de la demo.
+- Carga de imagenes en Carta Digital con registro (`/linkhub`):
+  - se agrego endpoint server-side `POST /api/linkhub/storage/offload` (autenticado con Firebase ID token) para subir imagenes a Firebase Storage desde backend y evitar bloqueos CORS del navegador.
+  - el guardado ahora intenta primero la subida server-side por cada imagen inline; si falla, mantiene fallback al flujo cliente previo.
+  - se exporto `adminStorage` en Firebase Admin para uso centralizado del nuevo endpoint.
+- Rendimiento de pestaÃƒÂ±a `Reserva` (demo sin registro y carta con registro):
+  - se precarga el panel de reserva en `idle` para evitar latencia al primer clic.
+  - se hace prefetch de la imagen hero de reservas para abrir con contenido visual inmediato.
+  - se mantiene el panel montado en segundo plano (`hidden`) y se muestra al instante cuando el usuario toca `Reserva`.
+- Referidos (`/api/referrals/profile`) y Firebase Admin:
+  - se forzo `projectId` en la inicializacion de Firebase Admin con fallback (`fastpage-7ceb3`) para evitar fallos de Firestore por `Unable to detect a Project Id in the current environment`.
+  - se agrego resolucion robusta de `storageBucket` para mantener consistencia en servicios server-side.
+  - la lectura de service account ahora completa `projectId` faltante desde variables de entorno/fallback para no dejar inicializaciones parciales.
+  - el endpoint `PATCH /api/referrals/profile` ahora detecta errores de `projectId` faltante y responde `503` controlado en lugar de `500`.
+- Preview de carta en LinkHub (`/linkhub`) ahora con scroll interno y edicion continua:
+  - se elimino el limite visual de 4 productos en preview; ahora muestra todos los items filtrados.
+  - el cuerpo del preview es desplazable (`overflow-y`) para navegar listas largas sin cortar la UI en mobile/desktop.
+  - la barra inferior de secciones (`Contacto`, `Carta`, `Ubicacion`, `Reserva`) permanece visible en el preview para cambiar y editar secciones desde el mismo panel.
+  - se agrego boton rapido `Crear nuevo item` dentro del tab Carta del preview para insertar producto sin salir del preview.
+- Clonador web con registro (`/cloner/web`) ahora guarda plantilla limpia sin datos reales:
+  - al importar una URL y pasar a editor, el HTML se transforma a modo plantilla: textos reemplazados por `(edita aqui)` y enlaces externos neutralizados.
+  - imagenes reales del sitio clonado se reemplazan por placeholders visuales para evitar copiar activos originales.
+  - se mantienen estructura HTML, estilos, colores y layout para editar rapidamente sin arrastrar contenido real del sitio fuente.
+- Editor de clonado (`/editor/[id]`) mejora carga de imagenes:
+  - al tocar una imagen en modo edicion ahora abre selector de archivo para subir desde dispositivo.
+  - mantiene fallback a URL manual si no se selecciona archivo.
+- Stripe real en suscripciones (`/dashboard/billing` + `/settings`):
+  - se agrego flujo de pago Stripe con APIs dedicadas: `POST /api/payments/stripe/checkout` y `POST /api/payments/stripe/confirm`.
+  - el flujo replica la activacion automatica de plan al confirmar pago exitoso, usando almacenamiento de tracking en Firestore (`subscription_stripe_payments`).
+  - `Billing` ahora soporta metodo `STRIPE` con checkout seguro, confirmacion al retorno y mensajes en ES/EN.
+  - en `Configuracion > Plan` se agrego acceso directo a `Billing` con Stripe preseleccionado.
+  - se documentaron variables de entorno nuevas: `STRIPE_MODE` y `STRIPE_SECRET_KEY`.
+- Internacionalizacion de landing (`/`) con toggle ES/EN:
+  - en la seccion de planes, todas las listas de beneficios y CTAs ahora cambian completamente segun idioma.
+  - testimonios ahora tienen version ES/EN en tarjetas (segmento y cita) y cambian al instante al pulsar idioma.
+  - actividad en vivo ahora cambia accion y tiempo (`Hace X min` / `X min ago`) segun idioma.
+- Carrusel de testimonios en desktop (`/`):
+  - en modo PC los botones izquierda/derecha ahora rotan testimonios en carrusel con loop continuo (estilo feed/carrusel).
+  - en mobile se mantiene scroll horizontal tactil con snap.
+- Login Google en `/auth` robustecido:
+  - el flujo paso a `signInWithRedirect` como estrategia principal para evitar bloqueos/restricciones de popup en navegadores moviles y politicas COOP.
+  - se agrego estado `loading` del boton Google para prevenir dobles clics y errores por solicitudes emergentes simultaneas.
+  - se mantiene manejo de dominio no autorizado y mensajes de error controlados.
+- Internacionalizacion transversal ES/EN (editor + publicado):
+  - tienda publicada (`/t/[slug]`) ahora cambia labels, filtros, carrito, checkout, FAQ/testimonios y mensajes de WhatsApp segun idioma.
+  - carta publicada (`/bio/[slug]`) ahora cambia tabs, reserva, checkout, feedbacks y mensajes de WhatsApp segun idioma.
+  - clonador web (`/cloner/web`) ahora traduce estados, errores, modal de ayuda y seccion de proyectos publicados.
+  - editor de tienda (`/store`) y editor de carta (`/linkhub`) ahora respetan idioma en acciones principales de UI (guardar/publicar/copiar, menu movil, textos clave de navegacion y mensajes base).
+- Boton visible EN/ES en experiencias publicadas y demo:
+  - carta digital publicada (`/bio/[slug]`) y tienda publicada (`/t/[slug]`) ahora incluyen boton EN/ES dentro del header propio de la experiencia (independiente del Nav global).
+  - demos (`DemoExperience`) ahora exponen tambien toggle EN/ES en la barra superior para cambiar idioma sin salir del preview.
+- Traduccion dinamica para texto nuevo:
+  - se agrego `src/lib/autoI18n.ts` con localizacion bidireccional ES/EN por frases y palabras para contenido dinamico ingresado por usuario.
+  - se conecto en carta y tienda publicadas para nombre de negocio, etiquetas de seccion, categorias, productos, FAQ/testimonios, reservas y copy configurable.
+  - `ProductCard` ahora acepta labels/aria parametrizables para no dejar acciones fijas en un solo idioma.
+- Idioma nativo de plataforma:
+  - `LanguageProvider` ahora usa ingles (`en`) como idioma por defecto global para `fastpagepro.com`.
+  - el idioma seleccionado se persiste en `localStorage` y el `lang` del documento se sincroniza dinamicamente.
+  - se mantiene cambio inmediato a espanol con un clic desde los toggles EN/ES existentes.
+- Migracion de imagenes de Carta Digital a Cloudinary (`/linkhub`):
+  - `POST /api/linkhub/storage/offload` ahora sube activos a Cloudinary (server-side) y deja de escribir en Firebase Storage.
+  - el guardado en editor Carta Digital elimina fallback al SDK cliente de Firebase para evitar bloqueos CORS/intermitencias de subida.
+  - durante guardado se migran automaticamente URLs antiguas (no-Cloudinary) hacia Cloudinary en avatar, portadas, reserva y catalogo.
+  - si la subida a Cloudinary falla, el guardado detiene el flujo con error explicito (`No se pudo subir imagenes a Cloudinary`) para evitar bucles silenciosos.
+  - nuevas variables de entorno requeridas en servidor: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (o `CLOUDINARY_URL`).
+
+## 2026-03-04
+
+- Arquitectura 3C (Contract/Core/Context) aplicada como migracion piloto en `theme-marketplace` sin cambios de rutas publicas ni esquema de base de datos:
+  - nuevos contratos en `src/contract/themeMarketplace` (DTOs, puertos e interfaces de casos de uso).
+  - logica de negocio extraida a `src/core/themeMarketplace/themeMarketplaceUseCases.ts` (catalogo, compra y confirmacion de pago).
+  - adaptadores concretos en `src/context/themeMarketplace` para Firestore, catalogo de packs e Izipay.
+  - `src/lib/themeMarketplace/service.ts` se mantiene como fachada retrocompatible apuntando a los use cases 3C.
+  - endpoints `GET /api/theme-marketplace/packs` y `POST/PUT /api/theme-marketplace/purchase` conservan contrato HTTP y mensajes existentes.
+- Login Google en `/auth` robustecido adicionalmente para entornos con extensiones/popup inestable:
+  - si `signInWithPopup` falla con errores no fatales, ahora hace fallback inmediato a `signInWithRedirect` en vez de abortar flujo.
+  - persistencia de `google intent` (`login/register`) ahora usa `sessionStorage` con `try/catch` y fallback en memoria para navegadores que bloquean storage.
+  - se agrego manejo explicito de `auth/operation-not-allowed` para mostrar mensaje de configuracion en lugar de error generico.
+  - se fuerza por defecto el login Google via `signInWithRedirect` (`NEXT_PUBLIC_GOOGLE_AUTH_FORCE_REDIRECT=1`) para evitar fallas de inicio causadas por popups bloqueados/extensiones del navegador; se puede reactivar popup en desktop con `0`.
+- Login Google en PWA instalada (`standalone`) corregido:
+  - `/auth` ya no fuerza redireccion de host canonico cuando detecta contexto PWA (`display-mode: standalone` o `?source=pwa`), evitando que el flujo OAuth salga del contexto de la app instalada antes de iniciar sesion.
+- PWA update hardening para aplicar fixes como "reinstalada":
+  - `PwaServiceWorkerRegistrar` ahora fuerza `updateViaCache: "none"`, chequea updates en cada arranque y periodicamente, activa worker nuevo con `SKIP_WAITING` y recarga al cambiar `controller`.
+  - `public/sw.js` sube cache a `fastpage-pwa-v2`, precache con `cache: "reload"` y fallback con `ignoreSearch`.
+  - `next.config.mjs` agrega `Cache-Control` anti-cache para `/sw.js` y `no-cache` para `/manifest.webmanifest`.
+  - `ServiceWorkerCleanup` pasa de limpieza una sola vez a limpieza periodica (TTL 5 min), reduciendo casos donde queda estado viejo en app instalada.
+- Firebase Auth domain strategy actualizada para evitar `missing initial state` en redirect OAuth (PWA/mobile/storage-partitioned):
+  - `src/lib/firebase.ts` ahora prioriza `authDomain` same-origin (host actual) cuando esta en lista permitida, en lugar de forzar siempre `*.firebaseapp.com`.
+  - se agrega `NEXT_PUBLIC_FIREBASE_AUTH_ALLOWED_DOMAINS` para controlar dominios autorizados de runtime.
+  - fallback conservador a `fastpage-7ceb3.firebaseapp.com` si el host no esta permitido.
+- Landing principal (`/`) con hero visual mas premium y dinamico sin romper rutas ni CTAs:
+  - se integraron animaciones suaves con `framer-motion` en entrada del hero y panel derecho.
+  - se agregaron capas visuales (glow + grilla sutil) y tarjetas de metricas rapidas para reforzar valor/propuesta en primer pantallazo.
+  - se incorporo tarjeta de actividad en vivo dentro del panel del hero reutilizando el feed existente (ES/EN), manteniendo tracking y enlaces actuales.
+- Hero 3D real en landing (`/`) con rendimiento protegido:
+  - se agrego componente nuevo `src/components/landing/HeroOrbScene.tsx` usando `@react-three/fiber` y `@react-three/drei` para render de orbita 3D ligera en el panel principal.
+  - la escena 3D solo se activa en desktop (`min-width: 1024px`), con `prefers-reduced-motion` desactivado y evitando dispositivos low-end (heuristica por `deviceMemory`/`hardwareConcurrency`).
+  - en mobile o entornos de bajo rendimiento se mantiene fallback visual estatico del mismo estilo para no degradar UX ni tiempo de carga.
+- Carta Digital publicada (`/bio/[slug]`) corrige render de fotos de productos:
+  - `src/components/carta/ProductCard.tsx` ahora renderiza imagen principal y miniaturas con `next/image` en modo `unoptimized` para evitar roturas en runtime con URLs externas de Cloudinary.
+  - resultado: las imagenes subidas desde edicion con cuenta registrada se visualizan correctamente tras publicar.
+- Hero 3D de landing (`/`) alineado a narrativa de marca FastPage:
+  - `src/components/landing/HeroOrbScene.tsx` se rediseno para representar velocidad web: nucleo de rendimiento, anillo de trafico, particulas de red y simbolo visual tipo rayo.
+  - se agrego etiqueta visual `Fast Web Engine` para reforzar el concepto de paginas rapidas/alto rendimiento en el primer impacto.
+- Hardening backend para referidos y Stripe con validacion/rate-limit:
+  - se instalaron `zod`, `nanoid`, `@upstash/ratelimit` y `@upstash/redis`.
+  - se agrego helper server-side `src/lib/server/rateLimit.ts` con modo fail-open cuando Upstash no esta configurado.
+  - endpoints `POST /api/referrals/apply`, `PATCH /api/referrals/profile`, `GET /api/referrals/summary`, `POST /api/payments/stripe/checkout` y `POST /api/payments/stripe/confirm` ahora validan payload con `zod` y aplican rate limit por usuario.
+  - generacion de IDs/codigos sensibles dejo de usar `Math.random` en flujos de referidos/pagos y paso a `nanoid`/`customAlphabet`.
+  - se agregaron variables opcionales en `.env.example`: `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`.
+- Referidos (`/api/referrals/summary` y `/api/referrals/profile`) con resiliencia operativa:
+  - `src/lib/server/rateLimit.ts` ahora aplica fail-open tambien cuando Upstash responde con error (token invalido, timeout o red), evitando `500` en rutas autenticadas.
+  - `src/lib/referrals/service.ts` ahora devuelve resumen base (perfil + enlace + stats minimas) si fallan consultas secundarias de red/payouts, evitando que `guardar alias` o `actualizar enlace` fallen por dependencias no criticas.
+  - `PATCH /api/referrals/profile` ahora devuelve `409` claro cuando no se puede reservar alias (`REFERRAL_ALIAS_GENERATION_FAILED`), en lugar de `500` generico.
+- Reposicionamiento de imagenes por drag/touch en edicion y publicado (Carta Digital + Tienda Online):
+  - nuevo helper `src/lib/imagePosition.ts` para normalizar/clamp de foco (`x/y`) y generar `object-position` consistente.
+  - nuevo componente reutilizable `src/components/editor/DraggableImagePositionEditor.tsx` para mover imagen con mouse o dedo manteniendo presionado.
+  - Carta Digital (`/linkhub` + `/bio/[slug]`): avatar, portadas, imagen principal de item y hero de reservas ahora guardan `x/y` y se reflejan en publicado y carrito.
+  - Tienda (`/store` + `/t/[slug]`): portada hero, logo y fotos de productos ahora guardan `x/y` y se reflejan en publicado y carrito.
+  - compatibilidad hacia atras mantenida: perfiles/proyectos antiguos sin campos de posicion usan fallback `50% 50%` sin romper render ni rutas.
+- Referidos y metricas server-side en produccion (Vercel) recuperados:
+  - se detecto causa real de `500` en `/api/referrals/summary` y `/api/referrals/profile`: Firebase Admin se inicializaba con `applicationDefault()` sin credenciales validas en Vercel.
+  - se agregaron variables de entorno Admin en Vercel (`FIREBASE_SERVICE_ACCOUNT_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`) para habilitar Firestore server-side.
+  - `src/lib/firebaseAdmin.ts` ahora evita usar ADC por defecto en runtimes no-Google y solo lo habilita con opt-in (`FIREBASE_ADMIN_USE_APPLICATION_DEFAULT=1`) o contexto GCP explicito.
+- Referidos listos para uso real (guardar alias, regenerar enlace y copiar):
+  - se agrego helper `src/lib/server/firebaseError.ts` y se conecto en `api/referrals/*` + `api/linkhub/metrics/summary` para mapear fallos de credenciales Firebase Admin a `503` controlado (sin `500` generico).
+  - `settings` (`/settings`, tab Referidos) mejora UX operativa:
+    - fallback de copiado con `execCommand("copy")` cuando `navigator.clipboard` no esta disponible (caso comun en algunos moviles/PWA/webview).
+    - mensaje explicito de sesion expirada si falta ID token al guardar/cargar referidos.
+    - alias normalizado en cliente (`trim + lowercase`) antes de enviar al backend para consistencia.
+- Referidos con persistencia avanzada de alias y bloqueo de invitacion:
+  - `referral_profiles` ahora soporta `customAliases` (maximo 3) manteniendo compatibilidad con `customAlias` como alias primario.
+  - guardar alias ya no reemplaza ni libera aliases anteriores; se mantienen activos para siempre en la cuenta hasta llegar al limite.
+  - `PATCH /api/referrals/profile` devuelve `409` con `ALIAS_LIMIT_REACHED` cuando una cuenta intenta registrar mas de 3 aliases.
+  - `GET /afiliados/[alias]` redirige a signup con `ref=<alias>&lockRef=1` para bloquear el referido desde enlace de invitacion.
+  - `/signup` y `/auth` propagan `lockRef=1`; en registro el campo de referido queda de solo lectura cuando llega bloqueado por URL.
+  - `POST /api/referrals/apply` y `applyReferralCode` aceptan codigo o alias (hasta 32 chars), resolviendo alias activo a codigo interno para vincular la red en registro manual o Google.
+- Texto y encoding en Configuracion/Ajustes:
+  - `LanguageContext` ahora normaliza mojibake con decodificacion UTF-8 + mapeo CP1252 para corregir strings rotos y mostrar texto legible en UI.
+  - se corrigieron textos visibles en `/settings` y `/auth` con tildes correctas (`sesion`, `seccion`, `codigo`, `comision`, etc.).
+  - en `settings` (tab Referidos) se eliminaron los dos avisos rojos duplicados de `Sesion expirada...` para no repetir alerta cuando ya existe el boton superior de `Cerrar sesion`.
+- Carta Digital (`/linkhub`) con limites de proyectos:
+  - actualizar/publicar un proyecto existente ahora sigue permitido aun cuando el usuario este en tope de plan (ej. `5/5`), conservando estado `published` al guardar borrador.
+  - intento de publicar proyecto nuevo con limite alcanzado muestra bloqueo explicito (`candado`) y redirige a `Billing` para subir de plan.
+- Demo restaurante sin registro (`/demo/restaurant/[slug]`) optimizada para primer impacto:
+  - la demo ahora inicia por defecto en la pestana `Carta` (antes `Contacto`) para mostrar productos inmediatamente.
+  - en `Contacto`, los CTAs `Llamar ahora` y `Escribir ahora` ahora se muestran alineados en una misma fila en mobile para mejor legibilidad inicial.
+  - se agrego mini guia no invasiva dentro de `Carta` (primer ingreso) con pasos: navegar categorias, scroll, agregar al carrito, enviar por WhatsApp y entender personalizacion al activar cuenta/plan.
+  - la guia se puede cerrar (`Entendido`), queda persistida por demo (`localStorage`) y puede reabrirse manualmente con `Ver mini guia`.
+  - el widget flotante de ayuda en rutas `/demo` redujo su offset vertical en mobile para minimizar superposiciones con contenido principal.
+- Registro/Login (`/auth`) con textos corregidos:
+  - se normalizaron labels y mensajes en espanol con tildes correctas para evitar mojibake (`Iniciar Sesion`, `Contrasena`, `Codigo`, `continua`, etc.).
+  - se verifico que no queden cadenas corruptas (`Ã`, `Â`) en los flujos de `login` y `register`.
+- Navegacion `Retroceder` en demos (`/demo` y `/demo/[vertical]/[slug]`) reforzada:
+  - se agrego helper compartido `src/lib/navigation.ts` con estrategia `navigateBackWithFallback`.
+  - ahora prioriza volver al `referrer` mismo dominio cuando existe; si no, usa `history.back()`.
+  - se agrega fallback forzado por timeout para webview/PWA donde `history.back()` no cambia URL.
+  - fallback final garantizado: `/` en Demo Hub y `/demo?vertical=<vertical>` en Demo Experience.
+- Reserva con calendario nativo restaurado (mobile + desktop):
+  - en demo restaurante (`src/components/demo/RestaurantDemo.tsx`) el campo `Fecha` ahora incluye apertura explicita del date picker nativo (`showPicker` con fallback `focus/click`) y boton visual de calendario.
+  - en carta publicada (`src/app/bio/[slug]/page.tsx`) se aplica el mismo comportamiento para asegurar seleccion por calendario en PC y movil.
+  - se mantiene compatibilidad para navegadores sin `showPicker` usando fallback no destructivo.
+- Demo Hub (`/demo`) retroceder por pestana anterior:
+  - el boton `Retroceder` ahora prioriza volver a la vertical/pestana previa dentro del hub (`restaurant`, `ecommerce`, `services`) antes de salir de la pagina.
+  - se implemento historial de pestañas en `sessionStorage` (`fp_demo_vertical_history`) y sincronizacion del query param `?vertical=...`.
+  - si no existe pestana previa, mantiene fallback de navegacion segura al flujo anterior (`navigateBackWithFallback`).

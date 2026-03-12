@@ -1,0 +1,454 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
+  /* Prevent accidental horizontal drift without affecting intentional inner carousels */
+  body > * {
+    max-width: 100%;
+  }
+
+  main,
+  section,
+  article,
+  aside,
+  header,
+  footer {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  img,
+  video,
+  canvas,
+  iframe {
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  canvas {
+    height: auto;
+  }
+
+  /* Keep bottom overlays from clipping interactive content on mobile */
+  @media (max-width: 767px) {
+    main {
+      padding-bottom: max(5.5rem, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+:root {
+  /* Cosmic Dark Theme (Default) */
+  --background: #050505;
+  --foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --muted: rgba(255, 255, 255, 0.8);
+  --muted-foreground: rgba(255, 255, 255, 0.8);
+  --border: rgba(255, 255, 255, 0.1);
+
+  /* Gold Theme Colors - Dark Mode (Bright for glow) */
+  --gold-text: #ffd700;
+  --gold-gradient-start: #ffd700;
+  --gold-gradient-mid: #fdb931;
+  --gold-gradient-end: #c08200;
+  --gold-shadow: rgba(255, 215, 0, 0.6);
+}
+
+/* Deluxe & Gold Theme Utilities */
+.text-gold-glow {
+  color: var(--gold-text);
+  text-shadow:
+    0 0 10px var(--gold-shadow),
+    0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+.text-gold-gradient {
+  background: linear-gradient(
+    to bottom,
+    var(--gold-gradient-start),
+    var(--gold-gradient-mid),
+    var(--gold-gradient-end)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* FAQ Iridescent Gold Effect */
+@keyframes iridescent-gold {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.group:hover .text-gold-iridescent,
+details[open] summary .text-gold-iridescent {
+  background: linear-gradient(
+    90deg,
+    #ffd700,
+    #fdb931,
+    #ffffff,
+    #fdb931,
+    #ffd700
+  ) !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  animation: iridescent-gold 3s linear infinite !important;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.text-tornasolado {
+  background: linear-gradient(
+    90deg,
+    #ffd700,
+    #fdb931,
+    #ffffff,
+    #fdb931,
+    #ffd700
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: iridescent-gold 3s linear infinite;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+/* General Button Styles */
+.btn {
+  border-radius: 9999px;
+}
+
+.btn-deluxe {
+  position: relative;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    #bf953f,
+    #fcf6ba,
+    #b38728,
+    #fbf5b7,
+    #aa771c
+  );
+  background-size: 200% 200%;
+  color: #000;
+  border: 1px solid #aa771c;
+  font-weight: bold;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2),
+    0 0 15px rgba(255, 215, 0, 0.4);
+  transition: all 0.3s ease;
+  animation: shimmer 3s infinite linear;
+}
+
+.btn-deluxe:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 25px rgba(255, 215, 0, 0.6);
+}
+
+.btn-deluxe-outline {
+  background: transparent;
+  border-radius: 9999px;
+  color: var(--gold-text);
+  border: 1px solid var(--gold-text);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.btn-deluxe-outline:hover {
+  background: rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes flash-1 {
+  0%,
+  90%,
+  100% {
+    opacity: 0;
+  }
+  92% {
+    opacity: 0.6;
+  }
+  93% {
+    opacity: 0.2;
+  }
+  94% {
+    opacity: 0.8;
+  }
+  95% {
+    opacity: 0;
+  }
+}
+
+@keyframes flash-2 {
+  0%,
+  85%,
+  100% {
+    opacity: 0;
+  }
+  86% {
+    opacity: 0.5;
+  }
+  87% {
+    opacity: 0.1;
+  }
+  88% {
+    opacity: 0.7;
+  }
+  89% {
+    opacity: 0;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes flash-3 {
+  0%,
+  95%,
+  100% {
+    opacity: 0;
+  }
+  96% {
+    opacity: 0.4;
+  }
+  97% {
+    opacity: 0.1;
+  }
+  98% {
+    opacity: 0.6;
+  }
+  99% {
+    opacity: 0;
+  }
+}
+
+.animate-flash-1 {
+  animation: flash-1 7s infinite;
+}
+
+.animate-flash-2 {
+  animation: flash-2 11s infinite;
+}
+
+.animate-flash-3 {
+  animation: flash-3 13s infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes thunder-flash {
+  0%,
+  95%,
+  100% {
+    opacity: 0;
+  }
+  96% {
+    opacity: 0.8;
+  }
+  96.5% {
+    opacity: 0.1;
+  }
+  97% {
+    opacity: 1;
+  }
+  97.5% {
+    opacity: 0.2;
+  }
+  98% {
+    opacity: 0.8;
+  }
+  99% {
+    opacity: 0;
+  }
+}
+
+.animate-thunder {
+  animation: thunder-flash 10s infinite;
+}
+
+/* Glass Utility */
+.glass {
+  @apply bg-black/40 backdrop-blur-lg border border-white/10;
+}
+
+/* Minimalist Nav Glow Effect */
+.nav-link-glow {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.nav-link-glow:hover {
+  background: linear-gradient(
+    90deg,
+    #ffd700,
+    #fff7ad,
+    #fdb931,
+    #ffffff,
+    #fdb931,
+    #fff7ad,
+    #ffd700
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  animation: iridescent-gold 3s linear infinite;
+  text-shadow: 
+    0 0 10px rgba(255, 215, 0, 0.4),
+    0 0 20px rgba(255, 165, 0, 0.2);
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
+}
+
+.nav-link-glow::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  width: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, #fbbf24, #f59e0b, #fbbf24, transparent);
+  transition: all 0.4s ease;
+  transform: translateX(-50%);
+  opacity: 0;
+}
+
+.nav-link-glow:hover::after {
+  width: 100%;
+  opacity: 1;
+}
+
+@keyframes iridescent-nav {
+  0% { filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)); }
+  50% { filter: brightness(1.2) drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)); }
+  100% { filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)); }
+}
+
+/* Luxury cursor effect (desktop only) */
+.fp-cursor-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.fp-cursor-click {
+  position: absolute;
+  transform: translate(-8%, -88%);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.fp-cursor-click-bolt {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(0, 0);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff4c2, #fbbf24, #d97706);
+  background-size: 180% 180%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 8px rgba(251, 191, 36, 0.65),
+    0 0 14px rgba(251, 191, 36, 0.35);
+  animation:
+    iridescent-gold 0.45s linear,
+    fp-cursor-click-bolt 0.5s ease-out forwards;
+}
+
+@keyframes fp-cursor-click-bolt {
+  0% {
+    transform: translate(0, 0) scale(0.75) rotate(-6deg);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(2px, -5px) scale(1.05) rotate(8deg);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(4px, -10px) scale(0.9) rotate(16deg);
+    opacity: 0;
+  }
+}
+
+@media (pointer: fine) and (min-width: 1024px) {
+  .fp-gold-cursor-enabled,
+  .fp-gold-cursor-enabled body {
+    cursor: url("/cursors/gold-pointer.svg") 4 2, auto;
+  }
+
+  .fp-gold-cursor-enabled a,
+  .fp-gold-cursor-enabled button,
+  .fp-gold-cursor-enabled [role="button"],
+  .fp-gold-cursor-enabled input,
+  .fp-gold-cursor-enabled textarea,
+  .fp-gold-cursor-enabled select,
+  .fp-gold-cursor-enabled summary,
+  .fp-gold-cursor-enabled label {
+    cursor: url("/cursors/gold-pointer.svg") 4 2, pointer;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

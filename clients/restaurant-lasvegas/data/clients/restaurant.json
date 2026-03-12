@@ -1,0 +1,25 @@
+{
+  "vertical": "restaurant",
+  "defaults": {
+    "primaryColor": "#F5D287",
+    "accentColor": "#0A0A0A",
+    "logoText": "FASTPAGE RESTAURANT"
+  },
+  "env": {
+    "NEXT_PUBLIC_CATEGORY": "restaurant"
+  },
+  "seed": {
+    "business": {
+      "name": "Restaurant Demo",
+      "city": "Miami",
+      "country": "USA",
+      "currency": "USD"
+    },
+    "menu": [
+      { "name": "Classic Burger", "price": 12.99 },
+      { "name": "Chicken Sandwich", "price": 11.50 },
+      { "name": "Fries", "price": 4.99 },
+      { "name": "Soda", "price": 2.50 }
+    ]
+  }
+}

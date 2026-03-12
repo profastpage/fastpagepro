@@ -1,0 +1,193 @@
+{
+  "vertical": "restaurant",
+  "slug": "fuente-soda-flow",
+  "title": "Naranja Social Cafe",
+  "subtitle": "Jugos de naranja y platos de cafeteria con pedido rapido",
+  "description": "Demo tematica de fuente de soda con foco en jugos de naranja, bebidas de autor y platos clasicos de cafeteria para conversion por WhatsApp.",
+  "coverImage": "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?q=80&w=1800&auto=format&fit=crop",
+  "profileImage": "https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?q=80&w=800&auto=format&fit=crop",
+  "themeId": "darkKitchen",
+  "promoStrip": "2x1 en bebidas seleccionadas de 4pm a 6pm",
+  "openHours": "9:00 am - 11:30 pm",
+  "address": "Av. Pardo 512, Miraflores",
+  "whatsappNumber": "51987544021",
+  "socialLinks": [
+    { "platform": "instagram", "url": "https://instagram.com/naranjasocialcafe", "label": "Instagram" },
+    { "platform": "facebook", "url": "https://facebook.com/naranjasocialcafe", "label": "Facebook" },
+    { "platform": "tiktok", "url": "https://tiktok.com/@naranjasocialcafe", "label": "TikTok" },
+    { "platform": "youtube", "url": "https://youtube.com/@naranjasocialcafe", "label": "YouTube" },
+    { "platform": "website", "url": "https://www.fastpagepro.com/demo/restaurant/fuente-soda-flow", "label": "Web" }
+  ],
+  "categories": ["Frappes y frozen", "Jugos naturales", "Milkshakes", "Mocktails", "Bebidas calientes", "Sandwiches cafe", "Brunch y desayunos", "Postres"],
+  "items": [
+    {
+      "id": "fs-1",
+      "category": "Frappes y frozen",
+      "name": "Frappe oreo supreme",
+      "description": "Base de vainilla, galleta oreo triturada y crema batida.",
+      "image": "https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=1400&auto=format&fit=crop",
+      "price": 18,
+      "compareAtPrice": 22,
+      "badge": "Mas pedido",
+      "featured": true,
+      "favoriteOfDay": true
+    },
+    {
+      "id": "fs-2",
+      "category": "Frappes y frozen",
+      "name": "Frozen maracuya mint",
+      "description": "Maracuya natural con hielo frappe y hierbabuena fresca.",
+      "image": "https://images.unsplash.com/photo-1481671703460-040cb8a2d909?q=80&w=1400&auto=format&fit=crop",
+      "price": 16
+    },
+    {
+      "id": "fs-3",
+      "category": "Frappes y frozen",
+      "name": "Frappe mocha crunch",
+      "description": "Cafe, chocolate y topping crocante de cacao.",
+      "image": "https://images.unsplash.com/photo-1461988320302-91bde64fc8e4?q=80&w=1400&auto=format&fit=crop",
+      "price": 17
+    },
+    {
+      "id": "fs-4",
+      "category": "Jugos naturales",
+      "name": "Jugo verde detox",
+      "description": "Pina, espinaca, manzana y kion recien prensado.",
+      "image": "https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?q=80&w=1400&auto=format&fit=crop",
+      "price": 14,
+      "badge": "Top"
+    },
+    {
+      "id": "fs-5",
+      "category": "Jugos naturales",
+      "name": "Limonada frozen berries",
+      "description": "Limon fresco con frutos rojos y hielo granizado.",
+      "image": "https://images.unsplash.com/photo-1464306076886-da185f6a9d05?q=80&w=1400&auto=format&fit=crop",
+      "price": 15
+    },
+    {
+      "id": "fs-6",
+      "category": "Jugos naturales",
+      "name": "Naranja power",
+      "description": "Jugo de naranja 100% natural, sin azucar anadida.",
+      "image": "https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?q=80&w=1400&auto=format&fit=crop",
+      "price": 13
+    },
+    {
+      "id": "fs-7",
+      "category": "Milkshakes",
+      "name": "Milkshake chocolate fudge",
+      "description": "Helado de chocolate intenso con salsa fudge artesanal.",
+      "image": "https://images.unsplash.com/photo-1577805947697-89e18249d767?q=80&w=1400&auto=format&fit=crop",
+      "price": 19,
+      "compareAtPrice": 23
+    },
+    {
+      "id": "fs-8",
+      "category": "Milkshakes",
+      "name": "Milkshake strawberry cream",
+      "description": "Fresas naturales, helado de vainilla y crema suave.",
+      "image": "https://images.unsplash.com/photo-1579954115563-e72bf1381629?q=80&w=1400&auto=format&fit=crop",
+      "price": 18
+    },
+    {
+      "id": "fs-9",
+      "category": "Milkshakes",
+      "name": "Milkshake banana cookies",
+      "description": "Banana madura, galleta vainilla y topping crujiente.",
+      "image": "https://images.unsplash.com/photo-1553787499-6f913324e7b0?q=80&w=1400&auto=format&fit=crop",
+      "price": 18
+    },
+    {
+      "id": "fs-10",
+      "category": "Mocktails",
+      "name": "Sunset tonic",
+      "description": "Frutos citricos, tonic y jarabe tropical sin alcohol.",
+      "image": "https://images.unsplash.com/photo-1560963689-b5682b6440f8?q=80&w=1400&auto=format&fit=crop",
+      "price": 17
+    },
+    {
+      "id": "fs-11",
+      "category": "Mocktails",
+      "name": "Virgin mojito passion",
+      "description": "Menta fresca, limon y maracuya espumosa.",
+      "image": "https://images.unsplash.com/photo-1497534446932-c925b458314e?q=80&w=1400&auto=format&fit=crop",
+      "price": 16
+    },
+    {
+      "id": "fs-12",
+      "category": "Bebidas calientes",
+      "name": "Capuccino canela",
+      "description": "Espresso doble, leche cremosa y canela tostada.",
+      "image": "https://images.unsplash.com/photo-1511920170033-f8396924c348?q=80&w=1400&auto=format&fit=crop",
+      "price": 14
+    },
+    {
+      "id": "fs-13",
+      "category": "Bebidas calientes",
+      "name": "Chocolate caliente dark",
+      "description": "Chocolate espeso 70% cacao con malvaviscos.",
+      "image": "https://images.unsplash.com/photo-1542990253-0d0f5be5f2b1?q=80&w=1400&auto=format&fit=crop",
+      "price": 15
+    },
+    {
+      "id": "fs-14",
+      "category": "Postres",
+      "name": "Dulce frio",
+      "description": "Postre helado con crema suave, salsa de frutos rojos y crocante de galleta.",
+      "image": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?q=80&w=1400&auto=format&fit=crop",
+      "price": 16
+    },
+    {
+      "id": "fs-15",
+      "category": "Sandwiches cafe",
+      "name": "Club sandwich clasico",
+      "description": "Pan tostado, pechuga de pollo, tocino, tomate fresco y papas crocantes.",
+      "image": "https://images.unsplash.com/photo-1550317138-10000687a72b?q=80&w=1400&auto=format&fit=crop",
+      "price": 24,
+      "featured": true
+    },
+    {
+      "id": "fs-16",
+      "category": "Sandwiches cafe",
+      "name": "Panini caprese grill",
+      "description": "Mozzarella fundida, pesto de albahaca y tomate confitado en pan artesanal.",
+      "image": "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?q=80&w=1400&auto=format&fit=crop",
+      "price": 21
+    },
+    {
+      "id": "fs-17",
+      "category": "Brunch y desayunos",
+      "name": "Tostadas francesas miel y frutas",
+      "description": "Brioche dorado, miel natural, frutas frescas y crema ligera.",
+      "image": "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?q=80&w=1400&auto=format&fit=crop",
+      "price": 22
+    },
+    {
+      "id": "fs-18",
+      "category": "Brunch y desayunos",
+      "name": "Waffles berries supreme",
+      "description": "Waffles crujientes con frutos rojos, salsa dulce y azucar glass.",
+      "image": "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?q=80&w=1400&auto=format&fit=crop",
+      "price": 23
+    },
+    {
+      "id": "fs-19",
+      "category": "Brunch y desayunos",
+      "name": "Croissant mixto de pavo",
+      "description": "Croissant mantequilla relleno de pavo ahumado, queso y mix de hojas.",
+      "image": "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=1400&auto=format&fit=crop",
+      "price": 19
+    }
+  ],
+  "reservation": {
+    "title": "Reserva tu mesa soda bar",
+    "subtitle": "Separa tu mesa para brunch o tarde de bebidas y confirma por WhatsApp.",
+    "heroImage": "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?q=80&w=1800&auto=format&fit=crop",
+    "slotOptions": ["10:00 am", "12:30 pm", "4:00 pm", "7:30 pm", "9:00 pm"],
+    "minPartySize": 2,
+    "maxPartySize": 10,
+    "ctaLabel": "Reservar visita",
+    "notePlaceholder": "Celebracion, mesa alta o zona interior/exterior."
+  }
+}
