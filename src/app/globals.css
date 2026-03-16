@@ -693,7 +693,8 @@ details[open] summary .text-gold-iridescent {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem 2rem;
+    justify-content: center;
+    gap: 0.85rem 1.8rem;
   }
 
   .fp-industry-inline-item {
@@ -708,6 +709,17 @@ details[open] summary .text-gold-iridescent {
   .fp-industry-inline-item svg {
     color: #c9a227;
     flex: none;
+  }
+
+  @media (min-width: 1024px) {
+    .fp-industry-inline-strip {
+      gap: 1rem 2.6rem;
+    }
+
+    .fp-industry-inline-item {
+      font-size: 1.06rem;
+      letter-spacing: 0.01em;
+    }
   }
 
   .fp-hero-window {
