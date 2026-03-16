@@ -144,8 +144,8 @@ export default function ClientLanding() {
               Sistemas web que convierten visitas en reservas por WhatsApp
             </h1>
             <p className="hero-subtitle mt-6 max-w-3xl text-balance text-white/80">
-              Agencia digital especializada en sistemas web para reservas y ventas por WhatsApp
-              para hoteles, restaurantes y negocios.
+              Diseñamos sistemas web premium para hoteles, restaurantes y negocios que quieren
+              recibir más reservas y consultas desde su página web.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -179,11 +179,16 @@ export default function ClientLanding() {
               ))}
             </ul>
 
-            <div className="mt-10 flex flex-wrap gap-3">
-              <span className="fp-inline-proof">Hoteles</span>
-              <span className="fp-inline-proof">Restaurantes</span>
-              <span className="fp-inline-proof">Cafeterias</span>
-              <span className="fp-inline-proof">Negocios con reservas y ventas por WhatsApp</span>
+            <div className="mt-10">
+              <p className="text-sm font-medium text-white/75">
+                Soluciones web para negocios que venden por WhatsApp
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <span className="fp-inline-proof">Hoteles</span>
+                <span className="fp-inline-proof">Restaurantes</span>
+                <span className="fp-inline-proof">Cafeterías</span>
+                <span className="fp-inline-proof">Servicios</span>
+              </div>
             </div>
 
             <div className="mt-8 flex items-center gap-2">
@@ -439,11 +444,10 @@ export default function ClientLanding() {
           <div className="fp-final-cta">
             <p className="fp-eyebrow fp-eyebrow--center">Listo para vender mejor</p>
             <h2 className="fp-section-title mt-5 max-w-4xl text-center">
-              Convierte tu web en un canal de reservas por WhatsApp
+              Empieza a recibir reservas desde tu web
             </h2>
             <p className="fp-muted-copy mt-6 max-w-3xl text-center">
-              Creamos sistemas web premium para negocios que quieren mas clientes, mas reservas y
-              una imagen profesional real.
+              Convierte tu página en un canal directo de clientes por WhatsApp.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
