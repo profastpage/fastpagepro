@@ -503,10 +503,12 @@ details[open] summary .text-gold-iridescent {
 
   .fp-landing-shell::before {
     background:
-      radial-gradient(circle at 14% 28%, rgba(255, 210, 90, 0.05), transparent 22%),
-      radial-gradient(circle at 86% 42%, rgba(255, 190, 0, 0.038), transparent 22%),
-      radial-gradient(circle at 38% 82%, rgba(255, 255, 255, 0.018), transparent 25%),
-      radial-gradient(circle at 72% 74%, rgba(40, 200, 140, 0.02), transparent 20%);
+      radial-gradient(1200px 620px at 18% 28%, rgba(255, 186, 80, 0.08), transparent 72%),
+      radial-gradient(980px 560px at 82% 30%, rgba(40, 200, 140, 0.05), transparent 74%),
+      radial-gradient(1100px 640px at 78% 52%, rgba(255, 184, 90, 0.07), transparent 72%),
+      radial-gradient(950px 540px at 30% 66%, rgba(255, 190, 0, 0.06), transparent 72%),
+      radial-gradient(900px 520px at 72% 84%, rgba(35, 210, 140, 0.05), transparent 74%),
+      radial-gradient(circle at 38% 82%, rgba(255, 255, 255, 0.018), transparent 25%);
     opacity: 0.9;
   }
 
@@ -533,48 +535,8 @@ details[open] summary .text-gold-iridescent {
     padding-bottom: 120px;
   }
 
-  #screenshots,
-  #negocios,
-  #portfolio,
-  #resultados,
-  #proceso {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(0, 0, 0, 0.24));
-  }
-
-  #screenshots::before,
-  #negocios::before,
-  #portfolio::before,
-  #resultados::before,
-  #proceso::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-  }
-
-  #screenshots::before {
-    background:
-      radial-gradient(circle at 18% 40%, rgba(255, 186, 80, 0.09), transparent 62%),
-      radial-gradient(circle at 82% 30%, rgba(40, 200, 140, 0.05), transparent 56%);
-  }
-
-  #negocios::before {
-    background: radial-gradient(circle at 50% 50%, rgba(255, 176, 60, 0.07), transparent 66%);
-  }
-
-  #portfolio::before {
-    background:
-      radial-gradient(circle at 78% 25%, rgba(255, 184, 90, 0.08), transparent 62%),
-      radial-gradient(circle at 20% 80%, rgba(35, 210, 140, 0.05), transparent 60%);
-  }
-
-  #resultados::before {
-    background: radial-gradient(circle at 30% 35%, rgba(255, 190, 0, 0.07), transparent 64%);
-  }
-
-  #proceso::before {
-    background: radial-gradient(circle at 72% 58%, rgba(35, 210, 140, 0.055), transparent 66%);
+  .fp-landing-shell > section {
+    background: transparent;
   }
 
   .fp-eyebrow {
