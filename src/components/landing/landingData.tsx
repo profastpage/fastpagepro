@@ -213,22 +213,22 @@ export const AUTHORITY_ITEMS: AuthorityItem[] = [
   },
   {
     title: "Experiencia movil impecable",
-    description: "Pantallas claras, comodas y rapidas en celular.",
+    description: "Diseño claro y rapido en celular.",
     icon: Smartphone,
   },
   {
     title: "WhatsApp como canal central",
-    description: "CTA y flujo comercial orientados a reservas y ventas por chat.",
+    description: "WhatsApp como accion principal.",
     icon: MessageCircle,
   },
   {
     title: "Activacion rapida",
-    description: "Publicacion rapida y sistema listo para operar.",
+    description: "Publicacion rapida y sin friccion.",
     icon: Clock3,
   },
   {
     title: "Conversion como criterio",
-    description: "Cada bloque existe para mover a la accion.",
+    description: "Cada bloque impulsa accion.",
     icon: BadgeCheck,
   },
 ];

@@ -59,13 +59,13 @@ export default function ClientLanding() {
                 href={whatsappHref}
                 target="_blank"
                 rel="noreferrer"
-                className="fp-button-primary inline-flex items-center justify-center gap-2"
+                className="fp-button-primary inline-flex items-center justify-center gap-2 !px-8 !py-4 !text-base sm:!text-lg !font-semibold"
               >
                 <MessageCircle className="h-4 w-4" />
                 Solicitar sistema
                 <ArrowRight className="h-4 w-4" />
               </a>
-              <Link href="/demo" prefetch={false} className="fp-button-secondary inline-flex items-center justify-center">
+              <Link href="/demo" prefetch={false} className="fp-button-secondary inline-flex items-center justify-center !px-8 !py-4 !text-base sm:!text-lg !font-semibold !border !border-[#e6e6e6] !bg-[#f3f3f3]/5 !text-white">
                 Ver demos
               </Link>
             </div>
@@ -397,12 +397,12 @@ export default function ClientLanding() {
                 href={whatsappHref}
                 target="_blank"
                 rel="noreferrer"
-                className="fp-button-primary inline-flex items-center justify-center gap-2"
+                className="fp-button-primary inline-flex items-center justify-center gap-2 !px-8 !py-4 !text-base sm:!text-lg !font-semibold"
               >
                 <MessageCircle className="h-4 w-4" />
                 Hablar por WhatsApp
               </a>
-              <Link href="/demo" prefetch={false} className="fp-button-secondary inline-flex items-center justify-center">
+              <Link href="/demo" prefetch={false} className="fp-button-secondary inline-flex items-center justify-center !px-8 !py-4 !text-base sm:!text-lg !font-semibold !border !border-[#e6e6e6] !bg-[#f3f3f3]/5 !text-white">
                 Ver demos
               </Link>
             </div>
