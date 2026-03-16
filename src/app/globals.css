@@ -663,6 +663,27 @@ details[open] summary .text-gold-iridescent {
     color: rgba(255, 255, 255, 0.65);
   }
 
+  .fp-industry-inline-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 2rem;
+  }
+
+  .fp-industry-inline-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.02rem;
+    line-height: 1.25;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .fp-industry-inline-item svg {
+    color: #c9a227;
+    flex: none;
+  }
+
   .fp-hero-window {
     position: relative;
     overflow: hidden;
@@ -1765,6 +1786,14 @@ details[open] summary .text-gold-iridescent {
   .fp-trusted-band {
     gap: 1.25rem;
     padding: 1.5rem 1rem;
+  }
+
+  .fp-industry-inline-strip {
+    gap: 0.55rem 1.15rem;
+  }
+
+  .fp-industry-inline-item {
+    font-size: 0.94rem;
   }
 
   .fp-benefit-list--compact {

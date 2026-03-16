@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
-  Check,
   MessageCircle,
 } from "lucide-react";
 import Footer from "@/components/Footer";
@@ -74,12 +73,6 @@ export default function ClientLanding() {
       ),
     [],
   );
-  const heroBenefits = [
-    "Diseno profesional",
-    "Optimizado para celular",
-    "Integracion con WhatsApp",
-    "Activacion rapida",
-  ];
 
   const handleOpen = (project: PortfolioItem) => setActiveProject(project);
   const handleClose = () => setActiveProject(null);
@@ -188,26 +181,18 @@ export default function ClientLanding() {
         </div>
       </section>
 
-            <section className="relative z-10">
+      <section id="negocios" className="relative z-10">
         <div className="fp-container pb-6 sm:pb-8">
-          <div className="fp-trusted-band fp-trusted-band--compact">
-            <ul className="fp-benefit-list fp-benefit-list--compact">
-              {heroBenefits.map((benefit) => (
-                <li key={benefit} className="fp-benefit-item">
-                  <span className="fp-benefit-icon">
-                    <Check className="h-4 w-4" />
-                  </span>
-                  <span>{benefit}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="fp-trusted-band__chips">
-              <span className="fp-inline-proof">Hoteles</span>
-              <span className="fp-inline-proof">Restaurantes</span>
-              <span className="fp-inline-proof">Cafeterias</span>
-              <span className="fp-inline-proof">Servicios</span>
-            </div>
+          <div className="fp-industry-inline-strip">
+            {INDUSTRIES.map((industry) => {
+              const Icon = industry.icon;
+              return (
+                <span key={industry.label} className="fp-industry-inline-item">
+                  <Icon className="h-4 w-4" />
+                  <span>{industry.label}</span>
+                </span>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -238,36 +223,6 @@ export default function ClientLanding() {
                   </div>
                 </article>
               ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="negocios" className="relative z-10">
-        <div className="fp-container fp-section">
-          <div className="fp-industry-band">
-            <div className="text-center">
-              <p className="fp-eyebrow fp-eyebrow--center">
-                Soluciones web para negocios que viven de reservas, consultas y ventas
-              </p>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-center justify-items-center gap-10">
-              {INDUSTRIES.map((industry) => {
-                const Icon = industry.icon;
-                return (
-                  <div
-                    key={industry.label}
-                    className="industry-mark group flex min-w-0 flex-col items-center gap-3 text-center text-white/70"
-                  >
-                    <span className="fp-industry-icon">
-                      <Icon className="h-6 w-6" />
-                    </span>
-                    <span className="text-sm font-medium uppercase tracking-[0.08em]">
-                      {industry.label}
-                    </span>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>
