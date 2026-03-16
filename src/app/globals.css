@@ -612,6 +612,9 @@ details[open] summary .text-gold-iridescent {
 
   .fp-button-primary,
   .fp-button-secondary {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     min-height: 56px;
     border-radius: 999px;
     padding: 16px 28px;
@@ -625,6 +628,46 @@ details[open] summary .text-gold-iridescent {
       border-color 220ms ease,
       background 220ms ease,
       color 220ms ease;
+  }
+
+  .fp-button-primary::before,
+  .fp-button-secondary::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    z-index: -1;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(201, 162, 39, 0.34), transparent 54%),
+      radial-gradient(circle at 80% 100%, rgba(37, 211, 102, 0.3), transparent 56%);
+    transition: opacity 260ms ease;
+  }
+
+  .fp-button-primary::after,
+  .fp-button-secondary::after {
+    content: "";
+    position: absolute;
+    top: -120%;
+    left: -38%;
+    width: 38%;
+    height: 320%;
+    pointer-events: none;
+    opacity: 0;
+    mix-blend-mode: screen;
+    background: linear-gradient(
+      122deg,
+      transparent 0%,
+      rgba(201, 162, 39, 0.06) 22%,
+      rgba(201, 162, 39, 0.64) 46%,
+      rgba(74, 222, 128, 0.52) 63%,
+      transparent 84%
+    );
+    transform: translateX(-180%) rotate(14deg);
+    transition:
+      transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 220ms ease;
   }
 
   .fp-button-primary {
@@ -649,6 +692,38 @@ details[open] summary .text-gold-iridescent {
     transform: translateY(-2px);
     border-color: rgba(255, 255, 255, 0.28);
     background: rgba(255, 255, 255, 0.06);
+  }
+
+  .fp-button-primary:focus-visible,
+  .fp-button-secondary:focus-visible {
+    box-shadow:
+      0 0 0 2px rgba(11, 11, 12, 0.86),
+      0 0 0 4px rgba(74, 222, 128, 0.35),
+      0 0 22px rgba(201, 162, 39, 0.35);
+  }
+
+  .fp-button-primary:active::before,
+  .fp-button-secondary:active::before {
+    opacity: 1;
+  }
+
+  .fp-button-primary:active::after,
+  .fp-button-secondary:active::after {
+    opacity: 0.95;
+    transform: translateX(245%) rotate(14deg);
+  }
+
+  @media (hover: hover) {
+    .fp-button-primary:hover::before,
+    .fp-button-secondary:hover::before {
+      opacity: 1;
+    }
+
+    .fp-button-primary:hover::after,
+    .fp-button-secondary:hover::after {
+      opacity: 0.95;
+      transform: translateX(245%) rotate(14deg);
+    }
   }
 
   .fp-benefit-list {
