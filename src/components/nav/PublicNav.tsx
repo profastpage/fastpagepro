@@ -41,6 +41,9 @@ export default function PublicNav() {
   const [isOpen, setIsOpen] = useState(false);
   const locale = getLocale(language);
   const copy = COPY[locale];
+  const isRestaurantLanding = pathname === "/restaurantes";
+  const demosHref = isRestaurantLanding ? "#demos" : "/restaurantes#demos";
+  const pricingHref = isRestaurantLanding ? "#precios" : "/restaurantes#precios";
 
   useEffect(() => {
     setIsOpen(false);
@@ -74,8 +77,8 @@ export default function PublicNav() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-full border border-white/10 bg-[rgba(11,11,11,0.86)] px-4 py-3 shadow-[0_24px_60px_-34px_rgba(0,0,0,0.92)] backdrop-blur-xl">
+      <header className="fixed left-0 top-0 z-[1000] h-16 w-full border-b border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,10,0.65)] backdrop-blur-[10px]">
+        <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" prefetch={false} className="flex items-center gap-3" aria-label="FastPagePro Home">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#c9a227]/35 bg-[#c9a227]/10 text-[#c9a227]">
               <Zap className="h-5 w-5" />
@@ -91,10 +94,10 @@ export default function PublicNav() {
           </Link>
 
           <nav className="hidden items-center gap-6 lg:flex">
-            <a href="#demos" className="text-sm font-semibold text-zinc-300 transition hover:text-white">
+            <a href={demosHref} className="text-sm font-semibold text-zinc-300 transition hover:text-white">
               {copy.demos}
             </a>
-            <a href="#precios" className="text-sm font-semibold text-zinc-300 transition hover:text-white">
+            <a href={pricingHref} className="text-sm font-semibold text-zinc-300 transition hover:text-white">
               {copy.pricing}
             </a>
             <Link
@@ -150,16 +153,16 @@ export default function PublicNav() {
 
       {isOpen ? (
         <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden">
-          <div className="absolute inset-x-3 top-20 rounded-[2rem] border border-white/10 bg-[#090909] p-5 shadow-[0_30px_80px_-44px_rgba(0,0,0,0.95)]">
+          <div className="absolute inset-x-3 top-16 rounded-[2rem] border border-white/10 bg-[#090909] p-5 shadow-[0_30px_80px_-44px_rgba(0,0,0,0.95)]">
             <div className="flex flex-col gap-3">
               <a
-                href="#demos"
+                href={demosHref}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white"
               >
                 {copy.demos}
               </a>
               <a
-                href="#precios"
+                href={pricingHref}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white"
               >
                 {copy.pricing}
