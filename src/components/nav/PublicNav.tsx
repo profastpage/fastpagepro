@@ -12,18 +12,20 @@ const WHATSAPP_NUMBER = "51919662011";
 
 const COPY = {
   es: {
-    studio: "Estudio web premium",
-    demos: "Ver demos",
-    pricing: "Precios",
+    studio: "Agencia digital premium",
+    portfolio: "Ejemplos",
+    process: "Proceso",
+    restaurant: "Restaurantes",
     whatsapp: "Solicitar sistema",
     login: "Acceder",
     menu: "Abrir menu",
     close: "Cerrar menu",
   },
   en: {
-    studio: "Premium web studio",
-    demos: "View demos",
-    pricing: "Pricing",
+    studio: "Premium digital agency",
+    portfolio: "Work",
+    process: "Process",
+    restaurant: "Restaurants",
     whatsapp: "Request system",
     login: "Login",
     menu: "Open menu",
@@ -41,9 +43,10 @@ export default function PublicNav() {
   const [isOpen, setIsOpen] = useState(false);
   const locale = getLocale(language);
   const copy = COPY[locale];
-  const isRestaurantLanding = pathname === "/restaurantes";
-  const demosHref = isRestaurantLanding ? "#demos" : "/restaurantes#demos";
-  const pricingHref = isRestaurantLanding ? "#precios" : "/restaurantes#precios";
+  const isHome = pathname === "/";
+  const portfolioHref = isHome ? "#portfolio" : "/#portfolio";
+  const processHref = isHome ? "#proceso" : "/#proceso";
+  const restaurantHref = "/restaurantes";
 
   useEffect(() => {
     setIsOpen(false);
@@ -61,8 +64,8 @@ export default function PublicNav() {
       buildWhatsappSendUrl(
         WHATSAPP_NUMBER,
         locale === "en"
-          ? "Hello, I want to request a quote for a premium web system for my business."
-          : "Hola, quiero cotizar un sistema web premium para mi negocio.",
+          ? "Hello, I want to request a premium web system for bookings and WhatsApp sales."
+          : "Hola, quiero cotizar un sistema web premium para reservas y ventas por WhatsApp.",
       ),
     [locale],
   );
@@ -77,7 +80,7 @@ export default function PublicNav() {
 
   return (
     <>
-      <header className="fixed left-0 top-0 z-[1000] h-16 w-full border-b border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,10,0.65)] backdrop-blur-[10px]">
+      <header className="fixed left-0 top-0 z-[1000] h-16 w-full border-b border-[rgba(255,255,255,0.06)] bg-[rgba(10,10,10,0.72)] backdrop-blur-[12px]">
         <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" prefetch={false} className="flex items-center gap-3" aria-label="FastPagePro Home">
             <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#c9a227]/35 bg-[#c9a227]/10 text-[#c9a227]">
@@ -94,12 +97,19 @@ export default function PublicNav() {
           </Link>
 
           <nav className="hidden items-center gap-6 lg:flex">
-            <a href={demosHref} className="text-sm font-semibold text-zinc-300 transition hover:text-white">
-              {copy.demos}
+            <a href={portfolioHref} className="text-sm font-semibold text-zinc-300 transition hover:text-white">
+              {copy.portfolio}
             </a>
-            <a href={pricingHref} className="text-sm font-semibold text-zinc-300 transition hover:text-white">
-              {copy.pricing}
+            <a href={processHref} className="text-sm font-semibold text-zinc-300 transition hover:text-white">
+              {copy.process}
             </a>
+            <Link
+              href={restaurantHref}
+              prefetch={false}
+              className="text-sm font-semibold text-zinc-300 transition hover:text-white"
+            >
+              {copy.restaurant}
+            </Link>
             <Link
               href="/auth?tab=login"
               prefetch={false}
@@ -123,7 +133,7 @@ export default function PublicNav() {
               target="_blank"
               rel="noreferrer"
               onClick={() => handleWhatsappClick("nav_desktop")}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#25D366]/60 bg-[#25D366] px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-[#0B0B0B] transition hover:bg-[#1fba59]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#25D366]/60 bg-[#25D366] px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-[#0B0B0B] transition hover:-translate-y-0.5 hover:bg-[#1fba59]"
             >
               <MessageCircle className="h-4 w-4" />
               {copy.whatsapp}
@@ -156,17 +166,24 @@ export default function PublicNav() {
           <div className="absolute inset-x-3 top-16 rounded-[2rem] border border-white/10 bg-[#090909] p-5 shadow-[0_30px_80px_-44px_rgba(0,0,0,0.95)]">
             <div className="flex flex-col gap-3">
               <a
-                href={demosHref}
+                href={portfolioHref}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white"
               >
-                {copy.demos}
+                {copy.portfolio}
               </a>
               <a
-                href={pricingHref}
+                href={processHref}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white"
               >
-                {copy.pricing}
+                {copy.process}
               </a>
+              <Link
+                href={restaurantHref}
+                prefetch={false}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-white"
+              >
+                {copy.restaurant}
+              </Link>
               <Link
                 href="/auth?tab=login"
                 prefetch={false}

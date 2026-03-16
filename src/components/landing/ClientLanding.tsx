@@ -2,127 +2,227 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check, MessageCircle } from "lucide-react";
 import Footer from "@/components/Footer";
+import { buildWhatsappSendUrl } from "@/lib/whatsapp";
 import {
+  AUTHORITY_ITEMS,
   INDUSTRIES,
   PORTFOLIO_ITEMS,
   PortfolioItem,
   PortfolioPreview,
   PROCESS_STEPS,
+  RESULT_ITEMS,
 } from "@/components/landing/landingData";
 
 export default function ClientLanding() {
   const [activeProject, setActiveProject] = useState<PortfolioItem | null>(null);
   const modalScreenshots = useMemo(() => activeProject?.screenshots ?? [], [activeProject]);
+  const whatsappHref = useMemo(
+    () =>
+      buildWhatsappSendUrl(
+        "51919662011",
+        "Hola, quiero solicitar un sistema web premium para generar reservas y ventas por WhatsApp.",
+      ),
+    [],
+  );
+  const heroBenefits = [
+    "Diseno profesional",
+    "Optimizado para celular",
+    "Integracion con WhatsApp",
+    "Activacion rapida",
+  ];
+
   const handleOpen = (project: PortfolioItem) => setActiveProject(project);
   const handleClose = () => setActiveProject(null);
 
   return (
-    <main className="relative overflow-x-hidden bg-[#0b0b0c] text-white">
-      <section className="hero-landing relative z-10 min-h-[90vh] w-full pt-[90px]">
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-16 px-4 py-14 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:px-8 lg:pb-20">
+    <main className="fp-landing-shell relative overflow-x-hidden bg-[#0b0b0c] text-white">
+      <section className="hero-landing relative z-10 min-h-[92vh] w-full pt-[90px]">
+        <div className="fp-container fp-section grid grid-cols-1 items-center gap-16 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#c9a227]/30 bg-white/[0.03] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.26em] text-[#c9a227] sm:text-[11px]">
+            <div className="fp-eyebrow">
               <span className="h-2 w-2 rounded-full bg-[#c9a227]" />
-              FastPagePro
+              Agencia digital para reservas por WhatsApp
             </div>
-            <h1 className="hero-title mt-6 max-w-4xl text-white">
-              Sistemas web premium para negocios que venden en serio
+            <h1 className="hero-title mt-6 max-w-5xl text-white">
+              Sistemas web que convierten visitas en reservas por WhatsApp
             </h1>
             <p className="hero-subtitle mt-6 text-white/80">
-              FastPagePro organiza la oferta principal de la marca y separa cada vertical comercial en su propia landing para escalar conversion de forma limpia.
+              Disenamos paginas y sistemas web premium para hoteles, restaurantes y negocios que
+              quieren recibir mas reservas, consultas y ventas directas desde WhatsApp.
             </p>
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link
-                href="/restaurantes"
-                prefetch={false}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#25D366]/60 bg-[#25D366] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#0B0B0B] transition hover:bg-[#1fba59]"
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                className="fp-button-primary inline-flex items-center justify-center gap-2"
               >
-                Ver landing restaurantes
+                <MessageCircle className="h-4 w-4" />
+                Solicitar sistema
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/demo"
-                prefetch={false}
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/25 hover:bg-white/[0.08]"
-              >
+              </a>
+              <Link href="/demo" prefetch={false} className="fp-button-secondary inline-flex items-center justify-center">
                 Ver demos
               </Link>
-              <Link
-                href="/auth?tab=login"
-                prefetch={false}
-                className="inline-flex min-h-12 items-center justify-center rounded-full px-2 py-3 text-sm font-semibold text-zinc-300 transition hover:text-white"
-              >
-                Acceder al panel
-              </Link>
             </div>
-            <ul className="mt-10 space-y-3 text-white/80">
-              <li className="text-[18px]">Diseno profesional</li>
-              <li className="text-[18px]">Optimizado para celular</li>
-              <li className="text-[18px]">Integracion con WhatsApp</li>
-              <li className="text-[18px]">Activacion rapida</li>
+
+            <ul className="fp-benefit-list mt-10">
+              {heroBenefits.map((benefit) => (
+                <li key={benefit} className="fp-benefit-item">
+                  <span className="fp-benefit-icon">
+                    <Check className="h-4 w-4" />
+                  </span>
+                  <span>{benefit}</span>
+                </li>
+              ))}
             </ul>
+
+            <div className="mt-10 flex flex-wrap gap-3">
+              <span className="fp-inline-proof">Hoteles</span>
+              <span className="fp-inline-proof">Restaurantes</span>
+              <span className="fp-inline-proof">Cafeterias</span>
+              <span className="fp-inline-proof">Negocios con ventas por WhatsApp</span>
+            </div>
           </div>
 
-          <div className="hero-mockup mx-auto w-full max-w-[540px]">
-            <div className="rounded-[14px] border border-white/12 bg-black/35 p-5">
-              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a227]">
-                Arquitectura comercial
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-white">
-                Una marca principal, varias landings por vertical
-              </h2>
-              <p className="mt-4 text-sm leading-6 text-zinc-300">
-                La homepage presenta FastPagePro como sistema web premium. Cada sector vive en una ruta propia para claridad de conversion y mensaje.
-              </p>
-              <ul className="mt-6 space-y-2 text-sm text-zinc-200">
-                <li>Arquitectura modular para cada vertical.</li>
-                <li>Narrativa visual premium con foco comercial.</li>
-                <li>Velocidad y mensajeria directa con WhatsApp.</li>
-              </ul>
+          <div className="hero-mockup mx-auto w-full max-w-[560px]">
+            <div className="fp-hero-window">
+              <div className="fp-hero-window__top">
+                <div className="fp-hero-window__chrome">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="fp-hero-window__status">Sistema web premium</div>
+              </div>
+
+              <div className="fp-hero-window__body">
+                <div className="fp-hero-window__main">
+                  <span className="fp-mockup-chip">Reservas por WhatsApp</span>
+                  <h2 className="fp-hero-window__title">
+                    Web premium para hoteles, restaurantes y negocios que quieren vender mejor.
+                  </h2>
+                  <p className="fp-hero-window__copy">
+                    Estructura clara, CTA directos y una experiencia visual que eleva la confianza
+                    desde el primer segundo.
+                  </p>
+                  <div className="fp-hero-window__actions">
+                    <span className="fp-hero-window__action fp-hero-window__action--primary">
+                      Solicitar sistema
+                    </span>
+                    <span className="fp-hero-window__action">Ver demos</span>
+                  </div>
+                  <div className="fp-hero-window__metric-row">
+                    <div className="fp-hero-window__metric-card">
+                      <strong>CTA directo</strong>
+                      <span>Reservas, consultas y ventas sin friccion.</span>
+                    </div>
+                    <div className="fp-hero-window__metric-card">
+                      <strong>Mobile first</strong>
+                      <span>Jerarquia legible, botones claros y accion inmediata.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="fp-hero-window__rail">
+                  <div className="fp-hero-window__rail-card">
+                    <span className="fp-rail-kicker">Hotel</span>
+                    <strong>Reservas directas</strong>
+                    <p>Suites, ubicacion, CTA y WhatsApp concierge.</p>
+                  </div>
+                  <div className="fp-hero-window__rail-card">
+                    <span className="fp-rail-kicker">Restaurante</span>
+                    <strong>Carta digital</strong>
+                    <p>Menu visual, pedidos por chat y conversion movil.</p>
+                  </div>
+                  <div className="fp-hero-window__rail-card">
+                    <span className="fp-rail-kicker">Negocio</span>
+                    <strong>Leads calificados</strong>
+                    <p>Flujo premium para consultas y cierres comerciales.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 px-4 py-[120px] sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-12 rounded-[32px] border border-white/8 bg-white/[0.02] px-6 py-10 backdrop-blur-sm sm:px-8">
-          <div className="text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
-              Soluciones web para negocios modernos
+      <section id="negocios" className="relative z-10">
+        <div className="fp-container fp-section">
+          <div className="fp-industry-band">
+            <div className="text-center">
+              <p className="fp-eyebrow fp-eyebrow--center">
+                Soluciones web para negocios que viven de reservas, consultas y ventas
+              </p>
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-center justify-items-center gap-10">
+              {INDUSTRIES.map((industry) => {
+                const Icon = industry.icon;
+                return (
+                  <div
+                    key={industry.label}
+                    className="industry-mark group flex min-w-0 flex-col items-center gap-3 text-center text-white/70"
+                  >
+                    <span className="fp-industry-icon">
+                      <Icon className="h-6 w-6" />
+                    </span>
+                    <span className="text-sm font-medium uppercase tracking-[0.08em]">
+                      {industry.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10">
+        <div className="fp-container fp-section">
+          <div className="max-w-3xl">
+            <p className="fp-eyebrow">Autoridad</p>
+            <h2 className="fp-section-title mt-4">Pensado para negocios que necesitan vender en serio</h2>
+            <p className="fp-muted-copy mt-5 max-w-2xl">
+              No hacemos una landing bonita por deporte. Construimos sistemas web con criterio
+              comercial, experiencia premium y una salida clara hacia WhatsApp.
             </p>
           </div>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-center justify-items-center gap-10">
-            {INDUSTRIES.map((industry) => {
-              const Icon = industry.icon;
+
+          <div className="mt-14 grid gap-5 lg:grid-cols-5">
+            {AUTHORITY_ITEMS.map((item) => {
+              const Icon = item.icon;
               return (
-                <div
-                  key={industry.label}
-                  className="industry-mark group flex min-w-0 flex-col items-center gap-3 text-center text-white/70"
-                >
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] transition duration-300 group-hover:border-white/20 group-hover:bg-white/[0.06]">
+                <article key={item.title} className="fp-authority-card">
+                  <span className="fp-authority-card__icon">
                     <Icon className="h-6 w-6" />
                   </span>
-                  <span className="text-sm font-medium tracking-[0.02em]">{industry.label}</span>
-                </div>
+                  <h3 className="mt-8 text-lg font-semibold tracking-[-0.02em] text-white">{item.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-zinc-300">{item.description}</p>
+                </article>
               );
             })}
           </div>
+
+          <div className="fp-authority-strip mt-8">
+            <span>Diseno premium</span>
+            <span>Experiencia movil impecable</span>
+            <span>Flujo orientado a WhatsApp</span>
+            <span>Activacion rapida</span>
+            <span>Arquitectura enfocada en conversion</span>
+          </div>
         </div>
       </section>
 
-      <section className="relative z-10 px-4 py-[120px] sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[1200px]">
+      <section id="portfolio" className="relative z-10">
+        <div className="fp-container fp-section">
           <div className="max-w-3xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
-              Portfolio
-            </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-              Ejemplos de sistemas web
-            </h2>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
-              Paginas web modernas creadas para negocios reales.
+            <p className="fp-eyebrow">Portfolio</p>
+            <h2 className="fp-section-title mt-4">Ejemplos de sistemas web</h2>
+            <p className="fp-muted-copy mt-5 max-w-2xl">
+              Disenados para generar reservas, consultas y ventas por WhatsApp.
             </p>
           </div>
 
@@ -133,21 +233,33 @@ export default function ClientLanding() {
                   accent={item.accent}
                   surface={item.surface}
                   businessType={item.businessType}
+                  focus={item.focus}
                   metrics={item.metrics}
                 />
-                <div className="flex flex-1 flex-col px-6 pb-6 pt-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">{item.name}</h3>
-                      <p className="mt-2 text-sm uppercase tracking-[0.14em] text-zinc-500">
-                        {item.businessType}
-                      </p>
-                    </div>
+                <div className="flex flex-1 flex-col px-6 pb-7 pt-6">
+                  <div>
+                    <span className="fp-portfolio-tag">{item.focus}</span>
+                    <h3 className="mt-4 text-[30px] font-semibold tracking-[-0.04em] text-white">
+                      {item.name}
+                    </h3>
+                    <p className="mt-2 text-sm uppercase tracking-[0.18em] text-zinc-500">
+                      {item.businessType}
+                    </p>
+                    <p className="mt-4 text-sm leading-6 text-zinc-300">{item.summary}</p>
                   </div>
+
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    {item.metrics.map((metric) => (
+                      <span key={metric} className="fp-portfolio-chip">
+                        {metric}
+                      </span>
+                    ))}
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => handleOpen(item)}
-                    className="mt-8 inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/20 hover:bg-white/[0.08]"
+                    className="fp-button-secondary mt-8 inline-flex w-fit items-center justify-center gap-2"
                   >
                     Ver demo
                     <ArrowRight className="h-4 w-4" />
@@ -159,38 +271,119 @@ export default function ClientLanding() {
         </div>
       </section>
 
-      <section className="relative z-10 px-4 py-[120px] sm:px-6 lg:px-8">
-        <div className="mx-auto w-full max-w-[1200px]">
+      <section id="resultados" className="relative z-10">
+        <div className="fp-container fp-section">
+          <div className="grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
+            <div className="max-w-2xl">
+              <p className="fp-eyebrow">Resultados</p>
+              <h2 className="fp-section-title mt-4">Por que nuestros sistemas convierten mejor</h2>
+              <p className="fp-muted-copy mt-5">
+                Un sistema web bien disenado no solo se ve mejor. Reduce friccion, organiza el
+                mensaje, aumenta la confianza y lleva al usuario a una accion clara.
+              </p>
+
+              <div className="fp-results-visual mt-10">
+                <div className="fp-results-visual__header">
+                  <span>Entrada</span>
+                  <span>Decision</span>
+                  <span>Accion</span>
+                </div>
+                <div className="fp-results-visual__track">
+                  <div className="fp-results-visual__node">
+                    <strong>Visita</strong>
+                    <p>Google, Instagram, anuncio o referencia.</p>
+                  </div>
+                  <div className="fp-results-visual__node">
+                    <strong>Confianza</strong>
+                    <p>Diseno premium, oferta clara y estructura limpia.</p>
+                  </div>
+                  <div className="fp-results-visual__node">
+                    <strong>WhatsApp</strong>
+                    <p>Reserva, consulta o venta directa con CTA visibles.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              {RESULT_ITEMS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <article key={item.title} className="fp-result-card">
+                    <span className="fp-result-card__icon">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="mt-7 text-xl font-semibold tracking-[-0.03em] text-white">
+                      {item.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-zinc-300">{item.description}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="proceso" className="relative z-10">
+        <div className="fp-container fp-section">
           <div className="max-w-3xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
-              Proceso
-            </p>
-            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
-              Como creamos tu sistema web
-            </h2>
+            <p className="fp-eyebrow">Proceso</p>
+            <h2 className="fp-section-title mt-4">Como construimos tu sistema web</h2>
           </div>
 
           <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-4">
             {PROCESS_STEPS.map((step) => {
               const Icon = step.icon;
               return (
-                <article
-                  key={step.step}
-                  className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[#0f0f10] p-[30px]"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-[#c9a227]">
+                <article key={step.step} className="fp-process-card">
+                  <span className="fp-process-number">{step.step}</span>
+                  <div className="relative z-[1] flex items-center justify-between gap-4">
+                    <span className="fp-process-icon">
                       <Icon className="h-5 w-5" />
                     </span>
                     <span className="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">
                       {step.step}
                     </span>
                   </div>
-                  <h3 className="mt-8 text-xl font-semibold tracking-[-0.03em] text-white">{step.title}</h3>
-                  <p className="mt-4 text-sm leading-6 text-zinc-300">{step.description}</p>
+                  <h3 className="relative z-[1] mt-8 text-xl font-semibold tracking-[-0.03em] text-white">
+                    {step.title}
+                  </h3>
+                  <p className="relative z-[1] mt-4 text-sm leading-6 text-zinc-300">
+                    {step.description}
+                  </p>
                 </article>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10">
+        <div className="fp-container fp-section">
+          <div className="fp-final-cta">
+            <p className="fp-eyebrow fp-eyebrow--center">Listo para vender mejor</p>
+            <h2 className="fp-section-title mt-5 max-w-4xl text-center">
+              Convierte tu web en un canal de reservas por WhatsApp
+            </h2>
+            <p className="fp-muted-copy mt-6 max-w-3xl text-center">
+              Creamos sistemas web premium para negocios que quieren mas clientes, mas reservas y
+              una imagen profesional real.
+            </p>
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                className="fp-button-primary inline-flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Hablar por WhatsApp
+              </a>
+              <Link href="/demo" prefetch={false} className="fp-button-secondary inline-flex items-center justify-center">
+                Ver demos
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -201,9 +394,7 @@ export default function ClientLanding() {
           <div className="portfolio-modal__panel">
             <header className="portfolio-modal__header">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
-                  Portfolio
-                </p>
+                <p className="fp-eyebrow">Portfolio</p>
                 <h3 className="text-3xl font-semibold text-white">{activeProject.name}</h3>
               </div>
               <button
@@ -249,7 +440,7 @@ export default function ClientLanding() {
                 href={activeProject.href}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/20 hover:bg-white/[0.08]"
+                className="fp-button-secondary inline-flex items-center justify-center gap-2"
               >
                 Ver sitio completo
                 <ArrowRight className="h-4 w-4" />
