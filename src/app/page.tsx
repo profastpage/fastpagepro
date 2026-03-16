@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import type { CSSProperties } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   BriefcaseBusiness,
+  Building2,
+  Coffee,
   Hotel,
-  Store,
+  Palette,
+  Rocket,
+  Search,
+  ShoppingBag,
+  Stethoscope,
+  TrendingUp,
   UtensilsCrossed,
 } from "lucide-react";
 import Footer from "@/components/Footer";
@@ -32,32 +41,140 @@ export const metadata: Metadata = {
   },
 };
 
-const VERTICALS = [
+type IndustryItem = {
+  label: string;
+  icon: LucideIcon;
+};
+
+type PortfolioItem = {
+  name: string;
+  businessType: string;
+  href: string;
+  accent: string;
+  surface: string;
+  metrics: string[];
+};
+
+type ProcessStep = {
+  step: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+const INDUSTRIES: IndustryItem[] = [
+  { label: "Hoteles", icon: Hotel },
+  { label: "Restaurantes", icon: UtensilsCrossed },
+  { label: "Cafeterias", icon: Coffee },
+  { label: "Tiendas", icon: ShoppingBag },
+  { label: "Empresas", icon: Building2 },
+  { label: "Clinicas", icon: Stethoscope },
+];
+
+const PORTFOLIO_ITEMS: PortfolioItem[] = [
   {
-    title: "Restaurantes",
-    description: "Cartas digitales, pedidos por WhatsApp y landings comerciales para trafico frio.",
-    href: "/restaurantes",
-    icon: UtensilsCrossed,
-  },
-  {
-    title: "Hoteles",
-    description: "Experiencias de reserva con narrativa premium y contacto directo por WhatsApp.",
+    name: "Hotel Vuelo78",
+    businessType: "Hotel premium",
     href: "/demo/services/estate-prime",
-    icon: Hotel,
+    accent: "rgba(212, 175, 55, 0.9)",
+    surface: "radial-gradient(circle at 20% 20%, rgba(212,175,55,0.22), transparent 40%), linear-gradient(180deg, #171717 0%, #0f1012 100%)",
+    metrics: ["Reservas directas", "Suite showcase", "WhatsApp concierge"],
   },
   {
-    title: "Tiendas",
-    description: "Catalogos ligeros, escaparates de campana y recorridos de compra centrados en chat.",
-    href: "/demo/store/urban-wear",
-    icon: Store,
+    name: "Restaurante Demo",
+    businessType: "Carta digital",
+    href: "/restaurantes",
+    accent: "rgba(255, 132, 76, 0.9)",
+    surface: "radial-gradient(circle at 80% 10%, rgba(255,132,76,0.18), transparent 34%), linear-gradient(180deg, #151515 0%, #101112 100%)",
+    metrics: ["Menu visual", "Pedidos por chat", "CTA rapido"],
   },
   {
-    title: "Servicios",
-    description: "Paginas de autoridad para consultas, reuniones y leads con mejor posicionamiento.",
+    name: "Cafeteria Moderna",
+    businessType: "Landing comercial",
+    href: "/demo/restaurant/coffee-route",
+    accent: "rgba(122, 197, 169, 0.9)",
+    surface: "radial-gradient(circle at 18% 20%, rgba(122,197,169,0.18), transparent 36%), linear-gradient(180deg, #151618 0%, #0f1011 100%)",
+    metrics: ["Branding limpio", "Promos del dia", "Mobile first"],
+  },
+  {
+    name: "Empresa Corporativa",
+    businessType: "Servicios B2B",
     href: "/demo/services/consultoria-pro",
-    icon: BriefcaseBusiness,
+    accent: "rgba(126, 166, 255, 0.92)",
+    surface: "radial-gradient(circle at 78% 18%, rgba(126,166,255,0.18), transparent 36%), linear-gradient(180deg, #121315 0%, #0d0e10 100%)",
+    metrics: ["Autoridad visual", "Leads calificados", "Proceso consultivo"],
   },
-] as const;
+];
+
+const PROCESS_STEPS: ProcessStep[] = [
+  {
+    step: "01",
+    title: "Analizamos tu negocio",
+    description: "Entendemos tu oferta, tus clientes y la accion comercial que debe dominar la pagina.",
+    icon: Search,
+  },
+  {
+    step: "02",
+    title: "Disenamos tu web profesional",
+    description: "Construimos una interfaz clara, premium y optimizada para transmitir confianza de inmediato.",
+    icon: Palette,
+  },
+  {
+    step: "03",
+    title: "Publicamos tu sistema online",
+    description: "Dejamos la web lista en produccion, conectada y preparada para operar sin friccion.",
+    icon: Rocket,
+  },
+  {
+    step: "04",
+    title: "Empiezas a recibir clientes",
+    description: "La experiencia queda enfocada en consultas, reservas o ventas por WhatsApp y formularios.",
+    icon: TrendingUp,
+  },
+];
+
+function PortfolioPreview({
+  accent,
+  surface,
+  businessType,
+  metrics,
+}: Pick<PortfolioItem, "accent" | "surface" | "businessType" | "metrics">) {
+  return (
+    <div className="portfolio-preview" style={{ background: surface } as CSSProperties}>
+      <div className="portfolio-preview__chrome">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="portfolio-preview__hero">
+        <div>
+          <div className="portfolio-preview__eyebrow" style={{ color: accent }}>
+            FastPagePro
+          </div>
+          <div className="portfolio-preview__headline">{businessType}</div>
+        </div>
+        <div className="portfolio-preview__badge" style={{ borderColor: accent, color: accent }}>
+          Online
+        </div>
+      </div>
+      <div className="portfolio-preview__grid">
+        <div className="portfolio-preview__panel portfolio-preview__panel--large">
+          <div className="portfolio-preview__line portfolio-preview__line--strong" />
+          <div className="portfolio-preview__line" />
+          <div className="portfolio-preview__line portfolio-preview__line--short" />
+        </div>
+        <div className="portfolio-preview__stack">
+          {metrics.map((metric) => (
+            <div key={metric} className="portfolio-preview__panel">
+              <div className="portfolio-preview__metric-dot" style={{ background: accent }} />
+              <span>{metric}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   return (
@@ -101,10 +218,10 @@ export default function HomePage() {
               </Link>
             </div>
             <ul className="mt-10 space-y-3 text-white/80">
-              <li className="text-[18px]">✔ Diseño profesional</li>
-              <li className="text-[18px]">✔ Optimizado para celular</li>
-              <li className="text-[18px]">✔ Integración con WhatsApp</li>
-              <li className="text-[18px]">✔ Activación rápida</li>
+              <li className="text-[18px]">Diseno profesional</li>
+              <li className="text-[18px]">Optimizado para celular</li>
+              <li className="text-[18px]">Integracion con WhatsApp</li>
+              <li className="text-[18px]">Activacion rapida</li>
             </ul>
           </div>
 
@@ -118,7 +235,7 @@ export default function HomePage() {
               </h2>
               <p className="mt-4 text-sm leading-6 text-zinc-300">
                 La homepage presenta FastPagePro como sistema web premium. Cada sector vive en una ruta
-                propia para claridad de conversión y mensaje.
+                propia para claridad de conversion y mensaje.
               </p>
               <ul className="mt-6 space-y-2 text-sm text-zinc-200">
                 <li>Arquitectura modular para cada vertical.</li>
@@ -130,46 +247,112 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
-        <div className="mb-8 max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
-            Verticales activas
-          </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-            Cada tipo de negocio entra por una pagina mas precisa
-          </h2>
-          <p className="mt-4 text-base leading-7 text-zinc-300">
-            La primera vertical separada es restaurantes. Las demas quedan listas para crecer como landings
-            independientes sin rehacer la home principal.
-          </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {VERTICALS.map((vertical) => {
-            const Icon = vertical.icon;
-            return (
-              <article
-                key={vertical.title}
-                className="rounded-[1.9rem] border border-white/10 bg-white/[0.03] p-5"
-              >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-black/45 text-[#f1ddb5]">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <h3 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-white">
-                  {vertical.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-300">{vertical.description}</p>
-                <Link
-                  href={vertical.href}
-                  prefetch={false}
-                  className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-black/45 px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-[#25D366]/40 hover:bg-[#25D366]/10"
+      <section className="relative z-10 px-4 py-[120px] sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-12 rounded-[32px] border border-white/8 bg-white/[0.02] px-6 py-10 backdrop-blur-sm sm:px-8">
+          <div className="text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+              Soluciones web para negocios modernos
+            </p>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] items-center justify-items-center gap-10">
+            {INDUSTRIES.map((industry) => {
+              const Icon = industry.icon;
+              return (
+                <div
+                  key={industry.label}
+                  className="industry-mark group flex min-w-0 flex-col items-center gap-3 text-center text-white/70"
                 >
-                  Abrir
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] transition duration-300 group-hover:border-white/20 group-hover:bg-white/[0.06]">
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <span className="text-sm font-medium tracking-[0.02em]">{industry.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 px-4 py-[120px] sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1200px]">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+              Portfolio
+            </p>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+              Ejemplos de sistemas web
+            </h2>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
+              Paginas web modernas creadas para negocios reales.
+            </p>
+          </div>
+
+          <div className="mt-14 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-10">
+            {PORTFOLIO_ITEMS.map((item) => (
+              <article key={item.name} className="portfolio-card">
+                <PortfolioPreview
+                  accent={item.accent}
+                  surface={item.surface}
+                  businessType={item.businessType}
+                  metrics={item.metrics}
+                />
+                <div className="flex flex-1 flex-col px-6 pb-6 pt-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">{item.name}</h3>
+                      <p className="mt-2 text-sm uppercase tracking-[0.14em] text-zinc-500">
+                        {item.businessType}
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href={item.href}
+                    prefetch={false}
+                    className="mt-8 inline-flex min-h-11 w-fit items-center justify-center gap-2 rounded-full border border-white/12 bg-white/[0.04] px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/20 hover:bg-white/[0.08]"
+                  >
+                    Ver demo
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </article>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 px-4 py-[120px] sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-[1200px]">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+              Proceso
+            </p>
+            <h2 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+              Como creamos tu sistema web
+            </h2>
+          </div>
+
+          <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-4">
+            {PROCESS_STEPS.map((step) => {
+              const Icon = step.icon;
+              return (
+                <article
+                  key={step.step}
+                  className="rounded-2xl border border-[rgba(255,255,255,0.06)] bg-[#0f0f10] p-[30px]"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-[#c9a227]">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.24em] text-zinc-500">
+                      {step.step}
+                    </span>
+                  </div>
+                  <h3 className="mt-8 text-xl font-semibold tracking-[-0.03em] text-white">{step.title}</h3>
+                  <p className="mt-4 text-sm leading-6 text-zinc-300">{step.description}</p>
+                </article>
+              );
+            })}
+          </div>
         </div>
       </section>
 
