@@ -556,6 +556,32 @@ details[open] summary .text-gold-iridescent {
     text-align: center;
   }
 
+  .fp-deluxory-separator {
+    margin-top: 0.62rem;
+    height: 2px;
+    width: clamp(220px, 28vw, 520px);
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      rgba(74, 222, 128, 0.95) 0%,
+      rgba(74, 222, 128, 0.46) 42%,
+      rgba(74, 222, 128, 0.06) 100%
+    );
+    box-shadow:
+      0 0 18px rgba(74, 222, 128, 0.38),
+      0 0 40px rgba(74, 222, 128, 0.2);
+  }
+
+  .fp-deluxory-separator--center {
+    margin-inline: auto;
+    background: linear-gradient(
+      90deg,
+      rgba(74, 222, 128, 0.04) 0%,
+      rgba(74, 222, 128, 0.58) 50%,
+      rgba(74, 222, 128, 0.04) 100%
+    );
+  }
+
   .hero-title {
     font-size: clamp(46px, 6vw, 76px);
     line-height: 1.02;
@@ -1794,6 +1820,10 @@ details[open] summary .text-gold-iridescent {
 
   .fp-industry-inline-item {
     font-size: 0.94rem;
+  }
+
+  .fp-deluxory-separator {
+    width: min(72vw, 360px);
   }
 
   .fp-benefit-list--compact {

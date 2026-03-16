@@ -87,7 +87,7 @@ export default function ClientLanding() {
 
   return (
     <main className="fp-landing-shell relative overflow-x-hidden bg-[#0b0b0c] text-white">
-      <section className="hero-landing relative z-10 min-h-[92vh] w-full pt-[90px]">
+      <section className="hero-landing relative z-10 min-h-[100svh] w-full pt-[90px] md:min-h-screen">
         <div className="absolute inset-0 overflow-hidden">
           {HERO_SLIDES.map((slide, index) => {
             const isActive = index === heroIndex;
@@ -135,7 +135,7 @@ export default function ClientLanding() {
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,6,7,0.12)_0%,rgba(6,6,7,0.36)_100%)] md:bg-[radial-gradient(circle_at_20%_44%,rgba(0,0,0,0.18),transparent_28%),linear-gradient(180deg,rgba(6,6,7,0.18)_0%,rgba(6,6,7,0.3)_100%)]" />
         </div>
 
-        <div className="fp-container relative z-10 flex min-h-[calc(92vh-90px)] items-center py-12 sm:py-16 lg:py-20">
+        <div className="fp-container relative z-10 flex min-h-[calc(100svh-90px)] items-center py-14 sm:py-20 lg:min-h-[calc(100vh-90px)] lg:py-24">
           <div className="max-w-[44rem]">
             <h1 className="hero-title max-w-5xl text-white">
               Sistemas web que convierten visitas en reservas por WhatsApp
@@ -202,6 +202,7 @@ export default function ClientLanding() {
           <div className="fp-showcase-strip">
             <div className="max-w-2xl">
               <p className="fp-eyebrow">Screenshots</p>
+              <div className="fp-deluxory-separator" aria-hidden />
               <h2 className="fp-section-title mt-4">Vistas reales</h2>
             </div>
             <div className="fp-showcase-grid mt-10">
@@ -232,6 +233,7 @@ export default function ClientLanding() {
         <div className="fp-container fp-section">
           <div className="max-w-3xl">
             <p className="fp-eyebrow">Autoridad</p>
+            <div className="fp-deluxory-separator" aria-hidden />
             <h2 className="fp-section-title mt-4">Pensado para vender en serio</h2>
           </div>
 
@@ -264,6 +266,7 @@ export default function ClientLanding() {
         <div className="fp-container fp-section">
           <div className="max-w-3xl">
             <p className="fp-eyebrow">Portfolio</p>
+            <div className="fp-deluxory-separator" aria-hidden />
             <h2 className="fp-section-title mt-4">Ejemplos de sistemas web</h2>
             <p className="fp-muted-copy mt-5 max-w-2xl">Mas visuales. Mas claros. Mas orientados a conversion.</p>
           </div>
@@ -319,6 +322,7 @@ export default function ClientLanding() {
           <div className="grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
             <div className="max-w-2xl">
               <p className="fp-eyebrow">Resultados</p>
+              <div className="fp-deluxory-separator" aria-hidden />
               <h2 className="fp-section-title mt-4">Por que convierten mejor</h2>
 
               <div className="fp-results-visual mt-10">
@@ -368,6 +372,7 @@ export default function ClientLanding() {
         <div className="fp-container fp-section">
           <div className="max-w-3xl">
             <p className="fp-eyebrow">Proceso</p>
+            <div className="fp-deluxory-separator" aria-hidden />
             <h2 className="fp-section-title mt-4">Como trabajamos</h2>
           </div>
 
@@ -402,6 +407,7 @@ export default function ClientLanding() {
         <div className="fp-container fp-section">
           <div className="fp-final-cta">
             <p className="fp-eyebrow fp-eyebrow--center">Listo para vender mejor</p>
+            <div className="fp-deluxory-separator fp-deluxory-separator--center" aria-hidden />
             <h2 className="fp-section-title mt-5 max-w-4xl text-center">
               Empieza a recibir reservas desde tu web
             </h2>
