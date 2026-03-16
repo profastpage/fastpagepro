@@ -828,17 +828,39 @@ details[open] summary .text-gold-iridescent {
   }
 
   .fp-showcase-strip {
+    position: relative;
+    overflow: hidden;
     border-radius: 32px;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.02);
-    padding: 2.5rem;
+    background:
+      radial-gradient(circle at center, rgba(0, 255, 150, 0.06), transparent 72%),
+      radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.03), transparent 28%),
+      rgba(255, 255, 255, 0.02);
+    padding: 3rem;
     backdrop-filter: blur(12px);
+    box-shadow:
+      0 30px 90px rgba(0, 0, 0, 0.34),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .fp-showcase-strip::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: -12% -8% auto;
+    height: 70%;
+    background:
+      radial-gradient(circle at 50% 45%, rgba(0, 255, 150, 0.12), transparent 42%),
+      radial-gradient(circle at 76% 12%, rgba(255, 255, 255, 0.04), transparent 24%);
+    opacity: 0.9;
   }
 
   .fp-showcase-grid {
+    position: relative;
     display: grid;
-    gap: 1.5rem;
-    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.95fr);
+    align-items: stretch;
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
   }
 
   .fp-showcase-card {
@@ -846,17 +868,51 @@ details[open] summary .text-gold-iridescent {
     overflow: hidden;
     min-height: 380px;
     border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)), #101113;
-    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+      #101113;
+    backdrop-filter: blur(10px);
+    box-shadow:
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: all 0.4s ease;
+    transform: translateY(0) scale(1);
   }
 
   .fp-showcase-card--feature {
-    min-height: 460px;
+    min-height: 540px;
   }
 
   .fp-showcase-card--mobile {
     min-height: 460px;
+  }
+
+  .fp-showcase-card::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: auto 12% 6% 12%;
+    height: 28%;
+    border-radius: 999px;
+    background: radial-gradient(circle at center, rgba(0, 255, 150, 0.12), transparent 70%);
+    filter: blur(26px);
+    opacity: 0.55;
+    transform: translateY(16px);
+    transition: all 0.4s ease;
+  }
+
+  .fp-showcase-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.68),
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .fp-showcase-card:hover::before {
+    opacity: 0.72;
+    transform: translateY(6px) scale(1.04);
   }
 
   .fp-showcase-card__image {
@@ -865,6 +921,11 @@ details[open] summary .text-gold-iridescent {
     object-fit: cover;
     object-position: top center;
     display: block;
+    transition: transform 0.5s ease;
+  }
+
+  .fp-showcase-card:hover .fp-showcase-card__image {
+    transform: scale(1.025);
   }
 
   .fp-showcase-card--mobile .fp-showcase-card__image {
@@ -878,8 +939,10 @@ details[open] summary .text-gold-iridescent {
     position: absolute;
     inset-inline: 0;
     bottom: 0;
-    padding: 1rem;
-    background: linear-gradient(180deg, transparent 0%, rgba(11, 11, 12, 0.92) 100%);
+    padding: 1.15rem 1.15rem 1.2rem;
+    background:
+      linear-gradient(180deg, transparent 0%, rgba(11, 11, 12, 0.92) 70%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
   }
 
   .fp-showcase-card__label {
@@ -1598,6 +1661,7 @@ details[open] summary .text-gold-iridescent {
 
   .fp-showcase-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 
   .fp-showcase-card,
