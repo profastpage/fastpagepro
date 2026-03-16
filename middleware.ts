@@ -29,6 +29,14 @@ const ACTIVE_ONLY_PATHS: RegExp[] = [];
 
 const DEFAULT_CANONICAL_HOST = "www.fastpagepro.com";
 const DEFAULT_ALLOWED_PUBLIC_HOSTS = ["www.fastpagepro.com", "fastpagepro.com"];
+const VERCEL_HOST_SUFFIXES = [".vercel.app", ".vercel.sh"];
+
+function normalizeHost(input: string): string {
+  const trimmed = input.trim().toLowerCase();
+  if (!trimmed) return "";
+  const withoutProtocol = trimmed.replace(/^https?:\/\//, "");
+  return withoutProtocol.split("/")[0]?.split(",")[0]?.trim().split(":")[0] || "";
+}
 
 function resolveCurrentHost(request: NextRequest): string {
   const hostHeader =
@@ -50,7 +58,17 @@ function resolveAllowedPublicHosts(): Set<string> {
     .split(",")
     .map((entry) => entry.trim().toLowerCase())
     .filter(Boolean);
-  return new Set([...DEFAULT_ALLOWED_PUBLIC_HOSTS, canonical, ...aliases]);
+
+  const vercelHosts = [
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.NEXT_PUBLIC_VERCEL_URL,
+  ]
+    .map((value) => normalizeHost(String(value || "")))
+    .filter((value) => VERCEL_HOST_SUFFIXES.some((suffix) => value.endsWith(suffix)));
+
+  return new Set([...DEFAULT_ALLOWED_PUBLIC_HOSTS, canonical, ...aliases, ...vercelHosts]);
 }
 
 function isLocalHost(host: string): boolean {
