@@ -12,8 +12,9 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isLandingRoute = pathname === "/" || pathname === "/restaurantes";
 
-  if (pathname === "/") {
+  if (isLandingRoute) {
     return <LandingAppShell>{children}</LandingAppShell>;
   }
 

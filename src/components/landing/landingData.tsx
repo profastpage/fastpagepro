@@ -213,7 +213,7 @@ export const AUTHORITY_ITEMS: AuthorityItem[] = [
   },
   {
     title: "Experiencia movil impecable",
-    description: "Diseño claro y rapido en celular.",
+    description: "DiseÃ±o claro y rapido en celular.",
     icon: Smartphone,
   },
   {

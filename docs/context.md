@@ -1,5 +1,12 @@
 ﻿# Context
 
+## 2026-03-16
+
+- Reubicacion de landing publica:
+  - la landing comercial que vivia en `/` se movio a `/restaurantes` para conservar la narrativa enfocada en pedidos por WhatsApp sin usarla como homepage principal de toda la marca.
+  - `/` pasa a funcionar como home principal de FastPagePro con posicionamiento mas amplio y enlaces a verticales/demos.
+  - `AppShell` ahora trata `/` y `/restaurantes` como rutas publicas de landing para mantener `PublicNav` + `LandingLanguageProvider` en ambas.
+  - `PublicNav` adapta los anchors `demos/precios` segun la ruta actual para no romper navegacion entre la home principal y la landing de restaurantes.
 ## 2026-03-02
 
 - Demos publicas de landing (`/demo`) para restaurante, ecommerce y servicios:
@@ -319,3 +326,4 @@
   - se retiro `framer-motion` del hero de `/` y se reemplazo por clases CSS ligeras para conservar entrada visual sin costo de runtime.
   - las secciones secundarias debajo del hero ahora se montan por cercania al scroll (`IntersectionObserver`) o primera interaccion del usuario, evitando que su chunk se ejecute durante el arranque inicial de la home.
   - validacion local sobre build productiva (`next build` + `next start` + Lighthouse mobile en `http://127.0.0.1:4000`) dio aproximadamente: `Performance 94`, `FCP 0.9 s`, `LCP 2.6 s`, `TBT 200 ms`, `CLS 0`.
+

@@ -43,7 +43,7 @@ export default function ClientLanding() {
     () =>
       buildWhatsappSendUrl(
         "51919662011",
-        "Hola, quiero solicitar un sistema web premium para generar reservas y ventas por WhatsApp.",
+        "Hola, quiero solicitar un sistema web premium para generar reservas, consultas y ventas por WhatsApp.",
       ),
     [],
   );
@@ -60,21 +60,36 @@ export default function ClientLanding() {
   return (
     <main className="fp-landing-shell relative overflow-x-hidden bg-[#0b0b0c] text-white">
       <section className="hero-landing relative z-10 min-h-[92vh] w-full pt-[90px]">
-        <div className="fp-container fp-section grid grid-cols-1 items-center gap-16 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
-          <div className="max-w-3xl">
-            <div className="fp-eyebrow">
-              <span className="h-2 w-2 rounded-full bg-[#c9a227]" />
-              Agencia digital para reservas por WhatsApp
+        <div className="fp-container fp-section">
+          <div className="mx-auto w-full max-w-[1320px]">
+            <div className="fp-eyebrow mx-auto w-fit">
+              <span className="h-2 w-2 rounded-full bg-[#4ade80]" />
+              Sistemas web premium para reservas y ventas por WhatsApp
             </div>
-            <h1 className="hero-title mt-6 max-w-5xl text-white">
+            <h1 className="sr-only">
               Sistemas web que convierten visitas en reservas por WhatsApp
             </h1>
-            <p className="hero-subtitle mt-6 text-white/80">
-              Disenamos webs premium para hoteles, restaurantes y negocios que quieren mas
-              reservas, consultas y ventas por WhatsApp.
-            </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <div className="mt-8 overflow-hidden rounded-[32px] border border-white/10 bg-black/30 shadow-[0_30px_100px_-40px_rgba(0,0,0,0.95)]">
+              <picture>
+                <source media="(max-width: 767px)" srcSet="/portfolio/vuelo78/mobile-hero.jpg" />
+                <img
+                  src="/portfolio/vuelo78/desktop-hero.jpg"
+                  alt="FastPagePro hero de sistemas web para reservas y ventas por WhatsApp"
+                  className="block h-auto w-full max-w-full"
+                  loading="eager"
+                />
+              </picture>
+            </div>
+
+            <div className="mx-auto mt-10 max-w-3xl text-center">
+              <p className="hero-subtitle text-balance text-white/80">
+                Agencia digital especializada en sistemas web premium para hoteles, restaurantes
+                y negocios que quieren recibir mas reservas, consultas y ventas por WhatsApp.
+              </p>
+            </div>
+
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
               <a
                 href={whatsappHref}
                 target="_blank"
@@ -85,12 +100,16 @@ export default function ClientLanding() {
                 Solicitar sistema
                 <ArrowRight className="h-4 w-4" />
               </a>
-              <Link href="/demo" prefetch={false} className="fp-button-secondary inline-flex items-center justify-center !px-8 !py-4 !text-base sm:!text-lg !font-semibold !border !border-[#e6e6e6] !bg-[#f3f3f3]/5 !text-white">
+              <Link
+                href="/demo"
+                prefetch={false}
+                className="fp-button-secondary inline-flex items-center justify-center !border !border-[#e6e6e6] !bg-[#f3f3f3]/5 !px-8 !py-4 !text-base !font-semibold !text-white sm:!text-lg"
+              >
                 Ver demos
               </Link>
             </div>
 
-            <ul className="fp-benefit-list mt-10">
+            <ul className="fp-benefit-list mt-10 justify-center">
               {heroBenefits.map((benefit) => (
                 <li key={benefit} className="fp-benefit-item">
                   <span className="fp-benefit-icon">
@@ -101,70 +120,11 @@ export default function ClientLanding() {
               ))}
             </ul>
 
-            <div className="mt-10 flex flex-wrap gap-3">
+            <div className="mt-10 flex flex-wrap justify-center gap-3">
               <span className="fp-inline-proof">Hoteles</span>
               <span className="fp-inline-proof">Restaurantes</span>
               <span className="fp-inline-proof">Cafeterias</span>
-              <span className="fp-inline-proof">Negocios con ventas por WhatsApp</span>
-            </div>
-          </div>
-
-          <div className="hero-mockup mx-auto w-full max-w-[560px]">
-            <div className="fp-hero-window">
-              <div className="fp-hero-window__top">
-                <div className="fp-hero-window__chrome">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <div className="fp-hero-window__status">Sistema web premium</div>
-              </div>
-
-              <div className="fp-hero-window__body">
-                <div className="fp-hero-window__main">
-                  <span className="fp-mockup-chip">Reservas por WhatsApp</span>
-                  <h2 className="fp-hero-window__title">
-                    Webs premium para vender, reservar y responder mas rapido.
-                  </h2>
-                  <p className="fp-hero-window__copy">
-                    Mas confianza visual, CTA claros y una salida directa a WhatsApp.
-                  </p>
-                  <div className="fp-hero-window__actions">
-                    <span className="fp-hero-window__action fp-hero-window__action--primary">
-                      Solicitar sistema
-                    </span>
-                    <span className="fp-hero-window__action">Ver demos</span>
-                  </div>
-                  <div className="fp-hero-window__metric-row">
-                    <div className="fp-hero-window__metric-card">
-                      <strong>CTA directo</strong>
-                      <span>Reservas, consultas y ventas sin friccion.</span>
-                    </div>
-                    <div className="fp-hero-window__metric-card">
-                      <strong>Mobile first</strong>
-                      <span>Jerarquia legible, botones claros y accion inmediata.</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="fp-hero-window__rail">
-                  <div className="fp-hero-window__rail-card">
-                    <span className="fp-rail-kicker">Hotel</span>
-                    <strong>Reservas directas</strong>
-                    <p>Suites, ubicacion, CTA y WhatsApp concierge.</p>
-                  </div>
-                  <div className="fp-hero-window__rail-card">
-                    <span className="fp-rail-kicker">Restaurante</span>
-                    <strong>Carta digital</strong>
-                    <p>Menu visual, pedidos por chat y conversion movil.</p>
-                  </div>
-                  <div className="fp-hero-window__rail-card">
-                    <span className="fp-rail-kicker">Negocio</span>
-                    <strong>Leads calificados</strong>
-                    <p>Flujo premium para consultas y cierres comerciales.</p>
-                  </div>
-                </div>
-              </div>
+              <span className="fp-inline-proof">Negocios con reservas y ventas por WhatsApp</span>
             </div>
           </div>
         </div>
