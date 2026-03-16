@@ -804,21 +804,22 @@ details[open] summary .text-gold-iridescent {
 
   .fp-showcase-grid {
     display: grid;
-    gap: 1rem;
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
+    gap: 1.35rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .fp-showcase-card {
     position: relative;
     overflow: hidden;
-    min-height: 240px;
+    min-height: 340px;
     border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)), #101113;
+    aspect-ratio: 16 / 10;
   }
 
   .fp-showcase-card--mobile {
-    min-height: 240px;
+    min-height: 340px;
   }
 
   .fp-showcase-card__image {
@@ -956,7 +957,7 @@ details[open] summary .text-gold-iridescent {
 
   .portfolio-preview {
     position: relative;
-    min-height: 290px;
+    min-height: 360px;
     overflow: hidden;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding: 1.5rem;

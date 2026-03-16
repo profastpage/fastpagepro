@@ -251,7 +251,7 @@ export default function ClientLanding() {
             <p className="fp-muted-copy mt-5 max-w-2xl">Mas visuales. Mas claros. Mas orientados a conversion.</p>
           </div>
 
-          <div className="mt-14 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-10">
+          <div className="mt-14 grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-9">
             {PORTFOLIO_ITEMS.map((item) => (
               <article key={item.name} className="portfolio-card">
                 <PortfolioPreview
