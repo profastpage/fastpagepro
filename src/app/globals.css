@@ -794,6 +794,61 @@ details[open] summary .text-gold-iridescent {
     backdrop-filter: blur(12px);
   }
 
+  .fp-showcase-strip {
+    border-radius: 32px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    padding: 2.5rem;
+    backdrop-filter: blur(12px);
+  }
+
+  .fp-showcase-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.8fr) minmax(0, 0.8fr);
+  }
+
+  .fp-showcase-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 240px;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)), #101113;
+  }
+
+  .fp-showcase-card--mobile {
+    min-height: 240px;
+  }
+
+  .fp-showcase-card__image {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .fp-showcase-card__meta {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    padding: 1rem;
+    background: linear-gradient(180deg, transparent 0%, rgba(11, 11, 12, 0.92) 100%);
+  }
+
+  .fp-showcase-card__label {
+    display: inline-flex;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.45rem 0.75rem;
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #ffffff;
+  }
+
   .industry-mark {
     opacity: 0.6;
     filter: grayscale(100%);
@@ -811,11 +866,11 @@ details[open] summary .text-gold-iridescent {
 
   .fp-industry-icon {
     display: flex;
-    height: 3.5rem;
-    width: 3.5rem;
+    height: 4.5rem;
+    width: 4.5rem;
     align-items: center;
     justify-content: center;
-    border-radius: 1.1rem;
+    border-radius: 1.35rem;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.03);
     transition:
@@ -917,7 +972,31 @@ details[open] summary .text-gold-iridescent {
     pointer-events: none;
   }
 
+  .portfolio-preview__image-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .portfolio-preview__image-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(11, 11, 12, 0.18) 0%, rgba(11, 11, 12, 0.82) 100%),
+      linear-gradient(90deg, rgba(11, 11, 12, 0.6) 0%, transparent 50%);
+  }
+
+  .portfolio-preview__image {
+    display: block;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+
   .portfolio-preview__chrome {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -931,6 +1010,8 @@ details[open] summary .text-gold-iridescent {
   }
 
   .portfolio-preview__hero {
+    position: relative;
+    z-index: 1;
     margin-top: 1.15rem;
     display: flex;
     align-items: flex-start;
@@ -967,6 +1048,8 @@ details[open] summary .text-gold-iridescent {
   }
 
   .portfolio-preview__grid {
+    position: relative;
+    z-index: 1;
     margin-top: 1.5rem;
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
@@ -1100,6 +1183,9 @@ details[open] summary .text-gold-iridescent {
 
   .fp-process-card {
     min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
   }
 
   .fp-process-number {
@@ -1464,7 +1550,12 @@ details[open] summary .text-gold-iridescent {
     grid-template-columns: 1fr;
   }
 
+  .fp-showcase-grid {
+    grid-template-columns: 1fr;
+  }
+
   .fp-industry-band,
+  .fp-showcase-strip,
   .fp-final-cta {
     padding: 2rem 1.25rem;
   }

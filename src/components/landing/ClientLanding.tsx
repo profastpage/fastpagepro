@@ -18,6 +18,7 @@ import {
 export default function ClientLanding() {
   const [activeProject, setActiveProject] = useState<PortfolioItem | null>(null);
   const modalScreenshots = useMemo(() => activeProject?.screenshots ?? [], [activeProject]);
+  const heroScreens = PORTFOLIO_ITEMS[0]?.screenshots.slice(0, 3) ?? [];
   const whatsappHref = useMemo(
     () =>
       buildWhatsappSendUrl(
@@ -49,8 +50,8 @@ export default function ClientLanding() {
               Sistemas web que convierten visitas en reservas por WhatsApp
             </h1>
             <p className="hero-subtitle mt-6 text-white/80">
-              Disenamos paginas y sistemas web premium para hoteles, restaurantes y negocios que
-              quieren recibir mas reservas, consultas y ventas directas desde WhatsApp.
+              Disenamos webs premium para hoteles, restaurantes y negocios que quieren mas
+              reservas, consultas y ventas por WhatsApp.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -103,11 +104,10 @@ export default function ClientLanding() {
                 <div className="fp-hero-window__main">
                   <span className="fp-mockup-chip">Reservas por WhatsApp</span>
                   <h2 className="fp-hero-window__title">
-                    Web premium para hoteles, restaurantes y negocios que quieren vender mejor.
+                    Webs premium para vender, reservar y responder mas rapido.
                   </h2>
                   <p className="fp-hero-window__copy">
-                    Estructura clara, CTA directos y una experiencia visual que eleva la confianza
-                    desde el primer segundo.
+                    Mas confianza visual, CTA claros y una salida directa a WhatsApp.
                   </p>
                   <div className="fp-hero-window__actions">
                     <span className="fp-hero-window__action fp-hero-window__action--primary">
@@ -150,6 +150,37 @@ export default function ClientLanding() {
         </div>
       </section>
 
+      <section id="screenshots" className="relative z-10">
+        <div className="fp-container pb-[24px]">
+          <div className="fp-showcase-strip">
+            <div className="max-w-2xl">
+              <p className="fp-eyebrow">Screenshots</p>
+              <h2 className="fp-section-title mt-4">Vistas reales</h2>
+            </div>
+            <div className="fp-showcase-grid mt-10">
+              {heroScreens.map((screen) => (
+                <article
+                  key={screen.label}
+                  className={`fp-showcase-card fp-showcase-card--${screen.variant}`}
+                >
+                  {screen.src ? (
+                    <img
+                      src={screen.src}
+                      alt={screen.label}
+                      className="fp-showcase-card__image"
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <div className="fp-showcase-card__meta">
+                    <span className="fp-showcase-card__label">{screen.label}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="negocios" className="relative z-10">
         <div className="fp-container fp-section">
           <div className="fp-industry-band">
@@ -184,11 +215,7 @@ export default function ClientLanding() {
         <div className="fp-container fp-section">
           <div className="max-w-3xl">
             <p className="fp-eyebrow">Autoridad</p>
-            <h2 className="fp-section-title mt-4">Pensado para negocios que necesitan vender en serio</h2>
-            <p className="fp-muted-copy mt-5 max-w-2xl">
-              No hacemos una landing bonita por deporte. Construimos sistemas web con criterio
-              comercial, experiencia premium y una salida clara hacia WhatsApp.
-            </p>
+            <h2 className="fp-section-title mt-4">Pensado para vender en serio</h2>
           </div>
 
           <div className="mt-14 grid gap-5 lg:grid-cols-5">
@@ -221,9 +248,7 @@ export default function ClientLanding() {
           <div className="max-w-3xl">
             <p className="fp-eyebrow">Portfolio</p>
             <h2 className="fp-section-title mt-4">Ejemplos de sistemas web</h2>
-            <p className="fp-muted-copy mt-5 max-w-2xl">
-              Disenados para generar reservas, consultas y ventas por WhatsApp.
-            </p>
+            <p className="fp-muted-copy mt-5 max-w-2xl">Mas visuales. Mas claros. Mas orientados a conversion.</p>
           </div>
 
           <div className="mt-14 grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-10">
@@ -235,6 +260,7 @@ export default function ClientLanding() {
                   businessType={item.businessType}
                   focus={item.focus}
                   metrics={item.metrics}
+                  previewImage={item.screenshots.find((screenshot) => screenshot.src)?.src}
                 />
                 <div className="flex flex-1 flex-col px-6 pb-7 pt-6">
                   <div>
@@ -276,11 +302,7 @@ export default function ClientLanding() {
           <div className="grid gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
             <div className="max-w-2xl">
               <p className="fp-eyebrow">Resultados</p>
-              <h2 className="fp-section-title mt-4">Por que nuestros sistemas convierten mejor</h2>
-              <p className="fp-muted-copy mt-5">
-                Un sistema web bien disenado no solo se ve mejor. Reduce friccion, organiza el
-                mensaje, aumenta la confianza y lleva al usuario a una accion clara.
-              </p>
+              <h2 className="fp-section-title mt-4">Por que convierten mejor</h2>
 
               <div className="fp-results-visual mt-10">
                 <div className="fp-results-visual__header">
@@ -329,7 +351,7 @@ export default function ClientLanding() {
         <div className="fp-container fp-section">
           <div className="max-w-3xl">
             <p className="fp-eyebrow">Proceso</p>
-            <h2 className="fp-section-title mt-4">Como construimos tu sistema web</h2>
+            <h2 className="fp-section-title mt-4">Como trabajamos</h2>
           </div>
 
           <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-4">

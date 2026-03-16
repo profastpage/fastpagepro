@@ -73,7 +73,7 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
   {
     name: "Hotel Vuelo78",
     businessType: "Hotel premium",
-    summary: "Landing hotelera de alto ticket orientada a reservas directas y contacto inmediato por WhatsApp.",
+    summary: "Landing hotelera enfocada en reservas directas por WhatsApp.",
     focus: "Reservas directas",
     href: "https://vuelo78hotel.vercel.app/",
     accent: "rgba(212, 175, 55, 0.9)",
@@ -110,7 +110,7 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
   {
     name: "Restaurante Demo",
     businessType: "Carta digital",
-    summary: "Sistema web para restaurantes con menu visual, pedidos rapidos y activacion comercial sin friccion.",
+    summary: "Carta digital visual para pedidos y reservas por chat.",
     focus: "Carta digital",
     href: "/restaurantes",
     accent: "rgba(255, 132, 76, 0.9)",
@@ -133,7 +133,7 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
   {
     name: "Cafeteria Moderna",
     businessType: "Landing comercial",
-    summary: "Pagina pensada para cafeterias que quieren transmitir marca, mostrar carta y captar consultas al instante.",
+    summary: "Web comercial para mostrar marca, menu y consultas rapidas.",
     focus: "Ventas por WhatsApp",
     href: "/demo/restaurant/coffee-route",
     accent: "rgba(122, 197, 169, 0.9)",
@@ -156,7 +156,7 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
   {
     name: "Empresa Corporativa",
     businessType: "Servicios B2B",
-    summary: "Web corporativa de autoridad para servicios que necesitan leads calificados y reuniones comerciales.",
+    summary: "Web de autoridad para captar leads y reuniones comerciales.",
     focus: "Leads calificados",
     href: "/demo/services/consultoria-pro",
     accent: "rgba(126, 166, 255, 0.92)",
@@ -208,27 +208,27 @@ export const PROCESS_STEPS: ProcessStep[] = [
 export const AUTHORITY_ITEMS: AuthorityItem[] = [
   {
     title: "Diseno premium",
-    description: "Interfaces sobrias, caras y pensadas para transmitir confianza antes del primer mensaje.",
+    description: "Imagen premium que transmite confianza desde el primer segundo.",
     icon: LayoutTemplate,
   },
   {
     title: "Experiencia movil impecable",
-    description: "La conversion real ocurre en celular. Cada pantalla se construye con lectura, toque y rapidez.",
+    description: "Pantallas claras, comodas y rapidas en celular.",
     icon: Smartphone,
   },
   {
     title: "WhatsApp como canal central",
-    description: "Los CTA y el flujo comercial se orientan a consultas, reservas y cierres por chat.",
+    description: "CTA y flujo comercial orientados a reservas y ventas por chat.",
     icon: MessageCircle,
   },
   {
     title: "Activacion rapida",
-    description: "Disenamos, publicamos y dejamos el sistema listo para operar sin friccion tecnica.",
+    description: "Publicacion rapida y sistema listo para operar.",
     icon: Clock3,
   },
   {
     title: "Conversion como criterio",
-    description: "Cada bloque tiene una funcion: dar claridad, elevar confianza y mover a la accion.",
+    description: "Cada bloque existe para mover a la accion.",
     icon: BadgeCheck,
   },
 ];
@@ -236,32 +236,32 @@ export const AUTHORITY_ITEMS: AuthorityItem[] = [
 export const RESULT_ITEMS: ResultItem[] = [
   {
     title: "Menos friccion para reservar",
-    description: "Quitamos pasos innecesarios para que el usuario llegue a WhatsApp mas rapido.",
+    description: "Menos pasos, mas velocidad hacia WhatsApp.",
     icon: MousePointerClick,
   },
   {
     title: "Canal directo de contacto",
-    description: "La web no distrae: empuja a conversar, cotizar o reservar sin intermediarios.",
+    description: "Conversacion directa sin intermediarios ni ruido.",
     icon: MessageCircle,
   },
   {
     title: "Diseno que transmite confianza",
-    description: "Una presencia premium mejora la percepcion de valor y eleva la tasa de respuesta.",
+    description: "Una mejor presencia visual aumenta la respuesta.",
     icon: BadgeCheck,
   },
   {
     title: "Pensado para celular",
-    description: "Jerarquia visual, botones y bloques optimizados para pantallas pequenas.",
+    description: "Jerarquia, botones y bloques optimizados para mobile.",
     icon: Smartphone,
   },
   {
     title: "CTA claros",
-    description: "La accion principal domina la pantalla y evita que el usuario se pierda.",
+    description: "La accion principal siempre se entiende de inmediato.",
     icon: Rocket,
   },
   {
     title: "Estructura orientada a conversion",
-    description: "Cada seccion acompana la decision de compra con orden, prueba y claridad.",
+    description: "La estructura acompana la decision de compra.",
     icon: TrendingUp,
   },
 ];
@@ -272,9 +272,17 @@ export function PortfolioPreview({
   businessType,
   focus,
   metrics,
-}: Pick<PortfolioItem, "accent" | "surface" | "businessType" | "focus" | "metrics">) {
+  previewImage,
+}: Pick<PortfolioItem, "accent" | "surface" | "businessType" | "focus" | "metrics"> & {
+  previewImage?: string;
+}) {
   return (
     <div className="portfolio-preview" style={{ background: surface } as CSSProperties}>
+      {previewImage ? (
+        <div className="portfolio-preview__image-wrap">
+          <img src={previewImage} alt={businessType} className="portfolio-preview__image" loading="lazy" />
+        </div>
+      ) : null}
       <div className="portfolio-preview__chrome">
         <span />
         <span />
