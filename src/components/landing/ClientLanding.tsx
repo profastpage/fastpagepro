@@ -6,12 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   Check,
-  Coffee,
-  Hotel,
   MessageCircle,
-  ShoppingBag,
-  Stethoscope,
-  UtensilsCrossed,
 } from "lucide-react";
 import Footer from "@/components/Footer";
 import { buildWhatsappSendUrl } from "@/lib/whatsapp";
@@ -44,14 +39,6 @@ const HERO_SLIDES = [
     desktopPosition: "center center",
     mobilePosition: "40% center",
   },
-] as const;
-
-const TRUSTED_BUSINESSES = [
-  { label: "Hoteles", icon: Hotel },
-  { label: "Restaurantes", icon: UtensilsCrossed },
-  { label: "Cafeterías", icon: Coffee },
-  { label: "Tiendas", icon: ShoppingBag },
-  { label: "Clínicas", icon: Stethoscope },
 ] as const;
 
 export default function ClientLanding() {
@@ -184,30 +171,6 @@ export default function ClientLanding() {
                 Ver demos
               </Link>
             </div>
-
-            <ul className="fp-benefit-list mt-10">
-              {heroBenefits.map((benefit) => (
-                <li key={benefit} className="fp-benefit-item">
-                  <span className="fp-benefit-icon">
-                    <Check className="h-4 w-4" />
-                  </span>
-                  <span>{benefit}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-10">
-              <p className="text-sm font-medium text-white/75">
-                Soluciones web para negocios que venden por WhatsApp
-              </p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <span className="fp-inline-proof">Hoteles</span>
-                <span className="fp-inline-proof">Restaurantes</span>
-                <span className="fp-inline-proof">Cafeterías</span>
-                <span className="fp-inline-proof">Servicios</span>
-              </div>
-            </div>
-
             <div className="mt-8 flex items-center gap-2">
               {HERO_SLIDES.map((slide, index) => (
                 <button
@@ -225,23 +188,25 @@ export default function ClientLanding() {
         </div>
       </section>
 
-      <section className="relative z-10">
+            <section className="relative z-10">
         <div className="fp-container pb-6 sm:pb-8">
-          <div className="fp-trusted-band">
-            <p className="fp-trusted-band__title">Negocios que ya venden con sistemas web</p>
-            <div className="fp-trusted-band__grid">
-              {TRUSTED_BUSINESSES.map((business) => {
-                const Icon = business.icon;
+          <div className="fp-trusted-band fp-trusted-band--compact">
+            <ul className="fp-benefit-list fp-benefit-list--compact">
+              {heroBenefits.map((benefit) => (
+                <li key={benefit} className="fp-benefit-item">
+                  <span className="fp-benefit-icon">
+                    <Check className="h-4 w-4" />
+                  </span>
+                  <span>{benefit}</span>
+                </li>
+              ))}
+            </ul>
 
-                return (
-                  <div key={business.label} className="fp-trusted-band__item">
-                    <span className="fp-trusted-band__icon">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span>{business.label}</span>
-                  </div>
-                );
-              })}
+            <div className="fp-trusted-band__chips">
+              <span className="fp-inline-proof">Hoteles</span>
+              <span className="fp-inline-proof">Restaurantes</span>
+              <span className="fp-inline-proof">Cafeterias</span>
+              <span className="fp-inline-proof">Servicios</span>
             </div>
           </div>
         </div>
@@ -579,3 +544,5 @@ export default function ClientLanding() {
     </main>
   );
 }
+
+
