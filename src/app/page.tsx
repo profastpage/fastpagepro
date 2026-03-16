@@ -2,22 +2,22 @@ import type { Metadata } from "next";
 import LandingHomeEntry from "@/components/landing/LandingHomeEntry";
 
 export const metadata: Metadata = {
-  title: "FastPage | Crea paginas que convierten clientes por WhatsApp",
+  title: "FastPagePro | Sistemas web premium que generan clientes por WhatsApp",
   description:
-    "FastPage es un sistema de crecimiento para Latam: landing pages, carta digital, tienda online, IA y metricas para vender mas por WhatsApp.",
+    "FastPagePro crea paginas web y sistemas web premium para hoteles, restaurantes, tiendas y servicios, con enfoque en reservas, pedidos y clientes por WhatsApp.",
   openGraph: {
-    title: "FastPage | Convierte visitas en clientes por WhatsApp",
+    title: "FastPagePro | Sistemas web premium para negocios",
     description:
-      "Crea, vende y escala con Builder, Online Store, Carta Digital, IA y Pro Metrics en una sola plataforma.",
+      "Creamos sistemas web premium para negocios que quieren captar reservas, pedidos y clientes por WhatsApp.",
     type: "website",
     url: "https://www.fastpagepro.com",
-    siteName: "FastPage",
+    siteName: "FastPagePro",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FastPage | Sistema de crecimiento para negocios en Latam",
+    title: "FastPagePro | Sistemas web premium para negocios",
     description:
-      "Lanza activos que convierten y cierra por WhatsApp con metricas reales.",
+      "Paginas web y sistemas hechos a medida para vender por WhatsApp.",
   },
   alternates: {
     canonical: "https://www.fastpagepro.com",

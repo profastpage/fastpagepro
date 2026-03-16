@@ -1,1192 +1,925 @@
-﻿"use client";
+"use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
-import { type ComponentType, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo } from "react";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
-  BarChart3,
-  Copy,
+  BriefcaseBusiness,
+  Check,
   Globe2,
+  Hotel,
   MessageCircle,
   MonitorSmartphone,
-  Palette,
-  PlayCircle,
   Rocket,
   ShieldCheck,
-  ShoppingCart,
+  Sparkles,
   Store,
   UtensilsCrossed,
-  WandSparkles,
 } from "lucide-react";
-import LandingVerticalSelector from "@/components/landing/LandingVerticalSelector";
-import PwaInstallTopBanner from "@/components/pwa/PwaInstallTopBanner";
+import Footer from "@/components/Footer";
+import DemoImage from "@/components/demo/DemoImage";
 import { useLandingLanguage } from "@/context/LandingLanguageContext";
-import {
-  persistUtmFromUrl,
-  trackGrowthEvent,
-} from "@/lib/analytics";
-import {
-  getVerticalCopy,
-  normalizeVertical,
-  persistVerticalChoice,
-  verticalToDemoHref,
-  verticalToSignupHref,
-  type BusinessVertical,
-} from "@/lib/vertical";
+import { persistUtmFromUrl, trackGrowthEvent } from "@/lib/analytics";
+import { getDemoUrl } from "@/lib/demoRouting";
+import { buildWhatsappSendUrl } from "@/lib/whatsapp";
 
-const HeroOrbScene = dynamic(() => import("@/components/landing/HeroOrbScene"), {
-  ssr: false,
-});
-const LandingHomeSecondarySectionsDynamic = dynamic(
-  () => import("@/components/landing/LandingHomeSecondarySections"),
-  { ssr: false },
-);
+const WHATSAPP_NUMBER = "51919662011";
 
-type ModuleCard = {
-  id: "builder" | "templates" | "cloner" | "store" | "menu" | "metrics";
+type Locale = "es" | "en";
+
+type SectorCard = {
+  key: string;
   title: string;
-  line: string;
+  description: string;
   href: string;
-  icon: ComponentType<{ className?: string }>;
+  image: string;
+  icon: LucideIcon;
 };
 
-type HeroMetric = {
-  value: string;
+type ProcessStep = {
+  key: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+type BenefitItem = {
+  key: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+};
+
+type PricingPlan = {
+  key: string;
+  name: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  summary: string;
+  features: string[];
+  accent: string;
 };
 
-const MODULES_ES: ModuleCard[] = [
-  {
-    id: "menu",
-    icon: UtensilsCrossed,
-    title: "Carta Digital",
-    line: "Recibe mas pedidos en hora punta desde un solo link.",
-    href: "/demo/restaurant/sushi-prime",
+const COPY = {
+  es: {
+    hero: {
+      eyebrow: "FASTPAGEPRO",
+      badge: "Pago unico. Diseno premium. WhatsApp integrado.",
+      title: "Sistemas web que generan clientes por WhatsApp",
+      description:
+        "Creamos paginas web profesionales para hoteles, restaurantes, tiendas y servicios. Tu negocio vende con una presencia moderna, rapida y lista para convertir.",
+      note:
+        "La homepage deja de vender un SaaS DIY publico y pasa a presentar un servicio hecho a medida usando la base actual del proyecto.",
+      primaryCta: "Solicitar mi pagina web",
+      secondaryCta: "Ver demos",
+      loginCta: "Acceder al panel",
+      benefits: [
+        "Diseno profesional",
+        "Optimizado para celular",
+        "Integracion con WhatsApp",
+        "Activacion rapida",
+      ],
+      highlights: [
+        "Reservas directas para hoteles",
+        "Pedidos por WhatsApp para restaurantes",
+        "Catalogos que convierten para tiendas",
+        "Landing pages que captan clientes para servicios",
+      ],
+      showcaseLabel: "Muestras listas para adaptar",
+      showcaseTitle: "Base premium reutilizable, personalizada y enfocada en resultados.",
+      showcaseDescription:
+        "Cada entrega se apoya en la base actual de FastPagePro, pero con copy, composicion y CTA pensados para el negocio del cliente.",
+      mockupDesktop: "Vista principal",
+      mockupPhoneOne: "Reservas",
+      mockupPhoneTwo: "WhatsApp",
+      industriesLine: "Hoteles, restaurantes, tiendas y negocios de servicios.",
+    },
+    sections: {
+      sectorsEyebrow: "Sistemas por rubro",
+      sectorsTitle: "Demos premium para distintos tipos de negocio",
+      sectorsDescription:
+        "Usamos la base actual para acelerar entregas, pero cada proyecto se adapta al tipo de cliente que quieres captar.",
+      sectorsFootnote:
+        "Si tu rubro no aparece aqui, adaptamos la estructura a tu flujo comercial.",
+      stepsEyebrow: "Como funciona",
+      stepsTitle: "Un proceso corto, claro y orientado a publicar rapido",
+      stepsDescription:
+        "No te damos una plataforma para aprender desde cero. Construimos contigo y entregamos una web lista para vender.",
+      benefitsEyebrow: "Beneficios",
+      benefitsTitle: "Todo lo que necesita tu negocio para vender mejor",
+      benefitsDescription:
+        "La propuesta deja de ser una herramienta generica y se convierte en un sistema web hecho para reservas, pedidos y clientes reales.",
+      pricingEyebrow: "Paquetes",
+      pricingTitle: "Planes orientados a pago unico",
+      pricingDescription:
+        "La cotizacion final depende del alcance, pero la logica es simple: desarrollamos tu sistema y queda listo para vender, sin una suscripcion SaaS publica.",
+      pricingNote:
+        "Incluimos soporte de lanzamiento y definimos el alcance exacto antes de iniciar.",
+      finalEyebrow: "CTA final",
+      finalTitle: "Convierte tu negocio en una experiencia web premium",
+      finalDescription:
+        "Si quieres una pagina o sistema web elegante, rapido y enfocado en generar conversaciones por WhatsApp, el siguiente paso es solicitar tu version.",
+      finalButton: "Hablar por WhatsApp",
+    },
+    buttons: {
+      viewDemo: "Ver demo",
+      requestQuote: "Solicitar propuesta",
+    },
+    whatsappMessage:
+      "Hola, quiero cotizar un sistema web premium para mi negocio con integracion a WhatsApp.",
+  },
+  en: {
+    hero: {
+      eyebrow: "FASTPAGEPRO",
+      badge: "One-time payment. Premium design. WhatsApp integrated.",
+      title: "Web systems that generate customers through WhatsApp",
+      description:
+        "We build professional websites for hotels, restaurants, stores, and service businesses. Your brand gets a modern, fast, conversion-ready digital presence.",
+      note:
+        "The homepage stops selling a public DIY SaaS and shifts into a done-for-you service built on top of the current project base.",
+      primaryCta: "Request my website",
+      secondaryCta: "View demos",
+      loginCta: "Open dashboard",
+      benefits: [
+        "Professional design",
+        "Mobile optimized",
+        "WhatsApp integration",
+        "Fast activation",
+      ],
+      highlights: [
+        "Direct bookings for hotels",
+        "WhatsApp orders for restaurants",
+        "Storefronts that convert for shops",
+        "Landing pages that attract leads for services",
+      ],
+      showcaseLabel: "Examples ready to adapt",
+      showcaseTitle: "A premium base, reused with intention and customized for results.",
+      showcaseDescription:
+        "Every delivery reuses the FastPagePro foundation, then gets copy, composition, and CTA logic designed for the client business.",
+      mockupDesktop: "Main view",
+      mockupPhoneOne: "Bookings",
+      mockupPhoneTwo: "WhatsApp",
+      industriesLine: "Hotels, restaurants, stores, and service businesses.",
+    },
+    sections: {
+      sectorsEyebrow: "Systems by vertical",
+      sectorsTitle: "Premium demos for different business types",
+      sectorsDescription:
+        "We reuse the current base to move faster, but every delivery is adapted to the type of client you want to attract.",
+      sectorsFootnote:
+        "If your business type is not listed here, we adapt the structure to your commercial workflow.",
+      stepsEyebrow: "How it works",
+      stepsTitle: "A short, clear process focused on launching fast",
+      stepsDescription:
+        "We do not hand you a platform to learn from scratch. We build with you and deliver a website ready to sell.",
+      benefitsEyebrow: "Benefits",
+      benefitsTitle: "Everything your business needs to sell better",
+      benefitsDescription:
+        "The offer stops being a generic tool and becomes a web system built for real bookings, orders, and customer conversations.",
+      pricingEyebrow: "Packages",
+      pricingTitle: "Plans designed around one-time payment",
+      pricingDescription:
+        "Final pricing depends on scope, but the commercial logic is simple: we build your system and leave it ready to sell, without a public SaaS subscription.",
+      pricingNote:
+        "Launch support is included and the exact scope is defined before development starts.",
+      finalEyebrow: "Final CTA",
+      finalTitle: "Turn your business into a premium web experience",
+      finalDescription:
+        "If you want an elegant, fast website or web system focused on generating WhatsApp conversations, the next step is requesting your version.",
+      finalButton: "Talk on WhatsApp",
+    },
+    buttons: {
+      viewDemo: "View demo",
+      requestQuote: "Request proposal",
+    },
+    whatsappMessage:
+      "Hello, I want to request a quote for a premium web system for my business with WhatsApp integration.",
   },
-  {
-    id: "store",
-    icon: ShoppingCart,
-    title: "Tienda Online",
-    line: "Muestra productos y cierra pedidos por WhatsApp sin friccion.",
-    href: "/demo/ecommerce/urban-wear",
-  },
-  {
-    id: "builder",
-    icon: WandSparkles,
-    title: "Constructor",
-    line: "Crea paginas que convierten clics en mensajes listos para comprar.",
-    href: "/builder",
-  },
-  {
-    id: "templates",
-    icon: Palette,
-    title: "Plantillas",
-    line: "Lanza campanas en horas con copys que ya venden.",
-    href: "/demo/services/consultoria-pro",
-  },
-  {
-    id: "cloner",
-    icon: Copy,
-    title: "Clonador",
-    line: "Replica ofertas ganadoras y acelera tus ventas.",
-    href: "/cloner/web",
-  },
-  {
-    id: "metrics",
-    icon: BarChart3,
-    title: "Metricas PRO",
-    line: "Detecta que campana vende mas y escala con datos.",
-    href: "/demo/services/pro-metrics",
-  },
-];
-
-const MODULES_EN: ModuleCard[] = [
-  {
-    id: "menu",
-    icon: UtensilsCrossed,
-    title: "Digital Menu",
-    line: "Get more peak-hour orders from one single link.",
-    href: "/demo/restaurant/sushi-prime",
-  },
-  {
-    id: "store",
-    icon: ShoppingCart,
-    title: "Online Store",
-    line: "Show products and close WhatsApp orders friction-free.",
-    href: "/demo/ecommerce/urban-wear",
-  },
-  {
-    id: "builder",
-    icon: WandSparkles,
-    title: "Builder",
-    line: "Create pages that turn clicks into ready-to-buy chats.",
-    href: "/builder",
-  },
-  {
-    id: "templates",
-    icon: Palette,
-    title: "Templates",
-    line: "Launch campaigns in hours with copy that already sells.",
-    href: "/demo/services/consultoria-pro",
-  },
-  {
-    id: "cloner",
-    icon: Copy,
-    title: "Cloner",
-    line: "Replicate winning offers and accelerate your sales.",
-    href: "/cloner/web",
-  },
-  {
-    id: "metrics",
-    icon: BarChart3,
-    title: "Pro Metrics",
-    line: "Identify what sells best and scale with data.",
-    href: "/demo/services/pro-metrics",
-  },
-];
-
-const FLOW_STEPS_ES = [
-  { title: "Visitas", icon: Globe2, description: "Trae trafico desde anuncios, redes y recomendaciones." },
-  { title: "Landing", icon: MonitorSmartphone, description: "Convierte interes en pedidos, reservas o cotizaciones." },
-  { title: "WhatsApp", icon: MessageCircle, description: "Responde rapido y cierra ventas en la misma conversacion." },
-  { title: "Metricas", icon: BarChart3, description: "Mide que fuentes y productos generan mas ingresos." },
-  { title: "Escala", icon: Rocket, description: "Duplica lo que funciona sin perder tiempo ni presupuesto." },
-];
-
-const FLOW_STEPS_EN = [
-  { title: "Traffic", icon: Globe2, description: "Bring traffic from ads, social channels, and referrals." },
-  { title: "Landing", icon: MonitorSmartphone, description: "Turn interest into orders, bookings, or quotes." },
-  { title: "WhatsApp", icon: MessageCircle, description: "Reply fast and close sales in the same chat." },
-  { title: "Metrics", icon: BarChart3, description: "Measure which sources and products generate more revenue." },
-  { title: "Scale", icon: Rocket, description: "Double down on what works without wasting time or budget." },
-];
-
-const HERO_METRICS_ES: HeroMetric[] = [
-  { value: "+120", label: "Negocios activos", icon: Store },
-  { value: "24/7", label: "Ventas activas", icon: ShieldCheck },
-  { value: "0%", label: "Comision por venta", icon: BarChart3 },
-];
-
-const HERO_METRICS_EN: HeroMetric[] = [
-  { value: "+120", label: "Active businesses", icon: Store },
-  { value: "24/7", label: "Always selling", icon: ShieldCheck },
-  { value: "0%", label: "Commission per sale", icon: BarChart3 },
-];
-
-const DEMO_TAB_CONFIG_ES: Record<BusinessVertical, string> = {
-  restaurant: "Carta Digital",
-  ecommerce: "Tienda Online",
-  services: "Landing",
-};
-
-const DEMO_TAB_CONFIG_EN: Record<BusinessVertical, string> = {
-  restaurant: "Digital Menu",
-  ecommerce: "Online Store",
-  services: "Landing",
-};
-
-const FAQS_ES = [
-  {
-    q: "Necesito programar para usar FastPage?",
-    a: "No. Todo es visual y puedes publicar sin escribir codigo.",
-  },
-  {
-    q: "Puedo usar mi dominio?",
-    a: "Si. Desde Business puedes conectar un dominio comprado por tu negocio.",
-  },
-  {
-    q: "Puedo quitar el branding?",
-    a: "Si, en plan Pro (y Agency cuando se habilite).",
-  },
-  {
-    q: "Que es un proyecto activo?",
-    a: "Todo proyecto publicado desde Constructor, Plantillas, Clonador, Carta Digital o Tienda Online.",
-  },
-  {
-    q: "Carta Digital vs Tienda Online?",
-    a: "Carta Digital es para restaurantes. Tienda Online es ecommerce multirubro.",
-  },
-  {
-    q: "Que mide Metricas PRO?",
-    a: "Visitas, conversion, tiempo en pagina, clics, trafico semanal y rendimiento tecnico.",
-  },
-  {
-    q: "Que hace la IA?",
-    a: "Business: copy basico. Pro: optimizacion avanzada de estructura, copy y conversion.",
-  },
-  {
-    q: "Puedo cancelar cuando quiera?",
-    a: "Si, puedes cancelar desde billing cuando lo necesites.",
-  },
-];
-
-const FAQS_EN = [
-  {
-    q: "Do I need coding skills to use FastPage?",
-    a: "No. Everything is visual and you can publish without writing code.",
-  },
-  {
-    q: "Can I use my own domain?",
-    a: "Yes. From Business plan, you can connect a domain bought by your business.",
-  },
-  {
-    q: "Can I remove branding?",
-    a: "Yes, on Pro plan (and Agency when enabled).",
-  },
-  {
-    q: "What is an active project?",
-    a: "Any published project from Builder, Templates, Cloner, Digital Menu, or Online Store.",
-  },
-  {
-    q: "Digital Menu vs Online Store?",
-    a: "Digital Menu is for restaurants. Online Store is for multi-category ecommerce.",
-  },
-  {
-    q: "What does Pro Metrics track?",
-    a: "Visits, conversion, time on page, clicks, weekly traffic, and technical performance.",
-  },
-  {
-    q: "What does AI do?",
-    a: "Business: basic copy help. Pro: advanced optimization for structure, copy, and conversion.",
-  },
-  {
-    q: "Can I cancel anytime?",
-    a: "Yes, you can cancel from billing whenever you need.",
-  },
-];
-
-type TestimonialItem = {
-  name: string;
-  city: string;
-  segment: string;
-  quote: string;
-  avatar: string;
-};
-
-const TESTIMONIALS_ES: TestimonialItem[] = [
-  {
-    name: "Mariana Quispe",
-    city: "Lima, Peru",
-    segment: "Carta Digital",
-    quote: "Con la carta digital pasamos de pedidos sueltos a un flujo diario por WhatsApp.",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Carlos Gutierrez",
-    city: "Arequipa, Peru",
-    segment: "Carta Digital",
-    quote: "El buscador y categorias hicieron que nuestros clientes pidan mas rapido.",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Javier Rojas",
-    city: "Trujillo, Peru",
-    segment: "Online Store",
-    quote: "Con FastPage nuestra tienda online cerro ventas desde el primer fin de semana.",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Diana Salazar",
-    city: "Cusco, Peru",
-    segment: "Landing Servicios",
-    quote: "La landing para servicios nos trae leads listos para agendar por WhatsApp.",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Fernando Paredes",
-    city: "Chiclayo, Peru",
-    segment: "Online Store",
-    quote: "Mejoramos conversion en trafico frio y subimos el ticket promedio.",
-    avatar:
-      "https://images.unsplash.com/photo-1463453091185-61582044d556?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Sofia Herrera",
-    city: "Piura, Peru",
-    segment: "Carta Digital",
-    quote: "Los platos destacados elevaron nuestros pedidos en horas punta.",
-    avatar:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Miguel Campos",
-    city: "Bogota, Colombia",
-    segment: "Landing Servicios",
-    quote: "Pasamos de depender de referidos a captar clientes con anuncios y landing.",
-    avatar:
-      "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Valentina Castro",
-    city: "Medellin, Colombia",
-    segment: "Online Store",
-    quote: "La tienda quedo lista para campanas y ahora vendemos todos los dias.",
-    avatar:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Luis Mendoza",
-    city: "Quito, Ecuador",
-    segment: "Carta Digital",
-    quote: "Reducimos llamadas y centralizamos pedidos desde un solo link.",
-    avatar:
-      "https://images.unsplash.com/photo-1542204625-de293a06df33?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Camila Navarro",
-    city: "Guayaquil, Ecuador",
-    segment: "Landing Servicios",
-    quote: "Con IA ajustamos el copy y aumentamos consultas calificadas.",
-    avatar:
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Andres Molina",
-    city: "Santiago, Chile",
-    segment: "Online Store",
-    quote: "La experiencia mobile nos ayudo a convertir mejor que nuestro sitio anterior.",
-    avatar:
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Paula Ibanez",
-    city: "Valparaiso, Chile",
-    segment: "Carta Digital",
-    quote: "Nuestros clientes ahora encuentran promociones en segundos.",
-    avatar:
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Daniela Ponce",
-    city: "CDMX, Mexico",
-    segment: "Online Store",
-    quote: "El checkout por WhatsApp nos simplifico ventas y seguimiento.",
-    avatar:
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Ricardo Leon",
-    city: "Monterrey, Mexico",
-    segment: "Landing Servicios",
-    quote: "FastPage nos dio una landing de alto impacto sin depender de programadores.",
-    avatar:
-      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Gabriela Flores",
-    city: "Puebla, Mexico",
-    segment: "Carta Digital",
-    quote: "La carta digital ordeno nuestra operacion de delivery en un dia.",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Jose Zamora",
-    city: "Santa Cruz, Bolivia",
-    segment: "Online Store",
-    quote: "Con temas y ofertas dinamicas aumentamos conversion desde Instagram Ads.",
-    avatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Lucia Ortega",
-    city: "La Paz, Bolivia",
-    segment: "Landing Servicios",
-    quote: "Pasamos de pocos mensajes a una agenda estable de reuniones semanales.",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Diego Ferreyra",
-    city: "Buenos Aires, Argentina",
-    segment: "Online Store",
-    quote: "La estructura del catalogo nos permitio escalar campanas sin friccion.",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Natalia Acosta",
-    city: "Cordoba, Argentina",
-    segment: "Carta Digital",
-    quote: "Con chips por categoria los clientes compran mas combinaciones.",
-    avatar:
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Hector Villanueva",
-    city: "Asuncion, Paraguay",
-    segment: "Landing Servicios",
-    quote: "FastPage nos ayudo a presentar mejor nuestra oferta y cerrar mas rapido.",
-    avatar:
-      "https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=320&auto=format&fit=crop",
-  },
-];
-
-const TESTIMONIALS_EN: TestimonialItem[] = [
-  {
-    name: "Mariana Quispe",
-    city: "Lima, Peru",
-    segment: "Digital Menu",
-    quote: "With the digital menu, we went from random orders to a daily WhatsApp flow.",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Carlos Gutierrez",
-    city: "Arequipa, Peru",
-    segment: "Digital Menu",
-    quote: "Search and categories helped our customers order much faster.",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Javier Rojas",
-    city: "Trujillo, Peru",
-    segment: "Online Store",
-    quote: "With FastPage our online store closed sales from the very first weekend.",
-    avatar:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Diana Salazar",
-    city: "Cusco, Peru",
-    segment: "Service Landing",
-    quote: "Our services landing now brings leads ready to book through WhatsApp.",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Fernando Paredes",
-    city: "Chiclayo, Peru",
-    segment: "Online Store",
-    quote: "We improved cold-traffic conversion and increased average ticket size.",
-    avatar:
-      "https://images.unsplash.com/photo-1463453091185-61582044d556?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Sofia Herrera",
-    city: "Piura, Peru",
-    segment: "Digital Menu",
-    quote: "Featured dishes increased our orders during peak hours.",
-    avatar:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Miguel Campos",
-    city: "Bogota, Colombia",
-    segment: "Service Landing",
-    quote: "We stopped depending on referrals and started acquiring clients with ads and landing pages.",
-    avatar:
-      "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Valentina Castro",
-    city: "Medellin, Colombia",
-    segment: "Online Store",
-    quote: "The store was campaign-ready and now we sell every single day.",
-    avatar:
-      "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Luis Mendoza",
-    city: "Quito, Ecuador",
-    segment: "Digital Menu",
-    quote: "We reduced phone calls and centralized orders from one single link.",
-    avatar:
-      "https://images.unsplash.com/photo-1542204625-de293a06df33?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Camila Navarro",
-    city: "Guayaquil, Ecuador",
-    segment: "Service Landing",
-    quote: "With AI copy optimization, we increased qualified inquiries.",
-    avatar:
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Andres Molina",
-    city: "Santiago, Chile",
-    segment: "Online Store",
-    quote: "The mobile experience converted better than our previous website.",
-    avatar:
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Paula Ibanez",
-    city: "Valparaiso, Chile",
-    segment: "Digital Menu",
-    quote: "Our customers now find promotions in seconds.",
-    avatar:
-      "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df2?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Daniela Ponce",
-    city: "CDMX, Mexico",
-    segment: "Online Store",
-    quote: "WhatsApp checkout simplified sales and follow-up.",
-    avatar:
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Ricardo Leon",
-    city: "Monterrey, Mexico",
-    segment: "Service Landing",
-    quote: "FastPage gave us a high-impact landing without depending on developers.",
-    avatar:
-      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Gabriela Flores",
-    city: "Puebla, Mexico",
-    segment: "Digital Menu",
-    quote: "The digital menu organized our delivery operation in one day.",
-    avatar:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Jose Zamora",
-    city: "Santa Cruz, Bolivia",
-    segment: "Online Store",
-    quote: "With dynamic themes and offers, we increased conversion from Instagram Ads.",
-    avatar:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Lucia Ortega",
-    city: "La Paz, Bolivia",
-    segment: "Service Landing",
-    quote: "We went from a few messages to a stable weekly meeting schedule.",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Diego Ferreyra",
-    city: "Buenos Aires, Argentina",
-    segment: "Online Store",
-    quote: "The catalog structure let us scale campaigns without friction.",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Natalia Acosta",
-    city: "Cordoba, Argentina",
-    segment: "Digital Menu",
-    quote: "With category chips, customers buy more combinations.",
-    avatar:
-      "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=320&auto=format&fit=crop",
-  },
-  {
-    name: "Hector Villanueva",
-    city: "Asuncion, Paraguay",
-    segment: "Service Landing",
-    quote: "FastPage helped us present our offer better and close faster.",
-    avatar:
-      "https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=320&auto=format&fit=crop",
-  },
-];
-
-type LiveActivityItem = {
-  name: string;
-  city: string;
-  action: string;
-  minutesAgo: number;
-};
-
-const LIVE_ACTIVITY_FEED_ES: LiveActivityItem[] = [
-  { name: "Jorge M.", city: "Piura", action: "conecto su WhatsApp y activo su Carta Digital", minutesAgo: 1 },
-  { name: "Valeria R.", city: "Lima", action: "publico su tienda online y recibio 2 pedidos", minutesAgo: 2 },
-  { name: "Sushi Prime", city: "Arequipa", action: "convirtio 5 mensajes en ventas", minutesAgo: 3 },
-  { name: "Urban Wear", city: "Trujillo", action: "cerro 3 ventas desde WhatsApp", minutesAgo: 4 },
-  { name: "Cafe Nativo", city: "Cusco", action: "activo promociones en Carta Digital", minutesAgo: 5 },
-  { name: "Luna Store", city: "Chiclayo", action: "recibio su primer carrito por WhatsApp", minutesAgo: 6 },
-  { name: "Tacos MX", city: "CDMX", action: "aumento conversion desde menu digital", minutesAgo: 7 },
-  { name: "NovaTech", city: "Bogota", action: "convirtio trafico en 4 consultas por WhatsApp", minutesAgo: 8 },
-  { name: "Maki House", city: "Quito", action: "activo botones de pedido directo", minutesAgo: 9 },
-  { name: "Casa Natura", city: "Medellin", action: "cerro 6 ventas con Online Store", minutesAgo: 10 },
-  { name: "Deli Burger", city: "Guayaquil", action: "publico nueva carta y subio pedidos", minutesAgo: 11 },
-  { name: "Fit Market", city: "Santiago", action: "activo checkout por WhatsApp", minutesAgo: 12 },
-  { name: "Don Anticucho", city: "Lima", action: "logro 9 pedidos en hora punta", minutesAgo: 13 },
-  { name: "Trendy Shop", city: "Monterrey", action: "recibio 5 ventas desde anuncios", minutesAgo: 14 },
-  { name: "Punto Verde", city: "Santa Cruz", action: "convirtio visitas en ventas por chat", minutesAgo: 15 },
-  { name: "Pan & Cafe", city: "La Paz", action: "activo CTA de pedido por WhatsApp", minutesAgo: 16 },
-  { name: "Beauty Home", city: "Puebla", action: "publico catalogo y cerro 3 ventas", minutesAgo: 17 },
-  { name: "Parrilla 51", city: "Buenos Aires", action: "aumento reservas desde Carta Digital", minutesAgo: 18 },
-  { name: "Smart Lab", city: "Cordoba", action: "convirtio 7 leads en conversaciones", minutesAgo: 19 },
-  { name: "Moda Street", city: "Asuncion", action: "activo ofertas y vendio por WhatsApp", minutesAgo: 20 },
-  { name: "Crustaceo", city: "Piura", action: "subio el ticket promedio con combos", minutesAgo: 21 },
-  { name: "Flash Store", city: "Lima", action: "recibio pago confirmado desde chat", minutesAgo: 22 },
-  { name: "Sabor Criollo", city: "Arequipa", action: "reactivo clientes con menu digital", minutesAgo: 23 },
-  { name: "Electro Home", city: "Trujillo", action: "convirtio mensajes en ventas del dia", minutesAgo: 24 },
-];
-
-const LIVE_ACTIVITY_FEED_EN: LiveActivityItem[] = [
-  { name: "Jorge M.", city: "Piura", action: "connected WhatsApp and activated the digital menu", minutesAgo: 1 },
-  { name: "Valeria R.", city: "Lima", action: "published an online store and received 2 orders", minutesAgo: 2 },
-  { name: "Sushi Prime", city: "Arequipa", action: "converted 5 chats into sales", minutesAgo: 3 },
-  { name: "Urban Wear", city: "Trujillo", action: "closed 3 sales from WhatsApp", minutesAgo: 4 },
-  { name: "Cafe Nativo", city: "Cusco", action: "activated promotions on digital menu", minutesAgo: 5 },
-  { name: "Luna Store", city: "Chiclayo", action: "received first WhatsApp cart", minutesAgo: 6 },
-  { name: "Tacos MX", city: "CDMX", action: "improved conversion from digital menu", minutesAgo: 7 },
-  { name: "NovaTech", city: "Bogota", action: "turned traffic into 4 WhatsApp inquiries", minutesAgo: 8 },
-  { name: "Maki House", city: "Quito", action: "enabled direct order buttons", minutesAgo: 9 },
-  { name: "Casa Natura", city: "Medellin", action: "closed 6 sales with Online Store", minutesAgo: 10 },
-  { name: "Deli Burger", city: "Guayaquil", action: "published a new menu and increased orders", minutesAgo: 11 },
-  { name: "Fit Market", city: "Santiago", action: "enabled WhatsApp checkout", minutesAgo: 12 },
-  { name: "Don Anticucho", city: "Lima", action: "achieved 9 orders in peak hour", minutesAgo: 13 },
-  { name: "Trendy Shop", city: "Monterrey", action: "received 5 sales from ads", minutesAgo: 14 },
-  { name: "Punto Verde", city: "Santa Cruz", action: "converted visits into chat sales", minutesAgo: 15 },
-  { name: "Pan & Cafe", city: "La Paz", action: "enabled WhatsApp order CTA", minutesAgo: 16 },
-  { name: "Beauty Home", city: "Puebla", action: "published catalog and closed 3 sales", minutesAgo: 17 },
-  { name: "Parrilla 51", city: "Buenos Aires", action: "increased bookings from digital menu", minutesAgo: 18 },
-  { name: "Smart Lab", city: "Cordoba", action: "turned 7 leads into conversations", minutesAgo: 19 },
-  { name: "Moda Street", city: "Asuncion", action: "activated offers and sold via WhatsApp", minutesAgo: 20 },
-  { name: "Crustaceo", city: "Piura", action: "raised average ticket with combo offers", minutesAgo: 21 },
-  { name: "Flash Store", city: "Lima", action: "received a confirmed payment from chat", minutesAgo: 22 },
-  { name: "Sabor Criollo", city: "Arequipa", action: "reactivated clients with digital menu", minutesAgo: 23 },
-  { name: "Electro Home", city: "Trujillo", action: "converted chats into same-day sales", minutesAgo: 24 },
-];
-
-const DELUXE_BUTTON_BASE =
-  "inline-flex items-center justify-center gap-2 rounded-2xl border border-amber-300/45 bg-gradient-to-b from-zinc-900 via-black to-zinc-950 px-5 py-2.5 text-sm font-black text-amber-100 shadow-[inset_0_1px_0_rgba(251,191,36,0.32),0_10px_24px_-16px_rgba(251,191,36,0.55)] transition hover:-translate-y-0.5 hover:border-amber-300/70 hover:text-amber-50 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/55";
-const SOFT_BUTTON_BASE =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:border-amber-300/45 hover:bg-amber-300/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/50";
-const HERO_CTA_VARIANT_ES = "B" as "A" | "B";
-const HERO_PRIMARY_CTA_LABEL_ES =
-  HERO_CTA_VARIANT_ES === "A" ? "CREA TU NEGOCIO DIGITAL HOY" : "Crea tu negocio digital hoy";
-
-const PRICING_FEATURES_ES = {
-  starter: [
-    "1 proyecto activo",
-    "10 productos por proyecto",
-    "🔒 Dominio propio (Business o Pro)",
-    "Branding visible",
-    "❌ Sin soporte directo",
-    "🔒 IA (Business o Pro)",
-  ],
-  business: [
-    "Hasta 5 proyectos activos",
-    "50 productos por proyecto",
-    "Dominio propio permitido",
-    "IA basica",
-    "Metricas basicas",
-    "📧 Soporte por correo (max. 24h)",
-    "🔒 Testimonios, copys PRO y galeria avanzada",
-  ],
-  pro: [
-    "Hasta 20 proyectos activos",
-    "Productos ilimitados",
-    "Branding removible",
-    "IA avanzada",
-    "💬 Soporte en vivo por WhatsApp",
-    "Metricas PRO + insights",
-    "Testimonios reales con transicion por tema",
-    "Copys de venta instantaneos por plato/producto",
-    "Galeria PRO: hasta 5 fotos por producto",
-    "Despacho configurable: delivery/recojo/comer en local",
-  ],
 } as const;
 
-const PRICING_FEATURES_EN = {
-  starter: [
-    "1 active project",
-    "10 products per project",
-    "🔒 Custom domain (Business or Pro)",
-    "Visible branding",
-    "❌ No direct support",
-    "🔒 AI (Business or Pro)",
-  ],
-  business: [
-    "Up to 5 active projects",
-    "50 products per project",
-    "Custom domain enabled",
-    "Basic AI",
-    "Basic metrics",
-    "📧 Email support (max 24h)",
-    "🔒 Testimonials, PRO copy and advanced gallery",
-  ],
-  pro: [
-    "Up to 20 active projects",
-    "Unlimited products",
-    "Removable branding",
-    "Advanced AI",
-    "💬 Live WhatsApp support",
-    "Pro metrics + insights",
-    "Real testimonials with theme transitions",
-    "Instant sales copy per dish/product",
-    "Pro gallery: up to 5 photos per product",
-    "Configurable fulfillment: delivery/pickup/dine-in",
-  ],
-} as const;
+function getLocale(language: string): Locale {
+  return language === "en" ? "en" : "es";
+}
 
 export default function LandingHome() {
   const { language } = useLandingLanguage();
-  const isEnglish = language === "en";
-  const [vertical, setVertical] = useState<BusinessVertical>("restaurant");
-  const [activityIndex, setActivityIndex] = useState(0);
-  const [enableHero3D, setEnableHero3D] = useState(false);
-  const [mountSecondarySections, setMountSecondarySections] = useState(false);
-  const secondarySectionsTriggerRef = useRef<HTMLDivElement | null>(null);
+  const locale = getLocale(language);
+  const copy = COPY[locale];
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const urlVertical = normalizeVertical(
-      new URLSearchParams(window.location.search).get("vertical"),
-    );
-    setVertical(urlVertical);
-    persistVerticalChoice(urlVertical);
     persistUtmFromUrl();
     void trackGrowthEvent("page_view", {
-      page: "landing_home",
-      vertical: urlVertical,
+      vertical: "services",
+      slug: "homepage_service_rebrand",
     });
   }, []);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const desktopMedia = window.matchMedia("(min-width: 1024px)");
-    const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const whatsappHref = useMemo(
+    () => buildWhatsappSendUrl(WHATSAPP_NUMBER, copy.whatsappMessage),
+    [copy.whatsappMessage],
+  );
 
-    const resolve3D = () => {
-      const navigatorWithMemory = window.navigator as Navigator & { deviceMemory?: number };
-      const memory = navigatorWithMemory.deviceMemory ?? 8;
-      const cores = window.navigator.hardwareConcurrency ?? 8;
-      const isLowEnd = memory <= 3 || cores <= 4;
-      setEnableHero3D(desktopMedia.matches && !reducedMotionMedia.matches && !isLowEnd);
-    };
-
-    resolve3D();
-
-    const onMediaChange = () => resolve3D();
-    desktopMedia.addEventListener("change", onMediaChange);
-    reducedMotionMedia.addEventListener("change", onMediaChange);
-    return () => {
-      desktopMedia.removeEventListener("change", onMediaChange);
-      reducedMotionMedia.removeEventListener("change", onMediaChange);
-    };
-  }, []);
-
-  const liveActivityFeed = isEnglish ? LIVE_ACTIVITY_FEED_EN : LIVE_ACTIVITY_FEED_ES;
-  const testimonials = isEnglish ? TESTIMONIALS_EN : TESTIMONIALS_ES;
-  const pricingFeatures = isEnglish ? PRICING_FEATURES_EN : PRICING_FEATURES_ES;
-
-  useEffect(() => {
-    setActivityIndex(0);
-  }, [isEnglish]);
-
-  useEffect(() => {
-    if (!liveActivityFeed.length) return;
-    const intervalId = window.setInterval(() => {
-      setActivityIndex((current) => (current + 1) % liveActivityFeed.length);
-    }, 3800);
-    return () => window.clearInterval(intervalId);
-  }, [liveActivityFeed.length]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const trigger = secondarySectionsTriggerRef.current;
-    if (!trigger) {
-      setMountSecondarySections(true);
-      return;
-    }
-
-    const mountSections = () => setMountSecondarySections(true);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          mountSections();
-        }
+  const sectorCards = useMemo<SectorCard[]>(
+    () => [
+      {
+        key: "hotels",
+        title: locale === "en" ? "Hotels" : "Hoteles",
+        description:
+          locale === "en"
+            ? "Booking pages with boutique style, direct WhatsApp contact, and polished room presentation."
+            : "Paginas de reservas con estilo boutique, contacto directo por WhatsApp y presentacion cuidada de habitaciones.",
+        href: getDemoUrl("services", "estate-prime"),
+        image:
+          "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1600&auto=format&fit=crop",
+        icon: Hotel,
       },
       {
-        rootMargin: "0px 0px -18% 0px",
-        threshold: 1,
+        key: "restaurants",
+        title: locale === "en" ? "Restaurants" : "Restaurantes",
+        description:
+          locale === "en"
+            ? "Digital menu experiences and conversion flows that turn visits into WhatsApp orders."
+            : "Experiencias tipo carta digital y flujos de conversion para pasar de visitas a pedidos por WhatsApp.",
+        href: getDemoUrl("restaurant", "sushi-prime"),
+        image:
+          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1600&auto=format&fit=crop",
+        icon: UtensilsCrossed,
       },
-    );
+      {
+        key: "stores",
+        title: locale === "en" ? "Stores" : "Tiendas",
+        description:
+          locale === "en"
+            ? "Product catalogs, campaign-ready storefronts, and chat-first purchase journeys."
+            : "Catalogos de productos, storefronts listos para campanas y recorridos de compra centrados en chat.",
+        href: getDemoUrl("store", "urban-wear"),
+        image:
+          "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1600&auto=format&fit=crop",
+        icon: Store,
+      },
+      {
+        key: "services",
+        title: locale === "en" ? "Services" : "Servicios",
+        description:
+          locale === "en"
+            ? "Authority-focused landing pages built to generate consultations, meetings, and qualified leads."
+            : "Landing pages de autoridad pensadas para generar consultas, reuniones y leads calificados.",
+        href: getDemoUrl("services", "consultoria-pro"),
+        image:
+          "https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=1600&auto=format&fit=crop",
+        icon: BriefcaseBusiness,
+      },
+    ],
+    [locale],
+  );
 
-    observer.observe(trigger);
-    window.addEventListener("scroll", mountSections, { once: true, passive: true });
-    window.addEventListener("wheel", mountSections, { once: true, passive: true });
-    window.addEventListener("touchmove", mountSections, { once: true, passive: true });
-    window.addEventListener("keydown", mountSections, { once: true });
-    const timeoutId = window.setTimeout(mountSections, 1200);
+  const processSteps = useMemo<ProcessStep[]>(
+    () => [
+      {
+        key: "brief",
+        title:
+          locale === "en"
+            ? "You send us your business information"
+            : "Nos envias la informacion",
+        description:
+          locale === "en"
+            ? "Brand assets, WhatsApp number, offers, photos, references, and the action you want the client to take."
+            : "Marca, numero de WhatsApp, oferta, fotos, referencias y la accion que quieres que haga tu cliente.",
+        icon: Sparkles,
+      },
+      {
+        key: "build",
+        title:
+          locale === "en"
+            ? "We create your professional website"
+            : "Creamos tu web profesional",
+        description:
+          locale === "en"
+            ? "We adapt the base, define the visual direction, and build the sections that matter for your business."
+            : "Adaptamos la base, definimos la direccion visual y construimos las secciones que mas importan para tu negocio.",
+        icon: MonitorSmartphone,
+      },
+      {
+        key: "launch",
+        title:
+          locale === "en"
+            ? "You start receiving customers"
+            : "Empiezas a recibir clientes",
+        description:
+          locale === "en"
+            ? "The site goes live with WhatsApp integrated so your business can start capturing bookings, orders, or inquiries."
+            : "Publicamos la web con WhatsApp integrado para empezar a captar reservas, pedidos o consultas.",
+        icon: Rocket,
+      },
+    ],
+    [locale],
+  );
 
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", mountSections);
-      window.removeEventListener("wheel", mountSections);
-      window.removeEventListener("touchmove", mountSections);
-      window.removeEventListener("keydown", mountSections);
-      window.clearTimeout(timeoutId);
-    };
-  }, []);
+  const benefits = useMemo<BenefitItem[]>(
+    () => [
+      {
+        key: "whatsapp",
+        title: locale === "en" ? "WhatsApp integrated" : "WhatsApp integrado",
+        description:
+          locale === "en"
+            ? "Buttons, flows, and messages designed to move the client into a conversation."
+            : "Botones, flujos y mensajes pensados para llevar al cliente directo a la conversacion.",
+        icon: MessageCircle,
+      },
+      {
+        key: "premium",
+        title: locale === "en" ? "Premium design" : "Diseno premium",
+        description:
+          locale === "en"
+            ? "Dark, elegant aesthetics with clear hierarchy and refined surfaces."
+            : "Estetica oscura y elegante con jerarquia clara y superficies refinadas.",
+        icon: Sparkles,
+      },
+      {
+        key: "fees",
+        title: locale === "en" ? "No commissions" : "Sin comisiones",
+        description:
+          locale === "en"
+            ? "Your business does not depend on a public platform charging per order or booking."
+            : "Tu negocio no depende de una plataforma publica que cobre por cada pedido o reserva.",
+        icon: ShieldCheck,
+      },
+      {
+        key: "tailored",
+        title: locale === "en" ? "Tailored to your business" : "Adaptado a tu negocio",
+        description:
+          locale === "en"
+            ? "Each vertical gets its own information structure and CTA logic."
+            : "Cada rubro recibe una estructura de informacion y una logica de CTA coherente.",
+        icon: BriefcaseBusiness,
+      },
+      {
+        key: "speed",
+        title: locale === "en" ? "Fast hosting" : "Hosting rapido",
+        description:
+          locale === "en"
+            ? "A lightweight delivery base focused on quick load times and a premium feel."
+            : "Una base ligera enfocada en tiempos de carga rapidos y sensacion premium.",
+        icon: Globe2,
+      },
+      {
+        key: "mobile",
+        title: locale === "en" ? "Mobile optimized" : "Optimizado para movil",
+        description:
+          locale === "en"
+            ? "Mobile-first layouts, visible CTA, and intentional flows on smaller screens."
+            : "Diseno mobile-first, CTA visible y flujos intencionales en pantallas pequenas.",
+        icon: MonitorSmartphone,
+      },
+    ],
+    [locale],
+  );
 
-  const copy = useMemo(
-    () =>
-      isEnglish
-        ? {
-            heroTag: "More WhatsApp orders",
-            heroTitle: "Turn visits into WhatsApp orders, every day",
-            heroDesc:
-              "FastPage helps you sell more with landing, store, and digital menu in one system.",
-            heroProof: "+120 businesses already activated their orders and sales flow in FastPage.",
-            heroChecklist: [
-              "Live in minutes",
-              "No commissions per sale",
-              "Pay and activate now",
-            ],
-            ctaPrimary: "Create your digital business today",
-            ctaPrimaryHelper: "Plans from 29 soles/month • No commissions",
-            ctaDemo: "Watch live demo",
-            ctaPlans: "View plans",
-            urgency: "This week is key to sell more: activate your version today.",
-            chips: ["Ready in minutes", "WhatsApp orders", "No commissions"],
-            panelTag: "FastPage System",
-            panelDesc: "Pick a demo, adapt it to your business, and start selling today.",
-            panelCta: "Open demo and sell",
-            systemTitle: "FastPage System",
-            systemDesc: "Attract traffic, convert on WhatsApp, and measure sales to scale.",
-            allInOneTitle: "All in one",
-            allInOneDesc:
-              "Everything you need to attract customers, convert orders, and increase sales.",
-            moduleCta: "View module",
-            verticalTitle: "Choose your business type",
-            verticalCards: [
-              "Get more direct WhatsApp orders and spend less time on calls.",
-              "Turn traffic into purchases with catalog and chat checkout.",
-              "Capture clients ready to schedule and close by WhatsApp.",
-            ],
-            demosTitle: "Demos already selling by business type",
-            demosDesc: "Explore ready-to-convert cases to capture clients and close WhatsApp orders.",
-            pricingTitle: "Plans to sell and scale 💸",
-            starterSubtitle: "Direct monthly payment (no trial) ⚡",
-            starterAnnualDiscount: "Up to 10% off annual plan",
-            starterCta: "Start now",
-            businessBadge: "⭐ Most chosen",
-            businessSubtitle: "Create your digital business today with support and key sales tools.",
-            businessAnnualDiscount: "Up to 20% off annual plan",
-            businessNote: "Immediate activation after payment.",
-            businessCta: "Activate Business",
-            proSubtitle: "Direct monthly payment to scale seriously (no trial) 🚀",
-            proAnnualDiscount: "Up to 30% off annual plan",
-            proCta: "Buy now",
-            domainLine: "Connect your domain from Business and keep a professional brand.",
-            riskFree: "No commissions per order. Cancel anytime.",
-            resultsTitle: "Real business outcomes",
-            testimonialsLeft: "Scroll testimonials left",
-            testimonialsRight: "Scroll testimonials right",
-            testimonialBadges: ["WhatsApp", "Orders", "Bookings", "Checkout", "Metrics", "Conversion"],
-            faqTitle: "Frequently asked questions",
-            finalTitle: "Start today and get more WhatsApp orders",
-            finalDesc: "Activate your demo, personalize your business, and publish in minutes.",
-            liveActivity: "LIVE ACTIVITY",
-            from: "from",
-          }
-        : {
-            heroTag: "MAS PEDIDOS POR WHATSAPP",
-            heroTitle: "Convierte visitas en pedidos por WhatsApp en minutos",
-            heroDesc:
-              "Landing, tienda y carta digital conectadas a WhatsApp en un solo sistema.",
-            heroProof: "Más de 120 negocios ya reciben pedidos por WhatsApp con FastPage.",
-            heroChecklist: [
-              "Activo en minutos",
-              "Sin comisiones por venta",
-              "Pago y activacion inmediata",
-            ],
-            ctaPrimary: HERO_PRIMARY_CTA_LABEL_ES,
-            ctaPrimaryHelper: "Planes desde 29 soles/mes • Sin comisiones",
-            ctaDemo: "Ver demo en vivo",
-            ctaPlans: "Ver planes",
-            urgency: "Actívalo hoy y empieza a recibir pedidos.",
-            chips: ["Listo en minutos", "Pedidos por WhatsApp", "Sin comisiones"],
-            panelTag: "Sistema FastPage",
-            panelDesc: "Elige una demo, adapta tu negocio y empieza a vender hoy.",
-            panelCta: "Abrir demo y vender",
-            systemTitle: "Sistema FastPage",
-            systemDesc: "Atraes visitas, conviertes en WhatsApp y mides ventas para escalar.",
-            allInOneTitle: "Todo en uno",
-            allInOneDesc:
-              "Todo lo que necesitas para atraer clientes, convertir pedidos y aumentar ventas.",
-            moduleCta: "Ver modulo",
-            verticalTitle: "Elige tu rubro",
-            verticalCards: [
-              "Mas pedidos directos por WhatsApp y menos tiempo al telefono.",
-              "Convierte trafico en compras con catalogo y cierre en chat.",
-              "Capta clientes listos para agendar y cerrar por WhatsApp.",
-            ],
-            demosTitle: "Demos que ya venden por rubro",
-            demosDesc: "Explora casos listos para captar clientes y cerrar pedidos por WhatsApp.",
-            pricingTitle: "Planes para vender y escalar 💸",
-            starterSubtitle: "Pago directo mensual (sin trial) ⚡",
-            starterAnnualDiscount: "Hasta 10% de descuento en plan anual",
-            starterCta: "Empezar ahora",
-            businessBadge: "⭐ Mas elegido",
-            businessSubtitle: "Crea tu negocio digital hoy con soporte y herramientas clave para vender.",
-            businessAnnualDiscount: "Hasta 20% de descuento en plan anual",
-            businessNote: "Activacion inmediata tras pago.",
-            businessCta: "Activar Business",
-            proSubtitle: "Pago directo mensual para escalar en serio (sin trial) 🚀",
-            proAnnualDiscount: "Hasta 30% de descuento en plan anual",
-            proCta: "Comprar ahora",
-            domainLine: "Conecta tu dominio desde Plan Business y manten una marca profesional.",
-            riskFree: "Sin comisiones por pedido. Cancela cuando quieras.",
-            resultsTitle: "Resultados de negocios reales",
-            testimonialsLeft: "Desplazar testimonios a la izquierda",
-            testimonialsRight: "Desplazar testimonios a la derecha",
-            testimonialBadges: ["WhatsApp", "Pedidos", "Reservas", "Checkout", "Metricas", "Conversion"],
-            faqTitle: "Preguntas frecuentes",
-            finalTitle: "Empieza hoy y recibe mas pedidos por WhatsApp",
-            finalDesc: "Activa tu demo, personaliza tu negocio y publica en minutos.",
-            liveActivity: "ACTIVIDAD EN VIVO",
-            from: "de",
-          },
-    [isEnglish],
+  const pricingPlans = useMemo<PricingPlan[]>(
+    () => [
+      {
+        key: "basic",
+        name: locale === "en" ? "Basic" : "Basico",
+        label: locale === "en" ? "One-time payment" : "Pago unico",
+        summary:
+          locale === "en"
+            ? "Ideal for a clean commercial homepage with WhatsApp CTA and fast launch."
+            : "Ideal para una homepage comercial clara, con CTA a WhatsApp y salida rapida.",
+        features:
+          locale === "en"
+            ? [
+                "Premium hero + essential sections",
+                "Responsive delivery",
+                "WhatsApp button and lead capture focus",
+                "Fast content setup",
+              ]
+            : [
+                "Hero premium + secciones esenciales",
+                "Entrega responsive",
+                "WhatsApp y foco en captacion",
+                "Carga rapida de contenido",
+              ],
+        accent:
+          "border-white/12 bg-[linear-gradient(180deg,rgba(17,17,17,0.92),rgba(10,10,10,0.9))]",
+      },
+      {
+        key: "pro",
+        name: locale === "en" ? "Professional" : "Profesional",
+        label: locale === "en" ? "Recommended" : "Recomendado",
+        summary:
+          locale === "en"
+            ? "For businesses that need better conversion, better sales narrative, and a more robust proposal."
+            : "Para negocios que necesitan mejor conversion, mejor narrativa comercial y una propuesta mas robusta.",
+        features:
+          locale === "en"
+            ? [
+                "Sector-specific structure",
+                "Demo adaptation for your business",
+                "WhatsApp flows for bookings, orders, or leads",
+                "Premium visual polish and launch support",
+              ]
+            : [
+                "Estructura por rubro",
+                "Adaptacion de demo a tu negocio",
+                "Flujos a WhatsApp para reservas, pedidos o leads",
+                "Pulido visual premium y soporte de lanzamiento",
+              ],
+        accent:
+          "border-[#c9a227]/45 bg-[linear-gradient(180deg,rgba(201,162,39,0.16),rgba(9,9,9,0.94))]",
+      },
+      {
+        key: "premium",
+        name: "Premium",
+        label: locale === "en" ? "Custom scope" : "Alcance a medida",
+        summary:
+          locale === "en"
+            ? "For businesses that want a more complete system with custom flow decisions and stronger positioning."
+            : "Para negocios que quieren un sistema mas completo, con decisiones de flujo a medida y posicionamiento mas fuerte.",
+        features:
+          locale === "en"
+            ? [
+                "Custom architecture and sections",
+                "Advanced content direction",
+                "Broader scope for complex businesses",
+                "Launch aligned to your commercial objective",
+              ]
+            : [
+                "Arquitectura y secciones a medida",
+                "Direccion de contenido avanzada",
+                "Mayor alcance para negocios mas complejos",
+                "Salida alineada a tu objetivo comercial",
+              ],
+        accent:
+          "border-emerald-200/20 bg-[linear-gradient(180deg,rgba(39,69,60,0.34),rgba(8,8,8,0.92))]",
+      },
+    ],
+    [locale],
   );
-  const moduleCards = isEnglish ? MODULES_EN : MODULES_ES;
-  const flowSteps = isEnglish ? FLOW_STEPS_EN : FLOW_STEPS_ES;
-  const heroMetrics = isEnglish ? HERO_METRICS_EN : HERO_METRICS_ES;
-  const demoTabConfig = isEnglish ? DEMO_TAB_CONFIG_EN : DEMO_TAB_CONFIG_ES;
-  const faqs = isEnglish ? FAQS_EN : FAQS_ES;
-  const verticalCopy = useMemo(() => getVerticalCopy(vertical, language), [language, vertical]);
-  const heroDemoHref = useMemo(() => verticalToDemoHref(vertical), [vertical]);
-  const heroSignupHref = useMemo(
-    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS`,
-    [vertical],
-  );
-  const starterSignupHref = useMemo(
-    () => `${verticalToSignupHref(vertical)}&plan=FREE`,
-    [vertical],
-  );
-  const businessSignupHref = useMemo(
-    () => `${verticalToSignupHref(vertical)}&plan=BUSINESS`,
-    [vertical],
-  );
-  const proSignupHref = useMemo(
-    () => `${verticalToSignupHref(vertical)}&plan=PRO`,
-    [vertical],
-  );
-  const safeActivityIndex = liveActivityFeed.length ? activityIndex % liveActivityFeed.length : 0;
-  const activeLiveActivity = liveActivityFeed[safeActivityIndex] || liveActivityFeed[0];
-  const activityTimeLabel = activeLiveActivity
-    ? isEnglish
-      ? `${activeLiveActivity.minutesAgo} min ago`
-      : `Hace ${activeLiveActivity.minutesAgo} min`
-    : "";
 
   return (
-    <main className="relative overflow-x-hidden pb-24 md:pb-0">
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.16),transparent_56%)]" />
-      <section className="relative z-30 mx-auto w-full max-w-7xl px-3 pt-20 md:hidden">
-        <PwaInstallTopBanner />
-      </section>
+    <main className="relative overflow-x-hidden bg-[#0B0B0B] text-white">
+      <div aria-hidden className="pointer-events-none absolute inset-0">
+        <div className="fp-demo-orb left-[-8rem] top-[-4rem] h-72 w-72 bg-[#c9a227]" />
+        <div className="fp-demo-orb right-[-5rem] top-[18rem] h-80 w-80 bg-[#25D366]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(201,162,39,0.16),transparent_38%),radial-gradient(circle_at_right,rgba(37,211,102,0.1),transparent_32%),linear-gradient(180deg,#0B0B0B_0%,#0B0B0B_38%,#101010_100%)]" />
+        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.45)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.45)_1px,transparent_1px)] [background-size:42px_42px]" />
+      </div>
 
-      <section className="relative z-10 mx-auto min-h-[calc(100svh-84px)] w-full max-w-7xl overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(120deg,rgba(16,16,16,0.95),rgba(10,10,10,0.82)_45%,rgba(17,17,17,0.96))] px-4 pb-12 pt-24 sm:px-6 md:pt-28 lg:px-8 lg:pt-32">
-        <div aria-hidden className="pointer-events-none absolute inset-0">
-          <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl" />
-          <div className="absolute right-[-4rem] top-1/3 h-64 w-64 rounded-full bg-cyan-300/10 blur-3xl" />
-          <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.35)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.35)_1px,transparent_1px)] [background-size:28px_28px]" />
-        </div>
-
-        <div className="relative grid gap-8 lg:grid-cols-[1.06fr_0.94fr] lg:items-center">
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <p className="inline-flex rounded-full border border-amber-300/35 bg-amber-300/10 px-4 py-1 text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
-              {copy.heroTag}
+      <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-16 pt-28 sm:px-6 lg:px-8 lg:pb-24 lg:pt-36">
+        <div className="grid gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#c9a227]/30 bg-white/[0.03] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.26em] text-[#c9a227] sm:text-[11px]">
+              <span className="h-2 w-2 rounded-full bg-[#c9a227]" />
+              {copy.hero.eyebrow}
+            </div>
+            <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-400">
+              {copy.hero.badge}
             </p>
-            <h1 className="text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl">
-              {copy.heroTitle}
+            <h1 className="mt-4 max-w-4xl text-5xl font-semibold leading-[0.92] tracking-[-0.06em] text-white sm:text-6xl lg:text-7xl">
+              {copy.hero.title}
             </h1>
-            <p className="max-w-2xl text-base text-zinc-300 md:text-lg">{copy.heroDesc}</p>
-            <div className="max-w-2xl space-y-0.5 text-left text-[11px] font-medium leading-[1.3] text-zinc-300 sm:text-xs">
-              {copy.heroChecklist.map((item) => (
-                <p key={item}>✅ {item}</p>
-              ))}
-            </div>
-            <p className="max-w-2xl text-xs font-semibold text-amber-200/90">{copy.heroProof}</p>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-zinc-300 sm:text-lg">
+              {copy.hero.description}
+            </p>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
+              {copy.hero.note}
+            </p>
 
-            <div className="grid max-w-2xl grid-cols-3 gap-2 sm:gap-3">
-              {heroMetrics.map((metric) => {
-                const Icon = metric.icon;
-                return (
-                  <div
-                    key={metric.label}
-                    className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-                  >
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-amber-300/35 bg-amber-300/10">
-                      <Icon className="h-3.5 w-3.5 text-amber-300" />
-                    </span>
-                    <p className="mt-2 text-sm font-black text-white sm:text-base">{metric.value}</p>
-                    <p className="text-[11px] text-zinc-300 sm:text-xs">{metric.label}</p>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div>
-              <LandingVerticalSelector
-                value={vertical}
-                onChange={(nextVertical) => {
-                  setVertical(nextVertical);
-                  persistVerticalChoice(nextVertical);
-                  void trackGrowthEvent("view_demo", {
-                    vertical: nextVertical,
-                    slug: "landing_selector",
-                  });
-                }}
-              />
-            </div>
-
-            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <Link
-                href={heroSignupHref}
-                prefetch={false}
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
                 onClick={() =>
-                  void trackGrowthEvent("click_cta_signup", {
-                    vertical,
+                  void trackGrowthEvent("click_whatsapp", {
+                    vertical: "services",
+                    slug: "hero_primary",
                     location: "hero_primary",
                   })
                 }
-                className={`${DELUXE_BUTTON_BASE} inline-flex w-full justify-center rounded-full px-7 py-3 uppercase tracking-[0.12em] sm:w-auto`}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#25D366]/60 bg-[#25D366] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#0B0B0B] transition hover:bg-[#1fba59] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]/60"
               >
-                {copy.ctaPrimary}
-              </Link>
-              <Link
-                href={heroDemoHref}
-                prefetch={false}
-                onClick={() =>
-                  void trackGrowthEvent("click_demo_open", {
-                    vertical,
-                    slug: "hub",
-                    location: "hero_secondary",
-                  })
-                }
-                className={`${SOFT_BUTTON_BASE} inline-flex w-full justify-center rounded-full px-6 py-3 uppercase tracking-[0.12em] sm:w-auto`}
-              >
-                <PlayCircle className="h-4 w-4" /> {copy.ctaDemo}
-              </Link>
-              <a
-                href="#pricing"
-                onClick={() =>
-                  void trackGrowthEvent("click_demo_open", {
-                    vertical,
-                    slug: "pricing",
-                    location: "hero_pricing_link",
-                  })
-                }
-                className="text-sm font-semibold text-amber-300 underline-offset-4 transition hover:text-amber-200 hover:underline"
-              >
-                {copy.ctaPlans}
+                {copy.hero.primaryCta}
+                <ArrowRight className="h-4 w-4" />
               </a>
+              <a
+                href="#demos"
+                onClick={() =>
+                  void trackGrowthEvent("view_demo", {
+                    vertical: "services",
+                    slug: "hero_demos_anchor",
+                  })
+                }
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-[#c9a227]/45 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+              >
+                {copy.hero.secondaryCta}
+              </a>
+              <Link
+                href="/auth?tab=login"
+                prefetch={false}
+                className="inline-flex min-h-12 items-center justify-center rounded-full px-2 py-3 text-sm font-semibold text-zinc-300 transition hover:text-white"
+              >
+                {copy.hero.loginCta}
+              </Link>
             </div>
-            <p className="max-w-2xl text-center text-[11px] text-zinc-400/80 sm:text-xs">
-              {copy.ctaPrimaryHelper}
-            </p>
-            <p className="text-xs font-semibold text-amber-200/85">
-              {copy.urgency}
-            </p>
 
-            <div className="flex flex-wrap gap-2">
-              {copy.chips.map((item) => (
-                <span
-                  key={item}
-                  className="inline-flex rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-zinc-200"
+            <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              {copy.hero.benefits.map((benefit) => (
+                <div
+                  key={benefit}
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-zinc-200"
                 >
-                  {item}
-                </span>
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#c9a227]/35 bg-[#c9a227]/10 text-[#c9a227]">
+                    <Check className="h-4 w-4" />
+                  </span>
+                  <span>{benefit}</span>
+                </div>
               ))}
+            </div>
+
+            <div className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.02] p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                {copy.hero.industriesLine}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {copy.hero.highlights.map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm leading-6 text-zinc-300">
+                    <span className="mt-1 h-2.5 w-2.5 rounded-full bg-[#c9a227]" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/45 p-5 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div
-              aria-hidden
-              className="absolute -right-6 -top-6 h-28 w-28 rounded-full border border-amber-300/20 bg-amber-300/10 blur-xl"
-            />
-            <div className="relative mb-4 hidden md:block">
-              {enableHero3D ? (
-                <HeroOrbScene />
-              ) : (
-                <div className="relative flex h-[220px] items-end overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_28%_18%,rgba(251,191,36,0.14),transparent_48%),radial-gradient(circle_at_78%_72%,rgba(34,211,238,0.1),transparent_55%),linear-gradient(165deg,rgba(8,8,8,0.96),rgba(18,18,18,0.88))] p-4">
-                  <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(to_right,rgba(255,255,255,0.3)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.3)_1px,transparent_1px)] [background-size:24px_24px]" />
-                  <p className="relative text-xs font-bold uppercase tracking-[0.16em] text-amber-200/90">
-                    {copy.panelTag}
+          <div className="fp-demo-panel relative overflow-hidden rounded-[2rem] p-4 sm:p-5">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(200,164,107,0.18),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(60,109,90,0.16),transparent_36%)]" />
+            <div className="relative">
+              <div className="mb-4 flex items-center justify-between gap-4 rounded-[1.6rem] border border-white/10 bg-black/35 px-4 py-3">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#c9a227]">
+                    {copy.hero.showcaseLabel}
                   </p>
+                  <p className="mt-1 text-sm text-zinc-300">{copy.hero.showcaseTitle}</p>
                 </div>
-              )}
-            </div>
-            <div className="relative mb-4 rounded-2xl border border-white/10 bg-zinc-950/70 p-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-300">{copy.liveActivity}</p>
-                <span className="rounded-full border border-emerald-300/40 bg-emerald-300/10 px-2 py-0.5 text-[10px] font-bold text-emerald-200">
-                  {activityTimeLabel || (isEnglish ? "now" : "ahora")}
-                </span>
               </div>
-              <p className="mt-1 text-sm font-semibold text-white">
-                {activeLiveActivity ? `${activeLiveActivity.name} ${copy.from} ${activeLiveActivity.city}` : "FastPage"}
-              </p>
-              <p className="mt-1 text-xs text-zinc-300">
-                {activeLiveActivity?.action ?? copy.panelDesc}
-              </p>
-            </div>
 
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">{copy.panelTag}</p>
-            <h2 className="mt-3 text-3xl font-black text-white">{verticalCopy.headline}</h2>
-            <p className="mt-3 text-sm text-zinc-300">
-              {copy.panelDesc}
-            </p>
-            <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2">
-              {flowSteps.map((step) => (
-                <div key={step.title} className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-300">{step.title}</p>
-                  <p className="mt-1 text-sm font-semibold text-white">{step.description}</p>
+              <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
+                <article className="overflow-hidden rounded-[1.8rem] border border-white/10 bg-[#090909] shadow-[0_28px_80px_-42px_rgba(0,0,0,0.92)]">
+                  <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                      {copy.hero.mockupDesktop}
+                    </p>
+                    <span className="rounded-full border border-[#c9a227]/35 bg-[#c9a227]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#c9a227]">
+                      FastPagePro
+                    </span>
+                  </div>
+                  <div className="relative h-[320px] w-full sm:h-[420px]">
+                    <DemoImage
+                      src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=1600&auto=format&fit=crop"
+                      alt="FastPagePro main showcase"
+                      fallbackLabel="FastPagePro"
+                      fill
+                      unoptimized
+                      priority
+                      sizes="(max-width: 1024px) 100vw, 42vw"
+                      className="object-cover"
+                    />
+                  </div>
+                </article>
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                  <article className="fp-demo-hover-card overflow-hidden rounded-[1.8rem] border border-white/10 bg-black/45 p-3">
+                    <div className="relative h-44 w-full overflow-hidden rounded-[1.35rem] border border-white/10">
+                      <DemoImage
+                        src="https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=1200&auto=format&fit=crop"
+                        alt="Hotel booking mockup"
+                        fallbackLabel="Bookings"
+                        fill
+                        unoptimized
+                        sizes="(max-width: 1024px) 50vw, 22vw"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                          {copy.hero.mockupPhoneOne}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-200">
+                          {locale === "en" ? "Hotel and booking flows" : "Flujos para hoteleria y reservas"}
+                        </p>
+                      </div>
+                      <Hotel className="h-5 w-5 text-[#c9a227]" />
+                    </div>
+                  </article>
+
+                  <article className="fp-demo-hover-card overflow-hidden rounded-[1.8rem] border border-white/10 bg-black/45 p-3">
+                    <div className="relative h-44 w-full overflow-hidden rounded-[1.35rem] border border-white/10">
+                      <DemoImage
+                        src="https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?q=80&w=1200&auto=format&fit=crop"
+                        alt="WhatsApp commerce mockup"
+                        fallbackLabel="WhatsApp"
+                        fill
+                        unoptimized
+                        sizes="(max-width: 1024px) 50vw, 22vw"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                          {copy.hero.mockupPhoneTwo}
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-200">
+                          {locale === "en" ? "Orders, leads, and direct contact" : "Pedidos, leads y contacto directo"}
+                        </p>
+                      </div>
+                      <MessageCircle className="h-5 w-5 text-[#25D366]" />
+                    </div>
+                  </article>
                 </div>
-              ))}
+              </div>
+
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-400">
+                {copy.hero.showcaseDescription}
+              </p>
             </div>
-            <Link
-              href={heroDemoHref}
-              prefetch={false}
-              onClick={() =>
-                void trackGrowthEvent("click_demo_open", {
-                  vertical,
-                  slug: "hero_panel",
-                })
-              }
-              className={`${DELUXE_BUTTON_BASE} mt-5 w-full rounded-xl px-4 py-2.5 text-base`}
-            >
-              {copy.panelCta}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
           </div>
         </div>
       </section>
 
-      <div ref={secondarySectionsTriggerRef} aria-hidden className="h-px w-full" />
+      <section id="demos" className="relative z-10 mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+            {copy.sections.sectorsEyebrow}
+          </p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+            {copy.sections.sectorsTitle}
+          </h2>
+          <p className="mt-4 text-base leading-7 text-zinc-300">
+            {copy.sections.sectorsDescription}
+          </p>
+        </div>
 
-      {mountSecondarySections ? (
-        <LandingHomeSecondarySectionsDynamic
-          copy={copy}
-          flowSteps={flowSteps}
-          moduleCards={moduleCards}
-          demoTabConfig={demoTabConfig}
-          pricingFeatures={pricingFeatures}
-          faqs={faqs}
-          testimonials={testimonials}
-          heroSignupHref={heroSignupHref}
-          heroDemoHref={heroDemoHref}
-          starterSignupHref={starterSignupHref}
-          businessSignupHref={businessSignupHref}
-          proSignupHref={proSignupHref}
-          vertical={vertical}
-          activityTimeLabel={activityTimeLabel}
-          activeLiveActivity={activeLiveActivity}
-        />
-      ) : null}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {sectorCards.map((sector) => {
+            const Icon = sector.icon;
+            return (
+              <article
+                key={sector.key}
+                className="fp-demo-hover-card overflow-hidden rounded-[1.9rem] border border-white/10 bg-white/[0.03]"
+              >
+                <div className="relative h-64 w-full">
+                  <DemoImage
+                    src={sector.image}
+                    alt={sector.title}
+                    fallbackLabel={sector.title}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                  <div className="absolute left-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-black/45 text-[#f1ddb5] backdrop-blur-md">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                </div>
+                <div className="space-y-4 p-5">
+                  <div>
+                    <h3 className="text-2xl font-semibold tracking-[-0.03em] text-white">
+                      {sector.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-zinc-300">{sector.description}</p>
+                  </div>
+                  <Link
+                    href={sector.href}
+                    prefetch={false}
+                    onClick={() =>
+                      void trackGrowthEvent("click_demo_open", {
+                        vertical:
+                          sector.key === "stores"
+                            ? "ecommerce"
+                            : sector.key === "restaurants"
+                              ? "restaurant"
+                              : "services",
+                        slug: sector.key,
+                        location: "sector_card",
+                      })
+                    }
+                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-black/45 px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-[#25D366]/40 hover:bg-[#25D366]/10"
+                  >
+                    {copy.buttons.viewDemo}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <p className="mt-5 text-sm text-zinc-400">{copy.sections.sectorsFootnote}</p>
+      </section>
+      <section className="relative z-10 mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-end">
+          <div className="max-w-xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+              {copy.sections.stepsEyebrow}
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+              {copy.sections.stepsTitle}
+            </h2>
+            <p className="mt-4 text-base leading-7 text-zinc-300">
+              {copy.sections.stepsDescription}
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {processSteps.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <article
+                  key={step.key}
+                  className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(12,12,12,0.9))] p-5"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#c9a227]/35 bg-[#c9a227]/10 text-[#c9a227]">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-500">
+                      0{index + 1}
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-white">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-zinc-300">{step.description}</p>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+            {copy.sections.benefitsEyebrow}
+          </p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+            {copy.sections.benefitsTitle}
+          </h2>
+          <p className="mt-4 text-base leading-7 text-zinc-300">
+            {copy.sections.benefitsDescription}
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {benefits.map((benefit) => {
+            const Icon = benefit.icon;
+            return (
+              <article
+                key={benefit.key}
+                className="rounded-[1.7rem] border border-white/10 bg-white/[0.03] p-5"
+              >
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#c9a227]/35 bg-[#c9a227]/10 text-[#c9a227]">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-white">
+                  {benefit.title}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">{benefit.description}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="precios" className="relative z-10 mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+            {copy.sections.pricingEyebrow}
+          </p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+            {copy.sections.pricingTitle}
+          </h2>
+          <p className="mt-4 text-base leading-7 text-zinc-300">
+            {copy.sections.pricingDescription}
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          {pricingPlans.map((plan) => (
+            <article
+              key={plan.key}
+              className={`flex h-full flex-col rounded-[2rem] border p-6 ${plan.accent}`}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-400">
+                    {plan.label}
+                  </p>
+                  <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white">
+                    {plan.name}
+                  </h3>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-300">
+                  FastPagePro
+                </span>
+              </div>
+              <p className="mt-5 text-sm leading-6 text-zinc-300">{plan.summary}</p>
+              <ul className="mt-6 space-y-3 text-sm leading-6 text-zinc-200">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <Check className="mt-1 h-4 w-4 shrink-0 text-[#25D366]" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() =>
+                  void trackGrowthEvent("click_whatsapp", {
+                    vertical: "services",
+                    slug: plan.key,
+                    location: "pricing_card",
+                  })
+                }
+                className="mt-8 inline-flex min-h-12 w-full items-center justify-center rounded-full border border-[#25D366]/45 bg-[#25D366]/12 px-4 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-[#25D366]/60 hover:bg-[#25D366]/18"
+              >
+                {copy.buttons.requestQuote}
+              </a>
+            </article>
+          ))}
+        </div>
+
+        <p className="mt-5 rounded-[1.6rem] border border-white/10 bg-white/[0.03] px-5 py-4 text-sm leading-6 text-zinc-300">
+          {copy.sections.pricingNote}
+        </p>
+      </section>
+
+      <section id="contacto" className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-12 pt-14 sm:px-6 lg:px-8">
+        <div className="overflow-hidden rounded-[2.2rem] border border-[#c9a227]/28 bg-[linear-gradient(135deg,rgba(201,162,39,0.16),rgba(11,11,11,0.94)_42%,rgba(37,211,102,0.22))] p-8 sm:p-10">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#c9a227]">
+              {copy.sections.finalEyebrow}
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+              {copy.sections.finalTitle}
+            </h2>
+            <p className="mt-5 text-base leading-7 text-zinc-200">
+              {copy.sections.finalDescription}
+            </p>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() =>
+                void trackGrowthEvent("click_whatsapp", {
+                  vertical: "services",
+                  slug: "final_cta",
+                  location: "final_cta",
+                })
+              }
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[#25D366]/60 bg-[#25D366] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-[#0B0B0B] transition hover:bg-[#1fba59]"
+            >
+              {copy.sections.finalButton}
+              <ArrowRight className="h-4 w-4" />
+            </a>
+            <a
+              href="#demos"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-6 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:border-white/25 hover:bg-white/[0.08]"
+            >
+              {copy.hero.secondaryCta}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div className="fixed inset-x-0 bottom-3 z-40 px-3 md:hidden">
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() =>
+            void trackGrowthEvent("click_whatsapp", {
+              vertical: "services",
+              slug: "mobile_sticky",
+              location: "mobile_sticky",
+            })
+          }
+          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[#25D366]/55 bg-[#25D366] px-4 py-3 text-sm font-semibold text-[#0B0B0B] shadow-[0_20px_40px_-24px_rgba(0,0,0,0.92)] backdrop-blur-md transition hover:bg-[#1fba59]"
+        >
+          <MessageCircle className="h-4 w-4" />
+          {copy.hero.primaryCta}
+        </a>
+      </div>
+
+      <Footer />
     </main>
   );
 }
-
-
-

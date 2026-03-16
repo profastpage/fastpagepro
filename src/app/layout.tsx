@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description: "Creador y clonador de landing pages",
   manifest: "/manifest.webmanifest",
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#070707" },
-    { color: "#f5d287" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0B0B" },
+    { color: "#0B0B0B" },
   ],
   appleWebApp: {
     capable: true,

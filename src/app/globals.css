@@ -49,21 +49,26 @@
 }
 
 :root {
-  /* Cosmic Dark Theme (Default) */
-  --background: #050505;
-  --foreground: #ffffff;
-  --primary: #ffffff;
+  --brand-black: #0b0b0b;
+  --brand-green: #25d366;
+  --brand-gold: #c9a227;
+  --brand-white: #ffffff;
+
+  /* FastPagePro brand theme */
+  --background: var(--brand-black);
+  --foreground: var(--brand-white);
+  --primary: var(--brand-white);
   --primary-foreground: #000000;
   --muted: rgba(255, 255, 255, 0.8);
   --muted-foreground: rgba(255, 255, 255, 0.8);
   --border: rgba(255, 255, 255, 0.1);
 
-  /* Gold Theme Colors - Dark Mode (Bright for glow) */
-  --gold-text: #ffd700;
-  --gold-gradient-start: #ffd700;
-  --gold-gradient-mid: #fdb931;
-  --gold-gradient-end: #c08200;
-  --gold-shadow: rgba(255, 215, 0, 0.6);
+  /* Premium gold accent */
+  --gold-text: var(--brand-gold);
+  --gold-gradient-start: #dcc15f;
+  --gold-gradient-mid: var(--brand-gold);
+  --gold-gradient-end: #9f7f1f;
+  --gold-shadow: rgba(201, 162, 39, 0.42);
 }
 
 /* Deluxe & Gold Theme Utilities */
@@ -71,7 +76,7 @@
   color: var(--gold-text);
   text-shadow:
     0 0 10px var(--gold-shadow),
-    0 0 20px rgba(255, 215, 0, 0.1);
+    0 0 20px rgba(201, 162, 39, 0.1);
 }
 
 .text-gold-gradient {
@@ -104,35 +109,35 @@
 details[open] summary .text-gold-iridescent {
   background: linear-gradient(
     90deg,
-    #ffd700,
-    #fdb931,
+    #c9a227,
+    #dcc15f,
     #ffffff,
-    #fdb931,
-    #ffd700
+    #dcc15f,
+    #c9a227
   ) !important;
   background-size: 200% auto !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   color: transparent !important;
   animation: iridescent-gold 3s linear infinite !important;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 10px rgba(201, 162, 39, 0.28);
 }
 
 .text-tornasolado {
   background: linear-gradient(
     90deg,
-    #ffd700,
-    #fdb931,
+    #c9a227,
+    #dcc15f,
     #ffffff,
-    #fdb931,
-    #ffd700
+    #dcc15f,
+    #c9a227
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   animation: iridescent-gold 3s linear infinite;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 10px rgba(201, 162, 39, 0.28);
 }
 
 /* General Button Styles */
@@ -145,21 +150,21 @@ details[open] summary .text-gold-iridescent {
   border-radius: 9999px;
   background: linear-gradient(
     135deg,
-    #bf953f,
-    #fcf6ba,
-    #b38728,
-    #fbf5b7,
-    #aa771c
+    #b8921e,
+    #ead98d,
+    #c9a227,
+    #f2e6af,
+    #a57f16
   );
   background-size: 200% 200%;
   color: #000;
-  border: 1px solid #aa771c;
+  border: 1px solid #a57f16;
   font-weight: bold;
   box-shadow:
     0 4px 6px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     inset 0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 0 15px rgba(255, 215, 0, 0.4);
+    0 0 15px rgba(201, 162, 39, 0.4);
   transition: all 0.3s ease;
   animation: shimmer 3s infinite linear;
 }
@@ -169,7 +174,7 @@ details[open] summary .text-gold-iridescent {
   box-shadow:
     0 8px 12px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    0 0 25px rgba(255, 215, 0, 0.6);
+    0 0 25px rgba(201, 162, 39, 0.6);
 }
 
 .btn-deluxe-outline {
@@ -177,15 +182,15 @@ details[open] summary .text-gold-iridescent {
   border-radius: 9999px;
   color: var(--gold-text);
   border: 1px solid var(--gold-text);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
-  text-shadow: 0 0 5px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 0 10px rgba(201, 162, 39, 0.1);
+  text-shadow: 0 0 5px rgba(201, 162, 39, 0.2);
   transition: all 0.3s ease;
 }
 
 .btn-deluxe-outline:hover {
-  background: rgba(255, 215, 0, 0.1);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+  background: rgba(201, 162, 39, 0.1);
+  box-shadow: 0 0 20px rgba(201, 162, 39, 0.2);
+  text-shadow: 0 0 8px rgba(201, 162, 39, 0.4);
 }
 
 @keyframes shimmer {
@@ -330,13 +335,13 @@ details[open] summary .text-gold-iridescent {
 .nav-link-glow:hover {
   background: linear-gradient(
     90deg,
-    #ffd700,
-    #fff7ad,
-    #fdb931,
+    #c9a227,
+    #dcc15f,
+    #c9a227,
     #ffffff,
-    #fdb931,
-    #fff7ad,
-    #ffd700
+    #c9a227,
+    #dcc15f,
+    #c9a227
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -344,9 +349,9 @@ details[open] summary .text-gold-iridescent {
   color: transparent !important;
   animation: iridescent-gold 3s linear infinite;
   text-shadow: 
-    0 0 10px rgba(255, 215, 0, 0.4),
-    0 0 20px rgba(255, 165, 0, 0.2);
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
+    0 0 10px rgba(201, 162, 39, 0.4),
+    0 0 20px rgba(201, 162, 39, 0.2);
+  filter: drop-shadow(0 0 8px rgba(201, 162, 39, 0.3));
 }
 
 .nav-link-glow::after {
@@ -368,9 +373,9 @@ details[open] summary .text-gold-iridescent {
 }
 
 @keyframes iridescent-nav {
-  0% { filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)); }
-  50% { filter: brightness(1.2) drop-shadow(0 0 12px rgba(255, 215, 0, 0.6)); }
-  100% { filter: brightness(1) drop-shadow(0 0 5px rgba(255, 215, 0, 0.4)); }
+  0% { filter: brightness(1) drop-shadow(0 0 5px rgba(201, 162, 39, 0.4)); }
+  50% { filter: brightness(1.2) drop-shadow(0 0 12px rgba(201, 162, 39, 0.6)); }
+  100% { filter: brightness(1) drop-shadow(0 0 5px rgba(201, 162, 39, 0.4)); }
 }
 
 /* Luxury cursor effect (desktop only) */
