@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Check, MessageCircle } from "lucide-react";
 import Footer from "@/components/Footer";
 import { buildWhatsappSendUrl } from "@/lib/whatsapp";
@@ -15,8 +16,30 @@ import {
   RESULT_ITEMS,
 } from "@/components/landing/landingData";
 
+const HERO_SLIDES = [
+  {
+    src: "/Hero/HERO-1.png",
+    alt: "Laptop con sistema web premium de reservas",
+    desktopPosition: "center center",
+    mobilePosition: "58% center",
+  },
+  {
+    src: "/Hero/HERO-2.jpg",
+    alt: "Flujo de reservas por WhatsApp en mobile y dashboard",
+    desktopPosition: "center center",
+    mobilePosition: "64% center",
+  },
+  {
+    src: "/Hero/HERO-3.jpg",
+    alt: "Sistema hotelero premium en laptop y mobile",
+    desktopPosition: "center center",
+    mobilePosition: "40% center",
+  },
+] as const;
+
 export default function ClientLanding() {
   const [activeProject, setActiveProject] = useState<PortfolioItem | null>(null);
+  const [heroIndex, setHeroIndex] = useState(0);
   const modalScreenshots = useMemo(() => activeProject?.screenshots ?? [], [activeProject]);
   const heroScreens = useMemo(() => {
     const screens = PORTFOLIO_ITEMS[0]?.screenshots ?? [];
@@ -57,18 +80,62 @@ export default function ClientLanding() {
   const handleOpen = (project: PortfolioItem) => setActiveProject(project);
   const handleClose = () => setActiveProject(null);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setHeroIndex((current) => (current + 1) % HERO_SLIDES.length);
+    }, 4000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   return (
     <main className="fp-landing-shell relative overflow-x-hidden bg-[#0b0b0c] text-white">
       <section className="hero-landing relative z-10 min-h-[92vh] w-full pt-[90px]">
         <div className="absolute inset-0 overflow-hidden">
-          <img
-            src="/Hero/HERO-1.png"
-            alt="FastPagePro hero"
-            className="absolute inset-0 h-full w-full object-cover object-center"
-            loading="eager"
-          />
+          {HERO_SLIDES.map((slide, index) => {
+            const isActive = index === heroIndex;
+
+            return (
+              <div
+                key={slide.src}
+                className={`absolute inset-0 transition-all duration-700 ease-out ${
+                  isActive ? "opacity-100" : "pointer-events-none opacity-0"
+                }`}
+                aria-hidden={!isActive}
+              >
+                <div className="absolute inset-0 md:hidden">
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    priority={index === 0}
+                    quality={92}
+                    sizes="100vw"
+                    className={`object-cover transition-transform duration-[4000ms] ease-linear ${
+                      isActive ? "scale-100" : "scale-[1.04]"
+                    }`}
+                    style={{ objectPosition: slide.mobilePosition }}
+                  />
+                </div>
+                <div className="absolute inset-0 hidden md:block">
+                  <Image
+                    src={slide.src}
+                    alt={slide.alt}
+                    fill
+                    priority={index === 0}
+                    quality={94}
+                    sizes="100vw"
+                    className={`object-cover transition-transform duration-[4000ms] ease-linear ${
+                      isActive ? "scale-100" : "scale-[1.03]"
+                    }`}
+                    style={{ objectPosition: slide.desktopPosition }}
+                  />
+                </div>
+              </div>
+            );
+          })}
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,6,7,0.94)_0%,rgba(6,6,7,0.78)_34%,rgba(6,6,7,0.3)_58%,rgba(6,6,7,0.12)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_44%,rgba(0,0,0,0.18),transparent_28%),linear-gradient(180deg,rgba(6,6,7,0.18)_0%,rgba(6,6,7,0.3)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,6,7,0.12)_0%,rgba(6,6,7,0.36)_100%)] md:bg-[radial-gradient(circle_at_20%_44%,rgba(0,0,0,0.18),transparent_28%),linear-gradient(180deg,rgba(6,6,7,0.18)_0%,rgba(6,6,7,0.3)_100%)]" />
         </div>
 
         <div className="fp-container relative z-10 flex min-h-[calc(92vh-90px)] items-center py-12 sm:py-16 lg:py-20">
@@ -117,6 +184,20 @@ export default function ClientLanding() {
               <span className="fp-inline-proof">Restaurantes</span>
               <span className="fp-inline-proof">Cafeterias</span>
               <span className="fp-inline-proof">Negocios con reservas y ventas por WhatsApp</span>
+            </div>
+
+            <div className="mt-8 flex items-center gap-2">
+              {HERO_SLIDES.map((slide, index) => (
+                <button
+                  key={slide.src}
+                  type="button"
+                  onClick={() => setHeroIndex(index)}
+                  aria-label={`Ver hero ${index + 1}`}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    index === heroIndex ? "w-10 bg-[#4ade80]" : "w-2.5 bg-white/35 hover:bg-white/55"
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
