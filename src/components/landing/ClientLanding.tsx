@@ -3,7 +3,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Check, MessageCircle } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Coffee,
+  Hotel,
+  MessageCircle,
+  ShoppingBag,
+  Stethoscope,
+  UtensilsCrossed,
+} from "lucide-react";
 import Footer from "@/components/Footer";
 import { buildWhatsappSendUrl } from "@/lib/whatsapp";
 import {
@@ -35,6 +44,14 @@ const HERO_SLIDES = [
     desktopPosition: "center center",
     mobilePosition: "40% center",
   },
+] as const;
+
+const TRUSTED_BUSINESSES = [
+  { label: "Hoteles", icon: Hotel },
+  { label: "Restaurantes", icon: UtensilsCrossed },
+  { label: "Cafeterías", icon: Coffee },
+  { label: "Tiendas", icon: ShoppingBag },
+  { label: "Clínicas", icon: Stethoscope },
 ] as const;
 
 export default function ClientLanding() {
@@ -203,6 +220,28 @@ export default function ClientLanding() {
                   }`}
                 />
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative z-10">
+        <div className="fp-container pb-6 sm:pb-8">
+          <div className="fp-trusted-band">
+            <p className="fp-trusted-band__title">Negocios que ya venden con sistemas web</p>
+            <div className="fp-trusted-band__grid">
+              {TRUSTED_BUSINESSES.map((business) => {
+                const Icon = business.icon;
+
+                return (
+                  <div key={business.label} className="fp-trusted-band__item">
+                    <span className="fp-trusted-band__icon">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span>{business.label}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
