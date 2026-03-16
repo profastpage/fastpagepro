@@ -221,7 +221,18 @@ export default function ClientLanding() {
                   key={`${activeProject.name}-${screenshot.label}`}
                   className={`portfolio-screenshot portfolio-screenshot--${screenshot.variant}`}
                 >
+                  {screenshot.src ? (
+                    <img
+                      src={screenshot.src}
+                      alt={`${activeProject.name} ${screenshot.label}`}
+                      className="portfolio-screenshot__image"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="portfolio-screenshot__placeholder" />
+                  )}
                   <span className="portfolio-screenshot__label">{screenshot.label}</span>
+                  <p className="portfolio-screenshot__description">{screenshot.description}</p>
                 </div>
               ))}
             </div>

@@ -25,7 +25,12 @@ export type PortfolioItem = {
   accent: string;
   surface: string;
   metrics: string[];
-  screenshots: { label: string; variant: "desktop" | "mobile" }[];
+  screenshots: {
+    label: string;
+    variant: "desktop" | "mobile";
+    src?: string;
+    description: string;
+  }[];
 };
 
 export type ProcessStep = {
@@ -54,8 +59,30 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
       "radial-gradient(circle at 20% 20%, rgba(212,175,55,0.22), transparent 40%), linear-gradient(180deg, #171717 0%, #0f1012 100%)",
     metrics: ["Reservas directas", "Suite showcase", "WhatsApp concierge"],
     screenshots: [
-      { label: "Desktop hero", variant: "desktop" },
-      { label: "Mobile booking", variant: "mobile" },
+      {
+        label: "Desktop hero",
+        variant: "desktop",
+        src: "/portfolio/vuelo78/desktop-hero.jpg",
+        description: "Hero principal con propuesta de valor, CTA y estilo premium orientado a conversion.",
+      },
+      {
+        label: "Desktop landing completa",
+        variant: "desktop",
+        src: "/portfolio/vuelo78/desktop-full.jpg",
+        description: "Vista completa del flujo desktop para revisar estructura, jerarquia y continuidad visual.",
+      },
+      {
+        label: "Mobile hero",
+        variant: "mobile",
+        src: "/portfolio/vuelo78/mobile-hero.jpg",
+        description: "Primer pantallazo en mobile con lectura clara y llamada a accion visible.",
+      },
+      {
+        label: "Mobile landing completa",
+        variant: "mobile",
+        src: "/portfolio/vuelo78/mobile-full.jpg",
+        description: "Scroll total en mobile para validar composicion, espaciado y experiencia responsive.",
+      },
     ],
   },
   {
@@ -67,8 +94,16 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
       "radial-gradient(circle at 80% 10%, rgba(255,132,76,0.18), transparent 34%), linear-gradient(180deg, #151515 0%, #101112 100%)",
     metrics: ["Menu visual", "Pedidos por chat", "CTA rapido"],
     screenshots: [
-      { label: "Desktop menu", variant: "desktop" },
-      { label: "Mobile menu", variant: "mobile" },
+      {
+        label: "Desktop menu",
+        variant: "desktop",
+        description: "Vista de carta digital orientada a conversion por WhatsApp.",
+      },
+      {
+        label: "Mobile menu",
+        variant: "mobile",
+        description: "Experiencia de pedido en mobile con foco en rapidez.",
+      },
     ],
   },
   {
@@ -80,8 +115,16 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
       "radial-gradient(circle at 18% 20%, rgba(122,197,169,0.18), transparent 36%), linear-gradient(180deg, #151618 0%, #0f1011 100%)",
     metrics: ["Branding limpio", "Promos del dia", "Mobile first"],
     screenshots: [
-      { label: "Desktop hero", variant: "desktop" },
-      { label: "Mobile hero", variant: "mobile" },
+      {
+        label: "Desktop hero",
+        variant: "desktop",
+        description: "Landing de cafeteria con branding limpio y bloque comercial principal.",
+      },
+      {
+        label: "Mobile hero",
+        variant: "mobile",
+        description: "Version mobile optimizada para lectura y accion rapida.",
+      },
     ],
   },
   {
@@ -93,8 +136,16 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
       "radial-gradient(circle at 78% 18%, rgba(126,166,255,0.18), transparent 36%), linear-gradient(180deg, #121315 0%, #0d0e10 100%)",
     metrics: ["Autoridad visual", "Leads calificados", "Proceso consultivo"],
     screenshots: [
-      { label: "Desktop lead form", variant: "desktop" },
-      { label: "Mobile info", variant: "mobile" },
+      {
+        label: "Desktop lead form",
+        variant: "desktop",
+        description: "Bloques de autoridad y captura de lead en entorno B2B.",
+      },
+      {
+        label: "Mobile info",
+        variant: "mobile",
+        description: "Informacion esencial adaptada a pantalla mobile.",
+      },
     ],
   },
 ];

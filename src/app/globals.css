@@ -688,17 +688,54 @@ details[open] summary .text-gold-iridescent {
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.5));
     padding: 1rem;
-    min-height: 160px;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
   }
 
   .portfolio-screenshot--desktop {
-    min-height: 210px;
+    min-height: 300px;
+  }
+
+  .portfolio-screenshot__image {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    object-fit: cover;
+    display: block;
+    background: #0b0b0c;
+  }
+
+  .portfolio-screenshot--desktop .portfolio-screenshot__image {
+    aspect-ratio: 16 / 10;
+  }
+
+  .portfolio-screenshot--mobile .portfolio-screenshot__image {
+    aspect-ratio: 9 / 16;
+    max-width: 240px;
+    margin-inline: auto;
+  }
+
+  .portfolio-screenshot__placeholder {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+      radial-gradient(circle at top right, rgba(201, 162, 39, 0.18), transparent 40%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.45));
+    aspect-ratio: 16 / 10;
+  }
+
+  .portfolio-screenshot--mobile .portfolio-screenshot__placeholder {
+    aspect-ratio: 9 / 16;
+    max-width: 240px;
+    margin-inline: auto;
   }
 
   .portfolio-screenshot__label {
-    position: absolute;
-    bottom: 0.75rem;
-    right: 0.85rem;
+    width: fit-content;
+    margin-left: auto;
     font-size: 0.65rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -706,6 +743,13 @@ details[open] summary .text-gold-iridescent {
     background: rgba(0, 0, 0, 0.4);
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
+  }
+
+  .portfolio-screenshot__description {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.74);
   }
 
   .fp-demo-shell {
