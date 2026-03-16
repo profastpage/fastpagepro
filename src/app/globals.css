@@ -640,6 +640,74 @@ details[open] summary .text-gold-iridescent {
     border-radius: 999px;
   }
 
+  .portfolio-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .portfolio-modal__layer {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .portfolio-modal__panel {
+    position: relative;
+    width: min(960px, 92vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0b0b0c;
+    padding: 2rem;
+    box-shadow: 0 40px 90px rgba(0, 0, 0, 0.7);
+    z-index: 2;
+  }
+
+  .portfolio-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .portfolio-modal__grid {
+    margin-top: 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+
+  .portfolio-screenshot {
+    position: relative;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.5));
+    padding: 1rem;
+    min-height: 160px;
+  }
+
+  .portfolio-screenshot--desktop {
+    min-height: 210px;
+  }
+
+  .portfolio-screenshot__label {
+    position: absolute;
+    bottom: 0.75rem;
+    right: 0.85rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #c9a227;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+  }
+
   .fp-demo-shell {
     position: relative;
     overflow: hidden;
