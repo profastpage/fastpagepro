@@ -479,6 +479,10 @@ details[open] summary .text-gold-iridescent {
     padding-inline: 24px;
   }
 
+  .fp-container--wide {
+    max-width: 1360px;
+  }
+
   .fp-section {
     padding-top: 120px;
     padding-bottom: 120px;
@@ -804,29 +808,41 @@ details[open] summary .text-gold-iridescent {
 
   .fp-showcase-grid {
     display: grid;
-    gap: 1.35rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.95fr);
   }
 
   .fp-showcase-card {
     position: relative;
     overflow: hidden;
-    min-height: 340px;
+    min-height: 380px;
     border-radius: 22px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)), #101113;
-    aspect-ratio: 16 / 10;
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.4);
+  }
+
+  .fp-showcase-card--feature {
+    min-height: 460px;
   }
 
   .fp-showcase-card--mobile {
-    min-height: 340px;
+    min-height: 460px;
   }
 
   .fp-showcase-card__image {
     height: 100%;
     width: 100%;
     object-fit: cover;
+    object-position: top center;
     display: block;
+  }
+
+  .fp-showcase-card--mobile .fp-showcase-card__image {
+    object-fit: contain;
+    background:
+      radial-gradient(circle at top center, rgba(255, 195, 70, 0.08), transparent 48%),
+      #0e0f11;
   }
 
   .fp-showcase-card__meta {
@@ -1553,6 +1569,12 @@ details[open] summary .text-gold-iridescent {
 
   .fp-showcase-grid {
     grid-template-columns: 1fr;
+  }
+
+  .fp-showcase-card,
+  .fp-showcase-card--feature,
+  .fp-showcase-card--mobile {
+    min-height: 360px;
   }
 
   .fp-industry-band,

@@ -18,7 +18,27 @@ import {
 export default function ClientLanding() {
   const [activeProject, setActiveProject] = useState<PortfolioItem | null>(null);
   const modalScreenshots = useMemo(() => activeProject?.screenshots ?? [], [activeProject]);
-  const heroScreens = PORTFOLIO_ITEMS[0]?.screenshots.slice(0, 3) ?? [];
+  const heroScreens = useMemo(() => {
+    const screens = PORTFOLIO_ITEMS[0]?.screenshots ?? [];
+    const desktop =
+      screens.find(
+        (screen) =>
+          screen.variant === "desktop" &&
+          !screen.label.toLowerCase().includes("completa"),
+      ) ?? screens.find((screen) => screen.variant === "desktop");
+    const mobile =
+      screens.find(
+        (screen) =>
+          screen.variant === "mobile" &&
+          !screen.label.toLowerCase().includes("completa"),
+      ) ?? screens.find((screen) => screen.variant === "mobile");
+
+    return [desktop, mobile].filter(
+      (
+        screen,
+      ): screen is (typeof PORTFOLIO_ITEMS)[number]["screenshots"][number] => Boolean(screen),
+    );
+  }, []);
   const whatsappHref = useMemo(
     () =>
       buildWhatsappSendUrl(
@@ -151,17 +171,17 @@ export default function ClientLanding() {
       </section>
 
       <section id="screenshots" className="relative z-10">
-        <div className="fp-container pb-[24px]">
+        <div className="fp-container fp-container--wide pb-[24px]">
           <div className="fp-showcase-strip">
             <div className="max-w-2xl">
               <p className="fp-eyebrow">Screenshots</p>
               <h2 className="fp-section-title mt-4">Vistas reales</h2>
             </div>
             <div className="fp-showcase-grid mt-10">
-              {heroScreens.map((screen) => (
+              {heroScreens.map((screen, index) => (
                 <article
                   key={screen.label}
-                  className={`fp-showcase-card fp-showcase-card--${screen.variant}`}
+                  className={`fp-showcase-card fp-showcase-card--${screen.variant} ${index === 0 ? "fp-showcase-card--feature" : ""}`}
                 >
                   {screen.src ? (
                     <img
